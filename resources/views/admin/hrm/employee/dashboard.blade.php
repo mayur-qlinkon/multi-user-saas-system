@@ -562,7 +562,7 @@ function empDashboard() {
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
 
             try {
-                const res = await fetch('{{ route("admin.hrm.attendance.scan-store") }}', {
+                const res = await fetch('{{ route("admin.hrm.attendance.scan") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

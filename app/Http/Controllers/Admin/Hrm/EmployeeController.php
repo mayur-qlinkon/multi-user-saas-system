@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Admin\Hrm;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Hrm\StoreEmployeeRequest;
 use App\Http\Requests\Admin\Hrm\UpdateEmployeeRequest;
-use App\Models\Hrm\Employee;
 use App\Models\Hrm\Department;
 use App\Models\Hrm\Designation;
-use App\Models\User;
-use App\Models\Store;
+use App\Models\Hrm\Employee;
 use App\Models\Hrm\EmployeeSalaryStructure;
 use App\Models\Hrm\SalaryComponent;
+use App\Models\Hrm\Shift;
+use App\Models\Store;
+use App\Models\User;
 use App\Services\Hrm\EmployeeService;
 use Illuminate\Http\Request;
 
@@ -38,7 +39,7 @@ class EmployeeController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('employee_code', 'like', "%{$search}%")
-                  ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -61,6 +62,7 @@ class EmployeeController extends Controller
     {
         $departments = Department::active()->ordered()->get();
         $designations = Designation::active()->ordered()->get();
+        $shifts = Shift::active()->ordered()->get();
         $stores = Store::where('is_active', true)->get();
         $managers = Employee::active()->with('user')->get();
 
@@ -73,7 +75,7 @@ class EmployeeController extends Controller
             ->get();
 
         return view('admin.hrm.employees.create', compact(
-            'departments', 'designations', 'stores', 'managers', 'availableUsers'
+            'departments', 'designations', 'shifts', 'stores', 'managers', 'availableUsers'
         ));
     }
 
@@ -92,6 +94,7 @@ class EmployeeController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
+
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
@@ -99,7 +102,7 @@ class EmployeeController extends Controller
     public function show(Employee $employee)
     {
         $employee->load([
-            'user', 'department', 'designation', 'store',
+            'user', 'user.stores', 'department', 'designation', 'shift', 'store',
             'reportingManager.user', 'subordinates.user',
         ]);
 
@@ -130,15 +133,15 @@ class EmployeeController extends Controller
     {
         $validated = $request->validate([
             'salary_component_id' => 'required|exists:salary_components,id',
-            'calculation_type'    => 'required|in:fixed,percentage',
-            'amount'              => 'nullable|numeric|min:0',
-            'percentage_of'       => 'nullable|string|max:50',
-            'effective_from'      => 'nullable|date',
-            'effective_to'        => 'nullable|date|after_or_equal:effective_from',
+            'calculation_type' => 'required|in:fixed,percentage',
+            'amount' => 'nullable|numeric|min:0',
+            'percentage_of' => 'nullable|string|max:50',
+            'effective_from' => 'nullable|date',
+            'effective_to' => 'nullable|date|after_or_equal:effective_from',
         ]);
 
-        $validated['employee_id']   = $employee->id;
-        $validated['is_active']     = true;
+        $validated['employee_id'] = $employee->id;
+        $validated['is_active'] = true;
         // Default effective_from to start of current month so it covers the current payroll period
         if (empty($validated['effective_from'])) {
             $validated['effective_from'] = now()->startOfMonth()->toDateString();
@@ -160,6 +163,7 @@ class EmployeeController extends Controller
     {
         abort_if($structure->employee_id !== $employee->id, 403);
         $structure->delete();
+
         return response()->json(['message' => 'Component removed from salary structure.']);
     }
 
@@ -169,11 +173,12 @@ class EmployeeController extends Controller
 
         $departments = Department::active()->ordered()->get();
         $designations = Designation::active()->ordered()->get();
+        $shifts = Shift::active()->ordered()->get();
         $stores = Store::where('is_active', true)->get();
         $managers = Employee::active()->where('id', '!=', $employee->id)->with('user')->get();
 
         return view('admin.hrm.employees.edit', compact(
-            'employee', 'departments', 'designations', 'stores', 'managers'
+            'employee', 'departments', 'designations', 'shifts', 'stores', 'managers'
         ));
     }
 
@@ -192,6 +197,7 @@ class EmployeeController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
+
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
@@ -200,6 +206,7 @@ class EmployeeController extends Controller
     {
         try {
             $this->employeeService->delete($employee);
+
             return response()->json(['success' => true, 'message' => 'Employee deleted.']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);

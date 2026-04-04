@@ -721,8 +721,8 @@
                         </a>
 
                         
-                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.attendance.*', 'admin.hrm.attendance-settings.*', 'admin.hrm.office-locations.*'])); ?>">
-                            <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.attendance.*', 'admin.hrm.attendance-settings.*', 'admin.hrm.office-locations.*'])); ?>">
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*'])); ?>">
+                            <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="clock" class="nav-icon w-[18px] h-[18px]"></i> Attendance</span>
                                 <i data-lucide="chevron-right" class="nav-chevron"></i>
                             </button>
@@ -730,8 +730,7 @@
                                 <div class="sub-menu">
                                     <a href="<?php echo e(route('admin.hrm.attendance.today')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.attendance.today')); ?>">Today</a>
                                     <a href="<?php echo e(route('admin.hrm.attendance.report')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.attendance.report')); ?>">Report</a>
-                                    <a href="<?php echo e(route('admin.hrm.office-locations.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.office-locations.*')); ?>">Office Locations</a>
-                                    <a href="<?php echo e(route('admin.hrm.attendance-settings.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.attendance-settings.*')); ?>">Settings</a>
+                                    <a href="<?php echo e(route('admin.hrm.office-locations.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.office-locations.*')); ?>">Office Locations</a>                                    
                                 </div>
                             </div>
                         </div>
@@ -1642,6 +1641,11 @@
                         if (this.announcements.length === 0) {
                             this.fetchPending();
                         }
+                    });
+
+                    // Re-check when attendance scanner requests it
+                    window.addEventListener('announcements:recheck', () => {
+                        this.fetchPending();
                     });
                 },
 

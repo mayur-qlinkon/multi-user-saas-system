@@ -2,16 +2,17 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AttendanceLog extends Model
 {
     use Tenantable;
 
     const ACTION_CHECK_IN = 'check_in';
+
     const ACTION_CHECK_OUT = 'check_out';
 
     protected $fillable = [
@@ -23,7 +24,6 @@ class AttendanceLog extends Model
         'punched_at',
         'latitude',
         'longitude',
-        'qr_token',
         'device_info',
         'ip_address',
         'user_agent',

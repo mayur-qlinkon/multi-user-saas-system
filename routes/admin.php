@@ -1,77 +1,75 @@
 <?php
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Platform\OnboardingController;
 
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\StoreController;
-use App\Http\Controllers\Admin\UnitController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\AdminOrderController;
+use App\Http\Controllers\Admin\AnnouncementPopupController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeValueController;
-use App\Http\Controllers\Admin\SupplierController;
-use App\Http\Controllers\Admin\ClientController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\LabelController;
-use App\Http\Controllers\Admin\PurchaseController;
-use App\Http\Controllers\Admin\PaymentMethodController;
-use App\Http\Controllers\Admin\PurchaseReturnController;
-use App\Http\Controllers\Admin\InvoiceController;
-use App\Http\Controllers\Admin\QuotationController;
-use App\Http\Controllers\Admin\InvoiceReturnController;
-use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Admin\MerchandisingController;
-use App\Http\Controllers\Admin\AdminOrderController;
-use App\Http\Controllers\Admin\ExpenseController;
-use App\Http\Controllers\Admin\ExpenseCategoryController;
-use App\Http\Controllers\Admin\StorefrontSectionController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChallanController;
 use App\Http\Controllers\Admin\ChallanReturnController;
-use App\Http\Controllers\Admin\StorefrontSectionProductController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\InventoryReportController;
-use App\Http\Controllers\Admin\NotificationController;
-
+use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\Crm\CrmDashboardController;
+use App\Http\Controllers\Admin\Crm\CrmImportExportController;
+use App\Http\Controllers\Admin\Crm\CrmLeadController;
+use App\Http\Controllers\Admin\Crm\CrmLeadSourceController;
 use App\Http\Controllers\Admin\Crm\CrmPipelineController;
 use App\Http\Controllers\Admin\Crm\CrmStageController;
-use App\Http\Controllers\Admin\Crm\CrmLeadSourceController;
-use App\Http\Controllers\Admin\Crm\CrmLeadController;
 use App\Http\Controllers\Admin\Crm\CrmTagController;
-use App\Http\Controllers\Admin\Crm\CrmImportExportController;
-use App\Http\Controllers\Admin\Crm\CrmDashboardController;
-use App\Http\Controllers\Api\SearchController;
-
-// HRM Controllers
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ExpenseCategoryController;
+use App\Http\Controllers\Admin\ExpenseController;
+use App\Http\Controllers\Admin\Hrm\AnnouncementController as HrmAnnouncementController;
+use App\Http\Controllers\Admin\Hrm\AttendanceController as HrmAttendanceController;
+use App\Http\Controllers\Admin\Hrm\AttendanceRuleController as HrmAttendanceRuleController;
 use App\Http\Controllers\Admin\Hrm\DepartmentController as HrmDepartmentController;
 use App\Http\Controllers\Admin\Hrm\DesignationController as HrmDesignationController;
 use App\Http\Controllers\Admin\Hrm\EmployeeController as HrmEmployeeController;
-use App\Http\Controllers\Admin\Hrm\AttendanceController as HrmAttendanceController;
-use App\Http\Controllers\Admin\Hrm\AttendanceSettingController as HrmAttendanceSettingController;
+use App\Http\Controllers\Admin\Hrm\EmployeeDashboardController as HrmEmployeeDashboardController;
+use App\Http\Controllers\Admin\Hrm\HolidayController as HrmHolidayController;
+use App\Http\Controllers\Admin\Hrm\HrmTaskController;
+use App\Http\Controllers\Admin\Hrm\LeaveBalanceController as HrmLeaveBalanceController;
 use App\Http\Controllers\Admin\Hrm\LeaveController as HrmLeaveController;
 use App\Http\Controllers\Admin\Hrm\LeaveTypeController as HrmLeaveTypeController;
-use App\Http\Controllers\Admin\Hrm\SalarySlipController as HrmSalarySlipController;
-use App\Http\Controllers\Admin\Hrm\SalaryComponentController as HrmSalaryComponentController;
-use App\Http\Controllers\Admin\Hrm\HrmTaskController;
-use App\Http\Controllers\Admin\Hrm\AnnouncementController as HrmAnnouncementController;
-use App\Http\Controllers\Admin\Hrm\WorkLogController as HrmWorkLogController;
-use App\Http\Controllers\Admin\Hrm\ShiftController as HrmShiftController;
-use App\Http\Controllers\Admin\Hrm\HolidayController as HrmHolidayController;
-use App\Http\Controllers\Admin\Hrm\AttendanceRuleController as HrmAttendanceRuleController;
-use App\Http\Controllers\Admin\Hrm\EmployeeDashboardController as HrmEmployeeDashboardController;
-use App\Http\Controllers\Admin\Hrm\MyLeaveController as HrmMyLeaveController;
+use App\Http\Controllers\Admin\Hrm\MobileScanController as HrmMobileScanController;
 use App\Http\Controllers\Admin\Hrm\MyAttendanceController as HrmMyAttendanceController;
+use App\Http\Controllers\Admin\Hrm\MyLeaveController as HrmMyLeaveController;
 use App\Http\Controllers\Admin\Hrm\MySalarySlipController as HrmMySalarySlipController;
 use App\Http\Controllers\Admin\Hrm\MyTaskController as HrmMyTaskController;
-use App\Http\Controllers\Admin\Hrm\OfficeLocationController as HrmOfficeLocationController;
-use App\Http\Controllers\Admin\Hrm\MobileScanController as HrmMobileScanController;
-use App\Http\Controllers\Admin\Hrm\LeaveBalanceController as HrmLeaveBalanceController;
 use App\Http\Controllers\Admin\Hrm\MyWorkLogController as HrmMyWorkLogController;
-use App\Http\Controllers\Admin\AnnouncementPopupController;
-
-
+use App\Http\Controllers\Admin\Hrm\OfficeLocationController as HrmOfficeLocationController;
+use App\Http\Controllers\Admin\Hrm\SalaryComponentController as HrmSalaryComponentController;
+use App\Http\Controllers\Admin\Hrm\SalarySlipController as HrmSalarySlipController;
+use App\Http\Controllers\Admin\Hrm\ShiftController as HrmShiftController;
+// HRM Controllers
+use App\Http\Controllers\Admin\Hrm\WorkLogController as HrmWorkLogController;
+use App\Http\Controllers\Admin\InventoryReportController;
+use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\InvoiceReturnController;
+use App\Http\Controllers\Admin\LabelController;
+use App\Http\Controllers\Admin\MerchandisingController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\PaymentMethodController;
+use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\PurchaseController;
+use App\Http\Controllers\Admin\PurchaseReturnController;
+use App\Http\Controllers\Admin\QuotationController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\StoreController;
+use App\Http\Controllers\Admin\StorefrontSectionController;
+use App\Http\Controllers\Admin\StorefrontSectionProductController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\UnitController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Platform\OnboardingController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |==========================================================================
@@ -86,148 +84,144 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        
+
         // ════════════════════════════════════════════════
         // SETTINGS
         // ════════════════════════════════════════════════
-       Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function () {
-            Route::get('/',            'index'      )->name('index');
-            Route::post('/',           'update'     )->name('update');
-            Route::post('/clear-cache','clearCache' )->name('clear-cache');
-            Route::post('/reset',      'resetAll'   )->name('reset');
-            Route::get('/audit',       'auditTrail' )->name('audit');
+        Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'update')->name('update');
+            Route::post('/clear-cache', 'clearCache')->name('clear-cache');
+            Route::post('/reset', 'resetAll')->name('reset');
+            Route::get('/audit', 'auditTrail')->name('audit');
         });
         // ── Storefront Pages (CMS) ──
-        Route::prefix('pages')->name('pages.')->controller(\App\Http\Controllers\Admin\PageController::class)->group(function () {
-            Route::get('/',                 'index')->name('index');
-            Route::get('/create',           'create')->name('create');
-            Route::post('/',                'store')->name('store');
-            Route::get('/{page}/edit',      'edit')->name('edit');
-            Route::put('/{page}',           'update')->name('update');
-            Route::delete('/{page}',        'destroy')->name('destroy');
-            
+        Route::prefix('pages')->name('pages.')->controller(PageController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{page}/edit', 'edit')->name('edit');
+            Route::put('/{page}', 'update')->name('update');
+            Route::delete('/{page}', 'destroy')->name('destroy');
+
             // AJAX Quick Toggles
-            Route::post('/{page}/toggle',   'togglePublish')->name('toggle');
+            Route::post('/{page}/toggle', 'togglePublish')->name('toggle');
         });
 
-
         // ── Notifications ──
-       Route::prefix('notifications')->name('notifications.')->controller(NotificationController::class)->group(function () {
+        Route::prefix('notifications')->name('notifications.')->controller(NotificationController::class)->group(function () {
             Route::get('/', 'index')->name('index'); // 👈 ADD THIS
             Route::post('/{id}/read', 'markAsRead')->name('read');
             Route::post('/mark-all-read', 'markAllRead')->name('mark-all-read');
         });
-      
 
         Route::prefix('banners')->name('banners.')->controller(BannerController::class)->group(function () {
-            Route::get('/',                  'index'       )->name('index');
-            Route::get('/create',            'create'      )->name('create');
-            Route::post('/',                 'store'        )->name('store');
-            Route::get('/{banner}',          'show'         )->name('show');
-            Route::get('/{banner}/edit',     'edit'         )->name('edit');
-            Route::put('/{banner}',          'update'       )->name('update');
-            Route::delete('/{banner}',       'destroy'      )->name('destroy');
-            Route::post('/{banner}/toggle',  'toggleActive' )->name('toggle');
-            Route::post('/{banner}/duplicate','duplicate'   )->name('duplicate');
-            Route::post('/reorder',          'reorder'      )->name('reorder');
-            Route::post('/{id}/restore',     'restore'      )->name('restore');
-            Route::post('/{banner}/click',   'trackClick'   )->name('track-click');
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{banner}', 'show')->name('show');
+            Route::get('/{banner}/edit', 'edit')->name('edit');
+            Route::put('/{banner}', 'update')->name('update');
+            Route::delete('/{banner}', 'destroy')->name('destroy');
+            Route::post('/{banner}/toggle', 'toggleActive')->name('toggle');
+            Route::post('/{banner}/duplicate', 'duplicate')->name('duplicate');
+            Route::post('/reorder', 'reorder')->name('reorder');
+            Route::post('/{id}/restore', 'restore')->name('restore');
+            Route::post('/{banner}/click', 'trackClick')->name('track-click');
         });
-        
+
         Route::prefix('merchandising')
             ->name('merchandising.')
             ->controller(MerchandisingController::class)
             ->group(function () {
-        
+
                 // ── Main page ──
                 Route::get('/', 'index')->name('index');
-        
+
                 // ── AJAX: load products for a category ──
                 Route::get('/{categoryId}/products', 'loadCategory')->name('load-category');
-        
+
                 // ── AJAX: search unassigned products ──
                 Route::get('/{categoryId}/search', 'searchProducts')->name('search');
-        
+
                 // ── AJAX: add a product to category ──
                 Route::post('/{categoryId}/add', 'addProduct')->name('add-product');
-        
+
                 // ── AJAX: remove a product from category ──
                 Route::delete('/{categoryId}/products/{productId}', 'removeProduct')->name('remove-product');
-        
+
                 // ── AJAX: save drag-drop order ──
                 Route::post('/{categoryId}/reorder', 'reorder')->name('reorder');
-        
+
                 // ── AJAX: toggle featured star ──
                 Route::post('/{categoryId}/products/{productId}/toggle-featured', 'toggleFeatured')->name('toggle-featured');
-        
+
                 // ── AJAX: toggle per-category visibility ──
                 Route::post('/{categoryId}/products/{productId}/toggle-active', 'toggleActive')->name('toggle-active');
-        
-        });
+
+            });
 
         Route::prefix('storefront-sections')
             ->name('storefront-sections.')
             ->controller(StorefrontSectionController::class)
             ->group(function () {
-        
+
                 // ── Standard CRUD ──
-                Route::get('/',                    'index')   ->name('index');
-                Route::get('/create',              'create')  ->name('create');
-                Route::post('/',                   'store')   ->name('store');
-                Route::get('/{storefrontSection}/edit',    'edit')    ->name('edit');
-                Route::put('/{storefrontSection}',         'update')  ->name('update');
-                Route::delete('/{storefrontSection}',      'destroy') ->name('destroy');
-        
+                Route::get('/', 'index')->name('index');
+                Route::get('/create', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{storefrontSection}/edit', 'edit')->name('edit');
+                Route::put('/{storefrontSection}', 'update')->name('update');
+                Route::delete('/{storefrontSection}', 'destroy')->name('destroy');
+
                 // ── AJAX ──
-                Route::post('/reorder',                            'reorder')      ->name('reorder');
-                Route::post('/{storefrontSection}/toggle',         'toggleActive') ->name('toggle');
-                Route::post('/{storefrontSection}/duplicate',      'duplicate')    ->name('duplicate');
-        });
+                Route::post('/reorder', 'reorder')->name('reorder');
+                Route::post('/{storefrontSection}/toggle', 'toggleActive')->name('toggle');
+                Route::post('/{storefrontSection}/duplicate', 'duplicate')->name('duplicate');
+            });
         Route::prefix('storefront-sections/{storefrontSection}/products')
             ->name('storefront-sections.products.')
             ->controller(StorefrontSectionProductController::class)
             ->group(function () {
-                Route::get('/',           'index')  ->name('index');
-                Route::get('/load',       'load')   ->name('load');
-                Route::get('/search',     'search') ->name('search');
-                Route::post('/',          'add')    ->name('add');
-                Route::delete('/{productId}', 'remove') ->name('remove');
-                Route::post('/reorder',   'reorder')->name('reorder');
-        });
+                Route::get('/', 'index')->name('index');
+                Route::get('/load', 'load')->name('load');
+                Route::get('/search', 'search')->name('search');
+                Route::post('/', 'add')->name('add');
+                Route::delete('/{productId}', 'remove')->name('remove');
+                Route::post('/reorder', 'reorder')->name('reorder');
+            });
         Route::prefix('orders')
             ->name('orders.')
             ->controller(AdminOrderController::class)
             ->group(function () {
-                Route::get('/',                      'index')       ->name('index');
-                Route::get('/create',                      'create')       ->name('create');
-                Route::get('/{order}/edit',                      'edit')       ->name('edit');
-                Route::post('/',                      'store')       ->name('store');
-                Route::get('/{order}',               'show')        ->name('show');
-                Route::put('/{order}',               'update')      ->name('update');
-                Route::patch('/{order}/logistics',   'updateLogistics')->name('logistics'); // 🌟 NEW: Quick Tracking Update
-                Route::post('/{order}/status',       'updateStatus')->name('status');
-                Route::post('/{order}/cancel',       'cancel')      ->name('cancel');
-                Route::post('/{order}/note',         'addNote')     ->name('note');
-                Route::post('/{order}/mark-paid',    'markPaid')    ->name('mark-paid');
+                Route::get('/', 'index')->name('index');
+                Route::get('/create', 'create')->name('create');
+                Route::get('/{order}/edit', 'edit')->name('edit');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{order}', 'show')->name('show');
+                Route::put('/{order}', 'update')->name('update');
+                Route::patch('/{order}/logistics', 'updateLogistics')->name('logistics'); // 🌟 NEW: Quick Tracking Update
+                Route::post('/{order}/status', 'updateStatus')->name('status');
+                Route::post('/{order}/cancel', 'cancel')->name('cancel');
+                Route::post('/{order}/note', 'addNote')->name('note');
+                Route::post('/{order}/mark-paid', 'markPaid')->name('mark-paid');
                 Route::get('/{order}/receipt', 'downloadReceipt')->name('receipt');
-        });
+            });
 
-
-        Route::get('/audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index'])->name('audit-logs.index');
-        Route::get('/reports', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/inventory/reports', [InventoryReportController::class, 'index'])
             ->name('inventory.reports.index');
-        
-        
+
         // Everything below here REQUIRES a store to exist!
         Route::middleware('store.exists')->group(function () {
-            
+
             // --- ONBOARDING ROUTES ---
             Route::get('/welcome', [OnboardingController::class, 'index'])->name('onboarding.index');
-            Route::post('/welcome', [OnboardingController::class, 'store'])->name('onboarding.store');   
+            Route::post('/welcome', [OnboardingController::class, 'store'])->name('onboarding.store');
 
-            Route::get("/dashboard",[DashboardController::class, 'index'])->name('dashboard');
-            Route::get("/",[DashboardController::class, 'index']);
+            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/', [DashboardController::class, 'index']);
 
             // ── Announcement Popup (employee-facing AJAX) ──
             Route::prefix('announcements-popup')->name('announcements-popup.')->controller(AnnouncementPopupController::class)->group(function () {
@@ -238,9 +232,9 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             });
 
             Route::post('/switch-store', [StoreController::class, 'switch'])->name('store.switch');
-            
+
             Route::resource('/users', UserController::class);
-            Route::resource('/stores', StoreController::class)->except(['create', 'show', 'edit']);            
+            Route::resource('/stores', StoreController::class)->except(['create', 'show', 'edit']);
             Route::resource('/clients', ClientController::class)->except(['create', 'edit', 'show']);
             Route::resource('/suppliers', SupplierController::class)->except(['create', 'show', 'edit']);
             Route::resource('/warehouses', WarehouseController::class)->except(['create', 'show', 'edit']);
@@ -248,15 +242,15 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             // 1. Standard Resource
             Route::resource('purchase-returns', PurchaseReturnController::class);
             Route::resource('invoices', InvoiceController::class);
-            
+
             // ==========================================
             // INVOICE RETURNS (CREDIT NOTES)
             // ==========================================
-            
+
             // 1. Custom Create & Store (Requires the original invoice ID)
             Route::get('invoices/{invoice}/returns/create', [InvoiceReturnController::class, 'create'])
                 ->name('invoice-returns.create');
-                
+
             Route::post('invoices/{invoice}/returns', [InvoiceReturnController::class, 'store'])
                 ->name('invoice-returns.store');
 
@@ -269,14 +263,12 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 ->except(['create', 'store'])
                 ->names('invoice-returns'); // 🌟 CRITICAL FIX: Forces the 'admin.' prefix!
 
-            
-
             Route::resource('quotations', QuotationController::class);
             Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert');
             Route::post('quotations/{quotation}/mark-sent', [QuotationController::class, 'markAsSent'])->name('quotations.mark_sent');
             Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'downloadPdf'])
-            ->name('quotations.pdf');
-                        
+                ->name('quotations.pdf');
+
             // ==========================================
             // POS MODULE ROUTING
             // ==========================================
@@ -290,18 +282,18 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
 
             // Endpoint for the POS Product Grid (Infinite Scroll & Search)
             Route::get('api/products', [PosController::class, 'fetchProducts'])->name('api.products');
-            
-            // 2. API Endpoint for Alpine to fetch Purchase Order details dynamically            
+
+            // 2. API Endpoint for Alpine to fetch Purchase Order details dynamically
             Route::patch('/purchases/{purchase}/payment', [PurchaseController::class, 'updatePayment'])
                 ->name('purchases.payment');
             Route::patch('/purchase-returns/{purchase_return}/payment', [PurchaseReturnController::class, 'updatePayment'])
-            ->name('purchase-returns.payment');
+                ->name('purchase-returns.payment');
             Route::post('/invoices/{invoice}/pay', [InvoiceController::class, 'addPayment'])->name('admin.invoices.pay');
-        
+
             // Purchase Specific API & Actions
             Route::get('api/purchases/{id}/for-return', [PurchaseController::class, 'getForReturn'])
                 ->name('api.purchases.for-return');
-                
+
             // 🌟 NEW SEARCH ROUTE
             Route::get('api/purchases/search', [SearchController::class, 'searchPurchases'])
                 ->name('api.purchases.search');
@@ -314,7 +306,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 ->name('purchase-returns.pdf');
             Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
 
-        });        
+        });
         // Label Printing Module
         Route::get('/labels', [LabelController::class, 'index'])->name('labels.index');
         Route::get('/labels/render', [LabelController::class, 'renderImage'])->name('labels.render-image');
@@ -337,144 +329,136 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
         Route::resource('/units', UnitController::class)->except(['create', 'show', 'edit']);
 
         Route::post('/payment-methods/reorder', [PaymentMethodController::class, 'reorder'])->name('payment_methods.reorder');
-        Route::resource('/payment-methods', PaymentMethodController::class)->except(['create', 'edit', 'show']);        
+        Route::resource('/payment-methods', PaymentMethodController::class)->except(['create', 'edit', 'show']);
 
         // API LEVEL
         Route::get('/api/search-skus', [SearchController::class, 'searchSkus'])->name('api.search-skus');
 
-
-
         Route::prefix('crm')->name('crm.')->group(function () {
-                
-                Route::get('/dashboard', [CrmDashboardController::class, 'index'])
+
+            Route::get('/dashboard', [CrmDashboardController::class, 'index'])
                 ->name('dashboard');
-                // ── Pipelines ──
-                Route::prefix('pipelines')->name('pipelines.')->controller(CrmPipelineController::class)->group(function () {
-                    Route::get('/',                     'index')       ->name('index');
-                    Route::post('/',                    'store')        ->name('store');
-                    // Route::get('/create',               'create')      ->name('create');
-                    // Route::get('/{pipeline}/edit',      'edit')        ->name('edit');
-                    Route::put('/{pipeline}',           'update')      ->name('update');
-                    Route::delete('/{pipeline}',        'destroy')     ->name('destroy');
-                    Route::post('/{pipeline}/default',  'setDefault')  ->name('default');
-                });
-            
-                // ── Stages (nested under pipeline) ──
-                Route::prefix('pipelines/{pipeline}/stages')->name('stages.')->controller(CrmStageController::class)->group(function () {
-                    Route::get('/',             'index')   ->name('index');
-                    Route::post('/',            'store')   ->name('store');
-                    Route::put('/{stage}',      'update')  ->name('update');
-                    Route::delete('/{stage}',   'destroy') ->name('destroy');
-                    Route::post('/reorder',     'reorder') ->name('reorder'); // SortableJS
-                });
-            
-                // ── Lead Sources ──
-                Route::prefix('sources')->name('sources.')->controller(CrmLeadSourceController::class)->group(function () {
-                    Route::get('/',             'index')   ->name('index');
-                    Route::post('/',            'store')   ->name('store');
-                    Route::put('/{source}',     'update')  ->name('update');
-                    Route::delete('/{source}',  'destroy') ->name('destroy');
-                });
-            
-                // ── Tags ──
-                Route::prefix('tags')->name('tags.')->controller(CrmTagController::class)->group(function () {
-                    Route::get('/',         'index')   ->name('index');
-                    Route::post('/',        'store')   ->name('store');
-                    Route::put('/{tag}',    'update')  ->name('update');
-                    Route::delete('/{tag}', 'destroy') ->name('destroy');
-                });
-
-                // ── Import / Export ──
-                Route::get('/leads/import',           [CrmImportExportController::class, 'importPage'])->name('leads.import');
-                Route::post('/leads/import',          [CrmImportExportController::class, 'import'])    ->name('leads.import.store');
-                Route::get('/leads/import/template',  [CrmImportExportController::class, 'template'])  ->name('leads.import.template');
-                Route::get('/leads/export',           [CrmImportExportController::class, 'export'])    ->name('leads.export');
-
-                // ── Leads ──
-                Route::prefix('leads')->name('leads.')->controller(CrmLeadController::class)->group(function () {
-                
-                    // ── Core CRUD ──
-                    Route::get('/',             'index')   ->name('index');
-                    Route::get('/create',       'create')  ->name('create');
-                    Route::post('/',            'store')   ->name('store');
-                    Route::get('/{lead}',       'show')    ->name('show');
-                    Route::get('/{lead}/edit',  'edit')    ->name('edit');
-                    Route::put('/{lead}',       'update')  ->name('update');
-                    Route::delete('/{lead}',    'destroy') ->name('destroy');
-                
-                    // ── Stage move — AJAX ──
-                    Route::post('/{lead}/stage',    'moveStage')   ->name('stage');
-                
-                    // ── Activity log — AJAX ──
-                    Route::post('/{lead}/activity', 'logActivity') ->name('activity');
-                
-                    // ── Tasks — AJAX ──
-                    Route::post('/{lead}/tasks',            'storeTask')    ->name('tasks.store');
-                    Route::put('/{lead}/tasks/{task}',      'updateTask')   ->name('tasks.update');
-                    Route::post('/{lead}/tasks/{task}/complete', 'completeTask') ->name('tasks.complete');
-                    Route::delete('/{lead}/tasks/{task}',   'destroyTask')  ->name('tasks.destroy');
-                
-                    // ── Convert lead → client ──
-                    Route::post('/{lead}/convert', 'convert') ->name('convert');
-                
-                    // ── Score update ──
-                    Route::post('/{lead}/score', 'updateScore') ->name('score');
-                                    
-                });                
-            
+            // ── Pipelines ──
+            Route::prefix('pipelines')->name('pipelines.')->controller(CrmPipelineController::class)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                // Route::get('/create',               'create')      ->name('create');
+                // Route::get('/{pipeline}/edit',      'edit')        ->name('edit');
+                Route::put('/{pipeline}', 'update')->name('update');
+                Route::delete('/{pipeline}', 'destroy')->name('destroy');
+                Route::post('/{pipeline}/default', 'setDefault')->name('default');
             });
 
-
-            // ── EXPENSE MODULE ──
-            Route::prefix('expenses')->name('expenses.')->group(function () {
-                
-                // Core CRUD
-                Route::get('/',             [ExpenseController::class, 'index'])  ->name('index');
-                Route::get('/create',       [ExpenseController::class, 'create']) ->name('create');
-                Route::post('/',            [ExpenseController::class, 'store'])  ->name('store');
-                Route::get('/{expense}',    [ExpenseController::class, 'show'])   ->name('show');
-                Route::get('/{expense}/edit',[ExpenseController::class, 'edit'])   ->name('edit');
-                Route::put('/{expense}',    [ExpenseController::class, 'update']) ->name('update');
-                Route::delete('/{expense}', [ExpenseController::class, 'destroy'])->name('destroy');
-
-                // Workflow / Status Update (AJAX)
-                Route::patch('/{expense}/status', [ExpenseController::class, 'updateStatus'])->name('status.update');
+            // ── Stages (nested under pipeline) ──
+            Route::prefix('pipelines/{pipeline}/stages')->name('stages.')->controller(CrmStageController::class)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::put('/{stage}', 'update')->name('update');
+                Route::delete('/{stage}', 'destroy')->name('destroy');
+                Route::post('/reorder', 'reorder')->name('reorder'); // SortableJS
             });
 
-            // Expense Categories (Single Page CRUD)
-            Route::patch('expense-categories/{expense_category}/toggle-status', [ExpenseCategoryController::class, 'toggleStatus'])
-                ->name('expense-categories.toggle-status');
-                
-            Route::resource('expense-categories', ExpenseCategoryController::class)
-                ->except(['create', 'show', 'edit'])
-                ->parameters([
-                    'expense-categories' => 'expense_category' // Ensures the route model binding matches our controller variable
+            // ── Lead Sources ──
+            Route::prefix('sources')->name('sources.')->controller(CrmLeadSourceController::class)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::put('/{source}', 'update')->name('update');
+                Route::delete('/{source}', 'destroy')->name('destroy');
+            });
+
+            // ── Tags ──
+            Route::prefix('tags')->name('tags.')->controller(CrmTagController::class)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::put('/{tag}', 'update')->name('update');
+                Route::delete('/{tag}', 'destroy')->name('destroy');
+            });
+
+            // ── Import / Export ──
+            Route::get('/leads/import', [CrmImportExportController::class, 'importPage'])->name('leads.import');
+            Route::post('/leads/import', [CrmImportExportController::class, 'import'])->name('leads.import.store');
+            Route::get('/leads/import/template', [CrmImportExportController::class, 'template'])->name('leads.import.template');
+            Route::get('/leads/export', [CrmImportExportController::class, 'export'])->name('leads.export');
+
+            // ── Leads ──
+            Route::prefix('leads')->name('leads.')->controller(CrmLeadController::class)->group(function () {
+
+                // ── Core CRUD ──
+                Route::get('/', 'index')->name('index');
+                Route::get('/create', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{lead}', 'show')->name('show');
+                Route::get('/{lead}/edit', 'edit')->name('edit');
+                Route::put('/{lead}', 'update')->name('update');
+                Route::delete('/{lead}', 'destroy')->name('destroy');
+
+                // ── Stage move — AJAX ──
+                Route::post('/{lead}/stage', 'moveStage')->name('stage');
+
+                // ── Activity log — AJAX ──
+                Route::post('/{lead}/activity', 'logActivity')->name('activity');
+
+                // ── Tasks — AJAX ──
+                Route::post('/{lead}/tasks', 'storeTask')->name('tasks.store');
+                Route::put('/{lead}/tasks/{task}', 'updateTask')->name('tasks.update');
+                Route::post('/{lead}/tasks/{task}/complete', 'completeTask')->name('tasks.complete');
+                Route::delete('/{lead}/tasks/{task}', 'destroyTask')->name('tasks.destroy');
+
+                // ── Convert lead → client ──
+                Route::post('/{lead}/convert', 'convert')->name('convert');
+
+                // ── Score update ──
+                Route::post('/{lead}/score', 'updateScore')->name('score');
+
+            });
+
+        });
+
+        // ── EXPENSE MODULE ──
+        Route::prefix('expenses')->name('expenses.')->group(function () {
+
+            // Core CRUD
+            Route::get('/', [ExpenseController::class, 'index'])->name('index');
+            Route::get('/create', [ExpenseController::class, 'create'])->name('create');
+            Route::post('/', [ExpenseController::class, 'store'])->name('store');
+            Route::get('/{expense}', [ExpenseController::class, 'show'])->name('show');
+            Route::get('/{expense}/edit', [ExpenseController::class, 'edit'])->name('edit');
+            Route::put('/{expense}', [ExpenseController::class, 'update'])->name('update');
+            Route::delete('/{expense}', [ExpenseController::class, 'destroy'])->name('destroy');
+
+            // Workflow / Status Update (AJAX)
+            Route::patch('/{expense}/status', [ExpenseController::class, 'updateStatus'])->name('status.update');
+        });
+
+        // Expense Categories (Single Page CRUD)
+        Route::patch('expense-categories/{expense_category}/toggle-status', [ExpenseCategoryController::class, 'toggleStatus'])
+            ->name('expense-categories.toggle-status');
+
+        Route::resource('expense-categories', ExpenseCategoryController::class)
+            ->except(['create', 'show', 'edit'])
+            ->parameters([
+                'expense-categories' => 'expense_category', // Ensures the route model binding matches our controller variable
             ]);
 
+        // ── Custom Challan Routes ──
+        Route::get('challans/{challan}/pdf', [ChallanController::class, 'downloadPdf'])->name('challans.pdf');
+        Route::patch('challans/{challan}/status', [ChallanController::class, 'updateStatus'])->name('challans.status.update');
 
-            // ── Custom Challan Routes ──
-            Route::get('challans/{challan}/pdf', [ChallanController::class, 'downloadPdf'])->name('challans.pdf');
-            Route::patch('challans/{challan}/status', [ChallanController::class, 'updateStatus'])->name('challans.status.update');
+        // ── Standard Resource Routes ──
+        Route::resource('challans', ChallanController::class);
 
-            // ── Standard Resource Routes ──
-            Route::resource('challans', ChallanController::class);
+        // ──────────────────────────────────────────────────────────────
+        // CHALLAN RETURNS
+        // ──────────────────────────────────────────────────────────────
+        Route::get('challan-returns', [ChallanReturnController::class, 'index'])->name('challan-returns.index');
+        Route::get('challan-returns/create/{challan}', [ChallanReturnController::class, 'create'])->name('challan-returns.create');
+        Route::post('challan-returns', [ChallanReturnController::class, 'store'])->name('challan-returns.store');
+        Route::get('challan-returns/{challanReturn}', [ChallanReturnController::class, 'show'])->name('challan-returns.show');
+        Route::get('challan-returns/{challanReturn}/edit', [ChallanReturnController::class, 'edit'])->name('challan-returns.edit');
+        Route::put('challan-returns/{challanReturn}', [ChallanReturnController::class, 'update'])->name('challan-returns.update');
+        Route::get('challan-returns/{challanReturn}/pdf', [ChallanReturnController::class, 'downloadPdf'])->name('challan-returns.pdf');
 
-            // ──────────────────────────────────────────────────────────────
-            // CHALLAN RETURNS
-            // ──────────────────────────────────────────────────────────────
-            Route::get('challan-returns', [ChallanReturnController::class, 'index'])->name('challan-returns.index');
-            Route::get('challan-returns/create/{challan}', [ChallanReturnController::class, 'create'])->name('challan-returns.create');
-            Route::post('challan-returns', [ChallanReturnController::class, 'store'])->name('challan-returns.store');
-            Route::get('challan-returns/{challanReturn}', [ChallanReturnController::class, 'show'])->name('challan-returns.show');
-            Route::get('challan-returns/{challanReturn}/edit', [ChallanReturnController::class, 'edit'])->name('challan-returns.edit');
-            Route::put('challan-returns/{challanReturn}', [ChallanReturnController::class, 'update'])->name('challan-returns.update');
-            Route::get('challan-returns/{challanReturn}/pdf', [ChallanReturnController::class, 'downloadPdf'])->name('challan-returns.pdf');
-            
-
-
-
-
-          // ════════════════════════════════════════════════
+        // ════════════════════════════════════════════════
         // HRM MODULE
         // ════════════════════════════════════════════════
         Route::prefix('hrm')->name('hrm.')->group(function () {
@@ -530,12 +514,10 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::get('employees/{employee}/salary-structures', [HrmEmployeeController::class, 'salaryStructures'])->name('employees.salary-structures.index');
             Route::post('employees/{employee}/salary-structures', [HrmEmployeeController::class, 'storeSalaryStructure'])->name('employees.salary-structures.store');
             Route::delete('employees/{employee}/salary-structures/{structure}', [HrmEmployeeController::class, 'destroySalaryStructure'])->name('employees.salary-structures.destroy');
-            
+
             // ── Attendance ──
             Route::prefix('attendance')->name('attendance.')->controller(HrmAttendanceController::class)->group(function () {
-                Route::post('/generate-qr', 'generateQr')->name('generate-qr');
                 Route::post('/scan', 'scan')->name('scan')->middleware('throttle:10,1');
-                Route::post('/scan-store', 'scanStore')->name('scan-store')->middleware('throttle:10,1');
                 Route::get('/today', 'today')->name('today');
                 Route::get('/report', 'report')->name('report');
                 Route::post('/{attendance}/override', [HrmAttendanceController::class, 'override'])->name('override');
@@ -545,10 +527,6 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::resource('attendance-rules', HrmAttendanceRuleController::class)->except(['create', 'show', 'edit']);
 
             // ── Attendance Settings ──
-            Route::prefix('attendance-settings')->name('attendance-settings.')->controller(HrmAttendanceSettingController::class)->group(function () {
-                Route::get('/', 'index')->name('index');
-                Route::put('/', 'update')->name('update');
-            });
 
             // ── Office Locations (GPS + per-store QR) ──
             Route::prefix('office-locations')->name('office-locations.')->controller(HrmOfficeLocationController::class)->group(function () {
@@ -560,7 +538,6 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
 
             // ── Mobile Attendance Scan (printed QR poster → phone) ──
             Route::get('attend/{store}', [HrmMobileScanController::class, 'show'])->name('attend');
-            Route::post('attend/{store}', [HrmMobileScanController::class, 'scan'])->name('attend.scan');
 
             // ── Leave Types (Single Page CRUD) ──
             Route::resource('leave-types', HrmLeaveTypeController::class)->except(['create', 'show', 'edit']);
@@ -617,12 +594,12 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
 
             // ── Announcements ──
             Route::prefix('announcements')->name('announcements.')->controller(HrmAnnouncementController::class)->group(function () {
-                Route::get('/',                       'index')->name('index');
-                Route::get('/create',                 'create')->name('create');
-                Route::post('/',                      'store')->name('store');
+                Route::get('/', 'index')->name('index');
+                Route::get('/create', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
                 // 👉 Download must be here
                 Route::get('/{announcement}/download', 'downloadAttachment')->name('download');
-                
+
                 // 👉 Add ->whereNumber() so it doesn't accidentally catch the download route!
                 Route::get('/{announcement}', 'show')->name('show')->whereNumber('announcement');
                 Route::get('/{announcement}/edit', 'edit')->name('edit')->whereNumber('announcement');
@@ -630,13 +607,13 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::delete('/{announcement}', 'destroy')->name('destroy')->whereNumber('announcement');
 
                 // Status actions
-                Route::patch('/{announcement}/publish',   'publish')->name('publish');
+                Route::patch('/{announcement}/publish', 'publish')->name('publish');
                 Route::patch('/{announcement}/unpublish', 'unpublish')->name('unpublish');
-                Route::patch('/{announcement}/schedule',  'schedule')->name('schedule');
+                Route::patch('/{announcement}/schedule', 'schedule')->name('schedule');
 
                 // Utilities
                 Route::post('/{announcement}/duplicate', 'duplicate')->name('duplicate');
-                Route::post('/{id}/restore',             'restore')->name('restore');
+                Route::post('/{id}/restore', 'restore')->name('restore');
             });
 
             // ── Work Logs ──
@@ -649,14 +626,11 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             });
         });
 
-
-
-        
         /*
         |--------------------------------------------------------------------------
         | Module-Specific Routes (Protected by the Second Bouncer!)
         |--------------------------------------------------------------------------
-        | Only owners whose active Subscription Plan includes these specific 
+        | Only owners whose active Subscription Plan includes these specific
         | modules will be allowed to access these routes.
         */
 
@@ -670,8 +644,4 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
         //     Route::resource('/invoices', InvoiceController::class);
         // });
 
-});
-
-      
-
-
+    });

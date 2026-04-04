@@ -22,8 +22,7 @@ return new class extends Migration
             $table->string('batch_number')->nullable();
             $table->foreignId('unit_id')->constrained('units');
             $table->decimal('unit_cost', 15, 4)->nullable();
-            $table->enum('direction',['in','out']);
-            // --- 👤 The "Who" (Your Missing Fix) ---
+            $table->enum('direction',['in','out']);            
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->decimal('quantity', 15, 4);
             $table->decimal('balance_after', 15, 2)->comment('Total stock in warehouse AFTER this move');
@@ -31,14 +30,12 @@ return new class extends Migration
                 'purchase', 'sale', 'purchase_return', 'sale_return', 
                 'adjustment', 'transfer_in', 'transfer_out', 'opening_stock'
             ]);
-
             $table->string('reference_type')->nullable()->comment('e.g., App\Models\Invoice');
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->string('note')->nullable(); // Brief reason for manual adjustments
             $table->timestamps();
             $table->index(['product_sku_id','warehouse_id']);
             $table->index(['company_id','movement_type']);
-
         });
     }
 

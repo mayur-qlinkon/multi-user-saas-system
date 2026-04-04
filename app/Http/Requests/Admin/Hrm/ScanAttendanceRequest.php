@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Hrm;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ScanAttendanceRequest extends FormRequest
 {
@@ -14,9 +15,14 @@ class ScanAttendanceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'qr_data' => ['required', 'string'],
+            'store_id' => [
+                'required',
+                'integer',
+                Rule::exists('stores', 'id')->where('company_id', auth()->user()->company_id),
+            ],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'force_checkout' => ['nullable', 'boolean'],
         ];
     }
 
@@ -32,7 +38,8 @@ class ScanAttendanceRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'qr_data.required' => 'QR code data is required. Please scan the QR code.',
+            'store_id.required' => 'Store ID is required. Please scan the QR code again.',
+            'store_id.exists' => 'Invalid store. Please scan a valid QR code.',
             'latitude.required' => 'Location access is required for attendance.',
             'longitude.required' => 'Location access is required for attendance.',
         ];

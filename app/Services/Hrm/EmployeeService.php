@@ -17,72 +17,95 @@ class EmployeeService
         return DB::transaction(function () use ($data) {
             $data['created_by'] = Auth::id();
             $data['company_id'] = Auth::user()->company_id;
+            $storeIds = $this->normalizeStoreIds($data);
 
-            // 1. Profile Photo -> Use ImageUploadService (Crop to 400x400, optimize)
             if (isset($data['photo'])) {
                 $data['photo'] = $this->imageService->upload($data['photo'], 'employees/photos', [
-                    'width'  => 400,
+                    'width' => 400,
                     'height' => 400,
-                    'crop'   => true, 
+                    'crop' => true,
                 ]);
             }
 
-            // 2. Official Documents -> Use Native Storage (100% original quality, allows PDF)
-            $data['id_proof']      = $this->uploadDocument($data['id_proof'] ?? null, 'employees/documents');
+            $data['id_proof'] = $this->uploadDocument($data['id_proof'] ?? null, 'employees/documents');
             $data['address_proof'] = $this->uploadDocument($data['address_proof'] ?? null, 'employees/documents');
 
-            return Employee::create($data);
+            unset($data['store_ids']);
+
+            $employee = Employee::create($data);
+            $employee->user->stores()->sync($storeIds);
+
+            return $employee->fresh(['user.stores', 'shift']);
         });
     }
 
     public function update(Employee $employee, array $data): Employee
     {
         return DB::transaction(function () use ($employee, $data) {
-            
-            // Photo Update
+            $storeIds = $this->normalizeStoreIds($data, $employee);
+
             if (isset($data['photo'])) {
                 $this->imageService->delete($employee->photo);
                 $data['photo'] = $this->imageService->upload($data['photo'], 'employees/photos', [
-                    'width' => 400, 'height' => 400, 'crop' => true
+                    'width' => 400,
+                    'height' => 400,
+                    'crop' => true,
                 ]);
             }
-            
-            // Document Updates
+
             if (isset($data['id_proof'])) {
                 $this->deleteDocument($employee->id_proof);
                 $data['id_proof'] = $this->uploadDocument($data['id_proof'], 'employees/documents');
             }
-            
+
             if (isset($data['address_proof'])) {
                 $this->deleteDocument($employee->address_proof);
                 $data['address_proof'] = $this->uploadDocument($data['address_proof'], 'employees/documents');
             }
 
+            unset($data['store_ids']);
+
             $employee->update($data);
-            return $employee->fresh();
+            $employee->user->stores()->sync($storeIds);
+
+            return $employee->fresh(['user.stores', 'shift']);
         });
     }
 
     public function delete(Employee $employee): void
     {
         DB::transaction(function () use ($employee) {
-            // Optional: Delete physical files
-            // $this->imageService->delete($employee->photo);
-            // $this->deleteDocument($employee->id_proof);
-            // $this->deleteDocument($employee->address_proof);
-            
             $employee->delete();
         });
     }
 
-    // ── Helper Methods for Raw Documents ──
+    protected function normalizeStoreIds(array &$data, ?Employee $employee = null): array
+    {
+        $existingStoreIds = $employee?->user?->stores()->pluck('stores.id')->all() ?? [];
+        $storeIds = collect($data['store_ids'] ?? $existingStoreIds)
+            ->filter()
+            ->map(fn ($storeId) => (int) $storeId);
+
+        if (! empty($data['store_id'])) {
+            $storeIds->prepend((int) $data['store_id']);
+        }
+
+        $storeIds = $storeIds->unique()->values()->all();
+
+        if (empty($data['store_id']) && ! empty($storeIds)) {
+            $data['store_id'] = $storeIds[0];
+        }
+
+        return $storeIds;
+    }
 
     private function uploadDocument($file, string $path): ?string
     {
-        if (!$file) return null;
-        
-        // Native Laravel storage. Preserves 100% quality and keeps exact file format (PDF, JPG, etc.)
-        return $file->store($path, 'public'); 
+        if (! $file) {
+            return null;
+        }
+
+        return $file->store($path, 'public');
     }
 
     private function deleteDocument(?string $path): void

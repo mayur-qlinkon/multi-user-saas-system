@@ -310,21 +310,40 @@ async function markAttendance() {
     btnText.innerHTML = '<span class="spinner"></span>';
 
     try {
-        const resp = await fetch('{{ route('admin.hrm.attend.scan', $store) }}', {
+        const sendScan = async (forceCheckout = false) => fetch('{{ route('admin.hrm.attendance.scan') }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Accept': 'application/json',
             },
-            body: JSON.stringify({ latitude: gpsLat, longitude: gpsLng }),
+            body: JSON.stringify({
+                store_id: {{ $store->id }},
+                latitude: gpsLat,
+                longitude: gpsLng,
+                force_checkout: forceCheckout,
+            }),
         });
 
-        const data = await resp.json();
+        let resp = await sendScan();
+        let data = await resp.json();
+
+        if (data.requires_confirmation) {
+            const confirmed = window.confirm(data.message);
+
+            if (!confirmed) {
+                btn.disabled = false;
+                btnText.textContent = '{{ $action === "check-out" ? "Check Out" : "Check In" }}';
+                return;
+            }
+
+            resp = await sendScan(true);
+            data = await resp.json();
+        }
 
         if (data.success) {
-            showResult(true, data.action === 'checked-in' ? '✅' : '👋',
-                data.action === 'checked-in' ? 'Checked In!' : 'Checked Out!',
+            showResult(true, data.action === 'check_in' ? '✅' : '👋',
+                data.action === 'check_in' ? 'Checked In!' : 'Checked Out!',
                 data.message);
         } else {
             showResult(false, '⚠️', 'Could Not Mark Attendance', data.message);

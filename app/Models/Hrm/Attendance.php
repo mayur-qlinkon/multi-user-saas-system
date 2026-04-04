@@ -2,34 +2,43 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Store;
+use App\Models\User;
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
-use App\Models\User;
-use App\Models\Store;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Attendance extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     // ── Constants ──
 
     const STATUS_PRESENT = 'present';
+
     const STATUS_ABSENT = 'absent';
+
     const STATUS_LATE = 'late';
+
     const STATUS_HALF_DAY = 'half_day';
+
     const STATUS_ON_LEAVE = 'on_leave';
+
     const STATUS_HOLIDAY = 'holiday';
+
     const STATUS_WEEK_OFF = 'week_off';
 
     const METHOD_QR = 'qr';
+
     const METHOD_MANUAL = 'manual';
+
     const METHOD_AUTO = 'auto';
+
     const METHOD_BIOMETRIC = 'biometric';
 
     const STATUS_LABELS = [
@@ -56,8 +65,8 @@ class Attendance extends Model
 
     protected $fillable = [
         'company_id', 'employee_id', 'store_id', 'date',
-        'check_in_time', 'check_in_lat', 'check_in_lng', 'check_in_qr_token', 'check_in_method',
-        'check_out_time', 'check_out_lat', 'check_out_lng', 'check_out_qr_token', 'check_out_method',
+        'check_in_time', 'check_in_lat', 'check_in_lng', 'check_in_method',
+        'check_out_time', 'check_out_lat', 'check_out_lng', 'check_out_method',
         'worked_hours', 'overtime_hours', 'status',
         'is_overridden', 'overridden_by', 'override_reason', 'notes',
     ];
@@ -83,7 +92,7 @@ class Attendance extends Model
             ->logOnly(['status', 'check_in_time', 'check_out_time', 'is_overridden', 'override_reason'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Attendance for {$this->date->format('d M Y')} was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Attendance for {$this->date->format('d M Y')} was {$event}");
     }
 
     // ── Relationships ──
@@ -112,12 +121,12 @@ class Attendance extends Model
 
     public function scopeForDate(Builder $query, $date): Builder
     {
-        return $query->where('date', $date);
+        return $query->whereDate('date', $date);
     }
 
     public function scopeToday(Builder $query): Builder
     {
-        return $query->where('date', today());
+        return $query->whereDate('date', today());
     }
 
     public function scopeForDateRange(Builder $query, $from, $to): Builder

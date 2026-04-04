@@ -1,15 +1,15 @@
-@extends('layouts.admin')
 
-@section('title', "Today's Attendance")
 
-@section('header-title')
+<?php $__env->startSection('title', "Today's Attendance"); ?>
+
+<?php $__env->startSection('header-title'); ?>
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Attendance Management</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Live Report for {{ \Carbon\Carbon::parse($todayDate)->format('l, d M Y') }}</p>
+        <p class="text-xs text-gray-400 font-medium mt-0.5">Live Report for <?php echo e(\Carbon\Carbon::parse($todayDate)->format('l, d M Y')); ?></p>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     [x-cloak] { display: none !important; }
     .table-container { background: #fff; border: 1.5px solid #f1f5f9; border-radius: 16px; overflow: hidden; }
@@ -29,45 +29,45 @@
     .form-input { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #1f2937; outline: none; }
     .form-input:focus { border-color: var(--brand-500); }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
-@php
+<?php
     // Calculate quick stats for HR
     $totalPresent = $attendances->whereIn('status', ['present', 'late', 'half_day'])->count();
     $totalLate = $attendances->where('status', 'late')->count();
     $totalAbsent = $attendances->where('status', 'absent')->count();
-@endphp
+?>
 
 <div x-data="todayAttendance()" x-init="init()" class="w-full pb-10 space-y-6">
 
-    {{-- ── Stats Row ── --}}
+    
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white border-1.5 border-gray-100 rounded-2xl p-5 flex items-center gap-4 shadow-sm">
             <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-500"><i data-lucide="users" class="w-6 h-6"></i></div>
             <div>
                 <p class="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Total Present</p>
-                <p class="text-2xl font-black text-gray-900">{{ $totalPresent }}</p>
+                <p class="text-2xl font-black text-gray-900"><?php echo e($totalPresent); ?></p>
             </div>
         </div>
         <div class="bg-white border-1.5 border-gray-100 rounded-2xl p-5 flex items-center gap-4 shadow-sm">
             <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500"><i data-lucide="clock-3" class="w-6 h-6"></i></div>
             <div>
                 <p class="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Late Arrivals</p>
-                <p class="text-2xl font-black text-gray-900">{{ $totalLate }}</p>
+                <p class="text-2xl font-black text-gray-900"><?php echo e($totalLate); ?></p>
             </div>
         </div>
         <div class="bg-white border-1.5 border-gray-100 rounded-2xl p-5 flex items-center gap-4 shadow-sm">
             <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-500"><i data-lucide="user-minus" class="w-6 h-6"></i></div>
             <div>
                 <p class="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Absent / Missing</p>
-                <p class="text-2xl font-black text-gray-900">{{ $totalAbsent }}</p>
+                <p class="text-2xl font-black text-gray-900"><?php echo e($totalAbsent); ?></p>
             </div>
         </div>
     </div>
 
-    {{-- ── Main Data Table ── --}}
+    
     <div class="table-container">
         <div class="p-5 border-b border-gray-100 flex items-center justify-between">
             <h2 class="text-[15px] font-black text-gray-800">Employee Logs</h2>
@@ -90,59 +90,62 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($attendances as $att)
+                    <?php $__empty_1 = true; $__currentLoopData = $attendances; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $att): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
                         <td>
                             <div class="flex items-center gap-3">
                                 <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-[12px] font-bold text-gray-500">
-                                    {{ substr($att->employee->user->name ?? '?', 0, 2) }}
+                                    <?php echo e(substr($att->employee->user->name ?? '?', 0, 2)); ?>
+
                                 </div>
                                 <div>
-                                    <p class="font-bold text-gray-900">{{ $att->employee->user->name ?? 'Unknown' }}</p>
-                                    <p class="text-[11px] text-gray-400">{{ $att->employee->employee_code }}</p>
+                                    <p class="font-bold text-gray-900"><?php echo e($att->employee->user->name ?? 'Unknown'); ?></p>
+                                    <p class="text-[11px] text-gray-400"><?php echo e($att->employee->employee_code); ?></p>
                                 </div>
                             </div>
                         </td>
                         <td>
                             <span class="text-[12px] font-semibold text-gray-600 bg-gray-50 px-2.5 py-1 rounded-md border border-gray-200">
-                                {{ $att->employee->department->name ?? 'N/A' }}
+                                <?php echo e($att->employee->department->name ?? 'N/A'); ?>
+
                             </span>
                         </td>
                         <td>
-                            @if($att->check_in_time)
-                                <p class="font-bold text-gray-700">{{ $att->check_in_time->format('h:i A') }}</p>
-                                @if($att->is_overridden) <span class="text-[10px] text-red-500 font-bold">*Overridden</span> @endif
-                            @else
+                            <?php if($att->check_in_time): ?>
+                                <p class="font-bold text-gray-700"><?php echo e($att->check_in_time->format('h:i A')); ?></p>
+                                <?php if($att->is_overridden): ?> <span class="text-[10px] text-red-500 font-bold">*Overridden</span> <?php endif; ?>
+                            <?php else: ?>
                                 <span class="text-gray-300">--:--</span>
-                            @endif
+                            <?php endif; ?>
                         </td>
                         <td>
-                            @if($att->check_out_time)
-                                <p class="font-bold text-gray-700">{{ $att->check_out_time->format('h:i A') }}</p>
-                                <p class="text-[10px] text-gray-400">{{ $att->worked_hours }} hrs worked</p>
-                            @else
+                            <?php if($att->check_out_time): ?>
+                                <p class="font-bold text-gray-700"><?php echo e($att->check_out_time->format('h:i A')); ?></p>
+                                <p class="text-[10px] text-gray-400"><?php echo e($att->worked_hours); ?> hrs worked</p>
+                            <?php else: ?>
                                 <span class="text-[11px] text-blue-500 font-semibold italic">Working...</span>
-                            @endif
+                            <?php endif; ?>
                         </td>
                         <td>
                             <div class="flex items-center gap-1.5 text-gray-500">
                                 <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                                <span class="text-[12px] font-medium">{{ $att->store->name ?? 'Head Office' }}</span>
+                                <span class="text-[12px] font-medium"><?php echo e($att->store->name ?? 'Head Office'); ?></span>
                             </div>
                         </td>
                         <td>
-                            <span class="status-badge status-{{ $att->status }}">
-                                {{ str_replace('_', ' ', $att->status) }}
+                            <span class="status-badge status-<?php echo e($att->status); ?>">
+                                <?php echo e(str_replace('_', ' ', $att->status)); ?>
+
                             </span>
                         </td>
                         <td class="text-right">
-                            <button @click="openOverrideModal({{ json_encode($att) }})" 
+                            <button @click="openOverrideModal(<?php echo e(json_encode($att)); ?>)" 
                                     class="w-8 h-8 inline-flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-brand-600 transition-colors" title="Override Record">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </button>
                         </td>
                     </tr>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="7" class="text-center py-10">
                             <div class="flex flex-col items-center justify-center text-gray-400">
@@ -151,13 +154,13 @@
                             </div>
                         </td>
                     </tr>
-                    @endforelse
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 
-    {{-- ── OVERRIDE MODAL ── --}}
+    
     <template x-teleport="body">
         <div x-show="showModal" x-cloak class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="closeModal()">
@@ -212,9 +215,9 @@
 
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 function todayAttendance() {
     return {
@@ -267,7 +270,7 @@ function todayAttendance() {
 
             try {
                 // Laravel Route for override: /admin/hrm/attendance/{attendance}/override
-                const url = `{{ url('admin/hrm/attendance') }}/${this.formData.id}/override`;
+                const url = `<?php echo e(url('admin/hrm/attendance')); ?>/${this.formData.id}/override`;
                 
                 // Format dates back for Laravel (Y-m-d H:i:s)
                 let payload = {
@@ -308,4 +311,5 @@ function todayAttendance() {
     }
 }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlinkonSoftware\resources\views/admin/hrm/attendance/today.blade.php ENDPATH**/ ?>

@@ -232,16 +232,46 @@
                         @enderror
                     </div>
 
+                    {{-- Additional Store Access --}}
+                    <div>
+                        <label class="field-label">Additional Store Access</label>
+                        <select name="store_ids[]" multiple size="4" class="field-input {{ $errors->has('store_ids') || $errors->has('store_ids.*') ? 'has-error' : '' }}">
+                            @foreach($stores as $store)
+                                <option value="{{ $store->id }}" {{ in_array($store->id, old('store_ids', [])) ? 'selected' : '' }}>{{ $store->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('store_ids')
+                            <p class="field-error">{{ $message }}</p>
+                        @enderror
+                        @error('store_ids.*')
+                            <p class="field-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Shift --}}
+                    <div>
+                        <label class="field-label">Shift</label>
+                        <select name="shift_id" class="field-input {{ $errors->has('shift_id') ? 'has-error' : '' }}">
+                            <option value="">Select shift</option>
+                            @foreach($shifts as $shift)
+                                <option value="{{ $shift->id }}" {{ old('shift_id') == $shift->id ? 'selected' : '' }}>{{ $shift->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('shift_id')
+                            <p class="field-error">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     {{-- Reporting Manager --}}
                     <div>
                         <label class="field-label">Reporting Manager</label>
-                        <select name="reporting_manager_id" class="field-input {{ $errors->has('reporting_manager_id') ? 'has-error' : '' }}">
+                        <select name="reporting_to" class="field-input {{ $errors->has('reporting_to') ? 'has-error' : '' }}">
                             <option value="">Select manager</option>
                             @foreach($managers as $manager)
-                                <option value="{{ $manager->id }}" {{ old('reporting_manager_id') == $manager->id ? 'selected' : '' }}>{{ $manager->employee_code }} - {{ $manager->user->name }}</option>
+                                <option value="{{ $manager->id }}" {{ old('reporting_to') == $manager->id ? 'selected' : '' }}>{{ $manager->employee_code }} - {{ $manager->user->name }}</option>
                             @endforeach
                         </select>
-                        @error('reporting_manager_id')
+                        @error('reporting_to')
                             <p class="field-error">{{ $message }}</p>
                         @enderror
                     </div>

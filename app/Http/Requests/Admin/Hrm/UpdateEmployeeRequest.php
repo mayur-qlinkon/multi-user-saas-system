@@ -19,8 +19,11 @@ class UpdateEmployeeRequest extends FormRequest
 
         return [
             'store_id' => ['nullable', Rule::exists('stores', 'id')->where('company_id', $companyId)],
+            'store_ids' => ['nullable', 'array'],
+            'store_ids.*' => [Rule::exists('stores', 'id')->where('company_id', $companyId)],
             'department_id' => ['nullable', Rule::exists('departments', 'id')->where('company_id', $companyId)],
             'designation_id' => ['nullable', Rule::exists('designations', 'id')->where('company_id', $companyId)],
+            'shift_id' => ['nullable', Rule::exists('shifts', 'id')->where('company_id', $companyId)],
             'reporting_to' => ['nullable', Rule::exists('employees', 'id')->where('company_id', $companyId)],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],

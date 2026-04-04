@@ -16,22 +16,17 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    // Mock AnnouncementService to avoid MySQL FIELD() incompatibility with SQLite
     $mock = Mockery::mock(AnnouncementService::class);
     $mock->shouldReceive('hasPendingMandatory')->andReturn(false);
     app()->instance(AnnouncementService::class, $mock);
 
-    // Default test time: 08:55 AM (before late_mark_after of 09:15)
     $this->travelTo(today()->setTimeFromTimeString('08:55:00'));
 });
-
-// ── Helpers ──
 
 function seedAttendanceContext(array $overrides = []): array
 {
     $company = Company::create(['name' => 'Test Company']);
 
-    // Store with GPS coordinates (Mumbai office)
     $store = Store::create(array_merge([
         'company_id' => $company->id,
         'name' => 'Mumbai Office',
@@ -40,7 +35,6 @@ function seedAttendanceContext(array $overrides = []): array
         'gps_radius_meters' => 200,
     ], $overrides['store'] ?? []));
 
-    // Shift: 9 AM to 6 PM
     $shift = Shift::create([
         'company_id' => $company->id,
         'name' => 'General Shift',
@@ -74,30 +68,36 @@ function seedAttendanceContext(array $overrides = []): array
     return compact('company', 'store', 'shift', 'user', 'employee');
 }
 
-function scanStorePayload(Store $store, array $overrides = []): array
+function scanPayload(Store $store, array $overrides = []): array
 {
     return array_merge([
         'store_id' => $store->id,
-        'latitude' => $store->office_lat,   // Exact store location
+        'latitude' => $store->office_lat,
         'longitude' => $store->office_lng,
     ], $overrides);
 }
 
-// ── Success: Check-In ──
+function withoutAttendanceMiddleware($testCase): void
+{
+    $testCase->withoutMiddleware([
+        CheckSubscription::class,
+        EnsureValidStoreSession::class,
+        CheckPendingAnnouncements::class,
+    ]);
+}
 
-test('employee can check in via static qr scan', function () {
+test('employee can check in via the single attendance scan endpoint', function () {
     $ctx = seedAttendanceContext();
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
 
     $response->assertOk()
-        ->assertJson([
-            'success' => true,
-            'message' => 'Attendance marked successfully.',
-        ]);
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('action', AttendanceLog::ACTION_CHECK_IN)
+        ->assertJsonPath('message', 'Check-in recorded successfully.');
 
     $this->assertDatabaseHas('attendances', [
         'employee_id' => $ctx['employee']->id,
@@ -107,13 +107,14 @@ test('employee can check in via static qr scan', function () {
     ]);
 });
 
-test('successful check-in creates attendance log', function () {
+test('successful check-in creates an attendance log', function () {
     $ctx = seedAttendanceContext();
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']))
+        ->assertOk();
 
     $this->assertDatabaseHas('attendance_logs', [
         'employee_id' => $ctx['employee']->id,
@@ -122,22 +123,18 @@ test('successful check-in creates attendance log', function () {
     ]);
 });
 
-// ── Shift Rules: Late & Half Day ──
-
-test('check-in after late threshold marks as late with message', function () {
+test('check-in after late threshold marks employee as late', function () {
     $ctx = seedAttendanceContext();
 
-    // Travel to 09:20 (after late_mark_after of 09:15)
     $this->travelTo(today()->setTimeFromTimeString('09:20:00'));
-
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
 
     $response->assertOk()
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('message', 'Attendance marked. You are 20 minutes late.');
+        ->assertJsonPath('message', 'Check-in recorded. You have been marked late.')
+        ->assertJsonPath('type', 'warning');
 
     $this->assertDatabaseHas('attendances', [
         'employee_id' => $ctx['employee']->id,
@@ -145,19 +142,18 @@ test('check-in after late threshold marks as late with message', function () {
     ]);
 });
 
-test('check-in after half day threshold marks as half day', function () {
+test('check-in after half day threshold marks employee as half day', function () {
     $ctx = seedAttendanceContext();
 
-    // Travel to 10:45 (after half_day_after of 10:30)
     $this->travelTo(today()->setTimeFromTimeString('10:45:00'));
-
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
 
     $response->assertOk()
-        ->assertJsonPath('message', 'Marked as half day. You are 105 minutes late.');
+        ->assertJsonPath('message', 'Check-in recorded. You have been marked half day.')
+        ->assertJsonPath('type', 'warning');
 
     $this->assertDatabaseHas('attendances', [
         'employee_id' => $ctx['employee']->id,
@@ -165,59 +161,107 @@ test('check-in after half day threshold marks as half day', function () {
     ]);
 });
 
-test('check-in without shift assigned marks as present', function () {
+test('scan is rejected when no shift is assigned', function () {
     $ctx = seedAttendanceContext(['employee' => ['shift_id' => null]]);
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
-
-    $response->assertOk()
-        ->assertJsonPath('message', 'Attendance marked successfully.');
-
-    $this->assertDatabaseHas('attendances', [
-        'employee_id' => $ctx['employee']->id,
-        'status' => Attendance::STATUS_PRESENT,
-    ]);
-});
-
-// ── Rejection: Already Checked In ──
-
-test('second scan on same day returns already checked in', function () {
-    $ctx = seedAttendanceContext();
-
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
-
-    // First scan — success
-    $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']))
-        ->assertOk();
-
-    // Second scan — rejected
-    $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
 
     $response->assertStatus(422)
         ->assertJson([
             'success' => false,
-            'message' => 'Already checked in.',
+            'message' => 'No shift is assigned to your employee profile.',
         ]);
+});
 
-    // Verify rejection is logged
-    $this->assertDatabaseHas('attendance_logs', [
+test('second scan after shift end performs check out', function () {
+    $ctx = seedAttendanceContext();
+
+    withoutAttendanceMiddleware($this);
+
+    $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']))
+        ->assertOk();
+
+    $this->travelTo(today()->setTimeFromTimeString('18:35:00'));
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertOk()
+        ->assertJsonPath('action', AttendanceLog::ACTION_CHECK_OUT)
+        ->assertJsonPath('message', 'Check-out recorded successfully.');
+
+    $attendance = Attendance::first();
+
+    expect((float) $attendance->overtime_hours)->toBeGreaterThan(0.5);
+    expect($attendance->check_out_time)->not->toBeNull();
+});
+
+test('early checkout requires confirmation and force checkout completes it', function () {
+    $ctx = seedAttendanceContext();
+
+    withoutAttendanceMiddleware($this);
+
+    $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']))
+        ->assertOk();
+
+    $this->travelTo(today()->setTimeFromTimeString('16:00:00'));
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertOk()
+        ->assertJsonPath('requires_confirmation', true)
+        ->assertJsonPath('action', AttendanceLog::ACTION_CHECK_OUT);
+
+    $confirmed = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store'], [
+            'force_checkout' => true,
+        ]));
+
+    $confirmed->assertOk()
+        ->assertJsonPath('action', AttendanceLog::ACTION_CHECK_OUT)
+        ->assertJsonPath('type', 'warning');
+
+    $this->assertDatabaseHas('attendances', [
         'employee_id' => $ctx['employee']->id,
-        'is_valid' => false,
-        'rejection_reason' => 'Already checked in for today.',
+        'status' => Attendance::STATUS_HALF_DAY,
+        'check_out_method' => Attendance::METHOD_QR,
     ]);
 });
 
-// ── Rejection: Unauthorized Store ──
+test('third scan after completed attendance is rejected', function () {
+    $ctx = seedAttendanceContext();
+
+    withoutAttendanceMiddleware($this);
+
+    $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']))
+        ->assertOk();
+
+    $this->travelTo(today()->setTimeFromTimeString('18:10:00'));
+
+    $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']))
+        ->assertOk();
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertStatus(422)
+        ->assertJson([
+            'success' => false,
+            'message' => 'Attendance already completed for this shift.',
+        ]);
+});
 
 test('scan at unassigned store is rejected', function () {
     $ctx = seedAttendanceContext();
 
-    // Create a second store the user is NOT assigned to
     $otherStore = Store::create([
         'company_id' => $ctx['company']->id,
         'name' => 'Delhi Office',
@@ -226,53 +270,72 @@ test('scan at unassigned store is rejected', function () {
         'gps_radius_meters' => 200,
     ]);
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($otherStore));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($otherStore));
 
     $response->assertStatus(422)
         ->assertJson([
             'success' => false,
-            'message' => 'Unauthorized store.',
+            'message' => 'You are not assigned to this store.',
         ]);
 
     $this->assertDatabaseHas('attendance_logs', [
         'employee_id' => $ctx['employee']->id,
         'is_valid' => false,
-        'rejection_reason' => 'Unauthorized store access.',
+        'rejection_reason' => 'You are not assigned to this store.',
     ]);
 });
 
-// ── Rejection: Outside GPS Radius ──
-
-test('scan outside gps radius is rejected', function () {
+test('scan outside store gps radius is rejected', function () {
     $ctx = seedAttendanceContext();
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
-    // Send coordinates far from store (Delhi coords vs Mumbai store)
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store'], [
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store'], [
             'latitude' => 28.6139000,
             'longitude' => 77.2090000,
         ]));
 
     $response->assertStatus(422)
-        ->assertJsonPath('success', false);
-
-    expect($response->json('message'))->toContain('You are outside allowed location');
+        ->assertJson([
+            'success' => false,
+            'message' => 'You are outside the allowed attendance radius for this store.',
+        ]);
 });
 
-// ── Rejection: Not Active Employee ──
+test('scan is rejected when store gps is not configured', function () {
+    $ctx = seedAttendanceContext(['store' => [
+        'office_lat' => null,
+        'office_lng' => null,
+        'gps_radius_meters' => null,
+    ]]);
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), [
+            'store_id' => $ctx['store']->id,
+            'latitude' => 19.0760000,
+            'longitude' => 72.8777000,
+        ]);
+
+    $response->assertStatus(422)
+        ->assertJson([
+            'success' => false,
+            'message' => 'This store does not have attendance GPS settings configured.',
+        ]);
+});
 
 test('inactive employee cannot scan', function () {
     $ctx = seedAttendanceContext(['employee' => ['status' => Employee::STATUS_INACTIVE]]);
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
 
     $response->assertStatus(422)
         ->assertJson([
@@ -280,8 +343,6 @@ test('inactive employee cannot scan', function () {
             'message' => 'You are not registered as an active employee.',
         ]);
 });
-
-// ── Rejection: User Without Employee Record ──
 
 test('user without employee record cannot scan', function () {
     $company = Company::create(['name' => 'Test Company']);
@@ -299,10 +360,10 @@ test('user without employee record cannot scan', function () {
     ]);
     $user->stores()->attach($store->id);
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($user)
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($store));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($store));
 
     $response->assertStatus(422)
         ->assertJson([
@@ -311,21 +372,19 @@ test('user without employee record cannot scan', function () {
         ]);
 });
 
-// ── Validation: Request-Level ──
-
-test('scan request requires store_id latitude and longitude', function () {
+test('scan request requires store id latitude and longitude', function () {
     $ctx = seedAttendanceContext();
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), []);
+        ->postJson(route('admin.hrm.attendance.scan'), []);
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['store_id', 'latitude', 'longitude']);
 });
 
-test('scan request rejects store from different company', function () {
+test('scan request rejects store from another company', function () {
     $ctx = seedAttendanceContext();
 
     $otherCompany = Company::create(['name' => 'Other Company']);
@@ -334,10 +393,10 @@ test('scan request rejects store from different company', function () {
         'name' => 'Other Store',
     ]);
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), [
+        ->postJson(route('admin.hrm.attendance.scan'), [
             'store_id' => $otherStore->id,
             'latitude' => 19.0760000,
             'longitude' => 72.8777000,
@@ -347,37 +406,14 @@ test('scan request rejects store from different company', function () {
         ->assertJsonValidationErrors(['store_id']);
 });
 
-// ── GPS: Allowed When Not Configured ──
-
-test('scan is allowed when store has no gps configured', function () {
-    $ctx = seedAttendanceContext(['store' => [
-        'office_lat' => null,
-        'office_lng' => null,
-        'gps_radius_meters' => null,
-    ]]);
-
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
-
-    $response = $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), [
-            'store_id' => $ctx['store']->id,
-            'latitude' => 28.6139000,
-            'longitude' => 77.2090000,
-        ]);
-
-    $response->assertOk()
-        ->assertJsonPath('success', true);
-});
-
-// ── Tenant Isolation ──
-
-test('attendance is created with correct company_id', function () {
+test('attendance record is created with the correct company id', function () {
     $ctx = seedAttendanceContext();
 
-    $this->withoutMiddleware([CheckSubscription::class, EnsureValidStoreSession::class, CheckPendingAnnouncements::class]);
+    withoutAttendanceMiddleware($this);
 
     $this->actingAs($ctx['user'])
-        ->postJson(route('admin.hrm.attendance.scan-store'), scanStorePayload($ctx['store']));
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']))
+        ->assertOk();
 
     $this->assertDatabaseHas('attendances', [
         'company_id' => $ctx['company']->id,
