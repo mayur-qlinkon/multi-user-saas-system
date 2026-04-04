@@ -1,0 +1,389 @@
+@extends('layouts.admin')
+
+@section('title', 'Edit Credit Note: ' . $invoiceReturn->credit_note_number)
+
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Invoices / Returns / Edit</h1>
+@endsection
+
+@push('styles')
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+    </style>
+@endpush
+
+@section('content')
+    <div class="pb-20" x-data="invoiceReturnForm(@js($invoice), @js($invoiceReturn), @js($companyState))">
+
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">
+                    Edit Return <span class="text-[#108c2a]">{{ $invoiceReturn->credit_note_number }}</span>
+                </h1>
+                <p class="text-sm text-gray-500 font-medium">Original Invoice:
+                    <strong>{{ $invoice->invoice_number }}</strong>
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.invoice-returns.index') }}"
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
+                <button type="submit" form="returnForm"
+                    class="bg-[#212538] hover:bg-black text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Update Draft
+                </button>
+            </div>
+        </div>
+
+        @if ($errors->any())
+            <div class="bg-red-50 text-red-700 p-4 rounded-lg mb-6 border border-red-200 shadow-sm">
+                <ul class="list-disc list-inside text-sm">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form id="returnForm" action="{{ route('admin.invoice-returns.update', $invoiceReturn->id) }}" method="POST"
+            @submit="BizAlert.loading('Updating Return...')">
+            @csrf
+            @method('PUT')
+
+            <input type="hidden" name="store_id" value="{{ $invoiceReturn->store_id }}">
+            <input type="hidden" name="supply_state" value="{{ $invoiceReturn->supply_state }}">
+            <input type="hidden" name="gst_treatment" value="{{ $invoiceReturn->gst_treatment }}">
+            <input type="hidden" name="currency_code" value="{{ $invoiceReturn->currency_code }}">
+            <input type="hidden" name="exchange_rate" value="{{ $invoiceReturn->exchange_rate }}">
+
+            {{-- 1. RETURN CONFIGURATION HEADER --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+                <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Return
+                            Date</label>
+                        <input type="date" name="return_date" x-model="formData.return_date" required
+                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-red-500 outline-none font-medium">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Return
+                            Type</label>
+                        <select name="return_type" x-model="formData.return_type" required
+                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-red-500 outline-none bg-white font-medium">
+                            <option value="refund">Refund (Give money back)</option>
+                            <option value="credit_note">Credit Note (Adjust Ledger)</option>
+                            <option value="replacement">Replacement (Exchange)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Reason</label>
+                        <select name="return_reason" x-model="formData.return_reason" required
+                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-red-500 outline-none bg-white font-medium">
+                            <option value="customer_return">Customer Changed Mind</option>
+                            <option value="damaged">Damaged Goods</option>
+                            <option value="quality_issue">Quality Issue</option>
+                            <option value="wrong_item">Wrong Item Sent</option>
+                            <option value="expired">Expired</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Return to
+                                Warehouse</label>
+                            <select name="warehouse_id" x-model="formData.warehouse_id" required
+                                class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-red-500 outline-none bg-white font-medium">
+                                @foreach ($warehouses as $warehouse)
+                                    <option value="{{ $warehouse->id }}">
+                                        {{ $warehouse->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <label class="flex items-center cursor-pointer group">
+                            <div class="relative">
+                                <input type="checkbox" name="restock" value="true" x-model="formData.restock"
+                                    class="sr-only">
+                                <div class="block w-10 h-6 rounded-full transition-colors"
+                                    :class="formData.restock ? 'bg-[#108c2a]' : 'bg-gray-300'"></div>
+                                <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform"
+                                    :class="formData.restock ? 'transform translate-x-4' : ''"></div>
+                            </div>
+                            <div class="ml-3">
+                                <span class="block text-sm font-bold text-gray-800">Restock Items</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 2. INVOICE ITEMS (Strictly loaded from original invoice) --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <h2 class="text-lg font-bold text-gray-800 tracking-tight">Modify Items to Return</h2>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead
+                            class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            <tr>
+                                <th class="px-5 py-4 w-10 text-center"><i data-lucide="check-square"
+                                        class="w-4 h-4 mx-auto"></i></th>
+                                <th class="px-4 py-4 min-w-[200px]">PRODUCT DETAILS</th>
+                                <th class="px-4 py-4 text-right">ORIGINAL QTY</th>
+                                <th class="px-4 py-4 text-right">PRICE (₹)</th>
+                                <th class="px-4 py-4 text-center">RETURN QTY</th>
+                                <th class="px-5 py-4 text-right">REFUND AMT (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="(item, index) in items" :key="item.invoice_item_id">
+                                <tr class="transition-colors"
+                                    :class="item.is_returning ? 'bg-red-50/30' : 'hover:bg-gray-50/50'">
+
+                                    <td class="px-5 py-3 text-center align-middle">
+                                        <input type="checkbox" x-model="item.is_returning" @change="calculate()"
+                                            class="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer">
+                                    </td>
+
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
+                                        <div class="text-[11px] text-gray-500 font-mono mt-1"
+                                            x-text="'SKU: ' + item.sku_code"></div>
+                                    </td>
+
+                                    <td class="px-4 py-3 text-right align-middle font-semibold text-gray-600"
+                                        x-text="item.original_qty"></td>
+
+                                    <td class="px-4 py-3 text-right align-middle">
+                                        <div class="text-[13px] font-semibold text-gray-600"
+                                            x-text="formatCurrency(item.unit_price)"></div>
+                                        <div class="text-[9px] text-gray-400">+ <span x-text="item.tax_percent"></span>%
+                                            Tax
+                                        </div>
+                                    </td>
+
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="flex justify-center"
+                                            :class="!item.is_returning ? 'opacity-50 pointer-events-none' : ''">
+                                            <input type="number" step="0.0001" x-model="item.return_qty"
+                                                @input="validateQty(item)" :disabled="!item.is_returning"
+                                                class="w-20 border border-gray-300 rounded px-2 py-1.5 text-center text-sm font-bold focus:border-red-500 outline-none text-red-600 bg-white">
+                                        </div>
+                                    </td>
+
+                                    <td class="px-5 py-3 text-right align-middle">
+                                        <span class="font-black text-gray-900 text-[14px]"
+                                            x-text="item.is_returning ? formatCurrency(item.line_total) : '₹0.00'"></span>
+                                    </td>
+
+                                    {{-- Hidden Inputs for Form Submission --}}
+                                    <template x-if="item.is_returning && item.return_qty > 0">
+                                        <div style="display: none;">
+                                            <input type="hidden" :name="'items[' + index + '][invoice_item_id]'"
+                                                :value="item.invoice_item_id">
+                                            <input type="hidden" :name="'items[' + index + '][product_name]'"
+                                                :value="item.product_name">
+                                            <input type="hidden" :name="'items[' + index + '][sku_code]'"
+                                                :value="item.sku_code">
+                                            <input type="hidden" :name="'items[' + index + '][quantity]'"
+                                                :value="item.return_qty">
+                                            <input type="hidden" :name="'items[' + index + '][unit_price]'"
+                                                :value="item.unit_price">
+                                            <input type="hidden" :name="'items[' + index + '][tax_percent]'"
+                                                :value="item.tax_percent">
+                                            <input type="hidden" :name="'items[' + index + '][tax_type]'"
+                                                :value="item.tax_type">
+                                            <input type="hidden" :name="'items[' + index + '][discount_type]'"
+                                                :value="item.discount_type">
+                                            <input type="hidden" :name="'items[' + index + '][discount_amount]'"
+                                                :value="item.discount_amount">
+                                        </div>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- 3. SUMMARY SECTION --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
+                    <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-3">Notes</h3>
+                    <textarea name="notes" rows="3" x-model="formData.notes"
+                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-red-500 outline-none resize-none"></textarea>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3
+                        class="text-xs font-bold text-gray-800 uppercase tracking-wider border-b border-gray-200 pb-3 mb-4">
+                        Refund Summary</h3>
+
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center text-gray-600">
+                            <span>Subtotal Return:</span>
+                            <span class="font-bold text-gray-800" x-text="formatCurrency(totals.subtotal)"></span>
+                        </div>
+
+                        <div class="flex justify-between items-center text-gray-600 pt-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold">Adjustment Discount:</span>
+                                <select name="discount_type" x-model="global.discount_type" @change="calculate()"
+                                    class="border border-gray-300 rounded px-1 text-[10px] bg-gray-50">
+                                    <option value="percentage">%</option>
+                                    <option value="fixed">Flat</option>
+                                </select>
+                            </div>
+                            <input type="number" step="0.01" name="discount_amount" x-model="global.discount_value"
+                                @input="calculate()"
+                                class="w-20 border border-gray-300 rounded px-2 py-1 text-right font-bold focus:border-red-500 outline-none">
+                        </div>
+
+                        <div class="flex justify-between items-end pt-4 border-t border-gray-100">
+                            <div class="text-[11px] font-bold text-gray-400 uppercase">Grand Total Refund</div>
+                            <div class="text-3xl font-black text-red-600" x-text="formatCurrency(totals.grand_total)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+@endsection
+
+@push('scripts')
+    <script>
+        function invoiceReturnForm(invoiceData, returnData, companyState) {
+
+            // Map Invoice Items and Check if they exist in the existing Return
+            const initialItems = invoiceData.items.map(invItem => {
+                // Find if this specific invoice line exists in the current return record
+                const existingReturnLine = returnData.items.find(ri => ri.invoice_item_id === invItem.id);
+
+                return {
+                    invoice_item_id: invItem.id,
+                    product_id: invItem.product_id,
+                    product_sku_id: invItem.product_sku_id,
+                    unit_id: invItem.unit_id,
+                    product_name: invItem.product_name,
+                    sku_code: invItem.sku ? (invItem.sku.sku_code || invItem.sku.sku) : '',
+                    hsn_code: invItem.hsn_code || '',
+                    original_qty: parseFloat(invItem.quantity) || 0,
+
+                    // Logic: If it exists in return, mark as true and set the qty
+                    is_returning: !!existingReturnLine,
+                    return_qty: existingReturnLine ? parseFloat(existingReturnLine.quantity) : parseFloat(invItem
+                        .quantity),
+
+                    unit_price: parseFloat(invItem.unit_price) || 0,
+                    tax_percent: parseFloat(invItem.tax_percent) || 0,
+                    tax_type: invItem.tax_type || 'exclusive',
+                    discount_type: invItem.discount_type || 'percentage',
+                    discount_amount: parseFloat(invItem.discount_amount) || 0,
+                    line_total: 0
+                };
+            });
+
+            return {
+                company_state: companyState,
+                supply_state: invoiceData.supply_state || companyState,
+                items: initialItems,
+
+                formData: {
+                    return_date: returnData.return_date || new Date().toISOString().split('T')[0],
+                    return_type: returnData.return_type || 'refund',
+                    return_reason: returnData.return_reason || 'customer_return',
+                    warehouse_id: returnData.warehouse_id || '',
+                    restock: returnData.restock,
+                    notes: returnData.notes || ''
+                },
+
+                global: {
+                    discount_type: returnData.discount_type || 'percentage',
+                    discount_value: parseFloat(returnData.discount_amount) || 0,
+                },
+
+                totals: {
+                    subtotal: 0,
+                    tax: 0,
+                    grand_total: 0
+                },
+
+                init() {
+                    this.calculate();
+                },
+
+                validateQty(item) {
+                    if (item.return_qty > item.original_qty) item.return_qty = item.original_qty;
+                    if (item.return_qty < 0) item.return_qty = 0;
+                    this.calculate();
+                },
+
+                calculate() {
+                    let subtotalAcc = 0;
+                    let taxAcc = 0;
+
+                    this.items.forEach(item => {
+                        if (item.is_returning && item.return_qty > 0) {
+                            let qty = parseFloat(item.return_qty);
+                            let price = parseFloat(item.unit_price);
+                            let taxPct = parseFloat(item.tax_percent);
+                            let discVal = parseFloat(item.discount_amount);
+
+                            let baseVal = qty * price;
+                            let lineDiscountAmt = (item.discount_type === 'percentage') ? (baseVal * (discVal /
+                                100)) : (discVal / item.original_qty * qty);
+                            let afterDiscount = Math.max(0, baseVal - lineDiscountAmt);
+
+                            let taxable = 0,
+                                tax = 0;
+                            if (item.tax_type === 'inclusive') {
+                                taxable = afterDiscount / (1 + (taxPct / 100));
+                                tax = afterDiscount - taxable;
+                            } else {
+                                taxable = afterDiscount;
+                                tax = taxable * (taxPct / 100);
+                            }
+
+                            item.line_total = taxable + tax;
+                            subtotalAcc += taxable;
+                            taxAcc += tax;
+                        }
+                    });
+
+                    this.totals.subtotal = subtotalAcc;
+                    let globalDiscVal = parseFloat(this.global.discount_value) || 0;
+                    let itemsSum = subtotalAcc + taxAcc;
+                    let globalDiscountAmount = (this.global.discount_type === 'percentage') ? (itemsSum * (globalDiscVal /
+                        100)) : globalDiscVal;
+
+                    this.totals.grand_total = Math.round(Math.max(0, itemsSum - globalDiscountAmount));
+                },
+
+                formatCurrency(val) {
+                    return isNaN(val) ? '₹0.00' : '₹' + val.toLocaleString('en-IN', {
+                        minimumFractionDigits: 2
+                    });
+                }
+            }
+        }
+    </script>
+@endpush

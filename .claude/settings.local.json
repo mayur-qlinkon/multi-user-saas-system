@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:UsersqlinkongraphicsDesktopMyLabqlinkonSoftware/resources/views -path *hrm* -name *.blade.php)",
+      "Bash(find C:UsersqlinkongraphicsDesktopMyLabqlinkonSoftware/app/Http/Resources -type f -name *.php)",
+      "Bash(find C:UsersqlinkongraphicsDesktopMyLabqlinkonSoftwareapp -name HrmTask*)",
+      "Bash(grep -r HrmTask C:UsersqlinkongraphicsDesktopMyLabqlinkonSoftwareapp --include=*.php -l)",
+      "Bash(grep -rn tasks C:UsersqlinkongraphicsDesktopMyLabqlinkonSoftwareroutes --include=*.php)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(php artisan:*)",
+      "Bash(find /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware -type f \\\\\\(-path */Models/*Department* -o -path */Models/*Designation* -o -path */Models/*Store* \\\\\\))",
+      "Bash(vendor/bin/pint --dirty --format agent)",
+      "Bash(php -l app/Services/Hrm/AttendanceService.php)",
+      "Bash(php -l app/Http/Controllers/Admin/Hrm/AttendanceController.php)",
+      "Bash(php -l app/Http/Requests/Admin/Hrm/StoreQrScanRequest.php)",
+      "Bash(php -l app/Http/Controllers/Admin/Hrm/MobileScanController.php)",
+      "Bash(php -m)"
+    ]
+  }
+}

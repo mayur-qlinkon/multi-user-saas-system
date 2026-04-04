@@ -1,0 +1,310 @@
+@extends('layouts.admin')
+
+@section('title', 'Holidays')
+
+@section('header-title')
+    <div>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Holidays</h1>
+        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage public and company holidays</p>
+    </div>
+@endsection
+
+@push('styles')
+<style>
+    [x-cloak] { display: none !important; }
+    .field-label { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .field-input { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 30px; font-size: 13.5px; outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; font-family: inherit; background: #fff; }
+    .field-input:focus { border-color: var(--brand-600); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-600) 10%, transparent); }
+    .field-error { font-size: 11px; color: #dc2626; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+    .toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle-switch input { display: none; }
+    .toggle-track { position: absolute; inset: 0; background: #e5e7eb; border-radius: 20px; cursor: pointer; transition: background 200ms ease; }
+    .toggle-switch input:checked + .toggle-track { background: var(--brand-600); }
+    .toggle-thumb { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 200ms ease; pointer-events: none; }
+    .toggle-switch input:checked ~ .toggle-thumb { transform: translateX(16px); }
+    .table-row { border-bottom: 1px solid #f8fafc; transition: background 100ms; }
+    .table-row:hover { background: #fafbfc; }
+    .table-row:last-child { border-bottom: none; }
+    .stat-card { background: #fff; border: 1.5px solid #f1f5f9; border-radius: 14px; padding: 14px 16px; transition: box-shadow 150ms, border-color 150ms; }
+    .stat-card:hover { border-color: #e2e8f0; box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+</style>
+@endpush
+
+@section('content')
+
+@php
+    $typeColors = \App\Models\Hrm\Holiday::TYPE_COLORS;
+@endphp
+
+<div class="pb-10" x-data="holidayPage()">
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div class="stat-card">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total</p>
+            <p class="text-2xl font-black text-gray-900">{{ $stats['total'] }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Upcoming</p>
+            <p class="text-2xl font-black text-green-600">{{ $stats['upcoming'] }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">National</p>
+            <p class="text-2xl font-black text-red-600">{{ $stats['national'] }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Company</p>
+            <p class="text-2xl font-black text-blue-600">{{ $stats['company'] }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white border border-gray-100 rounded-2xl px-4 py-3 mb-4">
+        <form method="GET" action="{{ route('admin.hrm.holidays.index') }}">
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="relative flex-1 min-w-[180px]">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"></i>
+                    <input type="text" x-model="searchQuery" placeholder="Search holidays..." class="field-input pl-9 !py-2 !text-[13px]">
+                </div>
+
+                <select name="year" class="field-input !w-auto !py-2 !text-[13px]" onchange="this.form.submit()">
+                    @for($y = now()->year - 1; $y <= now()->year + 1; $y++)
+                        <option value="{{ $y }}" {{ request('year', now()->year) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endfor
+                </select>
+
+                <select name="type" class="field-input !w-auto !py-2 !text-[13px]" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    @foreach(\App\Models\Hrm\Holiday::TYPE_LABELS as $val => $label)
+                        <option value="{{ $val }}" {{ request('type') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+
+                @if(request()->hasAny(['type']))
+                    <a href="{{ route('admin.hrm.holidays.index', ['year' => request('year', now()->year)]) }}"
+                        class="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors">Clear</a>
+                @endif
+
+                <button @click.prevent="openCreate()"
+                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                    style="background: var(--brand-600)">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Holiday
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-100">
+                        <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
+                        <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Holiday</th>
+                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Date</th>
+                        <th class="px-3 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-wider">Day</th>
+                        <th class="px-3 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-wider">Type</th>
+                        <th class="px-3 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-wider">Paid</th>
+                        <th class="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($holidays as $holiday)
+                        @php $tc = $typeColors[$holiday->type] ?? ['bg' => '#f3f4f6', 'text' => '#374151', 'border' => '#e5e7eb']; @endphp
+                        <tr class="table-row" x-show="matchesSearch('{{ strtolower($holiday->name) }}')">
+                            <td class="px-5 py-3 text-[12px] font-bold text-gray-400">{{ $holidays->firstItem() + $loop->index }}</td>
+                            <td class="px-5 py-3">
+                                <p class="text-[13px] font-bold text-gray-800">{{ $holiday->name }}</p>
+                                @if($holiday->description)
+                                    <p class="text-[11px] text-gray-400 mt-0.5 truncate max-w-[250px]">{{ $holiday->description }}</p>
+                                @endif
+                            </td>
+                            <td class="px-3 py-3">
+                                <p class="text-[12px] font-bold text-gray-700">{{ $holiday->date->format('d M Y') }}</p>
+                                @if($holiday->end_date)
+                                    <p class="text-[10px] text-gray-400">to {{ $holiday->end_date->format('d M Y') }} ({{ $holiday->total_days }} days)</p>
+                                @endif
+                            </td>
+                            <td class="px-3 py-3 text-center text-[12px] text-gray-600">{{ $holiday->date->format('l') }}</td>
+                            <td class="px-3 py-3 text-center">
+                                <span class="inline-flex text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md border"
+                                    style="background: {{ $tc['bg'] }}; color: {{ $tc['text'] }}; border-color: {{ $tc['border'] }}">
+                                    {{ $holiday->type_label }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-3 text-center">
+                                @if($holiday->is_paid)
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded">Yes</span>
+                                @else
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">No</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button @click="openEdit({{ $holiday->toJson() }})"
+                                        class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button @click="confirmDelete({{ $holiday->id }}, '{{ $holiday->name }}')"
+                                        class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7">
+                                <div class="flex flex-col items-center justify-center py-20 text-center">
+                                    <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                                        <i data-lucide="calendar-heart" class="w-7 h-7 text-gray-300"></i>
+                                    </div>
+                                    <p class="font-semibold text-gray-500 mb-1">No holidays added</p>
+                                    <p class="text-sm text-gray-400 mb-4">Add public and company holidays for {{ request('year', now()->year) }}</p>
+                                    <button @click="openCreate()" class="text-sm font-bold px-4 py-2 rounded-xl text-white" style="background: var(--brand-600)">Add Holiday</button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($holidays->hasPages())
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50">{{ $holidays->links() }}</div>
+        @endif
+    </div>
+
+    {{-- Modal --}}
+    <div x-show="modalOpen" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden" @click.away="modalOpen = false"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-black text-gray-800 uppercase tracking-widest text-sm" x-text="isEditing ? 'Edit Holiday' : 'New Holiday'"></h3>
+                <button @click="modalOpen = false" class="text-gray-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <form @submit.prevent="submitForm()">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="field-label">Holiday Name <span class="text-red-400">*</span></label>
+                        <input type="text" x-model="form.name" class="field-input" placeholder="e.g. Republic Day" required>
+                        <p class="field-error" x-show="errors.name" x-text="errors.name"></p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">Start Date <span class="text-red-400">*</span></label>
+                            <input type="date" x-model="form.date" class="field-input" required>
+                        </div>
+                        <div>
+                            <label class="field-label">End Date</label>
+                            <input type="date" x-model="form.end_date" class="field-input">
+                            <p class="text-[10px] text-gray-400 mt-1">Leave empty for single-day holiday</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Type <span class="text-red-400">*</span></label>
+                        <select x-model="form.type" class="field-input" required>
+                            <option value="national">National</option>
+                            <option value="state">State</option>
+                            <option value="company">Company</option>
+                            <option value="restricted">Restricted</option>
+                            <option value="optional">Optional</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Description</label>
+                        <textarea x-model="form.description" class="field-input" rows="2" placeholder="Optional description"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
+                            <span class="text-[12px] font-bold text-gray-600">Paid</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" x-model="form.is_paid">
+                                <span class="toggle-track"></span><span class="toggle-thumb"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
+                            <span class="text-[12px] font-bold text-gray-600">Recurring</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" x-model="form.is_recurring">
+                                <span class="toggle-track"></span><span class="toggle-thumb"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
+                            <span class="text-[12px] font-bold text-gray-600">Active</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" x-model="form.is_active">
+                                <span class="toggle-track"></span><span class="toggle-thumb"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                    <button type="button" @click="modalOpen = false" class="px-4 py-2 text-[13px] font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" :disabled="saving" class="px-5 py-2 text-[13px] font-bold text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50" style="background: var(--brand-600)">
+                        <span x-show="!saving" x-text="isEditing ? 'Update' : 'Create'"></span>
+                        <span x-show="saving" class="flex items-center gap-2">
+                            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            Saving...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@push('scripts')
+<script>
+window.holidayPage = function() {
+    return {
+        modalOpen: false, isEditing: false, editId: null, saving: false, searchQuery: '', errors: {},
+        form: { name: '', date: '', end_date: '', type: 'company', description: '', is_paid: true, is_recurring: false, is_active: true },
+
+        init() { this.$nextTick(() => { if (window.lucide) lucide.createIcons(); }); },
+        matchesSearch(name) { if (!this.searchQuery) return true; return name.includes(this.searchQuery.toLowerCase()); },
+        resetForm() { this.form = { name: '', date: '', end_date: '', type: 'company', description: '', is_paid: true, is_recurring: false, is_active: true }; this.errors = {}; },
+        openCreate() { this.resetForm(); this.isEditing = false; this.editId = null; this.modalOpen = true; },
+        openEdit(item) {
+            this.resetForm(); this.isEditing = true; this.editId = item.id;
+            this.form = { name: item.name, date: item.date?.split('T')[0] || '', end_date: item.end_date?.split('T')[0] || '', type: item.type, description: item.description || '', is_paid: item.is_paid, is_recurring: item.is_recurring, is_active: item.is_active };
+            this.modalOpen = true;
+        },
+        async submitForm() {
+            this.saving = true; this.errors = {};
+            const url = this.isEditing ? `{{ url('admin/hrm/holidays') }}/${this.editId}` : `{{ route('admin.hrm.holidays.store') }}`;
+            try {
+                const resp = await fetch(url, {
+                    method: this.isEditing ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' },
+                    body: JSON.stringify({ ...this.form, is_paid: this.form.is_paid ? 1 : 0, is_recurring: this.form.is_recurring ? 1 : 0, is_active: this.form.is_active ? 1 : 0 }),
+                });
+                const data = await resp.json();
+                if (!resp.ok) { if (resp.status === 422 && data.errors) { for (const [k, m] of Object.entries(data.errors)) this.errors[k] = m[0]; } else BizAlert.toast(data.message || 'Error', 'error'); return; }
+                BizAlert.toast(data.message, 'success'); this.modalOpen = false; setTimeout(() => window.location.reload(), 600);
+            } catch(e) { BizAlert.toast('Network error', 'error'); } finally { this.saving = false; }
+        },
+        confirmDelete(id, name) {
+            BizAlert.confirm('Delete Holiday', `Delete "${name}"?`, 'Delete').then(async (r) => {
+                if (!r.isConfirmed) return;
+                try {
+                    const resp = await fetch(`{{ url('admin/hrm/holidays') }}/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' } });
+                    const data = await resp.json();
+                    if (!resp.ok) { BizAlert.toast(data.message || 'Cannot delete', 'error'); return; }
+                    BizAlert.toast(data.message, 'success'); setTimeout(() => window.location.reload(), 600);
+                } catch(e) { BizAlert.toast('Network error', 'error'); }
+            });
+        },
+    };
+};
+</script>
+@endpush

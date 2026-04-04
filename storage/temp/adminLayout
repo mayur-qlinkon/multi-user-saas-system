@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Qlinkon')</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{{ asset('storage/' . get_setting('favicon')) }}">
+    {{-- Kill FOUC: hide body until CSS+JS ready --}}
+    <style>
+        html.loading body {
+            opacity: 0
+        }
+    </style>
+    @php
+        $primary = get_setting('primary_color', '#008a62');
+        $hover = get_setting('primary_hover_color', '#007050');
+        $stores = auth()->user()->stores ?? collect();
+        $currentStoreId = session('store_id');
+        $currentStore = $currentStoreId ? $stores->firstWhere('id', $currentStoreId) : $stores->first();
+
+        // 🌟 DYNAMIC SUBSCRIPTION LOGIC
+        $subscription = tenant_subscription();
+        $expiresAt = $subscription ? $subscription->expires_at : null;
+        $isLifetime = $subscription && is_null($expiresAt);
+
+        // Use ceil() and (int) to guarantee a clean whole number (e.g., 16 instead of 16.433)
+        $daysLeft = $expiresAt ? (int) ceil(now()->floatDiffInDays(\Carbon\Carbon::parse($expiresAt))) : 0;
+    @endphp
+    {{-- ✅ Vite — replaces CDN Tailwind --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        /* ═══════════════════════════════════════════════
+           THEME VARIABLES
+        ═══════════════════════════════════════════════ */
+        :root {
+            --brand-50: {{ $primary }}1A;
+            --brand-100: {{ $primary }}33;
+            --brand-500: {{ $primary }};
+            --brand-600: {{ $hover }};
+            --brand-700: {{ $hover }};
+            --bg-page: #f4f6f9;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html.loading body {
+            opacity: 0
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* ═══════════════════════════════════════════════
+           PAGE TRANSITION COVER
+        ═══════════════════════════════════════════════ */
+        #page-cover {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-page);
+            z-index: 9999;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity 220ms ease;
+        }
+
+        /* ═══════════════════════════════════════════════
+           SCROLLBAR
+        ═══════════════════════════════════════════════ */
+        .nav-scroll::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .nav-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .nav-scroll::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 4px;
+        }
+
+        .nav-scroll:hover::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+        }
+
+        /* ═══════════════════════════════════════════════
+           OVERLAY
+        ═══════════════════════════════════════════════ */
+        #sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(3px);
+            z-index: 30;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 280ms var(--ease);
+        }
+
+        #sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ═══════════════════════════════════════════════
+           SIDEBAR
+        ═══════════════════════════════════════════════ */
+        #main-sidebar {
+            transition: transform 280ms var(--ease), box-shadow 280ms var(--ease);
+        }
+
+        @media (max-width: 1023px) {
+            #main-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                transform: translateX(-100%);
+                z-index: 40;
+                box-shadow: none;
+            }
+
+            #main-sidebar.sidebar-open {
+                transform: translateX(0);
+                box-shadow: 20px 0 60px rgba(0, 0, 0, 0.13);
+            }
+
+            .sidebar-close-btn {
+                display: flex !important;
+            }
+        }
+
+        .sidebar-close-btn {
+            display: none;
+        }
+
+        /* ═══════════════════════════════════════════════
+           NAV ITEMS
+        ═══════════════════════════════════════════════ */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            border-radius: 0.625rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            text-decoration: none;
+            border: none;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+            outline: none;
+            transition: background 140ms var(--ease),
+                color 140ms var(--ease),
+                transform 80ms ease;
+        }
+
+        .nav-item:hover {
+            background: #f0f7f4;
+            color: var(--brand-600);
+        }
+
+        .nav-item:hover .nav-icon {
+            color: var(--brand-600);
+        }
+
+        .nav-item:active {
+            transform: scale(0.984);
+        }
+
+        .nav-item.active,
+        .nav-item.active:hover {
+            background: var(--brand-600);
+            color: #fff;
+        }
+
+        .nav-item.active .nav-icon,
+        .nav-item.active:hover .nav-icon {
+            color: #fff;
+        }
+
+        .nav-item.active .nav-chevron,
+        .nav-item.active:hover .nav-chevron {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Accordion parent open but not active route */
+        .nav-item.acc-open:not(.active) {
+            background: #f0f7f4;
+            color: var(--brand-600);
+        }
+
+        .nav-item.acc-open:not(.active) .nav-icon {
+            color: var(--brand-600);
+        }
+
+        .nav-item.acc-open:not(.active) .nav-chevron {
+            color: var(--brand-600);
+        }
+
+        .nav-icon {
+            color: #9ca3af;
+            flex-shrink: 0;
+            transition: color 140ms var(--ease);
+        }
+
+        .nav-chevron {
+            width: 14px;
+            height: 14px;
+            color: #d1d5db;
+            flex-shrink: 0;
+            transition: color 140ms var(--ease),
+                transform 240ms var(--ease);
+        }
+
+        .nav-chevron.rotated {
+            transform: rotate(90deg);
+        }
+
+        /* ═══════════════════════════════════════════════
+           ACCORDION — height-based, no Alpine
+        ═══════════════════════════════════════════════ */
+        .acc-wrap {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 255ms var(--ease),
+                opacity 200ms ease;
+        }
+
+        .sub-menu {
+            margin: 3px 0 4px 0.9rem;
+            padding: 2px 0 2px 0.85rem;
+            border-left: 1.5px solid #e5e7eb;
+        }
+
+        .sub-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #6b7280;
+            text-decoration: none;
+            transition: background 130ms var(--ease),
+                color 130ms var(--ease),
+                padding-left 150ms ease;
+        }
+
+        .sub-item:hover {
+            background: #f0f7f4;
+            color: var(--brand-600);
+            padding-left: 0.9rem;
+        }
+
+        .sub-item.active {
+            background: var(--brand-50);
+            color: var(--brand-600);
+            font-weight: 600;
+        }
+
+        .sub-item.active::before {
+            content: '';
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--brand-600);
+            flex-shrink: 0;
+        }
+
+        /* ═══════════════════════════════════════════════
+           HAMBURGER
+        ═══════════════════════════════════════════════ */
+        .hb-line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #212538;
+            border-radius: 2px;
+            transform-origin: center;
+            transition: transform 250ms var(--ease),
+                opacity 200ms ease,
+                width 200ms ease;
+        }
+
+        #hamburger-btn.is-open .hb-line:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+
+        #hamburger-btn.is-open .hb-line:nth-child(2) {
+            opacity: 0;
+            width: 0;
+        }
+
+        #hamburger-btn.is-open .hb-line:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+    </style>
+
+    @yield('styles')
+    @stack('styles')
+</head>
+
+<body class="bg-[#f4f6f9] text-gray-800 font-sans">
+
+    {{-- Page cover — fades away after load --}}
+    <div id="page-cover"></div>
+
+    @php
+        $isActive = fn(string|array $r) => request()->routeIs($r);
+        $navCls = fn(string|array $r) => $isActive($r) ? 'active' : '';
+        $subCls = fn(string|array $r) => $isActive($r) ? 'active' : '';
+        $accOpen = fn(string|array $r) => $isActive($r) ? 'true' : 'false';
+    @endphp
+
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="flex h-screen w-full overflow-hidden">
+
+        {{-- ═══════════════════════ SIDEBAR ═══════════════════════ --}}
+        <aside id="main-sidebar" class="w-64 bg-white ...">
+
+            {{-- Logo --}}
+            <div class="h-[60px] flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0">
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 bg-brand-600 rounded-lg text-white flex items-center justify-center shadow-sm">
+                        <i data-lucide="leaf" class="w-[18px] h-[18px] fill-current"></i>
+                    </div>
+                    <div class="leading-none">
+                        <span class="font-bold text-[17px] text-gray-800 tracking-tight">Qlinkon</span>
+                        <span
+                            class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-px">BIZNESS</span>
+                    </div>
+                </a>
+                <button onclick="closeSidebar()"
+                    class="sidebar-close-btn items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            {{-- Navigation --}}
+            <nav id="sidebar-nav" class="flex-1 overflow-y-auto nav-scroll py-3 px-2.5 space-y-0.5">
+
+                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ $navCls('admin.dashboard') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="home" class="nav-icon w-[18px] h-[18px]"></i> Dashboard
+                    </span>
+                </a>
+
+                <a href="{{ route('inquiry') }}" class="nav-item {{ $navCls('inquiry') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="list-ordered" class="nav-icon w-[18px] h-[18px]"></i> Order Inquiry
+                    </span>
+                </a>
+
+                {{-- @if (has_module('pos')) --}}
+                <a href="{{ url('/admin/pos') }}" class="nav-item {{ $navCls('/admin/pos') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="monitor" class="nav-icon w-[18px] h-[18px]"></i> POS
+                    </span>
+                </a>
+                {{-- @endif --}}
+                {{-- @if (has_permission('view_pos'))
+                <a href="{{ url('/admin/pos') }}" class="nav-item {{ $navCls('/admin/pos') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="monitor" class="nav-icon w-[18px] h-[18px]"></i> POS
+                    </span>
+                </a>
+            @endif --}}
+
+                {{-- Transport Receipt --}}
+                <div class="acc-group" data-open="{{ $accOpen('transport-receipt.*') }}">
+                    <button class="nav-item acc-trigger {{ $navCls('transport-receipt.*') }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="truck" class="nav-icon w-[18px] h-[18px]"></i> Transport Receipt
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+                            <a href="#" class="sub-item">Domestic</a>
+                            <a href="#" class="sub-item">International</a>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ route('admin.quotations.index') }}" class="nav-item {{ $navCls('admin.quotations.*') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="quote" class="nav-icon w-[18px] h-[18px]"></i> Quotations
+                    </span>
+                </a>
+
+
+                {{-- Products --}}
+                <div class="acc-group"
+                    data-open="{{ $accOpen(['admin.products.*', 'admin.attributes.*', 'admin.categories.*', 'admin.units.*', 'admin.labels.*']) }}">
+                    <button
+                        class="nav-item acc-trigger {{ $navCls(['products.*', 'admin.attributes.*', 'admin.categories.*', 'admin.units.*', 'admin.labels.*']) }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="package" class="nav-icon w-[18px] h-[18px]"></i> Products
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+                            <a href="{{ route('admin.products.index') }}"
+                                class="sub-item {{ $subCls('admin.products.*') }}">All
+                                Products</a>
+                            <a href="{{ route('admin.attributes.index') }}"
+                                class="sub-item {{ $subCls('admin.attributes.*') }}">Attributes</a>
+                            <a href="{{ route('admin.categories.index') }}"
+                                class="sub-item {{ $subCls('admin.categories.*') }}">Categories</a>
+                            <a href="{{ route('admin.units.index') }}"
+                                class="sub-item {{ $subCls('admin.units.*') }}">Units</a>
+                            <a href="{{ route('admin.labels.index') }}"
+                                class="sub-item {{ $subCls('admin.labels.*') }}">Print Barcode</a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Purchases --}}
+                <div class="acc-group" data-open="{{ $accOpen(['admin.invoices.*', 'admin.invoice-returns.*']) }}">
+                    <button class="nav-item acc-trigger {{ $navCls(['admin.invoices.*']) }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="nav-icon w-[18px] h-[18px]"></i> Invoices
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+                            <a href="{{ route('admin.invoices.index') }}"
+                                class="sub-item {{ $subCls('admin.invoices.*') }}">Sales</a>
+                            <a href="{{ route('admin.invoice-returns.index') }}"
+                                class="sub-item {{ $subCls('admin.invoice-returns.*') }}">Sales Returns</a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Purchases --}}
+                {{-- <a href="{{ route('admin.purchases.index') }}" class="nav-item {{ $navCls(['admin.purchases.*']) }}">
+                    <span class="flex items-center gap-3">
+                    <i data-lucide="file-text" class="nav-icon w-[18px] h-[18px]"></i> Purchases
+                </span>
+            </a> --}}
+
+                {{-- Purchases --}}
+                <div class="acc-group" data-open="{{ $accOpen(['admin.purchases.*', 'admin.purchase-returns.*']) }}">
+                    <button class="nav-item acc-trigger {{ $navCls(['admin.purchases.*']) }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="shopping-bag" class="nav-icon w-[18px] h-[18px]"></i> Purchases
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+                            <a href="{{ route('admin.purchases.index') }}"
+                                class="sub-item {{ $subCls('admin.purchases.*') }}">Purchases</a>
+                            <a href="{{ route('admin.purchase-returns.index') }}"
+                                class="sub-item {{ $subCls('admin.purchase-returns.*') }}">Purchases Returns</a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Production --}}
+                {{-- <div class="acc-group" data-open="{{ $accOpen('production.*') }}">
+                <button class="nav-item acc-trigger {{ $navCls('production.*') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="factory" class="nav-icon w-[18px] h-[18px]"></i> Production
+                    </span>
+                    <i data-lucide="chevron-right" class="nav-chevron"></i>
+                </button>
+                <div class="acc-wrap">
+                    <div class="sub-menu">
+                        <a href="#" class="sub-item">Orders</a>
+                        <a href="#" class="sub-item">Materials</a>
+                    </div>
+                </div>
+            </div> --}}
+
+                {{-- Expenses --}}
+                <div class="acc-group" data-open="{{ $accOpen('expenses.*') }}">
+                    <button class="nav-item acc-trigger {{ $navCls('expenses.*') }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="receipt" class="nav-icon w-[18px] h-[18px]"></i> Expenses
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+                            <a href="#" class="sub-item">All Expenses</a>
+                            <a href="#" class="sub-item">Categories</a>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ route('report') }}" class="nav-item {{ $navCls('report') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="bar-chart-2" class="nav-icon w-[18px] h-[18px]"></i> Report
+                    </span>
+                </a>
+
+                {{-- Peoples Management --}}
+                <div class="acc-group"
+                    data-open="{{ $accOpen(['admin.clients.*', 'leads.*', 'admin.suppliers.*', 'admin.users.*']) }}">
+                    <button
+                        class="nav-item acc-trigger {{ $navCls(['admin.clients.*', 'leads.*', 'admin.suppliers.*', 'users.*']) }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i>
+                            Peoples
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+
+                            <a href="{{ route('admin.clients.index') }}"
+                                class="sub-item {{ $subCls('admin.clients.*') }}">
+                                Clients
+                            </a>
+
+                            <a href="{{ route('admin.suppliers.index') }}"
+                                class="sub-item {{ $subCls('admin.suppliers.*') }}">
+                                Suppliers
+                            </a>
+
+                            <a href="{{ route('admin.users.index') }}"
+                                class="sub-item {{ $subCls('admin.users.*') }}">
+                                Users
+                            </a>
+
+                        </div>
+                    </div>
+                </div>
+
+                {{-- HRM --}}
+                <div class="acc-group" data-open="{{ $accOpen('hrm.*') }}">
+                    <button class="nav-item acc-trigger {{ $navCls('hrm.*') }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="briefcase" class="nav-icon w-[18px] h-[18px]"></i> HRM Management
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+                            <a href="#" class="sub-item">Employees</a>
+                            <a href="#" class="sub-item">Attendance</a>
+                            <a href="#" class="sub-item">Payroll</a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Settings --}}
+                <div class="acc-group"
+                    data-open="{{ $accOpen(['admin.settings.*', 'admin.stores.*', 'admin.warehouses.*', 'admin.roles.*', 'admin.payment-methods.*']) }}">
+                    <button
+                        class="nav-item acc-trigger {{ $navCls(['admin.settings.*', 'admin.stores.*', 'admin.warehouses.*', 'admin.roles.*', 'admin.payment-methods.*']) }}">
+                        <span class="flex items-center gap-3">
+                            <i data-lucide="settings" class="nav-icon w-[18px] h-[18px]"></i> Settings
+                        </span>
+                        <i data-lucide="chevron-right" class="nav-chevron"></i>
+                    </button>
+                    <div class="acc-wrap">
+                        <div class="sub-menu">
+                            <a href="{{ route('admin.stores.index') }}"
+                                class="sub-item {{ $subCls('admin.stores.*') }}">Stores</a>
+                            <a href="{{ route('admin.warehouses.index') }}"
+                                class="sub-item {{ $subCls('admin.warehouses.*') }}">Warehouses</a>
+                            <a href="{{ route('admin.roles.index') }}"
+                                class="sub-item {{ $subCls('admin.roles.*') }}">Roles &
+                                Permissions</a>
+                            <a href="{{ route('admin.payment-methods.index') }}"
+                                class="sub-item {{ $subCls('admin.payment-methods.*') }}">Payment Methods</a>
+                            <a href="{{ route('admin.settings.index') }}"
+                                class="sub-item {{ $subCls('admin.settings.*') }}">Settings</a>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ route('help') }}" class="nav-item {{ $navCls('help') }}">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="help-circle" class="nav-icon w-[18px] h-[18px]"></i> Help Center
+                    </span>
+                </a>
+
+                <a href="{{ url('/') }}" target="_blank" class="nav-item">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="external-link" class="nav-icon w-[18px] h-[18px]"></i> Visit Site
+                    </span>
+                </a>
+
+            </nav>
+
+            {{-- Expiry Badge --}}
+            {{-- Dynamic Expiry Badge --}}
+            @if ($subscription)
+                <div class="px-3 py-3 flex-shrink-0">
+                    <div class="bg-[#fff4ed] border border-[#fce4d6] rounded-xl p-3.5 text-center">
+                        @if ($isLifetime)
+                            <p class="text-[11px] font-semibold text-gray-600">Plan: <span
+                                    class="uppercase tracking-wider">{{ $subscription->plan->name ?? 'Lifetime' }}</span>
+                            </p>
+                            <p class="text-sm font-bold text-[#e06623] mt-0.5">Never Expires</p>
+                        @else
+                            <p class="text-[11px] font-semibold text-gray-600">Expires:
+                                {{ \Carbon\Carbon::parse($expiresAt)->format('d M, Y') }}</p>
+                            <p class="text-sm font-bold text-[#e06623] mt-0.5">{{ $daysLeft }} days left</p>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </aside>
+
+        {{-- ═══════════════════════ MAIN ═══════════════════════ --}}
+        <div class="flex-1 flex flex-col overflow-hidden relative min-w-0">
+
+            <header
+                class="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-5 z-30 sticky top-0">
+                <div class="flex items-center gap-3">
+                    <button id="hamburger-btn" onclick="toggleSidebar()"
+                        class="lg:hidden flex flex-col gap-[5px] items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none"
+                        aria-label="Toggle menu">
+                        <span class="hb-line"></span>
+                        <span class="hb-line"></span>
+                        <span class="hb-line"></span>
+                    </button>
+                    <div class="hidden sm:block">@yield('header-title')</div>
+                </div>
+                {{-- Store Switcher --}}
+                @if (is_owner())
+                    <div x-data="{ open: false }" class="relative mr-3">
+
+                        <button @click="open = !open" type="button"
+                            class="flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-gray-100 hover:bg-gray-200 rounded-lg">
+
+                            <i data-lucide="store" class="w-4 h-4"></i>
+
+                            <span>
+                                {{ $currentStore->name ?? 'Select Store' }}
+                            </span>
+
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </button>
+
+                        <div x-cloak x-show="open" @click.away="open = false" x-transition
+                            class="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-lg shadow-xl z-50">
+
+                            @foreach ($stores as $store)
+                                <form method="POST" action="{{ route('admin.store.switch') }}">
+                                    @csrf
+                                    <input type="hidden" name="store_id" value="{{ $store->id }}">
+
+                                    <button type="submit"
+                                        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50
+                {{ session('store_id') == $store->id ? 'bg-gray-100 font-semibold' : '' }}">
+
+                                        {{ $store->name }}
+
+                                    </button>
+                                </form>
+                            @endforeach
+
+                        </div>
+                    </div>
+                @else
+                    <div
+                        class="mr-3 px-3 py-2 text-sm font-semibold bg-gray-50 text-gray-600 rounded-lg flex items-center gap-2">
+                        <i data-lucide="store" class="w-4 h-4"></i>
+                        <span>{{ $currentStore->name ?? 'Unknown Store' }}</span>
+                    </div>
+                @endif
+                {{-- User Dropdown — Alpine only here --}}
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" @click.away="open = false"
+                        class="flex items-center focus:outline-none group">
+                        <div
+                            class="w-9 h-9 rounded-full bg-[#82c43c] text-white flex items-center justify-center shadow-sm relative ring-2 ring-transparent group-hover:ring-[#82c43c]/30 transition-all duration-200">
+                            <i data-lucide="leaf" class="w-4 h-4 fill-current"></i>
+                            <span
+                                class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#4ade80] border-2 border-white rounded-full"></span>
+                        </div>
+                    </button>
+                    <div x-cloak x-show="open" x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+                        class="absolute right-0 mt-2.5 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden origin-top-right">
+                        <div class="px-4 py-3.5 border-b border-gray-100 flex items-center gap-3 bg-gray-50/60">
+                            <div
+                                class="w-9 h-9 rounded-full bg-[#82c43c] text-white flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="leaf" class="w-4 h-4 fill-current"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-gray-900 truncate">{{ auth()->user()->name }}</p>
+                                <p class="text-xs text-gray-500 font-medium">
+                                    {{ auth()->user()->roles->first()->name ?? 'User' }}</p>
+                            </div>
+                        </div>
+                        <div class="py-1.5">
+                            <a href="#"
+                                class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#f59e0b] hover:bg-amber-50 transition-colors">
+                                <i data-lucide="megaphone" class="w-4 h-4"></i> Announcements
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#ef4444] hover:bg-red-50 transition-colors">
+                                    <i data-lucide="power" class="w-4 h-4"></i> Log Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main id="page-content" class="flex-1 overflow-x-hidden overflow-y-auto p-5 flex flex-col">
+                @yield('content')
+                <footer class="mt-auto py-6 text-center text-xs text-gray-400">
+                    &copy; {{ date('Y') }} Powered by <span class="font-semibold text-gray-600">Qlinkon</span>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <script>
+        // Global lucide reinit — call this after any dynamic DOM injection
+        window.initIcons = function(scope) {
+            if (typeof lucide === 'undefined') return;
+            lucide.createIcons({
+                // If scope passed, only scan that element — more performant
+                nodes: scope ? scope.querySelectorAll('[data-lucide]') : undefined
+            });
+        };
+        document.addEventListener("DOMContentLoaded", () => {
+            window.initIcons();
+        });
+
+        /* ═══════════════════════════════════════════════════════
+           PAGE TRANSITION
+           Kills FOUC and adds smooth enter/exit between pages
+        ═══════════════════════════════════════════════════════ */
+        (function() {
+            const cover = document.getElementById('page-cover');
+
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.style.transition = 'opacity 180ms ease';
+                document.body.style.opacity = '1';
+                requestAnimationFrame(() => {
+                    cover.style.opacity = '0';
+                    setTimeout(() => cover.remove(), 240);
+                });
+            });
+
+
+
+        })();
+
+        /* ═══════════════════════════════════════════════════════
+           ACCORDION — pure JS, single-open (one at a time)
+        ═══════════════════════════════════════════════════════ */
+        (function() {
+            const groups = Array.from(document.querySelectorAll('.acc-group'));
+
+            function open(group, instant) {
+                const wrap = group.querySelector('.acc-wrap');
+                const chevron = group.querySelector('.nav-chevron');
+                const trigger = group.querySelector('.acc-trigger');
+
+                if (instant) {
+                    // No animation on page load — prevents layout flash
+                    wrap.style.transition = 'none';
+                    wrap.style.maxHeight = wrap.scrollHeight + 'px';
+                    wrap.style.opacity = '1';
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        wrap.style.transition = ''; // restore after paint
+                    }));
+                } else {
+                    wrap.style.maxHeight = wrap.scrollHeight + 'px';
+                    wrap.style.opacity = '1';
+                }
+
+                chevron && chevron.classList.add('rotated');
+                trigger && trigger.classList.add('acc-open');
+                group._open = true;
+            }
+
+            function close(group) {
+                const wrap = group.querySelector('.acc-wrap');
+                const chevron = group.querySelector('.nav-chevron');
+                const trigger = group.querySelector('.acc-trigger');
+
+                wrap.style.maxHeight = '0';
+                wrap.style.opacity = '0';
+                chevron && chevron.classList.remove('rotated');
+                trigger && trigger.classList.remove('acc-open');
+                group._open = false;
+            }
+
+            // Boot: open active group instantly, close others
+            groups.forEach(group => {
+                const shouldOpen = group.dataset.open === 'true';
+                group._open = shouldOpen;
+                shouldOpen ? open(group, true) : close(group);
+
+                group.querySelector('.acc-trigger')?.addEventListener('click', () => {
+                    const isCurrentlyOpen = group._open;
+
+                    // Close ALL others with animation
+                    groups.forEach(g => {
+                        if (g !== group && g._open) close(g);
+                    });
+
+                    // Toggle clicked group
+                    isCurrentlyOpen ? close(group) : open(group, false);
+                });
+            });
+        })();
+
+        /* ═══════════════════════════════════════════════════════
+           SIDEBAR (mobile)
+        ═══════════════════════════════════════════════════════ */
+        function toggleSidebar() {
+            document.getElementById('main-sidebar').classList.contains('sidebar-open') ?
+                closeSidebar() : openSidebar();
+        }
+
+        function openSidebar() {
+            document.getElementById('main-sidebar').classList.add('sidebar-open');
+            document.getElementById('sidebar-overlay').classList.add('active');
+            document.getElementById('hamburger-btn').classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            document.getElementById('main-sidebar').classList.remove('sidebar-open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+            document.getElementById('hamburger-btn')?.classList.remove('is-open');
+            document.body.style.overflow = '';
+        }
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) closeSidebar();
+        });
+    </script>
+
+    <script src="{{ asset('assets/js/swal.js') }}"></script>
+    @yield('scripts')
+    @stack('scripts')
+</body>
+
+</html>
