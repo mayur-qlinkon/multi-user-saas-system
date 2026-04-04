@@ -44,6 +44,16 @@ class PlatformSeederController extends Controller
             'color'            => 'emerald',
         ],
 
+        'warehouses' => [
+            'name'             => 'Warehouses',
+            'description'      => 'Dummy warehouses with codes and locations.',
+            'class'            => \Database\Seeders\Inventory\WarehousesSeeder::class,
+            'requires_company' => true,
+            'icon'             => 'warehouse',
+            'color'            => 'blue',
+        ],
+
+
         'products' => [
             'name'             => 'Products',
             'description'      => 'Dummy products with SKUs and variants.',

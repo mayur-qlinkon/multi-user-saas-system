@@ -1,7 +1,9 @@
 @extends('layouts.admin')
 
 @section('title', 'Purchase Details: ' . $purchase->purchase_number)
-
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Show / Purchases</h1>
+@endsection
 @push('styles')
     <style>
         /* 🖨️ A4 PRINT OPTIMIZATION */
@@ -85,10 +87,7 @@
     @endphp
     <div class="pb-10">
 
-        <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
-            <div>
-                <h1 class="text-xl font-bold text-[#212538] tracking-tight">Purchase Details</h1>
-            </div>
+        <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">          
 
             <div class="flex flex-wrap items-center gap-2">
                 <a href="{{ route('admin.purchases.index') }}"
