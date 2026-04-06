@@ -357,6 +357,10 @@
                             <tr>
                                 <th class="px-5 py-4 min-w-[250px]">PRODUCT DETAILS</th>
                                 <th class="px-4 py-4 w-[120px] text-center">HSN/SAC</th>
+                                @if(batch_enabled())
+                                    <th class="px-4 py-4 w-[130px] text-center">BATCH #</th>
+                                    <th class="px-4 py-4 w-[130px] text-center">EXPIRY DATE</th>
+                                @endif
                                 <th class="px-4 py-4 w-[140px] text-right">UNIT PRICE</th>
                                 <th class="px-4 py-4 w-[140px] text-center">QTY</th>
                                 <th class="px-4 py-4 w-[120px] text-right">TAX %</th>
@@ -389,6 +393,21 @@
                                     <td class="px-4 py-3 text-center">
                                         <span class="text-[12px] font-mono text-gray-600" x-text="item.hsn_code || '-'"></span>
                                     </td>
+
+                                    @if(batch_enabled())
+                                    {{-- 2b. Batch Number --}}
+                                    <td class="px-4 py-3">
+                                        <input type="text" :name="'items[' + index + '][batch_number]'" x-model="item.batch_number"
+                                            placeholder="e.g. BT-001"
+                                            class="w-full border border-gray-300 rounded px-2 py-2 text-[12px] font-mono focus:border-brand-500 outline-none text-gray-700">
+                                    </td>
+
+                                    {{-- 2c. Expiry Date --}}
+                                    <td class="px-4 py-3">
+                                        <input type="date" :name="'items[' + index + '][expiry_date]'" x-model="item.expiry_date"
+                                            class="w-full border border-gray-300 rounded px-2 py-2 text-[12px] focus:border-brand-500 outline-none text-gray-700">
+                                    </td>
+                                    @endif
 
                                     {{-- 3. Base Unit Price Input (Indicative for Challans) --}}
                                     <td class="px-4 py-3">
@@ -434,7 +453,7 @@
                                 </tr>
                             </template>
                             <tr x-show="items.length === 0" x-cloak>
-                                <td colspan="7" class="px-6 py-12 text-center">
+                                <td colspan="{{ batch_enabled() ? 9 : 7 }}" class="px-6 py-12 text-center">
                                     <p class="text-sm font-medium text-gray-400">Search and add a product to begin.</p>
                                 </td>
                             </tr>
@@ -641,6 +660,8 @@
                         product_name: result.product_name,
                         sku_code: result.sku_code,
                         hsn_code: result.hsn_code || '',
+                        batch_number: '',
+                        expiry_date: '',
                         qty_sent: 1,
                         unit_price: parseFloat(result.price) || 0,
                         tax_rate: parseFloat(result.tax_percent) || 0,

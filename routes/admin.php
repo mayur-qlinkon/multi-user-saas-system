@@ -241,10 +241,10 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::post('/switch-store', [StoreController::class, 'switch'])->name('store.switch');
 
             Route::resource('/users', UserController::class);
-            Route::resource('/stores', StoreController::class)->except(['create', 'show', 'edit']);
+            Route::resource('/stores', StoreController::class);
             Route::resource('/clients', ClientController::class)->except(['create', 'edit', 'show']);
             Route::resource('/suppliers', SupplierController::class)->except(['create', 'show', 'edit']);
-            Route::resource('/warehouses', WarehouseController::class)->except(['create', 'show', 'edit']);
+            Route::resource('/warehouses', WarehouseController::class);
             Route::resource('/purchases', PurchaseController::class);
             // 1. Standard Resource
             Route::resource('purchase-returns', PurchaseReturnController::class);

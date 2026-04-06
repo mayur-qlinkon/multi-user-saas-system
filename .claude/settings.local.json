@@ -17,7 +17,8 @@
       "Bash(php -l app/Http/Controllers/Admin/Hrm/MobileScanController.php)",
       "Bash(php -m)",
       "Bash(php -l app/Services/PurchaseService.php)",
-      "Bash(vendor/bin/pint app/Services/PurchaseService.php --format agent)"
+      "Bash(vendor/bin/pint app/Services/PurchaseService.php --format agent)",
+      "Bash(find /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware -type f -name *challan*)"
     ]
   }
 }

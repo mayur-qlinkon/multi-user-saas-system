@@ -318,14 +318,22 @@
 @endsection
 
 @push('scripts')
+@php
+    // Format the data cleanly in PHP first so Blade's regex doesn't crash
+    $deptOptions = clone $targetOptions['departments']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values();
+    $storeOptions = clone $targetOptions['stores']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values();
+    $designationOptions = clone $targetOptions['designations']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values();
+    $roleOptions = clone $targetOptions['roles']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values();
+    $userOptions = clone $targetOptions['users']->map(fn($u) => ['id' => $u->id, 'label' => $u->name, 'sub' => $u->email])->values();
+@endphp
 <script>
 window.announcementForm = function() {
-    const allOptions = {
-        department: @json($targetOptions['departments']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values()),
-        store:      @json($targetOptions['stores']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values()),
-        designation:@json($targetOptions['designations']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values()),
-        role:       @json($targetOptions['roles']->map(fn($name, $id) => ['id' => $id, 'label' => $name, 'sub' => ''])->values()),
-        users:      @json($targetOptions['users']->map(fn($u) => ['id' => $u->id, 'label' => $u->name, 'sub' => $u->email])),
+     const allOptions = {
+        department: @json($deptOptions),
+        store:      @json($storeOptions),
+        designation:@json($designationOptions),
+        role:       @json($roleOptions),
+        users:      @json($userOptions),
     };
 
     const audienceLabels = @json(\App\Models\Hrm\Announcement::TARGET_LABELS);

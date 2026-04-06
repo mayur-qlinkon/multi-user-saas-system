@@ -117,6 +117,12 @@ class StoreChallanRequest extends FormRequest
             'items.*.qty_sent'       => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price'     => ['nullable', 'numeric', 'min:0'],
             'items.*.tax_rate'       => ['nullable', 'numeric', 'min:0', 'max:100'],
+
+            // 🌟 NEW: Batch Tracking Validation Rules
+            'items.*.batch_id'       => ['nullable', 'integer', Rule::exists('product_batches', 'id')],
+            'items.*.batch_number'   => ['nullable', 'string', 'max:255'],
+            'items.*.expiry_date'    => ['nullable', 'date'],
+            
             'items.*.notes'          => ['nullable', 'string', 'max:1000'],
         ];
     }

@@ -259,124 +259,132 @@
         <head>
             <title>Label Print</title>
             <style>
+                /* Reset & Base Setup */
                 * {
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
-                    font-family: sans-serif;
+                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
                 }
 
                 body {
-                    padding: __PADDING__;
-                    background: #fff;
+                    background: #f3f4f6; /* Gray background for screen preview */
+                    padding: 20px;
                 }
 
-                @@page {
-                    margin: 0;
-                }
-
-                @@media print {
+                /* Print-Specific Rules */
+                @media print {
                     body {
-                        padding: __PADDING__;
+                        background: #fff;
+                        padding: 0;
+                        -webkit-print-color-adjust: exact;
                     }
-
-                    .label {
-                        break-inside: avoid;
-                        page-break-inside: avoid;
+                    /* Forces standard A4 or Thermal padding without browser defaults */
+                    @page {
+                        margin: __PADDING__; 
                     }
                 }
 
-                .label {
-                    border: __BORDER__;
-                    border-radius: 6px;
-                    padding: 8px;
-                    margin: 3px;
-                    break-inside: avoid;
-                    page-break-inside: avoid;
-                    width: __LABEL_WIDTH__;
-                    overflow: hidden;
-                    display: inline-flex;
-                    vertical-align: top;
-                }
-
-                .flex-col-center {
-                    flex-direction: column;
-                    align-items: center;
-                    text-align: center;
-                }
-
-                .img-bc {
-                    width: 90%;
-                    height: 40px;
-                    object-fit: contain;
-                    flex-shrink: 0;
-                }
-
-                .sku {
-                    font-size: 11px;
-                    letter-spacing: 1px;
-                    font-family: monospace;
-                    margin-top: 4px;
-                }
-
-                .name {
-                    font-size: 12px;
-                    margin-top: 4px;
-                    font-weight: 600;
-                    line-height: 1.1;
-                }
-
-                .row {
-                    display: flex;
-                    justify-content: space-between;
-                    width: 100%;
-                    align-items: center;
-                    margin-top: 4px;
-                }
-
-                .store {
-                    font-size: 11px;
-                    font-weight: bold;
-                    margin-top: 6px;
-                }
-
-                .flex-row-left {
-                    flex-direction: row;
-                    align-items: center;
-                    gap: 10px;
-                }
-
-                .img-qr {
-                    width: __IMAGE_PX__px;
-                    height: __IMAGE_PX__px;
-                    object-fit: contain;
-                    flex-shrink: 0;
-                }
-
-                .qr-col {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
+                /* The Grid Container (Handles both A4 and Thermal) */
+                .label-container {
+                    display: grid;
+                    /* For A4: Usually 3 columns. Thermal will naturally stay 1 column if width is small */
+                    grid-template-columns: repeat(auto-fit, minmax(__LABEL_WIDTH__, 1fr));
+                    gap: 12px;
                     justify-content: center;
                 }
 
-                .line {
-                    border-bottom: 1px dashed #000;
-                    margin: 4px 0;
+                /* Individual Label Box */
+                .label {
+                    background: #fff;
+                    border: __BORDER__;
+                    border-radius: 4px;
+                    padding: 10px;
+                    text-align: center;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    align-items: center;
+                    
+                    /* CRITICAL: Prevents the printer from cutting a label in half */
+                    break-inside: avoid;
+                    page-break-inside: avoid;
+                    
+                    /* Fixed sizing to ensure alignment */
+                    width: __LABEL_WIDTH__;
+                    height: auto;
+                    min-height: 120px;
+                    overflow: hidden;
                 }
 
-                .var {
+                /* Typography & Hierarchy */
+                .store-name {
+                    font-size: 9px;
+                    font-weight: 700;
+                    color: #6b7280;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                }
+
+                .product-name {
+                    font-size: 12px;
+                    font-weight: 800;
+                    color: #111827;
+                    line-height: 1.2;
+                    /* Truncate long names to 2 lines max */
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+
+                .variant-name {
                     font-size: 10px;
-                    margin-bottom: 2px;
+                    font-weight: 600;
+                    color: #4b5563;
+                    margin-top: 2px;
+                }
+
+                .barcode-wrapper {
+                    margin: 6px 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    width: 100%;
+                }
+
+                .barcode-img {
+                    height: __IMAGE_PX__px;
+                    max-width: 90%;
+                    object-fit: contain;
+                }
+
+                /* 🌟 This displays the actual encoded number (Barcode or Fallback SKU) */
+                .barcode-number {
+                    font-size: 10px;
+                    font-family: monospace;
+                    letter-spacing: 1.5px;
+                    margin-top: 3px;
+                    color: #000;
+                }
+
+                .price-wrapper {
+                    margin-top: 4px;
                 }
 
                 .price {
-                    font-weight: bold;
+                    font-size: 16px; /* Can be overridden by JS config */
+                    font-weight: 900;
+                    color: #000;
                 }
             </style>
-        </head>
-
-        <body>__BODY__</body>
+            </head>
+            <body>
+                <div class="label-container">
+                    __BODY__
+                </div>
+            </body>
 
         </html>
     </template>
@@ -548,32 +556,27 @@
                             const price = p.display_price ? `₹${parseFloat(p.display_price).toFixed(2)}` : '';
                             let varText = (p.variant_name && p.variant_name !== '') ? `Var: ${p.variant_name}` : '';
 
-                            for (let i = 0; i < p._copies; i++) {
-                                if (this.labelType === 'barcode') {
-                                    labelsHtml += `
-                                <div class="label flex-col-center">
-                                    <img class="img-bc" src="${imgUrl}" />
-                                    <div class="sku">${p.label_value}</div>
-                                    ${this.cfg.showName ? `<div class="name">${p.name}</div>` : ''}
-                                    <div class="row">
-                                        <span class="var">${varText}</span>
-                                        ${this.cfg.showPrice && price ? `<span class="price" style="font-size:${this.cfg.fontSize}px">${price}</span>` : ''}
+                           for (let i = 0; i < p._copies; i++) {
+                                // We use p.label_value here. If barcode is empty, the backend already set this to the SKU!
+                                labelsHtml += `
+                                <div class="label">
+                                    ${this.cfg.showStore ? `<div class="store-name">${this.storeName}</div>` : ''}
+                                    
+                                    <div>
+                                        ${this.cfg.showName ? `<div class="product-name">${p.name}</div>` : ''}
+                                        ${varText ? `<div class="variant-name">${varText}</div>` : ''}
                                     </div>
-                                    ${this.cfg.showStore ? `<div class="store">${this.storeName}</div>` : ''}
-                                </div>`;
-                                } else {
-                                    labelsHtml += `
-                                <div class="label flex-row-left">
-                                    <img class="img-qr" src="${imgUrl}" />
-                                    <div class="qr-col">
-                                        ${this.cfg.showName ? `<div class="name">${p.name}</div>` : ''}
-                                        <div class="line"></div>
-                                        <div class="var">${varText}</div>
-                                        ${this.cfg.showPrice && price ? `<div class="price" style="font-size:${this.cfg.fontSize}px">${price}</div>` : ''}
-                                        ${this.cfg.showStore ? `<div class="store">${this.storeName}</div>` : ''}
+
+                                    <div class="barcode-wrapper">
+                                        <img class="barcode-img" src="${imgUrl}" />
+                                        <div class="barcode-number">${p.label_value}</div>
                                     </div>
+
+                                    ${this.cfg.showPrice && price ? `
+                                    <div class="price-wrapper">
+                                        <span class="price" style="font-size:${this.cfg.fontSize}px">${price}</span>
+                                    </div>` : ''}
                                 </div>`;
-                                }
                             }
                         });
 

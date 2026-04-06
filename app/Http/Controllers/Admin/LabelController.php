@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ProductSku;
+use App\Models\Category;
+
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -16,15 +20,15 @@ class LabelController extends Controller
      */    
     public function index()
     {
-        $companyId = auth()->user()->company_id;
+        $companyId = Auth::user()->company_id;
         
         // Fetch categories for the filter dropdown
-        $categories = \App\Models\Category::where('company_id', $companyId)
+        $categories = Category::where('company_id', $companyId)
             ->orderBy('name', 'asc')
             ->get(['id', 'name']);
             
         // 🌟 DYNAMIC STORE LOGIC (Matches your layout switcher perfectly)
-        $stores = auth()->user()->stores ?? collect();
+        $stores = Auth::user()->stores ?? collect();
         $currentStoreId = session('store_id');
         $currentStore = $currentStoreId ? $stores->firstWhere('id', $currentStoreId) : $stores->first();
         
@@ -68,10 +72,8 @@ class LabelController extends Controller
                 ]);
 
                 // 🌟 ROOT FIX 2: Safely detect which version of Chillerlan is installed
-                if (defined('\chillerlan\QRCode\Output\QROutputInterface::GD_PNG')) {
-                    $options->outputType = \chillerlan\QRCode\Output\QROutputInterface::GD_PNG; // Version 5.x
-                } elseif (defined('\chillerlan\QRCode\QRCode::OUTPUT_IMAGE_PNG')) {
-                    $options->outputType = \chillerlan\QRCode\QRCode::OUTPUT_IMAGE_PNG; // Version 4.x
+                if (defined('chillerlan\QRCode\QRCode::OUTPUT_IMAGE_PNG')) {
+                    $options->outputType = QRCode::OUTPUT_IMAGE_PNG;
                 }
 
                 $image = (new QRCode($options))->render($value);
@@ -106,13 +108,13 @@ class LabelController extends Controller
      */
     public function fetchProducts(Request $request)
     {
-        $companyId = auth()->user()->company_id;
+        $companyId = Auth::user()->company_id;
         $perPage   = min(100, max(1, (int) $request->query('per_page', 50)));
         $search    = trim($request->query('search', ''));
         $categoryId = (int) $request->query('category_id', 0);
 
         // Base Query targeting SKUs directly (The ERP Way)
-        $query = \App\Models\ProductSku::with([
+        $query = ProductSku::with([
             'product.category', 
             'skuValues.attributeValue',
             'product.media' => function($q) {
@@ -167,7 +169,8 @@ class LabelController extends Controller
                 'display_price' => $sku->price,
                 'category_name' => $sku->product->category->name ?? 'N/A',
                 'variant_name'  => $variantName,
-                'label_value'   => !empty($sku->sku) ? $sku->sku : $sku->barcode,
+                'label_value'   => $sku->display_barcode, // Uses our Model fallback rule
+                'actual_barcode'=> $sku->barcode, // Optional: Pass raw barcode to UI if needed
                 'image_url'     => $imagePath ? asset('storage/' . $imagePath) : '',
             ];
         });
@@ -189,7 +192,7 @@ class LabelController extends Controller
      */
     public function fetchSelectedSkus(Request $request)
     {
-        $companyId = auth()->user()->company_id;
+        $companyId =Auth::user()->company_id;
         
         // Handle input (Legacy accepted comma separated strings or JSON arrays)
         $rawIds = $request->input('product_ids', []);
@@ -206,7 +209,7 @@ class LabelController extends Controller
         // Fetch exactly the requested SKUs in the exact order requested using FIELD()
         $idString = implode(',', $skuIds);
         
-        $skus = \App\Models\ProductSku::with(['product.category', 'skuValues.attributeValue', 'product.media'])
+        $skus = ProductSku::with(['product.category', 'skuValues.attributeValue', 'product.media'])
             ->where('company_id', $companyId)
             ->whereIn('id', $skuIds)
             ->orderByRaw("FIELD(id, {$idString})")
@@ -222,7 +225,7 @@ class LabelController extends Controller
                 'sku'           => $sku->sku,
                 'display_price' => $sku->price,
                 'variant_name'  => $variantName,
-                'label_value'   => !empty($sku->sku) ? $sku->sku : $sku->barcode,
+                'label_value'   => $sku->display_barcode,
             ];
         });
 

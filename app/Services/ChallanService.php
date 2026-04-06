@@ -4,10 +4,11 @@ namespace App\Services;
 
 use App\Models\Challan;
 use App\Models\ChallanItem;
-use App\Models\ProductStock;
 use App\Models\ChallanStatusHistory;
-use Illuminate\Support\Facades\DB;
+use App\Models\ProductBatch;
+use App\Models\ProductStock;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use LogicException;
@@ -25,8 +26,8 @@ class ChallanService
     /**
      * Safely creates a new Challan, its items, computes totals, and sets initial history.
      *
-     * @param array $data Validated data from StoreChallanRequest
-     * @return Challan
+     * @param  array  $data  Validated data from StoreChallanRequest
+     *
      * @throws \Exception
      */
     public function createChallan(array $data): Challan
@@ -35,12 +36,12 @@ class ChallanService
             $this->validateStockAvailability($data['direction'] ?? 'outward', $data['warehouse_id'] ?? null, $data['items'] ?? []);
 
             $companyId = Auth::user()->company_id;
-            $userId    = Auth::id();
+            $userId = Auth::id();
 
             // 1. Generate guaranteed unique Challan Number
             $data['challan_number'] = Challan::generateNumber($companyId);
-            $data['company_id']     = $companyId;
-            $data['created_by']     = $userId;
+            $data['company_id'] = $companyId;
+            $data['created_by'] = $userId;
 
             // 2. Extract items (Preventing mass-assignment bleed)
             $itemsData = $data['items'] ?? [];
@@ -53,7 +54,7 @@ class ChallanService
             // 4. Model Computations (Rely on the Model's single source of truth)
             $challan->snapshotParty();
             $challan->setReturnDueDate(); // Will only set if is_returnable is true
-            $challan->computeInterState(); 
+            $challan->computeInterState();
             $challan->save(); // Save the computed snapshots
 
             // 5. Sync Line Items
@@ -64,49 +65,49 @@ class ChallanService
 
             // 7. Record Initial Status History
             ChallanStatusHistory::create([
-                'challan_id'      => $challan->id,
-                'from_status'     => null,
-                'to_status'       => $challan->status,
-                'notes'           => 'Challan created.',
+                'challan_id' => $challan->id,
+                'from_status' => null,
+                'to_status' => $challan->status,
+                'notes' => 'Challan created.',
                 'changed_by_type' => 'admin',
-                'changed_by'      => $userId,
-            ]);            
+                'changed_by' => $userId,
+            ]);
 
             // 2. 🚀 The Conditional Movement Logic
-            if ($challan->challan_type === Challan::TYPE_BRANCH_TRANSFER && 
+            if ($challan->challan_type === Challan::TYPE_BRANCH_TRANSFER &&
                 $challan->status === Challan::STATUS_DISPATCHED) {
-                
+
                 $this->processInternalBranchTransfer($challan);
             }
+
             return $challan->load('items');
         });
     }
 
     /**
-     * Safely updates an existing Challan. 
+     * Safely updates an existing Challan.
      * Includes an Iron Guard to prevent mutating items if it's already dispatched.
      *
-     * @param Challan $challan
-     * @param array $data Validated data from UpdateChallanRequest
-     * @return Challan
+     * @param  array  $data  Validated data from UpdateChallanRequest
+     *
      * @throws \Exception
      */
     public function updateChallan(Challan $challan, array $data): Challan
     {
         return DB::transaction(function () use ($challan, $data) {
-            
+
             $isEditingItems = isset($data['items']);
             // 🛡️ FIX: Validate stock before updating if items are being changed
-            if (!empty($itemsData)) {
+            if (! empty($itemsData)) {
                 // Use the new direction/warehouse if provided in request, otherwise use existing challan values
                 $direction = $data['direction'] ?? $challan->direction;
                 $warehouseId = $data['warehouse_id'] ?? $challan->warehouse_id;
-                
+
                 $this->validateStockAvailability($direction, $warehouseId, $itemsData);
             }
 
             // 🛡️ IRON GUARD: Prevent editing critical financial/inventory data if locked
-            if (!$challan->is_editable && $isEditingItems) {
+            if (! $challan->is_editable && $isEditingItems) {
                 throw new LogicException("Cannot modify items on a challan that is already {$challan->status}.");
             }
 
@@ -114,11 +115,11 @@ class ChallanService
             $itemsData = $data['items'] ?? [];
             unset($data['items']);
 
-            // 1. Update Header (status transitions should ideally be handled via transitionTo(), 
+            // 1. Update Header (status transitions should ideally be handled via transitionTo(),
             // but we allow basic updates here if it's still a draft).
             $oldStatus = $challan->status;
             $data['updated_by'] = Auth::id();
-            
+
             $challan->update($data);
 
             // 2. Re-compute Model Snapshots in case Party or States changed
@@ -127,7 +128,7 @@ class ChallanService
             $challan->save();
 
             // 3. Safely Sync Items (Only if it's editable)
-            if ($challan->is_editable && !empty($itemsData)) {
+            if ($challan->is_editable && ! empty($itemsData)) {
                 $this->syncLineItems($challan, $itemsData);
                 $challan->syncTotals();
             }
@@ -137,23 +138,22 @@ class ChallanService
                 // If transitioning to dispatched, trigger inventory
                 if ($data['status'] === Challan::STATUS_DISPATCHED) {
                     $challan->dispatched_by = Auth::id();
-                    $challan->save();                
+                    $challan->save();
                 }
 
                 ChallanStatusHistory::create([
-                    'challan_id'      => $challan->id,
-                    'from_status'     => $oldStatus,
-                    'to_status'       => $data['status'],
-                    'notes'           => 'Status updated via edit form.',
+                    'challan_id' => $challan->id,
+                    'from_status' => $oldStatus,
+                    'to_status' => $data['status'],
+                    'notes' => 'Status updated via edit form.',
                     'changed_by_type' => 'admin',
-                    'changed_by'      => Auth::id(),
+                    'changed_by' => Auth::id(),
                 ]);
             }
 
             return $challan->load('items');
         });
     }
-
 
     // ──────────────────────────────────────────────────────────────
     // 🛠️ INTERNAL SYNC & MATH ENGINES
@@ -170,19 +170,39 @@ class ChallanService
 
         // 1. Safely Delete removed items
         $itemsToDelete = array_diff($existingItemIds, $providedItemIds);
-        if (!empty($itemsToDelete)) {
+        if (! empty($itemsToDelete)) {
             ChallanItem::whereIn('id', $itemsToDelete)->delete();
         }
 
         // 2. Upsert Items
         foreach ($itemsData as $itemData) {
-            
+
             // 🛡️ Fallback safe defaults (Never trust the frontend entirely)
-            $qtySent   = (float) ($itemData['qty_sent'] ?? 0);
+            $qtySent = (float) ($itemData['qty_sent'] ?? 0);
             $unitPrice = (float) ($itemData['unit_price'] ?? 0);
-            
+
             // Auto-calculate line value on the backend
             $itemData['line_value'] = round($qtySent * $unitPrice, 2);
+
+            // 🔵 BATCH: Resolve batch_id from batch_number when batch tracking is enabled.
+            // STRICT: No stock logic here — challan is document-only.
+            if (batch_enabled() && ! empty($itemData['batch_number'])) {
+                $batch = ProductBatch::where('batch_number', $itemData['batch_number'])
+                    ->where('product_sku_id', $itemData['product_sku_id'] ?? null)
+                    ->first();
+
+                $itemData['batch_id'] = $batch?->id;
+
+                // Prefer the authoritative expiry_date from the batch record
+                if ($batch?->expiry_date) {
+                    $itemData['expiry_date'] = $batch->expiry_date->format('Y-m-d');
+                }
+            } elseif (! batch_enabled()) {
+                // Clear batch fields when feature is off to keep data clean
+                $itemData['batch_id'] = null;
+                $itemData['batch_number'] = null;
+                $itemData['expiry_date'] = null;
+            }
 
             if (isset($itemData['id']) && in_array($itemData['id'], $existingItemIds)) {
                 // Update existing
@@ -193,6 +213,7 @@ class ChallanService
             }
         }
     }
+
     /**
      * 🛡️ The Master Gatekeeper: Prevents overselling or adding zero-stock items.
      */
@@ -200,16 +221,18 @@ class ChallanService
     {
         // 1. Only validate stock if we are SENDING goods out.
         if ($direction !== Challan::DIRECTION_OUTWARD) {
-            return; 
+            return;
         }
 
-        if (!$warehouseId) {
-            throw new InvalidArgumentException("A valid warehouse must be selected for outward dispatches.");
+        if (! $warehouseId) {
+            throw new InvalidArgumentException('A valid warehouse must be selected for outward dispatches.');
         }
 
         foreach ($items as $item) {
             $skuId = $item['product_sku_id'] ?? $item['sku_id'] ?? null;
-            if (!$skuId) continue;
+            if (! $skuId) {
+                continue;
+            }
 
             $requestedQty = (float) ($item['qty_sent'] ?? 0);
             $productName = $item['product_name'] ?? 'Unknown Item';
@@ -227,16 +250,17 @@ class ChallanService
             }
         }
     }
+
     /**
      * 🛰️ Branch Transfer Engine: Moves stock from Warehouse A to Warehouse B.
      */
-   /**
+    /**
      * 🛰️ Branch Transfer Engine: Moves stock from Warehouse A to Warehouse B.
      */
     private function processInternalBranchTransfer(Challan $challan): void
     {
-        if (!$challan->to_warehouse_id) {
-            throw new LogicException("Destination Warehouse is required for Branch Transfers.");
+        if (! $challan->to_warehouse_id) {
+            throw new LogicException('Destination Warehouse is required for Branch Transfers.');
         }
 
         $challan->loadMissing(['items.productSku']);
@@ -244,41 +268,41 @@ class ChallanService
         Log::info("🚀 Starting Branch Transfer for Challan: {$challan->challan_number}");
 
         foreach ($challan->items as $item) {
-            
+
             // 🌟 ROOT FIX: Use the actual database column name!
-            if (!$item->product_sku_id) {
-                Log::warning("Skipped item because product_sku_id is missing", ['item_id' => $item->id]);
-                continue; 
+            if (! $item->product_sku_id) {
+                Log::warning('Skipped item because product_sku_id is missing', ['item_id' => $item->id]);
+
+                continue;
             }
 
             Log::info("📦 Moving SKU: {$item->product_sku_id} | QTY: {$item->qty_sent}");
 
             // A. DEDUCT from Source Warehouse (Store 1)
             $this->inventoryService->deductStock(
-                sku:          $item->productSku,
-                warehouseId:  $challan->warehouse_id,
-                qty:          $item->qty_sent,
+                sku: $item->productSku,
+                warehouseId: $challan->warehouse_id,
+                qty: $item->qty_sent,
                 movementType: 'transfer_out',
-                reference:    $challan,
-                batchId:      null,
-                batchNumber:  null,
-                unitCost:     $item->unit_price ?? 0
+                reference: $challan,
+                batchId: null,
+                batchNumber: null,
+                unitCost: $item->unit_price ?? 0
             );
 
             // B. ADD to Destination Warehouse (Store 2)
             $this->inventoryService->addStock(
-                sku:          $item->productSku,
-                warehouseId:  $challan->to_warehouse_id,
-                qty:          $item->qty_sent,
+                sku: $item->productSku,
+                warehouseId: $challan->to_warehouse_id,
+                qty: $item->qty_sent,
                 movementType: 'transfer_in',
-                reference:    $challan,
-                batchId:      null,
-                batchNumber:  null,
-                unitCost:     $item->unit_price ?? 0
+                reference: $challan,
+                batchId: null,
+                batchNumber: null,
+                unitCost: $item->unit_price ?? 0
             );
-            
+
             Log::info("✅ Successfully moved {$item->qty_sent} units to Warehouse {$challan->to_warehouse_id}");
         }
     }
-  
 }

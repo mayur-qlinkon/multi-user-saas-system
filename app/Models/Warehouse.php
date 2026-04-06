@@ -19,7 +19,7 @@ class Warehouse extends Model
         'email',
         'address',
         'city',
-        'state',
+        'state_id',
         'zip_code',
         'is_default',
         'is_active',

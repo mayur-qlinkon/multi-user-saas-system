@@ -3,139 +3,248 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Store;
 use App\Models\State;
-use App\Services\ImageUploadService;
+use App\Models\Store;
+use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class StoreController extends Controller
 {
-    protected ImageUploadService $imageService;
-
-    public function __construct(ImageUploadService $imageService)
+    /**
+     * Helper to determine if the current tenant has a multi-store plan.
+     * If true, they can override billing/bank settings at the store level.
+     */
+    private function isMultiStorePlan(): bool
     {
-        $this->imageService = $imageService;
+        $subscription = tenant_subscription();
+        return $subscription && $subscription->plan && $subscription->plan->store_limit > 1;
     }
 
     /**
-     * List all stores for the logged-in owner
+     * Display a listing of the stores.
      */
     public function index()
     {
-        // Fetching stores belonging to the authenticated user's company
-        $stores = Store::where('company_id', auth()->user()->company_id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Pass states for the new dynamic state dropdown
-        $states = State::where('is_active', true)->orderBy('name')->get();
-
-        return view('admin.stores', compact('stores', 'states'));
+        // Tenantable trait automatically restricts this to their company_id
+        $stores = Store::with('state')->latest()->paginate(15);
+        $canAddMore = check_plan_limit('stores');
+        
+        return view('admin.stores.index', compact('stores', 'canAddMore'));
     }
 
     /**
-     * Store a new shop/branch
+     * Show the form for creating a new store.
+     */
+    public function create()
+    {
+        if (!check_plan_limit('stores')) {
+            return redirect()->route('admin.stores.index')
+                ->with('error', 'You have reached your subscription limit for stores. Please upgrade your plan to add more.');
+        }
+
+        $states = State::where('is_active', true)->orderBy('name')->get();
+        $isMultiStore = $this->isMultiStorePlan();
+
+        return view('admin.stores.create', compact('states', 'isMultiStore'));
+    }
+
+    /**
+     * Store a newly created store in storage.
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name'            => 'required|string|max:255',
-            'email'           => 'nullable|email|max:255',
-            'phone'           => 'nullable|string|max:20',
-            'upi_id'           => 'nullable|string',
-            'gst_number'      => 'nullable|string|max:15',
-            'state_id'        => 'required|exists:states,id', // 🌟 NEW: Strict Validation
-            'city'            => 'nullable|string|max:100',
-            'address'         => 'nullable|string',
-            'zip_code'        => 'nullable|string|max:20',
-            'invoice_prefix'  => 'nullable|string|max:10', // 🌟 NEW
-            'purchase_prefix' => 'nullable|string|max:10', // 🌟 NEW
-            'logo_file'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:1024',
-            'signature_file'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:1024', // 🌟 NEW
-        ]);
-
-        $data = $request->except(['logo_file', 'signature_file', '_token']);
-        $data['company_id'] = auth()->user()->company_id;
-        $data['is_active'] = $request->boolean('is_active', true);
-
-        // 🌟 NEW: Process Images using our robust Service (Converts to WebP automatically)
-        if ($request->hasFile('logo_file')) {
-            $data['logo'] = $this->imageService->upload(
-                $request->file('logo_file'), 'stores/logos', ['width' => 300, 'format' => 'webp']
-            );
+        if (!check_plan_limit('stores')) {
+            abort(403, 'Store limit reached. Please upgrade your plan.');
         }
 
-        if ($request->hasFile('signature_file')) {
-            $data['signature'] = $this->imageService->upload(
-                $request->file('signature_file'), 'stores/signatures', ['width' => 300, 'format' => 'webp']
-            );
+        $isMultiStore = $this->isMultiStorePlan();
+
+        // 1. Basic Rules (Always Applied)
+        $rules = [
+            'name'      => ['required', 'string', 'max:255'],
+            'email'     => ['nullable', 'email', 'max:255'],
+            'phone'     => ['nullable', 'string', 'max:20'],
+            'address'   => ['nullable', 'string'],
+            'city'      => ['nullable', 'string', 'max:100'],
+            'state_id'  => ['nullable', 'exists:states,id'],
+            'zip_code'  => ['nullable', 'string', 'max:20'],
+            'country'   => ['nullable', 'string', 'max:100'],
+            'is_active' => ['nullable', 'boolean'],
+            'logo'      => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'signature' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        ];
+
+        // 2. Billing & Override Rules (Only Applied if Multi-Store Plan)
+        if ($isMultiStore) {
+            $rules = array_merge($rules, [
+                'gst_number'            => ['nullable', 'string', 'max:15'],
+                'upi_id'                => ['nullable', 'string', 'max:255'],
+                'bank_name'             => ['nullable', 'string', 'max:255'],
+                'account_name'          => ['nullable', 'string', 'max:255'],
+                'account_number'        => ['nullable', 'string', 'max:255'],
+                'ifsc_code'             => ['nullable', 'string', 'max:255'],
+                'branch_name'           => ['nullable', 'string', 'max:255'],
+                'invoice_prefix'        => ['nullable', 'string', 'max:10'],
+                'quotation_prefix'      => ['nullable', 'string', 'max:10'],
+                'purchase_prefix'       => ['nullable', 'string', 'max:10'],
+                'default_tax_type'      => ['nullable', 'string', 'max:50'],
+                'default_payment_terms' => ['nullable', 'string', 'max:50'],
+                'round_off_amounts'     => ['nullable', 'boolean'],
+                'invoice_footer_note'   => ['nullable', 'string'],
+                'invoice_terms'         => ['nullable', 'string'],
+            ]);
         }
 
-        $store = Store::create($data);
-        
-        // Assign the creator to this store
-        $store->users()->attach(auth()->id());
+        $validated = $request->validate($rules);
+        $validated['company_id'] = Auth::user()->company_id;
+        $validated['is_active']  = $request->boolean('is_active', true);
 
-        // Support both traditional redirects and SPA JSON requests
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'New store created successfully!', 'store' => $store]);
+        if ($isMultiStore) {
+            $validated['round_off_amounts'] = $request->boolean('round_off_amounts', true);
         }
-        return redirect()->back()->with('success', 'New store created successfully!');
+
+        // 🌟 IMAGE UPLOAD LOGIC (Add this right before DB::transaction)
+        if ($request->hasFile('logo')) {
+            // Replace with your ImageService if you have one
+            $validated['logo'] = $request->file('logo')->store('stores/logos', 'public');
+        }
+
+        if ($request->hasFile('signature')) {
+            $validated['signature'] = $request->file('signature')->store('stores/signatures', 'public');
+        }
+
+        try {
+            DB::transaction(function () use ($validated) {
+                Store::create($validated);
+            });
+
+            return redirect()->route('admin.stores.index')
+                ->with('success', 'Store branch created successfully.');
+
+        } catch (Exception $e) {
+            Log::error('Error creating store: ' . $e->getMessage());
+            return back()->withInput()
+                ->with('error', 'An error occurred while creating the store. Please check the logs and try again.');
+        }
     }
 
     /**
-     * Update store details
+     * Display the specified store details.
+     */
+    public function show(Store $store)
+    {
+        // Security checks are mostly handled by Tenantable, but extra safety is good.
+        if ($store->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $isMultiStore = $this->isMultiStorePlan();
+        
+        return view('admin.stores.show', compact('store', 'isMultiStore'));
+    }
+
+    /**
+     * Show the form for editing the specified store.
+     */
+    public function edit(Store $store)
+    {
+        if ($store->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $states = State::where('is_active', true)->orderBy('name')->get();
+        $isMultiStore = $this->isMultiStorePlan();
+
+        return view('admin.stores.edit', compact('store', 'states', 'isMultiStore'));
+    }
+
+    /**
+     * Update the specified store in storage.
      */
     public function update(Request $request, Store $store)
     {
-        // Authorization check
-        if ($store->company_id !== auth()->user()->company_id) {
-            abort(403);
+        if ($store->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized action.');
         }
 
-        $request->validate([
-            'name'            => 'required|string|max:255',
-            'email'           => 'nullable|email|max:255',
-            'phone'           => 'nullable|string|max:20',
-            'upi_id'           => 'nullable|string',
-            'gst_number'      => 'nullable|string|max:15',
-            'state_id'        => 'required|exists:states,id',
-            'city'            => 'nullable|string|max:100',
-            'address'         => 'nullable|string',
-            'zip_code'        => 'nullable|string|max:20',
-            'invoice_prefix'  => 'nullable|string|max:10',
-            'purchase_prefix' => 'nullable|string|max:10',
-            'logo_file'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:1024',
-            'signature_file'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:1024',
-        ]);
+        $isMultiStore = $this->isMultiStorePlan();
 
-        $data = $request->except(['logo_file', 'signature_file', '_token', '_method']);
-        $data['is_active'] = $request->boolean('is_active', true);
+        // 1. Basic Rules
+        $rules = [
+            'name'      => ['required', 'string', 'max:255'],
+            'email'     => ['nullable', 'email', 'max:255'],
+            'phone'     => ['nullable', 'string', 'max:20'],
+            'address'   => ['nullable', 'string'],
+            'city'      => ['nullable', 'string', 'max:100'],
+            'state_id'  => ['nullable', 'exists:states,id'],
+            'zip_code'  => ['nullable', 'string', 'max:20'],
+            'country'   => ['nullable', 'string', 'max:100'],
+            'is_active' => ['nullable', 'boolean'],
+            'logo'      => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'signature' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        ];
 
-        // 🌟 NEW: Replace old images intelligently to save server space
-        if ($request->hasFile('logo_file')) {
-            $data['logo'] = $this->imageService->upload(
-                $request->file('logo_file'), 'stores/logos', 
-                ['old_file' => $store->logo, 'width' => 300, 'format' => 'webp']
-            );
+        // 2. Billing & Override Rules (Only if Multi-Store Plan)
+        if ($isMultiStore) {
+            $rules = array_merge($rules, [
+                'gst_number'            => ['nullable', 'string', 'max:15'],
+                'upi_id'                => ['nullable', 'string', 'max:255'],
+                'bank_name'             => ['nullable', 'string', 'max:255'],
+                'account_name'          => ['nullable', 'string', 'max:255'],
+                'account_number'        => ['nullable', 'string', 'max:255'],
+                'ifsc_code'             => ['nullable', 'string', 'max:255'],
+                'branch_name'           => ['nullable', 'string', 'max:255'],
+                'invoice_prefix'        => ['nullable', 'string', 'max:10'],
+                'quotation_prefix'      => ['nullable', 'string', 'max:10'],
+                'purchase_prefix'       => ['nullable', 'string', 'max:10'],
+                'default_tax_type'      => ['nullable', 'string', 'max:50'],
+                'default_payment_terms' => ['nullable', 'string', 'max:50'],
+                'round_off_amounts'     => ['nullable', 'boolean'],
+                'invoice_footer_note'   => ['nullable', 'string'],
+                'invoice_terms'         => ['nullable', 'string'],
+            ]);
         }
 
-        if ($request->hasFile('signature_file')) {
-            $data['signature'] = $this->imageService->upload(
-                $request->file('signature_file'), 'stores/signatures', 
-                ['old_file' => $store->signature, 'width' => 300, 'format' => 'webp']
-            );
+        $validated = $request->validate($rules);
+        $validated['is_active'] = $request->boolean('is_active', false);
+
+        if ($isMultiStore) {
+            $validated['round_off_amounts'] = $request->boolean('round_off_amounts', false);
         }
 
-        $store->update($data);
-
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Store information updated!']);
+        // 🌟 IMAGE UPLOAD LOGIC FOR UPDATE (Add this right before DB::transaction)
+        if ($request->hasFile('logo')) {
+            if ($store->logo) {
+                Storage::disk('public')->delete($store->logo);
+            }
+            $validated['logo'] = $request->file('logo')->store('stores/logos', 'public');
         }
-        return redirect()->back()->with('success', 'Store information updated!');
+
+        if ($request->hasFile('signature')) {
+            if ($store->signature) {
+                Storage::disk('public')->delete($store->signature);
+            }
+            $validated['signature'] = $request->file('signature')->store('stores/signatures', 'public');
+        }
+
+        try {
+            DB::transaction(function () use ($validated, $store) {
+                $store->update($validated);
+            });
+
+            return redirect()->route('admin.stores.index')
+                ->with('success', 'Store branch updated successfully.');
+
+        } catch (Exception $e) {
+            Log::error('Error updating store: ' . $e->getMessage());
+            return back()->withInput()
+                ->with('error', 'An error occurred while updating the store. Please try again.');
+        }
     }
-
     /**
      * Switch current active store in session.
      * Validates the store belongs to the user (not just the company)
@@ -143,7 +252,7 @@ class StoreController extends Controller
      */
     public function switch(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Permission check — owners pass automatically via has_permission()
         if (! has_permission('stores.switch')) {
@@ -164,21 +273,31 @@ class StoreController extends Controller
         return back();
     }
 
+
     /**
-     * Remove a store (Soft Delete)
+     * Remove the specified store from storage.
      */
     public function destroy(Store $store)
     {
-        if ($store->company_id !== auth()->user()->company_id) {
-            abort(403);
+        if ($store->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized action.');
         }
 
-        // Optional: Check if it's the only store. Usually, you want at least one.
-        $store->delete();
-
-        if (request()->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Store deactivated and archived.']);
+        // Optional safety net: Prevent deleting if it's their only active store
+        $totalStores = Store::where('company_id', Auth::user()->company_id)->count();
+        if ($totalStores <= 1) {
+            return back()->with('error', 'You cannot delete your primary store. You must have at least one store active.');
         }
-        return redirect()->back()->with('success', 'Store deactivated and archived.');
+
+        try {
+            // Note: If you have foreign key constraints (like invoices linked to a store), 
+            // you might want to soft-delete or handle that gracefully here.
+            $store->delete();
+            return redirect()->route('admin.stores.index')->with('success', 'Store branch deleted successfully.');
+            
+        } catch (Exception $e) {
+            Log::error('Error deleting store: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete store. It may be linked to existing records.');
+        }
     }
 }

@@ -41,6 +41,12 @@ return new class extends Migration
             // When this line gets invoiced, track which invoice item it maps to
             $table->foreignId('invoice_item_id')->nullable()
                 ->constrained('invoice_items')->nullOnDelete();
+                $table->foreignId('batch_id')
+                ->nullable()                
+                ->constrained('product_batches')
+                ->nullOnDelete();
+            $table->string('batch_number', 100)->nullable();
+            $table->date('expiry_date')->nullable();
 
             $table->text('notes')->nullable(); // "2 pcs damaged on arrival"
 

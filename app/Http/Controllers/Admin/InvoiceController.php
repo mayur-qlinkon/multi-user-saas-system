@@ -5,31 +5,33 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreInvoiceRequest;
 use App\Http\Requests\Admin\UpdateInvoiceRequest;
-use App\Models\Invoice;
+use App\Models\Challan;
 use App\Models\Client;
-use App\Models\Warehouse;
 use App\Models\Company;
-use App\Models\Unit;
-use App\Models\Store;
+use App\Models\Invoice;
 use App\Models\State;
+use App\Models\Store;
+use App\Models\Unit;
+use App\Models\Warehouse;
+use App\Services\InventoryService;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
-use App\Services\InventoryService;
-
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 
 class InvoiceController extends Controller
 {
     protected InvoiceService $invoiceService;
+
     protected PaymentService $paymentService;
+
     protected InventoryService $inventoryService;
 
     public function __construct(
-        InvoiceService $invoiceService, 
+        InvoiceService $invoiceService,
         PaymentService $paymentService,
         InventoryService $inventoryService
     ) {
@@ -43,11 +45,11 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Invoice::with(['client', 'creator','payments'])->latest();
+        $query = Invoice::with(['client', 'creator', 'payments'])->latest();
 
         if ($request->filled('search')) {
             $query->where('invoice_number', 'like', "%{$request->search}%")
-                  ->orWhere('customer_name', 'like', "%{$request->search}%");
+                ->orWhere('customer_name', 'like', "%{$request->search}%");
         }
 
         if ($request->filled('status')) {
@@ -66,17 +68,51 @@ class InvoiceController extends Controller
     /**
      * Show the dedicated B2B/Direct Invoice creation form
      */
-    public function create()
+    public function create(Request $request)
     {
         $company = Company::first();
-        $companyState = $company->state->name ?? 'Unknown';        
-        $clients    = Client::where('is_active', true)->get();
+        $companyState = $company->state->name ?? 'Unknown';
+        $clients = Client::where('is_active', true)->get();
         $warehouses = Warehouse::all();
-        $stores     = Store::all();
-        $units      = Unit::all();
-        $states     = State::where('is_active', true)->orderBy('name')->get();
-        
-        return view('admin.invoices.create', compact('clients', 'warehouses', 'stores', 'units','companyState','states'));
+        $stores = Store::all();
+        $units = Unit::all();
+        $states = State::where('is_active', true)->orderBy('name')->get();
+
+        // Load challan for pre-fill when converting from a Delivery Challan
+        $challanPrefill = null;
+        $challanPrefillJs = null;
+        if ($request->filled('challan_id')) {
+            $challanPrefill = Challan::with(['items.productSku.product'])
+                ->where('company_id', Auth::user()->company_id)
+                ->findOrFail($request->challan_id);
+
+            // Build a JS-safe array of pending items for Alpine.js pre-population
+            $challanPrefillJs = $challanPrefill->items
+                ->filter(fn ($i) => $i->qty_pending > 0)
+                ->map(fn ($i) => [
+                    'challan_item_id' => $i->id,
+                    'product_id' => $i->product_id,
+                    'product_sku_id' => $i->product_sku_id,
+                    'unit_id' => $i->productSku?->unit_id,
+                    'product_name' => $i->product_name,
+                    'sku_code' => $i->sku_code,
+                    'hsn_code' => $i->hsn_code,
+                    'quantity' => (float) $i->qty_pending,
+                    'unit_price' => (float) $i->unit_price,
+                    'tax_percent' => (float) $i->tax_rate,
+                    'tax_type' => 'exclusive',
+                    'discount_type' => 'fixed',
+                    'discount_value' => 0,
+                    'batch_id' => $i->batch_id,
+                    'batch_number' => $i->batch_number,
+                ])
+                ->values();
+        }
+
+        return view('admin.invoices.create', compact(
+            'clients', 'warehouses', 'stores', 'units', 'companyState', 'states',
+            'challanPrefill', 'challanPrefillJs'
+        ));
     }
 
     /**
@@ -86,33 +122,34 @@ class InvoiceController extends Controller
     {
         try {
             return DB::transaction(function () use ($request) {
-                
+
                 $validated = $request->validated();
-                
+
                 // 1. Create Invoice via Service (Handles GST & Stock)
                 $invoice = $this->invoiceService->createInvoice(
-                    $validated, 
+                    $validated,
                     Auth::user()->company_id
                 );
 
-                // 2. Handle Initial Payment if provided           
-                if (!empty($validated['amount_paid']) && $validated['amount_paid'] > 0) {
+                // 2. Handle Initial Payment if provided
+                if (! empty($validated['amount_paid']) && $validated['amount_paid'] > 0) {
                     // 🌟 Pass the RAW amount the customer handed over directly to the service!
                     $this->paymentService->recordPayment($invoice, [
-                        'amount'            => $validated['amount_paid'],
+                        'amount' => $validated['amount_paid'],
                         'payment_method_id' => $validated['payment_method_id'] ?? null,
-                        'payment_date'      => now(),
-                        'status'            => 'completed',
-                        'notes'             => 'Initial payment received at invoice creation.'
+                        'payment_date' => now(),
+                        'status' => 'completed',
+                        'notes' => 'Initial payment received at invoice creation.',
                     ]);
                 }
 
                 return redirect()->route('admin.invoices.show', $invoice->id)
-                                 ->with('success', 'Invoice generated successfully!');
+                    ->with('success', 'Invoice generated successfully!');
             });
 
         } catch (\Exception $e) {
-            Log::error("Invoice Creation Failed: " . $e->getMessage());
+            Log::error('Invoice Creation Failed: '.$e->getMessage());
+
             return back()->with('error', $e->getMessage())->withInput();
         }
     }
@@ -120,19 +157,19 @@ class InvoiceController extends Controller
     /**
      * View detailed Invoice (The Bill Preview)
      */
-   public function show(Invoice $invoice)
+    public function show(Invoice $invoice)
     {
         // 🌟 Added 'company' and 'store.state' to eager load the new header data!
         $invoice->load([
-            'items.sku.product', 
-            'client', 
-            'payments.paymentMethod', 
+            'items.sku.product',
+            'client',
+            'payments.paymentMethod',
             'returns',
             'stockMovements',
-            'company', 
-            'store.state'
+            'company',
+            'store.state',
         ]);
-        
+
         return view('admin.invoices.show', compact('invoice'));
     }
 
@@ -145,15 +182,15 @@ class InvoiceController extends Controller
             return back()->with('error', 'Cannot edit a cancelled invoice.');
         }
         $company = Company::first();
-        $companyState = $company->state->name ?? 'Unknown';       
-        $clients    = Client::where('is_active', true)->get();
+        $companyState = $company->state->name ?? 'Unknown';
+        $clients = Client::where('is_active', true)->get();
         $warehouses = Warehouse::all();
-        $stores     = Store::all();
-        $units      = Unit::all();
+        $stores = Store::all();
+        $units = Unit::all();
 
         $invoice->load(['items.sku', 'payments']);
 
-        return view('admin.invoices.edit', compact('invoice', 'clients', 'warehouses', 'stores', 'units','companyState'));
+        return view('admin.invoices.edit', compact('invoice', 'clients', 'warehouses', 'stores', 'units', 'companyState'));
     }
 
     /**
@@ -163,7 +200,7 @@ class InvoiceController extends Controller
     {
         try {
             return DB::transaction(function () use ($request, $invoice) {
-                
+
                 $validated = $request->validated();
 
                 // 1. Update Invoice (Reverses old stock, updates rows, deducts new stock)
@@ -173,7 +210,7 @@ class InvoiceController extends Controller
                     Auth::user()->company_id
                 );
 
-                // 2. Sync Payments (Updates existing, creates new, or deletes if set to 0)               
+                // 2. Sync Payments (Updates existing, creates new, or deletes if set to 0)
                 if (isset($validated['amount_paid'])) {
                     // 🌟 Pass the RAW amount received
                     $this->paymentService->updateInitialPayment($invoice, [
@@ -181,12 +218,13 @@ class InvoiceController extends Controller
                         'payment_method_id' => $validated['payment_method_id'] ?? null,
                     ]);
                 }
-                
+
                 return redirect()->route('admin.invoices.show', $invoice->id)
-                                 ->with('success', 'Invoice updated successfully!');
+                    ->with('success', 'Invoice updated successfully!');
             });
         } catch (\Exception $e) {
-            Log::error("Invoice Update Failed: " . $e->getMessage());
+            Log::error('Invoice Update Failed: '.$e->getMessage());
+
             return back()->with('error', $e->getMessage())->withInput();
         }
     }
@@ -202,7 +240,7 @@ class InvoiceController extends Controller
 
         // 1. Validate the incoming request
         $request->validate([
-            'amount_paid'       => 'required|numeric|min:0.01',
+            'amount_paid' => 'required|numeric|min:0.01',
             'payment_method_id' => 'required|exists:payment_methods,id',
         ]);
 
@@ -224,17 +262,18 @@ class InvoiceController extends Controller
                 // 4. Record the payment using our robust service
                 // (This will automatically trigger syncDocumentPaymentStatus to update the Invoice to 'partial' or 'paid')
                 $this->paymentService->recordPayment($invoice, [
-                    'amount'            => $request->amount_paid,
+                    'amount' => $request->amount_paid,
                     'payment_method_id' => $request->payment_method_id,
-                    'payment_date'      => now(),
-                    'status'            => 'completed',
-                    'notes'             => 'Payment added from invoice list.'
+                    'payment_date' => now(),
+                    'status' => 'completed',
+                    'notes' => 'Payment added from invoice list.',
                 ]);
             });
 
             return back()->with('success', 'Payment recorded successfully!');
         } catch (\Exception $e) {
-            Log::error("Quick Payment Failed: " . $e->getMessage());
+            Log::error('Quick Payment Failed: '.$e->getMessage());
+
             return back()->with('error', 'Failed to record payment. Please try again.');
         }
     }
@@ -246,17 +285,17 @@ class InvoiceController extends Controller
     {
         // Load all required relations
         $invoice->load([
-            'items.sku.product', 
-            'client', 
+            'items.sku.product',
+            'client',
             'payments.paymentMethod',
             'company',
-            'store.state'
+            'store.state',
         ]);
         $companyInfo = $invoice->store ?? Auth::user()->company;
 
         // Load the view and pass data
         $pdf = Pdf::loadView('admin.invoices.pdf', compact('invoice', 'companyInfo'));
-        
+
         // Optional: Configure PDF settings for A4 paper
         $pdf->setPaper('A4', 'portrait');
 
@@ -264,7 +303,7 @@ class InvoiceController extends Controller
         $safeFilename = str_replace(['/', '\\'], '-', $invoice->invoice_number);
 
         // Download the file safely
-        return $pdf->download('Invoice-' . $safeFilename . '.pdf');
+        return $pdf->download('Invoice-'.$safeFilename.'.pdf');
     }
 
     /**
@@ -284,8 +323,9 @@ class InvoiceController extends Controller
 
             return back()->with('success', 'Invoice has been cancelled and stock reversed.');
         } catch (\Exception $e) {
-            Log::error("Invoice Cancellation Failed: " . $e->getMessage());
-            return back()->with('error', 'Failed to cancel invoice: ' . $e->getMessage());
+            Log::error('Invoice Cancellation Failed: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to cancel invoice: '.$e->getMessage());
         }
     }
 }

@@ -70,4 +70,18 @@ class ProductSku extends Model
         // Sums up the 'qty' column directly from the product_stocks table
         return $this->stocks()->sum('qty');
     }
+    /**
+     * CORE RULE: If barcode exists -> use barcode. If empty -> use SKU.
+     */
+    public function getDisplayBarcodeAttribute(): string
+    {
+        return !empty($this->barcode) ? $this->barcode : $this->sku;
+    }
+    /**
+     * Relationship: A SKU can have many batches.
+     */
+    public function batches(): HasMany
+    {
+        return $this->hasMany(ProductBatch::class, 'product_sku_id');
+    }
 }

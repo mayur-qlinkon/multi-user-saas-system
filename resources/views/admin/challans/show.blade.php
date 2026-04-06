@@ -109,6 +109,18 @@
                 </a>
 
                 @php
+                    $canConvert = $challan->direction === 'outward'
+                        && ! in_array($challan->status, ['draft', 'cancelled', 'converted_to_invoice', 'fully_returned'])
+                        && $challan->items->sum('qty_pending') > 0;
+                @endphp
+                @if ($canConvert)
+                    <a href="{{ route('admin.invoices.create', ['challan_id' => $challan->id]) }}"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold col-span-2 sm:col-span-1 justify-center">
+                        <i data-lucide="file-plus" class="w-4 h-4"></i> Convert to Invoice
+                    </a>
+                @endif
+
+                @php
                     $waText = urlencode(
                         "Hello {$partyName},\nHere is your {$challan->type_label} Document #{$challan->challan_number} dated " .
                         $challan->challan_date->format('d M Y') .
@@ -273,12 +285,16 @@
                     <table class="w-full text-left text-sm whitespace-nowrap table-auto">
                         <thead>
                             <tr class="border-b-2 border-gray-800 text-xs font-black text-gray-700 uppercase tracking-wider">
-                                <th class="py-3 px-2 w-[50%]">Description</th>
-                                <th class="py-3 px-2 text-center w-[20%]">HSN/SAC</th>
-                                <th class="py-3 px-2 text-right w-[15%]">Qty</th>
-                                @if($challan->is_returnable)
-                                    <th class="py-3 px-2 text-right w-[15%] text-blue-600">Pending</th>
-                                @endif                                
+                                <th class="py-3 px-2">Description</th>
+                                <th class="py-3 px-2 text-center">HSN/SAC</th>
+                                @if(batch_enabled())
+                                    <th class="py-3 px-2 text-center">Batch #</th>
+                                    <th class="py-3 px-2 text-center">Expiry</th>
+                                @endif
+                                <th class="py-3 px-2 text-right">Qty Sent</th>
+                                <th class="py-3 px-2 text-right text-orange-600">Returned</th>
+                                <th class="py-3 px-2 text-right text-green-600">Invoiced</th>
+                                <th class="py-3 px-2 text-right text-blue-600">Pending</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
@@ -289,15 +305,33 @@
                                         <div class="text-[11px] text-gray-500 font-mono mt-0.5">SKU: {{ $item->sku_code ?? 'N/A' }}</div>
                                     </td>
                                     <td class="py-4 px-2 text-center text-gray-600">{{ $item->hsn_code ?? '-' }}</td>
-                                    
+
+                                    @if(batch_enabled())
+                                        <td class="py-4 px-2 text-center font-mono text-[12px] text-gray-700">
+                                            {{ $item->batch_number ?? '-' }}
+                                        </td>
+                                        <td class="py-4 px-2 text-center text-[12px]">
+                                            @if($item->expiry_date)
+                                                <span class="{{ $item->expiry_date->isPast() ? 'text-red-600 font-bold' : 'text-gray-600' }}">
+                                                    {{ $item->expiry_date->format('d M Y') }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                    @endif
+
                                     {{-- Quantities --}}
                                     <td class="py-4 px-2 text-right font-bold text-gray-900">{{ (float) $item->qty_sent }}</td>
-                                    
-                                    @if($challan->is_returnable)
-                                        <td class="py-4 px-2 text-right font-bold {{ $item->qty_pending > 0 ? 'text-blue-600' : 'text-green-600' }}">
-                                            {{ (float) $item->qty_pending }}
-                                        </td>
-                                    @endif                                  
+                                    <td class="py-4 px-2 text-right font-semibold {{ $item->qty_returned > 0 ? 'text-orange-600' : 'text-gray-400' }}">
+                                        {{ (float) $item->qty_returned }}
+                                    </td>
+                                    <td class="py-4 px-2 text-right font-semibold {{ $item->qty_invoiced > 0 ? 'text-green-600' : 'text-gray-400' }}">
+                                        {{ (float) $item->qty_invoiced }}
+                                    </td>
+                                    <td class="py-4 px-2 text-right font-bold {{ $item->qty_pending > 0 ? 'text-blue-600' : 'text-gray-400' }}">
+                                        {{ (float) $item->qty_pending }}
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

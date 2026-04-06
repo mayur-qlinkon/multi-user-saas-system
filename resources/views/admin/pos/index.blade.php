@@ -583,7 +583,7 @@
                 html5QrcodeScanner: null,
 
                 // Cart & Customer State
-                cart: [],
+                cart: JSON.parse(localStorage.getItem('pos_cart')) || [],
                 customer: {
                     id: '',
                     name: 'Guest',
@@ -1034,6 +1034,8 @@
                     this.totals.round_off = (this.totals.payable - rawTotal).toFixed(2);
 
                     this.calculatePayment();
+
+                    localStorage.setItem('pos_cart', JSON.stringify(this.cart));
                 },
 
                 // ─────────────────────────────────────────────────────────

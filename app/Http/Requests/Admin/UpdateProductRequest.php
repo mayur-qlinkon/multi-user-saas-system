@@ -51,6 +51,17 @@ class UpdateProductRequest extends FormRequest
                     ->where('company_id', $companyId)
                     ->whereNot('product_id', $this->product->id)
             ],
+            // 🌟 ADD THIS: Optional, unique barcode for single products
+            'single_barcode'      => [
+                'exclude_if:type,variable', 
+                'nullable', 
+                'string', 
+                'max:255', 
+                // Note: In your update request, ensure you ignore the current SKU ID if needed!
+                Rule::unique('product_skus', 'barcode')->where('company_id', $companyId)->ignore($this->single_sku, 'sku') 
+            ],
+            
+
             'single_price'        => ['exclude_if:type,variable', 'required', 'numeric', 'min:0'],
             'single_cost'         => ['exclude_if:type,variable', 'required', 'numeric', 'min:0'],
             'single_mrp'          => ['exclude_if:type,variable', 'nullable', 'numeric', 'min:0'], // 🌟 NEW
@@ -97,6 +108,16 @@ class UpdateProductRequest extends FormRequest
                     ->where('company_id', $companyId)
                     ->whereNot('product_id', $this->product->id)
             ],
+
+            // 🌟 ADD THIS: Optional, unique barcode for variations
+            'variations.*.barcode' => [
+                'nullable', 
+                'string', 
+                'max:255',
+                // Keep uniqueness scoped to company
+                Rule::unique('product_skus', 'barcode')->where('company_id', $companyId)
+            ],
+            
             'variations.*.price'  => ['required_with:variations', 'numeric', 'min:0'],
             'variations.*.cost'   => ['required_with:variations', 'numeric', 'min:0'],
             'variations.*.mrp'    => ['nullable', 'numeric', 'min:0'], // 🌟 NEW

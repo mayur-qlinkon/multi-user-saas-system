@@ -201,16 +201,30 @@
                     $singleSku = $product->type === 'single' ? $product->skus->first() : null;
                 @endphp
 
-                <div x-show="productType === 'single'" x-cloak>
-                    <div class="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-6 gap-4 mb-6">
-                        <div class="lg:col-span-2">
+                <div x-show="productType === 'single'" x-cloak>                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">SKU <span
                                     class="text-red-500">*</span></label>
                             <div class="flex gap-2">
                                 <input type="text" name="single_sku" x-model="singleSku"
                                     :required="productType === 'single'"
-                                    class="w-full border border-gray-300 rounded-md px-3.5 py-2 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
+                                    class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
                                 <button type="button" @click="singleSku = generateSKU()" title="Generate Random SKU"
+                                    class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-md transition-colors border border-gray-200 flex-shrink-0">
+                                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {{-- 🌟 NEW: Barcode Field with Generate Button --}}
+                        <div>
+                            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Barcode <span class="text-gray-400 font-normal text-xs">(Optional)</span></label>
+                            <div class="flex gap-2">
+                                <input type="text" name="single_barcode" x-model="singleBarcode"
+                                    placeholder="Scan or auto-generate"
+                                    class="w-full border border-gray-300 rounded-md px-3.5 py-2 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
+                                
+                                <button type="button" @click="singleBarcode = generateBarcode()" title="Generate Random Barcode"
                                     class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-md transition-colors border border-gray-200 flex-shrink-0">
                                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                                 </button>
@@ -296,8 +310,8 @@
                                     Variation <span x-text="index + 1"></span>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
-                                    <div class="lg:col-span-2">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                                    <div>
                                         <label class="block text-[12px] font-bold text-gray-600 mb-1">SKU</label>
                                         <div class="flex items-center gap-2">
                                             <div class="relative w-full">
@@ -310,6 +324,28 @@
                                             </div>
                                             <button type="button" @click="variant.sku = generateSKU()"
                                                 title="Generate SKU"
+                                                class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg border border-gray-200 flex items-center justify-center transition-colors active:scale-95">
+                                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {{-- 🌟 NEW: Variation Barcode with Generate Button --}}
+                                    <div>
+                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Barcode <span class="text-gray-400 font-normal text-[10px]">(Optional)</span></label>
+                                        
+                                        <div class="flex items-center gap-2">
+                                            <div class="relative w-full">
+                                                <input type="text" :name="'variations[' + index + '][barcode]'"
+                                                    x-model="variant.barcode" placeholder="Scan or generate"
+                                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#108c2a] focus:ring-2 focus:ring-[#108c2a]/20 outline-none uppercase transition-all pr-9">
+                                                
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300">
+                                                    <i data-lucide="barcode" class="w-4 h-4"></i>
+                                                </span>
+                                            </div>
+                                            
+                                            <button type="button" @click="variant.barcode = generateBarcode()"
+                                                title="Generate Barcode"
                                                 class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg border border-gray-200 flex items-center justify-center transition-colors active:scale-95">
                                                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                                             </button>
@@ -566,7 +602,7 @@
                 productType: @json(old('type', $product->type)),
                 singleSku: @json(old('single_sku', $product->type === 'single' && $singleSku ? $singleSku->sku : '')),
                 singleMrp: @json(old('single_mrp', $product->type === 'single' && $singleSku ? $singleSku->mrp : '')), 
-
+                singleBarcode: @json(old('single_barcode', $product->type === 'single' && $singleSku ? $singleSku->barcode : '')),
                 // 🌟 Pre-load Variations from Database
                 @php
                     $variations = old(
@@ -578,6 +614,7 @@
                                         'id' => $sku->id,
                                         'is_existing' => true,
                                         'sku' => $sku->sku,
+                                        'barcode' => $sku->barcode,
                                         'price' => $sku->price,
                                         'cost' => $sku->cost,
                                         'mrp' => $sku->mrp,
@@ -594,6 +631,7 @@
                                     'id' => 'temp_' . time(),
                                     'is_existing' => false,
                                     'sku' => '',
+                                    'barcode' => '',
                                     'price' => '',
                                     'cost' => '',
                                     'mrp' => '',
@@ -742,12 +780,16 @@
                 generateSKU() {
                     return `PRD-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
                 },
+                generateBarcode() {
+                    return Math.floor(100000000000 + Math.random() * 900000000000).toString();
+                },
 
                 addVariation() {
                     this.variations.push({
                         id: Date.now(),
                         is_existing: false,
                         sku: '',
+                        barcode: '',
                         price: '',
                         cost: '',
                         mrp: '',

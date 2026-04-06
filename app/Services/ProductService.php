@@ -182,6 +182,7 @@ class ProductService
             if ($data['type'] === 'single') {
                 $sku = $product->skus()->create([
                     'sku'         => $data['single_sku'],
+                    'barcode'     => $data['single_barcode'] ?? null,
                     'price'       => $data['single_price'],
                     'cost'        => $data['single_cost'],
                     'mrp'         => $data['single_mrp'] ?? 0,
@@ -208,6 +209,7 @@ class ProductService
 
                     $sku = $product->skus()->create([
                         'sku'         => $skuString,
+                        'barcode'     => $varData['barcode'] ?? null,
                         'price'       => $varData['price'],
                         'cost'        => $varData['cost'],
                         'mrp'         => $varData['mrp'] ?? 0,
@@ -326,6 +328,7 @@ class ProductService
                     ['product_id' => $product->id], // Find existing
                     [
                         'sku'         => $data['single_sku'],
+                        'barcode'     => $data['single_barcode'] ?? null,
                         'price'       => $data['single_price'],
                         'cost'        => $data['single_cost'],
                         'mrp'         => $data['single_mrp'] ?? 0,
@@ -356,6 +359,7 @@ class ProductService
                         ],
                         [
                             'sku'         => $skuString,
+                            'barcode'     => $varData['barcode'] ?? null,
                             'price'       => $varData['price'],
                             'cost'        => $varData['cost'],
                             'mrp'         => $varData['mrp'] ?? 0,

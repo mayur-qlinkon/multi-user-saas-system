@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ChallanItem extends Model
 {
@@ -45,6 +45,11 @@ class ChallanItem extends Model
         // Conversion reference
         'invoice_item_id',
 
+        // Batch tracking (document-only snapshot — no stock impact)
+        'batch_id',
+        'batch_number',
+        'expiry_date',
+
         // Notes
         'notes',
     ];
@@ -58,12 +63,13 @@ class ChallanItem extends Model
      * @property float $line_value
      */
     protected $casts = [
-        'qty_sent'      => 'decimal:2',
-        'qty_returned'  => 'decimal:2',
-        'qty_invoiced'  => 'decimal:2',
-        'unit_price'    => 'decimal:2',
-        'tax_rate'      => 'decimal:2',
-        'line_value'    => 'decimal:2',
+        'qty_sent' => 'decimal:2',
+        'qty_returned' => 'decimal:2',
+        'qty_invoiced' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'tax_rate' => 'decimal:2',
+        'line_value' => 'decimal:2',
+        'expiry_date' => 'date',
     ];
 
     // ════════════════════════════════════════════════════
@@ -92,6 +98,7 @@ class ChallanItem extends Model
     {
         return $this->belongsTo(Product::class)->withTrashed();
     }
+
     /**
      * Original SKU — may be null if SKU was deleted.
      * Same rule: snapshot columns are source of truth for PDFs.
@@ -108,6 +115,16 @@ class ChallanItem extends Model
     public function invoiceItem(): BelongsTo
     {
         return $this->belongsTo(InvoiceItem::class, 'invoice_item_id');
+    }
+
+    /**
+     * The batch snapshot recorded at time of challan dispatch.
+     * IMPORTANT: This is a document-only reference.
+     * Stock deduction happens ONLY when the challan is converted to an Invoice.
+     */
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(ProductBatch::class, 'batch_id');
     }
 
     // ════════════════════════════════════════════════════
@@ -203,8 +220,8 @@ class ChallanItem extends Model
      */
     public function getDisplayNameAttribute(): string
     {
-        $name    = $this->product_name ?? 'Unknown Product';
-        $variant = $this->sku_label    ?? null;
+        $name = $this->product_name ?? 'Unknown Product';
+        $variant = $this->sku_label ?? null;
 
         return $variant ? "{$name} ({$variant})" : $name;
     }
@@ -215,12 +232,24 @@ class ChallanItem extends Model
      */
     public function getLineStateAttribute(): string
     {
-        if ($this->qty_sent <= 0)                  return 'empty';
-        if ($this->is_fully_invoiced)              return 'invoiced';
-        if ($this->is_fully_returned)              return 'returned';
-        if ($this->is_partially_invoiced)          return 'partial_invoice';
-        if ($this->is_partially_returned)          return 'partial_return';
-        if ($this->qty_pending === $this->qty_sent) return 'pending';
+        if ($this->qty_sent <= 0) {
+            return 'empty';
+        }
+        if ($this->is_fully_invoiced) {
+            return 'invoiced';
+        }
+        if ($this->is_fully_returned) {
+            return 'returned';
+        }
+        if ($this->is_partially_invoiced) {
+            return 'partial_invoice';
+        }
+        if ($this->is_partially_returned) {
+            return 'partial_return';
+        }
+        if ($this->qty_pending === $this->qty_sent) {
+            return 'pending';
+        }
 
         return 'mixed'; // both return and invoice have happened
     }
@@ -246,7 +275,7 @@ class ChallanItem extends Model
         if ($qty > $this->qty_pending) {
             throw new \InvalidArgumentException(
                 "Cannot return {$qty} units — only {$this->qty_pending} pending "
-                . "on item [{$this->id}] {$this->display_name}"
+                ."on item [{$this->id}] {$this->display_name}"
             );
         }
 
@@ -270,7 +299,7 @@ class ChallanItem extends Model
         if ($qty > $this->qty_pending) {
             throw new \InvalidArgumentException(
                 "Cannot invoice {$qty} units — only {$this->qty_pending} pending "
-                . "on item [{$this->id}] {$this->display_name}"
+                ."on item [{$this->id}] {$this->display_name}"
             );
         }
 
@@ -301,36 +330,36 @@ class ChallanItem extends Model
      */
     public static function fromSku(
         ProductSku $sku,
-        float      $qty,
-        int        $challanId
+        float $qty,
+        int $challanId
     ): array {
-        $product   = $sku->product;
+        $product = $sku->product;
         $unitPrice = (float) $sku->price;
 
         // Build variant label from sku values if available
         $skuLabel = null;
         if ($sku->relationLoaded('skuValues')) {
             $skuLabel = $sku->skuValues
-                ->map(fn($sv) => $sv->attributeValue?->value)
+                ->map(fn ($sv) => $sv->attributeValue?->value)
                 ->filter()
                 ->join(' / ');
         }
 
         return [
-            'challan_id'   => $challanId,
-            'product_id'   => $product->id,
-            'sku_id'       => $sku->id,
+            'challan_id' => $challanId,
+            'product_id' => $product->id,
+            'sku_id' => $sku->id,
             'product_name' => $product->name,
-            'sku_label'    => $skuLabel ?: null,
-            'sku_code'     => $sku->sku ?? null,
-            'hsn_code'     => $product->hsn_code ?? null,
-            'unit'         => $product->unit ?? 'pcs',
-            'qty_sent'     => $qty,
+            'sku_label' => $skuLabel ?: null,
+            'sku_code' => $sku->sku ?? null,
+            'hsn_code' => $product->hsn_code ?? null,
+            'unit' => $product->unit ?? 'pcs',
+            'qty_sent' => $qty,
             'qty_returned' => 0,
             'qty_invoiced' => 0,
-            'unit_price'   => $unitPrice,
-            'tax_rate'     => (float) ($product->tax_rate ?? 0),
-            'line_value'   => round($unitPrice * $qty, 2),
+            'unit_price' => $unitPrice,
+            'tax_rate' => (float) ($product->tax_rate ?? 0),
+            'line_value' => round($unitPrice * $qty, 2),
         ];
     }
 

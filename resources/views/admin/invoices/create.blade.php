@@ -29,7 +29,7 @@
 
 @section('content')
     {{-- 🌟 Pass the clients into Alpine --}}
-    <div class="pb-20" x-data="invoiceForm(@js($units ?? []), @js($companyState), @js($clients ?? []))">
+    <div class="pb-20" x-data="invoiceForm(@js($units ?? []), @js($companyState), @js($clients ?? []), @js($challanPrefillJs ?? null))">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Invoice</h1>
@@ -70,6 +70,30 @@
 
             {{-- HIDDEN SOURCE TRACKING --}}
             <input type="hidden" name="source" value="direct">
+
+            @if($challanPrefill)
+                {{-- Challan Conversion: Pass the challan ID so InvoiceService updates qty_invoiced --}}
+                <input type="hidden" name="challan_id" value="{{ $challanPrefill->id }}">
+
+                {{-- Conversion Banner --}}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-lg text-white flex-shrink-0">
+                        <i data-lucide="file-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-blue-800">Converting from Delivery Challan</h4>
+                        <p class="text-xs text-blue-600 font-medium">
+                            Challan <span class="font-black">{{ $challanPrefill->challan_number }}</span> —
+                            {{ $challanPrefill->items->sum('qty_pending') }} pending unit(s) pre-loaded below.
+                            Quantities are locked to the pending amount.
+                        </p>
+                    </div>
+                    <a href="{{ route('admin.challans.show', $challanPrefill->id) }}"
+                        class="ml-auto text-xs text-blue-600 hover:underline font-bold flex-shrink-0">
+                        View Challan →
+                    </a>
+                </div>
+            @endif
 
             {{-- 1. TRANSACTION HEADER --}}
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -334,6 +358,13 @@
                                         :value="item.quantity">
                                     <input type="hidden" :name="'items[' + index + '][hsn_code]'"
                                         :value="item.hsn_code">
+                                    {{-- Challan conversion fields --}}
+                                    <input type="hidden" :name="'items[' + index + '][challan_item_id]'"
+                                        :value="item.challan_item_id ?? ''">
+                                    <input type="hidden" :name="'items[' + index + '][batch_id]'"
+                                        :value="item.batch_id ?? ''">
+                                    <input type="hidden" :name="'items[' + index + '][batch_number]'"
+                                        :value="item.batch_number ?? ''">
                                 </td>
 
                                 {{-- 2. HSN/SAC Code --}}
@@ -353,19 +384,24 @@
                                     </div>
                                 </td>
 
-                                {{-- 4. Quantity Input --}}
+                                {{-- 4. Quantity Input (locked for challan conversions) --}}
                                 <td class="px-4 py-3">
-                                    <div class="flex items-center justify-center">
-                                        <button type="button"
-                                            @click="item.quantity = Math.max(1, parseFloat(item.quantity || 0) - 1); calculate()"
-                                            class="w-8 h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">-</button>
-                                        <input type="number" step="0.0001" x-model="item.quantity"
-                                            @input="calculate()"
-                                            class="w-16 h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700">
-                                        <button type="button"
-                                            @click="item.quantity = parseFloat(item.quantity || 0) + 1; calculate()"
-                                            class="w-8 h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">+</button>
-                                    </div>
+                                    <template x-if="item.challan_item_id">
+                                        <div class="text-center font-black text-gray-800 text-[14px]" x-text="item.quantity"></div>
+                                    </template>
+                                    <template x-if="!item.challan_item_id">
+                                        <div class="flex items-center justify-center">
+                                            <button type="button"
+                                                @click="item.quantity = Math.max(1, parseFloat(item.quantity || 0) - 1); calculate()"
+                                                class="w-8 h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">-</button>
+                                            <input type="number" step="0.0001" x-model="item.quantity"
+                                                @input="calculate()"
+                                                class="w-16 h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700">
+                                            <button type="button"
+                                                @click="item.quantity = parseFloat(item.quantity || 0) + 1; calculate()"
+                                                class="w-8 h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">+</button>
+                                        </div>
+                                    </template>
                                 </td>
 
                                 {{-- 5. Tax Percentage Display --}}
@@ -587,8 +623,8 @@
 
 @push('scripts')
     <script>
-        // 🌟 ADD allClients to the signature
-        function invoiceForm(allUnits = [], companyState = '', allClients = []) {
+        // 🌟 ADD allClients and challanItems to the signature
+        function invoiceForm(allUnits = [], companyState = '', allClients = [], challanItems = null) {
             return {
                 clientsList: allClients, // 🌟 Store clients here for dynamic rendering
                 units: allUnits,
@@ -656,14 +692,38 @@
                     });
                 },
 
-                // 🌟 ADD THIS INIT BLOCK                
+                // 🌟 ADD THIS INIT BLOCK
                 init() {
+                    // Pre-populate items from Challan conversion
+                    if (challanItems && challanItems.length > 0) {
+                        this.items = challanItems.map(item => ({
+                            key: this.itemCounter++,
+                            challan_item_id: item.challan_item_id,
+                            product_id:      item.product_id,
+                            product_sku_id:  item.product_sku_id,
+                            unit_id:         item.unit_id,
+                            product_name:    item.product_name,
+                            sku_code:        item.sku_code,
+                            hsn_code:        item.hsn_code || '',
+                            quantity:        item.quantity,
+                            unit_price:      item.unit_price,
+                            tax_percent:     item.tax_percent,
+                            tax_type:        item.tax_type || 'exclusive',
+                            discount_type:   item.discount_type || 'fixed',
+                            discount_value:  item.discount_value || 0,
+                            batch_id:        item.batch_id || null,
+                            batch_number:    item.batch_number || '',
+                            line_total:      0
+                        }));
+                        this.calculate();
+                    }
+
                     this.$nextTick(() => {
                         let selectEl = document.querySelector('select[name="store_id"]');
                         if (selectEl && selectEl.value) {
                             this.updateStoreData({ target: selectEl });
                         }
-                        
+
                         // 🌟 3. Auto-sync warehouse on page load if it's empty
                         if (!this.formData.warehouse_id) {
                             this.autoSelectWarehouse();
@@ -855,19 +915,22 @@
                 addSkuToTable(result) {
                     this.items.push({
                         key: this.itemCounter++,
-                        product_id: result.product_id,
-                        product_sku_id: result.product_sku_id,
-                        unit_id: result.unit_id,
-                        product_name: result.product_name,
-                        sku_code: result.sku_code,
-                        hsn_code: result.hsn_code || '', // 🌟 MAP THE HSN CODE
-                        quantity: 1,
-                        unit_price: parseFloat(result.price) || 0,
-                        tax_percent: parseFloat(result.tax_percent) || 18,
-                        tax_type: result.tax_type || 'exclusive',
-                        discount_type: 'percent',
-                        discount_value: 0,
-                        line_total: 0
+                        challan_item_id: null,
+                        batch_id:        null,
+                        batch_number:    '',
+                        product_id:      result.product_id,
+                        product_sku_id:  result.product_sku_id,
+                        unit_id:         result.unit_id,
+                        product_name:    result.product_name,
+                        sku_code:        result.sku_code,
+                        hsn_code:        result.hsn_code || '',
+                        quantity:        1,
+                        unit_price:      parseFloat(result.price) || 0,
+                        tax_percent:     parseFloat(result.tax_percent) || 18,
+                        tax_type:        result.tax_type || 'exclusive',
+                        discount_type:   'percent',
+                        discount_value:  0,
+                        line_total:      0
                     });
                     this.globalSearch = '';
                     this.calculate();

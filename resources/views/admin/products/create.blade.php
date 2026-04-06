@@ -102,7 +102,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Max Qty per Order</label>
+                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Max Qty per Order (Optional)</label>
                         <input type="number" name="quantity_limitation" value="{{ old('quantity_limitation') }}"
                             placeholder="No limit" min="1"
                             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
@@ -185,13 +185,14 @@
                 </div>
 
                 <div x-show="productType === 'single'" x-cloak>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">SKU <span
                                     class="text-red-500">*</span></label>
                             <div class="flex gap-2">
                                 <input type="text" name="single_sku" x-model="singleSku"
                                     :required="productType === 'single'"
+                                    placeholder="Type or auto-generate"
                                     class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
 
                                 <button type="button" @click="singleSku = generateSKU()" title="Generate Random SKU"
@@ -200,6 +201,22 @@
                                 </button>
                             </div>
                         </div>
+
+                        {{-- 🌟 UPDATED: Barcode Field with Generate Button --}}
+                        <div>
+                            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Barcode <span class="text-gray-400 font-normal text-xs">(Optional)</span></label>
+                            <div class="flex gap-2">
+                                <input type="text" name="single_barcode" x-model="singleBarcode"
+                                    placeholder="Scan or auto-generate"
+                                    class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
+                                
+                                <button type="button" @click="singleBarcode = generateBarcode()" title="Generate Random Barcode"
+                                    class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2.5 rounded-md transition-colors border border-gray-200 flex-shrink-0">
+                                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
                         {{-- 🌟 NEW: MRP Field --}}
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">MRP (₹) <span class="text-gray-400 font-normal text-xs">(Optional)</span></label>
@@ -207,6 +224,7 @@
                                 placeholder="Original Price"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
                         </div>
+                        
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Selling Price (₹) <span
                                     class="text-red-500">*</span></label>
@@ -349,6 +367,30 @@
                                             Leave blank to auto-generate SKU
                                         </p>
                                     </div>
+
+                                     {{-- 🌟 UPDATED: Variation Barcode with Generate Button --}}
+                                    <div>
+                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Barcode <span class="text-gray-400 font-normal text-[10px]">(Optional)</span></label>
+                                        
+                                        <div class="flex items-center gap-2">
+                                            <div class="relative w-full">
+                                                <input type="text" :name="'variations[' + index + '][barcode]'"
+                                                    x-model="variant.barcode" placeholder="Scan or generate"
+                                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#108c2a] focus:ring-2 focus:ring-[#108c2a]/20 outline-none uppercase transition-all pr-9">
+                                                
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300">
+                                                    <i data-lucide="barcode" class="w-4 h-4"></i>
+                                                </span>
+                                            </div>
+                                            
+                                            <button type="button" @click="variant.barcode = generateBarcode()"
+                                                title="Generate Barcode"
+                                                class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg border border-gray-200 flex items-center justify-center transition-colors active:scale-95">
+                                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     {{-- 🌟 NEW: MRP Field --}}
                                     <div>
                                         <label class="block text-[12px] font-bold text-gray-600 mb-1">MRP (₹)</label>
@@ -356,6 +398,7 @@
                                             x-model="variant.mrp" placeholder="Optional"
                                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
                                     </div>
+                                   
                                     <div>
                                         <label class="block text-[12px] font-bold text-gray-600 mb-1">Selling Price (₹) <span
                                     class="text-red-500">*</span></label>
@@ -637,6 +680,7 @@
                 productType: '{{ old('type', 'single') }}',
                 singleMrp: '{{ old('single_mrp', '') }}',
                 singleSku: '{{ old('single_sku') }}',
+                singleBarcode: '{{ old('single_barcode') }}',
                 singleStocks: [],
                 mediaList: [],
                 productGuides: [],
@@ -726,6 +770,7 @@
                 variations: [{
                     id: Date.now(),
                     sku: '',
+                    barcode: '',
                     price: '',
                     cost: '',
                     mrp: '',
@@ -741,10 +786,16 @@
 
                     return `${prefix}-${time}-${random}`;
                 },
+                // 🌟 ADD THIS NEW FUNCTION
+                generateBarcode() {
+                    // Generates a random 12-digit numeric string (similar to UPC format)
+                    return Math.floor(100000000000 + Math.random() * 900000000000).toString();
+                },
                 addVariation() {
                     this.variations.push({
                         id: Date.now(),
                         sku: '',
+                        barcode: '',
                         price: '',
                         cost: '',
                         mrp: '',

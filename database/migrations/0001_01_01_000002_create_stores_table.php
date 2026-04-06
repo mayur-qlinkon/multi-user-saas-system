@@ -22,10 +22,10 @@ return new class extends Migration
             $table->string('signature')->nullable();
 
             // --- 🇮🇳 Compliance & Regional ---
-            $table->string('gst_number', 15)->nullable(); // GSTIN is always 15 chars
+            $table->string('gst_number', 15)->nullable();
             $table->string('currency', 10)->default('INR');
             
-            // --- 📍 Location (The GST Foundation) ---
+            // --- 📍 Location ---
             $table->text('address')->nullable();
             $table->string('city', 100)->nullable();
             $table->string('zip_code', 20)->nullable();
@@ -35,11 +35,25 @@ return new class extends Migration
             $table->decimal('office_lng', 10, 7)->nullable();
             $table->unsignedInteger('gps_radius_meters')->nullable();
 
-            // --- 📄 Billing Customization (Future-Safe) ---
-            // Every store might want its own sequence: "ST1-INV-001" vs "BOM-INV-001"
+            // --- 🏦 Bank Details (Store Level Overrides) ---
+            $table->string('bank_name')->nullable();
+            $table->string('account_name')->nullable();
+            $table->string('account_number')->nullable();
+            $table->string('ifsc_code')->nullable();
+            $table->string('branch_name')->nullable();
+
+            // --- 📄 Billing Configuration (Store Level Overrides) ---
             $table->string('invoice_prefix', 10)->nullable();
+            $table->string('quotation_prefix', 10)->nullable();
             $table->string('purchase_prefix', 10)->nullable();
-            $table->integer('next_invoice_number')->default(1);
+            $table->integer('next_invoice_number')->nullable()->default(1);
+            $table->string('default_tax_type')->nullable(); // e.g., 'cgst_sgst', 'igst'
+            $table->string('default_payment_terms')->nullable(); // e.g., 'immediate', 'net_15'
+            $table->boolean('round_off_amounts')->nullable();
+            
+            // --- 📝 Default Invoice Content (Store Level Overrides) ---
+            $table->text('invoice_footer_note')->nullable();
+            $table->text('invoice_terms')->nullable();
             
             // --- Status & Timestamps ---
             $table->boolean('is_active')->default(true);
