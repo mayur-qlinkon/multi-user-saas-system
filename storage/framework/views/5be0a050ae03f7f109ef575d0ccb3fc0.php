@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt - {{ $invoice->invoice_number }}</title>
+    <title>Receipt - <?php echo e($invoice->invoice_number); ?></title>
     <style>
         /* 🌟 STRICT 80mm THERMAL PRINTER CSS */
         body {
@@ -97,34 +97,34 @@
 <body>
     <div class="ticket">
         <div class="text-center">
-            {{-- 🌟 COMPANY & BRANCH HEADER --}}
-            <h2 class="font-bold" style="margin:0; font-size:18px;">{{ $invoice->company->name ?? 'COMPANY NAME' }}</h2>
-            <h3 class="font-bold" style="margin:2px 0; font-size:14px;">{{ $invoice->store->name ?? 'Branch Name' }}</h3>
+            
+            <h2 class="font-bold" style="margin:0; font-size:18px;"><?php echo e($invoice->company->name ?? 'COMPANY NAME'); ?></h2>
+            <h3 class="font-bold" style="margin:2px 0; font-size:14px;"><?php echo e($invoice->store->name ?? 'Branch Name'); ?></h3>
 
-            <p style="margin:4px 0;">{{ $invoice->store->address ?? 'Store Address' }}</p>
-            <p style="margin:2px 0;">Phone: {{ $invoice->store->phone ?? 'N/A' }}</p>
+            <p style="margin:4px 0;"><?php echo e($invoice->store->address ?? 'Store Address'); ?></p>
+            <p style="margin:2px 0;">Phone: <?php echo e($invoice->store->phone ?? 'N/A'); ?></p>
 
-            @if (isset($invoice->store->gst_number))
-                <p style="margin:2px 0;">GSTIN: {{ $invoice->store->gst_number }}</p>
-            @endif
+            <?php if(isset($invoice->store->gst_number)): ?>
+                <p style="margin:2px 0;">GSTIN: <?php echo e($invoice->store->gst_number); ?></p>
+            <?php endif; ?>
             <div class="divider"></div>
         </div>
 
-        {{-- Meta Info --}}
+        
         <div>
-            <p style="margin:2px 0;">Receipt: <span class="font-bold">{{ $invoice->invoice_number }}</span></p>
-            <p style="margin:2px 0;">Date: {{ \Carbon\Carbon::parse($invoice->created_at)->format('d M Y, h:i A') }}</p>
-            <p style="margin:2px 0;">Cashier: {{ $invoice->creator->name ?? 'Admin' }}</p>
+            <p style="margin:2px 0;">Receipt: <span class="font-bold"><?php echo e($invoice->invoice_number); ?></span></p>
+            <p style="margin:2px 0;">Date: <?php echo e(\Carbon\Carbon::parse($invoice->created_at)->format('d M Y, h:i A')); ?></p>
+            <p style="margin:2px 0;">Cashier: <?php echo e($invoice->creator->name ?? 'Admin'); ?></p>
             <p style="margin:2px 0;">Customer: <span
-                    class="font-bold">{{ $invoice->customer_name ?: $invoice->customer->name ?? 'Walk-in' }}</span></p>
+                    class="font-bold"><?php echo e($invoice->customer_name ?: $invoice->customer->name ?? 'Walk-in'); ?></span></p>
 
-            {{-- Show Customer GSTIN for B2B --}}
-            @if (!empty($invoice->customer->gst_number) || !empty($invoice->customer_gstin))
-                <p style="margin:2px 0;">Cust GST: {{ $invoice->customer->gst_number ?? $invoice->customer_gstin }}</p>
-            @endif
+            
+            <?php if(!empty($invoice->customer->gst_number) || !empty($invoice->customer_gstin)): ?>
+                <p style="margin:2px 0;">Cust GST: <?php echo e($invoice->customer->gst_number ?? $invoice->customer_gstin); ?></p>
+            <?php endif; ?>
         </div>
 
-        {{-- Line Items --}}
+        
         <table class="items-table">
             <thead>
                 <tr>
@@ -133,90 +133,92 @@
                     <th class="text-right" style="width: 35%;">Total</th>
                 </tr>
             </thead>
-            @if(batch_enabled())
-                @php
+            <?php if(batch_enabled()): ?>
+                <?php
                     $receiptBatchMovements = ($invoice->relationLoaded('stockMovements'))
                         ? $invoice->stockMovements->where('direction', 'out')->whereNotNull('batch_number')->groupBy('product_sku_id')
                         : collect();
-                @endphp
-            @endif
+                ?>
+            <?php endif; ?>
             <tbody>
-                @foreach ($invoice->items as $item)
+                <?php $__currentLoopData = $invoice->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <tr>
-                        <td style="padding-bottom: 0;">{{ $item->product_name }}</td>
-                        <td style="padding-bottom: 0;">{{ (int) $item->quantity }}</td>
-                        <td class="text-right" style="padding-bottom: 0;">{{ number_format($item->total_amount, 2) }}
+                        <td style="padding-bottom: 0;"><?php echo e($item->product_name); ?></td>
+                        <td style="padding-bottom: 0;"><?php echo e((int) $item->quantity); ?></td>
+                        <td class="text-right" style="padding-bottom: 0;"><?php echo e(number_format($item->total_amount, 2)); ?>
+
                         </td>
                     </tr>
-                    {{-- SMART SECOND ROW FOR HSN & TAX (Fits perfectly in 80mm) --}}
+                    
                     <tr class="meta-row">
                         <td colspan="3">
-                            @if ($item->hsn_code)
-                                HSN:{{ $item->hsn_code }} |
-                            @endif Rate:₹{{ number_format($item->unit_price, 2) }} |
-                            Tax:{{ (float) $item->tax_percent }}%
-                            @if(batch_enabled() && isset($receiptBatchMovements[$item->product_sku_id]))
-                                @foreach($receiptBatchMovements[$item->product_sku_id] as $bm)
-                                    | Batch:{{ $bm->batch_number }}
-                                @endforeach
-                            @endif
+                            <?php if($item->hsn_code): ?>
+                                HSN:<?php echo e($item->hsn_code); ?> |
+                            <?php endif; ?> Rate:₹<?php echo e(number_format($item->unit_price, 2)); ?> |
+                            Tax:<?php echo e((float) $item->tax_percent); ?>%
+                            <?php if(batch_enabled() && isset($receiptBatchMovements[$item->product_sku_id])): ?>
+                                <?php $__currentLoopData = $receiptBatchMovements[$item->product_sku_id]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bm): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    | Batch:<?php echo e($bm->batch_number); ?>
+
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php endif; ?>
                         </td>
                     </tr>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </tbody>
         </table>
 
-        {{-- Financials & GST Breakup --}}
+        
         <table class="totals">
             <tr>
                 <td>Subtotal</td>
-                <td class="text-right">{{ number_format($invoice->subtotal, 2) }}</td>
+                <td class="text-right"><?php echo e(number_format($invoice->subtotal, 2)); ?></td>
             </tr>
 
-            {{-- 🌟 FIXED: SHOW DISCOUNT IF APPLIED --}}
-            @if ($invoice->discount_amount > 0)
+            
+            <?php if($invoice->discount_amount > 0): ?>
                 <tr>
                     <td class="font-bold">Discount</td>
-                    <td class="text-right font-bold">-{{ number_format($invoice->discount_amount, 2) }}</td>
+                    <td class="text-right font-bold">-<?php echo e(number_format($invoice->discount_amount, 2)); ?></td>
                 </tr>
-            @endif
+            <?php endif; ?>
 
-            {{-- 🌟 NEW: INDIAN GST BREAKUP --}}
-            @if ($invoice->igst_amount > 0)
+            
+            <?php if($invoice->igst_amount > 0): ?>
                 <tr>
                     <td>IGST (Inter-state)</td>
-                    <td class="text-right">{{ number_format($invoice->igst_amount, 2) }}</td>
+                    <td class="text-right"><?php echo e(number_format($invoice->igst_amount, 2)); ?></td>
                 </tr>
-            @else
-                @if ($invoice->cgst_amount > 0 || $invoice->sgst_amount > 0)
+            <?php else: ?>
+                <?php if($invoice->cgst_amount > 0 || $invoice->sgst_amount > 0): ?>
                     <tr>
                         <td>CGST</td>
-                        <td class="text-right">{{ number_format($invoice->cgst_amount, 2) }}</td>
+                        <td class="text-right"><?php echo e(number_format($invoice->cgst_amount, 2)); ?></td>
                     </tr>
                     <tr>
                         <td>SGST</td>
-                        <td class="text-right">{{ number_format($invoice->sgst_amount, 2) }}</td>
+                        <td class="text-right"><?php echo e(number_format($invoice->sgst_amount, 2)); ?></td>
                     </tr>
-                @endif
-            @endif
+                <?php endif; ?>
+            <?php endif; ?>
 
-            {{-- 🌟 NEW: ROUND OFF --}}
-            @if ($invoice->round_off != 0)
+            
+            <?php if($invoice->round_off != 0): ?>
                 <tr>
                     <td>Round Off</td>
-                    <td class="text-right">{{ number_format($invoice->round_off, 2) }}</td>
+                    <td class="text-right"><?php echo e(number_format($invoice->round_off, 2)); ?></td>
                 </tr>
-            @endif
+            <?php endif; ?>
 
             <tr class="font-bold" style="font-size: 15px;">
                 <td style="border-top: 1px dashed #000; padding-top: 5px;">GRAND TOTAL</td>
                 <td class="text-right" style="border-top: 1px dashed #000; padding-top: 5px;">
-                    ₹{{ number_format($invoice->grand_total, 2) }}</td>
+                    ₹<?php echo e(number_format($invoice->grand_total, 2)); ?></td>
             </tr>
         </table>
 
-        {{-- Smart Divider Logic --}}
-        @php
+        
+        <?php
             $upiId = $invoice->store->upi_id ?? null;
             $paymentStatus = strtolower($invoice->payment_status ?? 'unpaid');
             $showQr = false;
@@ -239,60 +241,60 @@
                     }
                 }
             }
-        @endphp
+        ?>
 
-        @if ($payment || $showQr)
+        <?php if($payment || $showQr): ?>
             <div class="divider"></div>
-        @endif
+        <?php endif; ?>
 
-        {{-- Payment Ledger --}}
-        @if ($payment)
+        
+        <?php if($payment): ?>
             <table class="totals" style="margin-top: 5px;">
                 <tr>
                     <td>Paid via
-                        ({{ $payment->paymentMethod->name ?? ($payment->paymentMethod->title ?? ($payment->paymentMethod->label ?? 'Cash')) }})
+                        (<?php echo e($payment->paymentMethod->name ?? ($payment->paymentMethod->title ?? ($payment->paymentMethod->label ?? 'Cash'))); ?>)
                     </td>
-                    <td class="text-right font-bold">₹{{ number_format($payment->amount_received, 2) }}</td>
+                    <td class="text-right font-bold">₹<?php echo e(number_format($payment->amount_received, 2)); ?></td>
                 </tr>
-                @if ($payment->change_returned > 0)
+                <?php if($payment->change_returned > 0): ?>
                     <tr>
                         <td>Change Returned</td>
-                        <td class="text-right">₹{{ number_format($payment->change_returned, 2) }}</td>
+                        <td class="text-right">₹<?php echo e(number_format($payment->change_returned, 2)); ?></td>
                     </tr>
-                @endif
+                <?php endif; ?>
             </table>
 
-            @if ($showQr)
+            <?php if($showQr): ?>
                 <div class="divider"></div>
-            @endif
-        @endif
+            <?php endif; ?>
+        <?php endif; ?>
 
-        {{-- 🌟 DYNAMIC UPI QR CODE --}}
-        @if ($showQr)
-            @php
+        
+        <?php if($showQr): ?>
+            <?php
                 $payeeName = rawurlencode($invoice->store->name ?? 'Store');
                 $amount = number_format($invoice->grand_total, 2, '.', '');
                 $upiString = "upi://pay?pa={$upiId}&pn={$payeeName}&am={$amount}&cu=INR";
                 $qrApiUrl =
                     'https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=0&data=' . urlencode($upiString);
-            @endphp
+            ?>
 
             <div class="text-center" style="margin: 10px 0;">
                 <p class="font-bold" style="font-size: 11px; margin-bottom: 5px;">Scan to Pay via UPI</p>
-                <img src="{{ $qrApiUrl }}" alt="UPI QR Code"
+                <img src="<?php echo e($qrApiUrl); ?>" alt="UPI QR Code"
                     style="width: 110px; height: 110px; margin: 0 auto; display: block;">
-                <p style="font-size: 10px; margin-top: 5px; font-family: monospace;">UPI ID: {{ $upiId }}</p>
+                <p style="font-size: 10px; margin-top: 5px; font-family: monospace;">UPI ID: <?php echo e($upiId); ?></p>
             </div>
 
             <div class="divider"></div>
-        @endif
+        <?php endif; ?>
 
-        {{-- Footer --}}
+        
         <div class="text-center">
-            @if ($invoice->discount_amount > 0)
+            <?php if($invoice->discount_amount > 0): ?>
                 <p class="font-bold" style="margin:10px 0 10px 0; border: 1px dashed #000; padding: 4px;">You Saved
-                    ₹{{ number_format($invoice->discount_amount, 2) }}!</p>
-            @endif
+                    ₹<?php echo e(number_format($invoice->discount_amount, 2)); ?>!</p>
+            <?php endif; ?>
             <p class="font-bold" style="margin:5px 0;">Thank you for your visit!</p>
             <p style="margin:0; font-size:10px;">Powered by Qlinkon BIZNESS</p>
         </div>
@@ -300,3 +302,4 @@
 </body>
 
 </html>
+<?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlinkonSoftware\resources\views/admin/pos/receipt.blade.php ENDPATH**/ ?>

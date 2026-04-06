@@ -15,7 +15,9 @@
       "Bash(php -l app/Http/Controllers/Admin/Hrm/AttendanceController.php)",
       "Bash(php -l app/Http/Requests/Admin/Hrm/StoreQrScanRequest.php)",
       "Bash(php -l app/Http/Controllers/Admin/Hrm/MobileScanController.php)",
-      "Bash(php -m)"
+      "Bash(php -m)",
+      "Bash(php -l app/Services/PurchaseService.php)",
+      "Bash(vendor/bin/pint app/Services/PurchaseService.php --format agent)"
     ]
   }
 }

@@ -1,10 +1,8 @@
-@extends('layouts.admin')
-
-@section('title', 'Purchase Details: ' . $purchase->purchase_number)
-@section('header-title')
+<?php $__env->startSection('title', 'Purchase Details: ' . $purchase->purchase_number); ?>
+<?php $__env->startSection('header-title'); ?>
     <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Show / Purchases</h1>
-@endsection
-@push('styles')
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('styles'); ?>
     <style>
         /* 🖨️ A4 PRINT OPTIMIZATION */
         @media print {
@@ -72,10 +70,10 @@
             }
         }
     </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
-    @php
+<?php $__env->startSection('content'); ?>
+    <?php
         $formatAmt = function ($amount) {
             $amount = (float) $amount;
             if ($amount == 0) {
@@ -84,42 +82,42 @@
             // Format to 4 decimals, then strip trailing zeros, then strip trailing dot if any
             return rtrim(rtrim(number_format($amount, 4, '.', ','), '0'), '.');
         };
-    @endphp
+    ?>
     <div class="pb-10">
 
         <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">          
 
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('admin.purchases.index') }}"
+                <a href="<?php echo e(route('admin.purchases.index')); ?>"
                     class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center shadow-sm">
                     Back
                 </a>
 
-                @if ($purchase->status !== 'received' && $purchase->status !== 'cancelled')
-                    <a href="{{ route('admin.purchases.edit', $purchase->id) }}"
+                <?php if($purchase->status !== 'received' && $purchase->status !== 'cancelled'): ?>
+                    <a href="<?php echo e(route('admin.purchases.edit', $purchase->id)); ?>"
                         class="bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center shadow-sm">
                         Edit
                     </a>
-                @endif
-                @if (has_permission('manage.purchase'))
+                <?php endif; ?>
+                <?php if(has_permission('manage.purchase')): ?>
                     <button onclick="window.print()"
                         class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm">
                         <i data-lucide="printer" class="w-4 h-4"></i> Print
                     </button>
 
-                    <a href="{{ route('admin.purchases.pdf', $purchase->id) }}" target="_blank"
+                    <a href="<?php echo e(route('admin.purchases.pdf', $purchase->id)); ?>" target="_blank"
                         class="bg-white border border-gray-200 hover:bg-red-50 hover:text-red-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm"
                         title="Download PDF">
                         <i data-lucide="file-text" class="w-4 h-4"></i> PDF
                     </a>
 
-                    @php
+                    <?php
                         $waText = urlencode(
                             "Purchase Order {$purchase->purchase_number} Details. Total: Rs. " .
                                 number_format($purchase->total_amount, 2),
                         );
-                    @endphp
-                    <a href="https://wa.me/?text={{ $waText }}" target="_blank"
+                    ?>
+                    <a href="https://wa.me/?text=<?php echo e($waText); ?>" target="_blank"
                         class="bg-white border border-gray-200 hover:bg-[#e8fbf0] hover:text-[#1da851] text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm">
 
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -131,14 +129,14 @@
 
                         Share
                     </a>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
 
         <div id="print-area" class="bg-white rounded shadow-sm border border-gray-200 overflow-hidden text-[#475569]">
 
             <div class="text-center py-6 border-b border-gray-100">
-                <h2 class="text-[15px] font-bold text-gray-800">Purchase Details : {{ $purchase->purchase_number }}</h2>
+                <h2 class="text-[15px] font-bold text-gray-800">Purchase Details : <?php echo e($purchase->purchase_number); ?></h2>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 print-grid-3 gap-6 p-6 print:p-2">
@@ -149,26 +147,26 @@
                     <div class="px-2 space-y-2 text-[13px]">
                         <div class="flex items-start gap-2">
                             <i data-lucide="user" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                            <span class="text-gray-800">{{ $purchase->supplier->name ?? 'N/A' }}</span>
+                            <span class="text-gray-800"><?php echo e($purchase->supplier->name ?? 'N/A'); ?></span>
                         </div>
-                        @if ($purchase->supplier->email)
+                        <?php if($purchase->supplier->email): ?>
                             <div class="flex items-start gap-2">
                                 <i data-lucide="mail" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                                <span>{{ $purchase->supplier->email }}</span>
+                                <span><?php echo e($purchase->supplier->email); ?></span>
                             </div>
-                        @endif
-                        @if ($purchase->supplier->phone)
+                        <?php endif; ?>
+                        <?php if($purchase->supplier->phone): ?>
                             <div class="flex items-start gap-2">
                                 <i data-lucide="phone" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                                <span>{{ $purchase->supplier->phone }}</span>
+                                <span><?php echo e($purchase->supplier->phone); ?></span>
                             </div>
-                        @endif
-                        @if ($purchase->supplier->address)
+                        <?php endif; ?>
+                        <?php if($purchase->supplier->address): ?>
                             <div class="flex items-start gap-2">
                                 <i data-lucide="map-pin" class="w-4 h-4  shrink-0 mt-0.5"></i>
-                                <span>{{ $purchase->supplier->address }}</span>
+                                <span><?php echo e($purchase->supplier->address); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -176,30 +174,30 @@
                     <div class="bg-[#f1f5f9] px-3 py-2 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">
                         Company Info</div>
                     <div class="px-2 space-y-2 text-[13px]">
-                        @php $companyInfo = $purchase->store ?? auth()->user()->company; @endphp
+                        <?php $companyInfo = $purchase->store ?? auth()->user()->company; ?>
 
                         <div class="flex items-start gap-2">
                             <i data-lucide="user" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                            <span class="text-gray-800">{{ $companyInfo->name ?? 'N/A' }}</span>
+                            <span class="text-gray-800"><?php echo e($companyInfo->name ?? 'N/A'); ?></span>
                         </div>
-                        @if ($companyInfo->email ?? false)
+                        <?php if($companyInfo->email ?? false): ?>
                             <div class="flex items-start gap-2">
                                 <i data-lucide="mail" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                                <span>{{ $companyInfo->email }}</span>
+                                <span><?php echo e($companyInfo->email); ?></span>
                             </div>
-                        @endif
-                        @if ($companyInfo->phone ?? false)
+                        <?php endif; ?>
+                        <?php if($companyInfo->phone ?? false): ?>
                             <div class="flex items-start gap-2">
                                 <i data-lucide="phone" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                                <span>{{ $companyInfo->phone }}</span>
+                                <span><?php echo e($companyInfo->phone); ?></span>
                             </div>
-                        @endif
-                        @if ($companyInfo->address ?? false)
+                        <?php endif; ?>
+                        <?php if($companyInfo->address ?? false): ?>
                             <div class="flex items-start gap-2">
                                 <i data-lucide="map-pin" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                                <span>{{ $companyInfo->address }}</span>
+                                <span><?php echo e($companyInfo->address); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -209,12 +207,12 @@
                     <div class="px-2 space-y-2 text-[13px]">
                         <div class="grid grid-cols-[110px_1fr] items-center">
                             <span class="text-gray-500">Reference :</span>
-                            <span class="text-gray-800">{{ $purchase->purchase_number }}</span>
+                            <span class="text-gray-800"><?php echo e($purchase->purchase_number); ?></span>
                         </div>
                         <div class="grid grid-cols-[110px_1fr] items-center">
                             <span class="text-gray-500">Status :</span>
                             <div>
-                                @php
+                                <?php
                                     $statusColors = [
                                         'draft' => 'bg-gray-100 text-gray-600',
                                         'ordered' => 'bg-blue-100 text-blue-700',
@@ -223,29 +221,31 @@
                                         'cancelled' => 'bg-red-100 text-red-600',
                                     ];
                                     $sColor = $statusColors[$purchase->status] ?? $statusColors['draft'];
-                                @endphp
-                                <span class="printState px-2 py-0.5 rounded text-[11px] font-medium {{ $sColor }}">
-                                    {{ ucfirst(str_replace('_', ' ', $purchase->status)) }}
+                                ?>
+                                <span class="printState px-2 py-0.5 rounded text-[11px] font-medium <?php echo e($sColor); ?>">
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $purchase->status))); ?>
+
                                 </span>
                             </div>
                         </div>
                         <div class="grid grid-cols-[110px_1fr] items-center">
                             <span class="text-gray-500">Warehouse :</span>
-                            <span class="text-gray-800">{{ $purchase->warehouse->name ?? 'N/A' }}</span>
+                            <span class="text-gray-800"><?php echo e($purchase->warehouse->name ?? 'N/A'); ?></span>
                         </div>
                         <div class="grid grid-cols-[110px_1fr] items-center">
                             <span class="text-gray-500">Payment Status :</span>
                             <div>
-                                @php
+                                <?php
                                     $payColors = [
                                         'unpaid' => 'bg-red-100 text-red-600',
                                         'partial' => 'bg-yellow-100 text-yellow-700',
                                         'paid' => 'bg-[#dcfce7] text-[#16a34a]',
                                     ];
                                     $pColor = $payColors[$purchase->payment_status] ?? $payColors['unpaid'];
-                                @endphp
-                                <span class="printState px-2 py-0.5 rounded text-[11px] font-medium {{ $pColor }}">
-                                    {{ ucfirst($purchase->payment_status) }}
+                                ?>
+                                <span class="printState px-2 py-0.5 rounded text-[11px] font-medium <?php echo e($pColor); ?>">
+                                    <?php echo e(ucfirst($purchase->payment_status)); ?>
+
                                 </span>
                             </div>
                         </div>
@@ -263,11 +263,11 @@
                         <thead>
                             <tr class="text-[11px] text-gray-400 uppercase tracking-wider border-b border-gray-100">
                                 <th class="pb-3 px-2 font-medium">Product</th>
-                                @if(batch_enabled())
+                                <?php if(batch_enabled()): ?>
                                     <th class="pb-3 px-2 font-medium text-center">Batch #</th>
                                     <th class="pb-3 px-2 font-medium text-center">Mfg Date</th>
                                     <th class="pb-3 px-2 font-medium text-center">Exp Date</th>
-                                @endif
+                                <?php endif; ?>
                                 <th class="pb-3 px-2 font-medium text-center">Net Unit Cost</th>
                                 <th class="pb-3 px-2 font-medium text-center">Quantity</th>
                                 <th class="pb-3 px-2 font-medium text-center">Unit Cost</th>
@@ -277,55 +277,63 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
-                            @foreach ($purchase->items as $item)
+                            <?php $__currentLoopData = $purchase->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
                                     <td class="py-3 px-2 text-gray-800">
-                                        {{ $item->product->name ?? 'Unknown' }}
-                                        <span class="text-gray-500">({{ $item->productSku->sku ?? 'N/A' }})</span>
+                                        <?php echo e($item->product->name ?? 'Unknown'); ?>
+
+                                        <span class="text-gray-500">(<?php echo e($item->productSku->sku ?? 'N/A'); ?>)</span>
                                     </td>
-                                    @if(batch_enabled())
+                                    <?php if(batch_enabled()): ?>
                                         <td class="py-3 px-2 text-center text-gray-600 font-mono text-[12px]">
-                                            {{ $item->batch_number ?? '-' }}
+                                            <?php echo e($item->batch_number ?? '-'); ?>
+
                                         </td>
                                         <td class="py-3 px-2 text-center text-gray-600">
-                                            {{ $item->manufacturing_date ? $item->manufacturing_date->format('d/m/Y') : '-' }}
+                                            <?php echo e($item->manufacturing_date ? $item->manufacturing_date->format('d/m/Y') : '-'); ?>
+
                                         </td>
                                         <td class="py-3 px-2 text-center text-gray-600">
-                                            @if($item->expiry_date)
-                                                <span class="{{ $item->expiry_date->isPast() ? 'text-red-600 font-semibold' : '' }}">
-                                                    {{ $item->expiry_date->format('d/m/Y') }}
+                                            <?php if($item->expiry_date): ?>
+                                                <span class="<?php echo e($item->expiry_date->isPast() ? 'text-red-600 font-semibold' : ''); ?>">
+                                                    <?php echo e($item->expiry_date->format('d/m/Y')); ?>
+
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 -
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
-                                    @endif
-                                    <td class="py-3 px-2 text-center text-gray-600">₹ {{ $formatAmt($item->unit_cost) }}
+                                    <?php endif; ?>
+                                    <td class="py-3 px-2 text-center text-gray-600">₹ <?php echo e($formatAmt($item->unit_cost)); ?>
+
                                     </td>
-                                    <td class="py-3 px-2 text-center text-gray-600">{{ $formatAmt($item->quantity) }}</td>
-                                    <td class="py-3 px-2 text-center text-gray-600">₹ {{ $formatAmt($item->unit_cost) }}
+                                    <td class="py-3 px-2 text-center text-gray-600"><?php echo e($formatAmt($item->quantity)); ?></td>
+                                    <td class="py-3 px-2 text-center text-gray-600">₹ <?php echo e($formatAmt($item->unit_cost)); ?>
+
                                     </td>
 
                                     <td class="py-3 px-2 text-center text-gray-600">
                                         ₹
-                                        {{ $formatAmt($item->quantity * $item->unit_cost * ($item->discount_percent / 100)) }}
+                                        <?php echo e($formatAmt($item->quantity * $item->unit_cost * ($item->discount_percent / 100))); ?>
+
                                     </td>
 
-                                    @php
+                                    <?php
                                         $baseAfterDisc =
                                             $item->quantity * $item->unit_cost * (1 - $item->discount_percent / 100);
                                         $taxAmt =
                                             $item->tax_type === 'inclusive'
                                                 ? $baseAfterDisc - $baseAfterDisc / (1 + $item->tax_percent / 100)
                                                 : $baseAfterDisc * ($item->tax_percent / 100);
-                                    @endphp
-                                    <td class="py-3 px-2 text-center text-gray-600">₹ {{ $formatAmt($taxAmt) }}</td>
+                                    ?>
+                                    <td class="py-3 px-2 text-center text-gray-600">₹ <?php echo e($formatAmt($taxAmt)); ?></td>
 
                                     <td class="py-3 px-2 text-right text-gray-600">₹
-                                        {{ $formatAmt($item->total ?? $baseAfterDisc + ($item->tax_type === 'exclusive' ? $taxAmt : 0)) }}
+                                        <?php echo e($formatAmt($item->total ?? $baseAfterDisc + ($item->tax_type === 'exclusive' ? $taxAmt : 0))); ?>
+
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
@@ -338,59 +346,61 @@
                             <tr>
                                 <td class="py-2 border-b border-gray-100">Order Tax</td>
                                 <td class="py-2 text-right border-b border-gray-100">₹
-                                    {{ $formatAmt($purchase->tax_amount) }}</td>
+                                    <?php echo e($formatAmt($purchase->tax_amount)); ?></td>
                             </tr>
                             <tr>
                                 <td class="py-2 border-b border-gray-100">Discount</td>
                                 <td class="py-2 text-right border-b border-gray-100">₹
-                                    {{ $formatAmt($purchase->discount_amount) }}</td>
+                                    <?php echo e($formatAmt($purchase->discount_amount)); ?></td>
                             </tr>
                             <tr>
                                 <td class="py-2 border-b border-gray-100">Shipping</td>
                                 <td class="py-2 text-right border-b border-gray-100">₹
-                                    {{ $formatAmt($purchase->shipping_cost) }}</td>
+                                    <?php echo e($formatAmt($purchase->shipping_cost)); ?></td>
                             </tr>
-                            @if ($purchase->other_charges > 0)
+                            <?php if($purchase->other_charges > 0): ?>
                                 <tr>
                                     <td class="py-2 border-b border-gray-100">Other Charges</td>
                                     <td class="py-2 text-right border-b border-gray-100">₹
-                                        {{ $formatAmt($purchase->other_charges) }}</td>
+                                        <?php echo e($formatAmt($purchase->other_charges)); ?></td>
                                 </tr>
-                            @endif
-                            @if ($purchase->round_off != 0)
+                            <?php endif; ?>
+                            <?php if($purchase->round_off != 0): ?>
                                 <tr>
                                     <td class="py-2 border-b border-gray-100">Round Off</td>
                                     <td class="py-2 text-right border-b border-gray-100">₹
-                                        {{ $formatAmt($purchase->round_off) }}</td>
+                                        <?php echo e($formatAmt($purchase->round_off)); ?></td>
                                 </tr>
-                            @endif
+                            <?php endif; ?>
                             <tr>
                                 <td class="py-2 border-b border-gray-100">Paid amount</td>
                                 <td class="py-2 text-right border-b border-gray-100">₹
-                                    {{ $formatAmt($purchase->total_amount - $purchase->balance_amount) }}</td>
+                                    <?php echo e($formatAmt($purchase->total_amount - $purchase->balance_amount)); ?></td>
                             </tr>
                             <tr>
                                 <td class="py-3 text-[#4f46e5] font-medium printState">Grand Total</td>
                                 <td class="py-3 text-right text-[#4f46e5] font-medium printState">₹
-                                    {{ $formatAmt($purchase->total_amount) }}</td>
+                                    <?php echo e($formatAmt($purchase->total_amount)); ?></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            @if ($purchase->notes || $purchase->terms_and_conditions)
+            <?php if($purchase->notes || $purchase->terms_and_conditions): ?>
                 <div class="px-6 pb-8 print:pb-2 print:pt-2 text-[13px] text-gray-500 page-break-avoid">
-                    @if ($purchase->notes)
-                        <p class="mb-2"><strong class="text-gray-700">Note:</strong> {{ $purchase->notes }}</p>
-                    @endif
-                    @if ($purchase->terms_and_conditions)
+                    <?php if($purchase->notes): ?>
+                        <p class="mb-2"><strong class="text-gray-700">Note:</strong> <?php echo e($purchase->notes); ?></p>
+                    <?php endif; ?>
+                    <?php if($purchase->terms_and_conditions): ?>
                         <p><strong class="text-gray-700">Terms & Conditions:</strong>
-                            {{ $purchase->terms_and_conditions }}</p>
-                    @endif
+                            <?php echo e($purchase->terms_and_conditions); ?></p>
+                    <?php endif; ?>
                 </div>
-            @endif
+            <?php endif; ?>
 
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlinkonSoftware\resources\views/admin/purchases/show.blade.php ENDPATH**/ ?>

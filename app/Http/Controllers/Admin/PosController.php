@@ -2,29 +2,31 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use App\Models\ProductSku;
-use App\Models\ProductMedia;
-use App\Models\Product;
+use App\Models\Category;
+use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Client;
+use App\Models\PaymentMethod;
+use App\Models\Product;
+use App\Models\ProductMedia;
+use App\Models\ProductSku;
 use App\Models\State;
 use App\Models\Unit;
-use App\Models\Category;
 use App\Models\Warehouse;
-use App\Models\PaymentMethod;
-use App\Services\PaymentService;
 use App\Services\InventoryService;
+use App\Services\PaymentService;
 use Exception;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PosController extends Controller
 {
     protected PaymentService $paymentService;
+
     protected InventoryService $inventoryService;
 
     public function __construct(PaymentService $paymentService, InventoryService $inventoryService)
@@ -40,28 +42,28 @@ class PosController extends Controller
     {
         $storeId = session('store_id') ?? Auth::user()->store_id;
 
-        if (!$storeId) {
+        if (! $storeId) {
             return redirect()->route('admin.dashboard')
                 ->with('error', 'Please select a Store Branch to access the POS.');
         }
 
         // 1. Load active global dictionaries (Tenantable trait handles company isolation)
-        $categories     = Category::where('is_active', true)->get();
-        $clients        = Client::where('is_active', true)->get();
-        $units          = Unit::where('is_active', true)->get();
-        $states         = State::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::where('is_active', true)->get();
+        $clients = Client::where('is_active', true)->get();
+        $units = Unit::where('is_active', true)->get();
+        $states = State::where('is_active', true)->orderBy('name')->get();
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('sort_order')->get();
 
         // 2. Load branch-specific data
-        $warehouses    = Warehouse::where('store_id', $storeId)->get();
-        
+        $warehouses = Warehouse::where('store_id', $storeId)->get();
+
         // 3. Fetch specific single records
         $defaultClient = Client::where('name', 'Walk-in Customer')->first();
-        $companyState  = Auth::user()->company->state->name ?? 'Unknown';
+        $companyState = Auth::user()->company->state->name ?? 'Unknown';
 
         return view('admin.pos.index', compact(
-            'categories', 'warehouses', 'paymentMethods', 'defaultClient', 
-            'companyState', 'storeId', 'states', 'clients', 'units'   
+            'categories', 'warehouses', 'paymentMethods', 'defaultClient',
+            'companyState', 'storeId', 'states', 'clients', 'units'
         ));
     }
 
@@ -74,7 +76,7 @@ class PosController extends Controller
         $warehouseId = (int) $request->input('warehouse_id');
         $companyId = Auth::user()->company_id;
 
-        if (empty($term) || !$warehouseId) {
+        if (empty($term) || ! $warehouseId) {
             return response()->json(['status' => 'error', 'message' => 'Invalid scan data.']);
         }
 
@@ -89,9 +91,10 @@ class PosController extends Controller
 
         if ($exactSku) {
             $stock = $this->inventoryService->getWarehouseStock($exactSku, $warehouseId);
+
             return response()->json([
                 'status' => 'exact',
-                'data'   => $this->formatSkuForCart($exactSku, $stock)
+                'data' => $this->formatSkuForCart($exactSku, $stock),
             ]);
         }
 
@@ -101,7 +104,7 @@ class PosController extends Controller
             ->where('is_active', true)
             ->whereHas('product', function ($query) use ($term) {
                 $query->where('name', 'like', "%{$term}%")
-                      ->where('is_active', true);
+                    ->where('is_active', true);
             })
             ->limit(15) // Keep it fast
             ->get();
@@ -112,12 +115,13 @@ class PosController extends Controller
 
         $formattedFuzzy = $fuzzySkus->map(function ($sku) use ($warehouseId) {
             $stock = $this->inventoryService->getWarehouseStock($sku, $warehouseId);
+
             return $this->formatSkuForCart($sku, $stock);
         });
 
         return response()->json([
             'status' => 'fuzzy',
-            'data'   => $formattedFuzzy
+            'data' => $formattedFuzzy,
         ]);
     }
 
@@ -127,41 +131,41 @@ class PosController extends Controller
     public function fetchProducts(Request $request)
     {
         $companyId = Auth::user()->company_id;
-        $perPage   = min(50, max(1, (int) $request->query('per_page', 15)));
-        $search    = trim($request->query('search', ''));
+        $perPage = min(50, max(1, (int) $request->query('per_page', 15)));
+        $search = trim($request->query('search', ''));
         $categoryId = (int) $request->query('category_id', 0);
         $warehouseId = (int) $request->query('warehouse_id', 1);
 
         $query = ProductSku::with([
-                'product.category', 
-                'skuValues.attributeValue', 
-                'unit',                  // 1. SKU Override Unit
-                'product.saleUnit',      // 2. Product Sale Unit
-                'product.productUnit',   // 3. Product Base Unit (Fallback)
-                'product.media' => function($q) {
-                    $q->where('is_primary', true)->where('media_type', 'image');
-                }
-            ])
+            'product.category',
+            'skuValues.attributeValue',
+            'unit',                  // 1. SKU Override Unit
+            'product.saleUnit',      // 2. Product Sale Unit
+            'product.productUnit',   // 3. Product Base Unit (Fallback)
+            'product.media' => function ($q) {
+                $q->where('is_primary', true)->where('media_type', 'image');
+            },
+        ])
             ->where('company_id', $companyId)
             ->where('is_active', true)
-            ->whereHas('product', function($q) {
+            ->whereHas('product', function ($q) {
                 $q->where('is_active', true);
             });
 
         // Unified Search
         if ($search !== '') {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('sku', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%")
-                  ->orWhereHas('product', function($pq) use ($search) {
-                      $pq->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('barcode', 'like', "%{$search}%")
+                    ->orWhereHas('product', function ($pq) use ($search) {
+                        $pq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         // Category Filter
         if ($categoryId > 0) {
-            $query->whereHas('product', function($q) use ($categoryId) {
+            $query->whereHas('product', function ($q) use ($categoryId) {
                 $q->where('category_id', $categoryId);
             });
         }
@@ -169,7 +173,7 @@ class PosController extends Controller
         $paginator = $query->latest('id')->paginate($perPage);
 
         $formattedData = $paginator->getCollection()->map(function ($sku) use ($warehouseId) {
-            $variantName = $sku->skuValues->map(fn($val) => $val->attributeValue->value)->implode(' / ');
+            $variantName = $sku->skuValues->map(fn ($val) => $val->attributeValue->value)->implode(' / ');
             $imagePath = $sku->product->media->first()?->media_path;
 
             // 🌟 BUGFIX: Bulletproof Unit Resolution with Safe Operators (?->)
@@ -178,29 +182,29 @@ class PosController extends Controller
 
             return [
                 'product_sku_id' => $sku->id,
-                'product_id'     => $sku->product_id,
-                'product_name'   => $sku->product->name,
-                'category_name'  => $sku->product->category->name ?? 'Uncategorized',
-                'sku_code'       => $sku->sku,
-                'barcode'        => $sku->barcode,
-                'unit_id'        => $resolvedUnitId,
-                'unit_name'      => $resolvedUnitName,
-                'hsn_code'       => $sku->product->hsn_code,
-                'display_price'  => (float) $sku->price,
-                'unit_price'     => (float) $sku->price,
-                'tax_percent'    => (float) ($sku->order_tax ?? 0),
-                'tax_type'       => $sku->tax_type,
-                'variant_name'   => $variantName,
-                'image_url'      => $imagePath ? asset('storage/' . $imagePath) : '',
-                'stock'          => $this->inventoryService->getWarehouseStock($sku, $warehouseId) 
+                'product_id' => $sku->product_id,
+                'product_name' => $sku->product->name,
+                'category_name' => $sku->product->category->name ?? 'Uncategorized',
+                'sku_code' => $sku->sku,
+                'barcode' => $sku->barcode,
+                'unit_id' => $resolvedUnitId,
+                'unit_name' => $resolvedUnitName,
+                'hsn_code' => $sku->product->hsn_code,
+                'display_price' => (float) $sku->price,
+                'unit_price' => (float) $sku->price,
+                'tax_percent' => (float) ($sku->order_tax ?? 0),
+                'tax_type' => $sku->tax_type,
+                'variant_name' => $variantName,
+                'image_url' => $imagePath ? asset('storage/'.$imagePath) : '',
+                'stock' => $this->inventoryService->getWarehouseStock($sku, $warehouseId),
             ];
         });
 
         return response()->json([
             'status' => 'success',
-            'data'   => $formattedData,
-            'meta'   => [
-                'total_pages'  => $paginator->lastPage(),
+            'data' => $formattedData,
+            'meta' => [
+                'total_pages' => $paginator->lastPage(),
                 'current_page' => $paginator->currentPage(),
             ],
         ]);
@@ -217,21 +221,22 @@ class PosController extends Controller
 
         return [
             'product_sku_id' => $sku->id,
-            'product_id'     => $sku->product_id,
-            'product_name'   => $sku->product->name,
-            'sku_code'       => $sku->sku,
-            'barcode'        => $sku->barcode,
-            'unit_id'        => $resolvedUnitId,
-            'unit_name'      => $resolvedUnitName,
-            'hsn_code'       => $sku->product->hsn_code,
-            'display_price'  => (float) $sku->price,
-            'unit_price'     => (float) $sku->price,
-            'tax_percent'    => (float) ($sku->order_tax ?? 0),
-            'tax_type'       => $sku->tax_type,
-            'stock'          => $stock,
+            'product_id' => $sku->product_id,
+            'product_name' => $sku->product->name,
+            'sku_code' => $sku->sku,
+            'barcode' => $sku->barcode,
+            'unit_id' => $resolvedUnitId,
+            'unit_name' => $resolvedUnitName,
+            'hsn_code' => $sku->product->hsn_code,
+            'display_price' => (float) $sku->price,
+            'unit_price' => (float) $sku->price,
+            'tax_percent' => (float) ($sku->order_tax ?? 0),
+            'tax_type' => $sku->tax_type,
+            'stock' => $stock,
         ];
     }
-/**
+
+    /**
      * 🟢 GENERATE THERMAL RECEIPT (80mm)
      */
     public function receipt($id)
@@ -239,15 +244,21 @@ class PosController extends Controller
         $companyId = Auth::user()->company_id;
 
         // 🌟 Eager load everything, including the polymorphic 'payments' relation
-        $invoice = Invoice::with([
-            'items', 
-            'customer', 
-            'store',    
+        $relations = [
+            'items',
+            'customer',
+            'store',
             'creator',
-            'payments.paymentMethod' // 🌟 Load the payment AND its method name!
-        ])
-        ->where('company_id', $companyId)
-        ->findOrFail($id);
+            'payments.paymentMethod',
+        ];
+
+        if (batch_enabled()) {
+            $relations[] = 'stockMovements';
+        }
+
+        $invoice = Invoice::with($relations)
+            ->where('company_id', $companyId)
+            ->findOrFail($id);
 
         // Grab the most recent payment for this invoice
         $payment = $invoice->payments->first();
@@ -255,6 +266,7 @@ class PosController extends Controller
         // Pass both to the view
         return view('admin.pos.receipt', compact('invoice', 'payment'));
     }
+
     /**
      * 🟢 QUICK ADD PRODUCT (POS Modal)
      * Creates a Single product, SKU, Image, and Opening Stock in one shot.
@@ -262,85 +274,85 @@ class PosController extends Controller
     public function storeQuickProduct(Request $request)
     {
         $request->validate([
-            'name'          => 'required|string|max:255',
-            'category_id'   => 'required|exists:categories,id',
-            'unit_id'       => 'required|exists:units,id',
-            'price'         => 'required|numeric|min:0',
-            'cost'          => 'required|numeric|min:0',
-            'tax_percent'   => 'nullable|numeric|min:0',
-            'tax_type'      => 'required|in:inclusive,exclusive',
-            'sku'           => 'nullable|string|max:100',
-            'barcode'       => 'nullable|string|max:100',
+            'name' => 'required|string|max:255',
+            'category_id' => 'required|exists:categories,id',
+            'unit_id' => 'required|exists:units,id',
+            'price' => 'required|numeric|min:0',
+            'cost' => 'required|numeric|min:0',
+            'tax_percent' => 'nullable|numeric|min:0',
+            'tax_type' => 'required|in:inclusive,exclusive',
+            'sku' => 'nullable|string|max:100',
+            'barcode' => 'nullable|string|max:100',
             'opening_stock' => 'nullable|numeric|min:0',
-            'warehouse_id'  => 'required|exists:warehouses,id',
-            'image'         => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $companyId = Auth::user()->company_id;
 
         try {
             $skuRecord = DB::transaction(function () use ($request, $companyId) {
-                
+
                 // 1. Create Parent Product (Defaulting to 'single' type)
                 $product = Product::create([
-                    'company_id'       => $companyId,
-                    'category_id'      => $request->category_id,
-                    'name'             => $request->name,
-                    'type'             => 'single',
+                    'company_id' => $companyId,
+                    'category_id' => $request->category_id,
+                    'name' => $request->name,
+                    'type' => 'single',
                     // Use the same unit for base, sale, and purchase for quick-adds
-                    'product_unit_id'  => $request->unit_id,
-                    'sale_unit_id'     => $request->unit_id,
+                    'product_unit_id' => $request->unit_id,
+                    'sale_unit_id' => $request->unit_id,
                     'purchase_unit_id' => $request->unit_id,
-                    'is_active'        => true,
+                    'is_active' => true,
                 ]);
 
                 // 2. Generate a random SKU if none was provided
-                $skuCode = $request->sku ?: strtoupper(\Illuminate\Support\Str::random(8));
+                $skuCode = $request->sku ?: strtoupper(Str::random(8));
 
                 // 3. Create the Product SKU
                 $sku = ProductSku::create([
-                    'company_id'  => $companyId,
-                    'product_id'  => $product->id,
-                    'unit_id'     => $request->unit_id,
-                    'sku'         => $skuCode,
-                    'barcode'     => $request->barcode,
-                    'cost'        => $request->cost,
-                    'price'       => $request->price,
-                    'order_tax'   => $request->tax_percent ?? 0,
-                    'tax_type'    => $request->tax_type,
-                    'is_active'   => true,
+                    'company_id' => $companyId,
+                    'product_id' => $product->id,
+                    'unit_id' => $request->unit_id,
+                    'sku' => $skuCode,
+                    'barcode' => $request->barcode,
+                    'cost' => $request->cost,
+                    'price' => $request->price,
+                    'order_tax' => $request->tax_percent ?? 0,
+                    'tax_type' => $request->tax_type,
+                    'is_active' => true,
                 ]);
 
                 // 4. Handle Image Upload (If provided)
                 if ($request->hasFile('image')) {
                     $path = $request->file('image')->store('products', 'public');
                     ProductMedia::create([
-                        'company_id'     => $companyId,
-                        'product_id'     => $product->id,
+                        'company_id' => $companyId,
+                        'product_id' => $product->id,
                         'product_sku_id' => $sku->id,
-                        'media_type'     => 'image',
-                        'media_path'     => $path,
-                        'is_primary'     => true,
+                        'media_type' => 'image',
+                        'media_path' => $path,
+                        'is_primary' => true,
                     ]);
                 }
 
                 // 5. Set Opening Stock (If provided)
                 $openingStockQty = (float) $request->opening_stock;
                 if ($openingStockQty > 0) {
-                    // 🌟 BUGFIX: We bypass 'setOpeningStock' and use 'addStock' directly 
+                    // 🌟 BUGFIX: We bypass 'setOpeningStock' and use 'addStock' directly
                     // with 'adjustment' because we know your database ENUM accepts that word!
                     $this->inventoryService->addStock(
                         sku: $sku,
                         warehouseId: $request->warehouse_id,
                         qty: $openingStockQty,
-                        movementType: 'adjustment', 
+                        movementType: 'adjustment',
                         reference: null
                     );
                 }
 
                 // 6. Reload relations for the frontend response
                 $sku->load(['product.category', 'unit', 'product.saleUnit', 'product.productUnit', 'product.media']);
-                
+
                 return $sku;
             });
 
@@ -349,9 +361,9 @@ class PosController extends Controller
 
             // Respond with our trusted standardized cart format
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Product created and ready for sale!',
-                'data'    => $this->formatSkuForCart($skuRecord, $currentStock)
+                'data' => $this->formatSkuForCart($skuRecord, $currentStock),
             ]);
 
         } catch (Exception $e) {
@@ -359,8 +371,8 @@ class PosController extends Controller
             if ($e->getCode() == 23000) {
                 return response()->json(['status' => 'error', 'message' => 'SKU or Barcode already exists in your company.'], 422);
             }
-            
-            return response()->json(['status' => 'error', 'message' => 'Failed to create product. ' . $e->getMessage()], 500);
+
+            return response()->json(['status' => 'error', 'message' => 'Failed to create product. '.$e->getMessage()], 500);
         }
     }
 
@@ -370,29 +382,29 @@ class PosController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'warehouse_id'      => 'required|exists:warehouses,id',
-            'customer_id'       => 'nullable|exists:clients,id',
-            'customer_name'     => 'nullable|string|max:255',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'customer_id' => 'nullable|exists:clients,id',
+            'customer_name' => 'nullable|string|max:255',
             'payment_method_id' => 'nullable|exists:payment_methods,id',
-            'amount_received'   => 'nullable|numeric|min:0',
-            'items'             => 'required|array|min:1',
+            'amount_received' => 'nullable|numeric|min:0',
+            'items' => 'required|array|min:1',
             'items.*.product_sku_id' => 'required|exists:product_skus,id',
-            'items.*.quantity'       => 'required|numeric|min:0.01',
-            'discount_type'          => 'nullable|in:fixed,percent',
-            'discount_value'         => 'nullable|numeric|min:0',
-            'discount_amount'        => 'nullable|numeric|min:0',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'discount_type' => 'nullable|in:fixed,percent',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
         ]);
 
         $companyId = Auth::user()->company_id;
-        $storeId   = session('store_id') ?? Auth::user()->store_id;
+        $storeId = session('store_id') ?? Auth::user()->store_id;
 
         try {
             $invoice = DB::transaction(function () use ($request, $companyId, $storeId) {
-                
+
                 // A. Generate Invoice Number
-                $prefix = 'POS-' . date('ym');
+                $prefix = 'POS-'.date('ym');
                 $count = Invoice::where('company_id', $companyId)->where('invoice_number', 'like', "{$prefix}%")->count() + 1;
-                $invoiceNumber = $prefix . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $invoiceNumber = $prefix.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
 
                 // B. Determine Customer & State for GST
                 $client = $request->customer_id ? Client::find($request->customer_id) : null;
@@ -400,22 +412,22 @@ class PosController extends Controller
 
                 // C. Create the Parent Invoice Header
                 $invoice = Invoice::create([
-                    'company_id'       => $companyId,
-                    'store_id'         => $storeId,
-                    'warehouse_id'     => $request->warehouse_id,
-                    'customer_id'      => $client->id ?? null,
-                    'customer_name'    => $client ? null : ($request->customer_name ?? 'Walk-in Customer'),
-                    'created_by'       => Auth::id(),
-                    'invoice_number'   => $invoiceNumber,
-                    'source'           => 'pos',
-                    'invoice_date'     => now()->toDateString(),
-                    'supply_state'     => $supplyState,
-                    'gst_treatment'    => $client ? $client->registration_type : 'unregistered',
-                    'status'           => 'confirmed', 
-                    
-                    'subtotal'         => 0,
-                    'tax_amount'       => 0,
-                    'grand_total'      => 0, 
+                    'company_id' => $companyId,
+                    'store_id' => $storeId,
+                    'warehouse_id' => $request->warehouse_id,
+                    'customer_id' => $client->id ?? null,
+                    'customer_name' => $client ? null : ($request->customer_name ?? 'Walk-in Customer'),
+                    'created_by' => Auth::id(),
+                    'invoice_number' => $invoiceNumber,
+                    'source' => 'pos',
+                    'invoice_date' => now()->toDateString(),
+                    'supply_state' => $supplyState,
+                    'gst_treatment' => $client ? $client->registration_type : 'unregistered',
+                    'status' => 'confirmed',
+
+                    'subtotal' => 0,
+                    'tax_amount' => 0,
+                    'grand_total' => 0,
                 ]);
 
                 $totalSubtotal = 0;
@@ -445,25 +457,25 @@ class PosController extends Controller
                     $totalTax += $taxAmount;
 
                     InvoiceItem::create([
-                        'invoice_id'     => $invoice->id,
-                        'product_id'     => $sku->product_id,
+                        'invoice_id' => $invoice->id,
+                        'product_id' => $sku->product_id,
                         'product_sku_id' => $sku->id,
-                        'unit_id'        => $item['unit_id'] ?? $sku->unit_id,
-                        'product_name'   => $item['product_name'],
-                        'hsn_code'       => $item['hsn_code'] ?? null,
-                        'quantity'       => $qty,
-                        'unit_price'     => $price,
-                        'tax_type'       => $item['tax_type'] ?? 'exclusive',
-                        'tax_percent'    => $taxPct,
-                        'taxable_value'  => $taxableValue,
-                        'tax_amount'     => $taxAmount,
-                        'total_amount'   => $lineTotal,
+                        'unit_id' => $item['unit_id'] ?? $sku->unit_id,
+                        'product_name' => $item['product_name'],
+                        'hsn_code' => $item['hsn_code'] ?? null,
+                        'quantity' => $qty,
+                        'unit_price' => $price,
+                        'tax_type' => $item['tax_type'] ?? 'exclusive',
+                        'tax_percent' => $taxPct,
+                        'taxable_value' => $taxableValue,
+                        'tax_amount' => $taxAmount,
+                        'total_amount' => $lineTotal,
                     ]);
                 }
 
-                // E. Finalize Invoice Totals & GST Splitting                
+                // E. Finalize Invoice Totals & GST Splitting
                 $discountAmount = (float) $request->input('discount_amount', 0);
-                
+
                 // 🌟 Subtract discount from the raw total
                 $rawTotal = ($totalSubtotal - $discountAmount) + $totalTax;
 
@@ -472,31 +484,31 @@ class PosController extends Controller
                 $grandTotal = round($rawTotal);
 
                 $invoice->update([
-                    'subtotal'       => $totalSubtotal,
-                    
+                    'subtotal' => $totalSubtotal,
+
                     // 🌟 SAVE THE DISCOUNT TO THE DB
-                    'discount_type'  => $request->input('discount_type', 'fixed'),
+                    'discount_type' => $request->input('discount_type', 'fixed'),
                     'discount_value' => $request->input('discount_value', 0),
-                    'discount_amount'=> $discountAmount,
-                    
+                    'discount_amount' => $discountAmount,
+
                     'taxable_amount' => $totalSubtotal,
-                    'tax_amount'     => $totalTax,
-                    'igst_amount'    => $isInterState ? $totalTax : 0,
-                    'cgst_amount'    => !$isInterState ? ($totalTax / 2) : 0,
-                    'sgst_amount'    => !$isInterState ? ($totalTax / 2) : 0,
-                    'round_off'      => $roundOff,
-                    'grand_total'    => $grandTotal,
+                    'tax_amount' => $totalTax,
+                    'igst_amount' => $isInterState ? $totalTax : 0,
+                    'cgst_amount' => ! $isInterState ? ($totalTax / 2) : 0,
+                    'sgst_amount' => ! $isInterState ? ($totalTax / 2) : 0,
+                    'round_off' => $roundOff,
+                    'grand_total' => $grandTotal,
                 ]);
 
                 // F. Record the Payment
-               $amountReceived = (float) $request->amount_received;
+                $amountReceived = (float) $request->amount_received;
                 if ($amountReceived > 0 && $request->payment_method_id) {
                     $this->paymentService->recordPayment($invoice, [
-                        'amount'            => $amountReceived,
+                        'amount' => $amountReceived,
                         'payment_method_id' => $request->payment_method_id,
-                        'payment_date'      => now(),
-                        'status'            => 'completed',
-                        'notes'             => 'POS Checkout',
+                        'payment_date' => now(),
+                        'status' => 'completed',
+                        'notes' => 'POS Checkout',
                     ]);
                 }
 
@@ -504,22 +516,22 @@ class PosController extends Controller
             });
 
             return response()->json([
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => 'Transaction completed successfully.',
-                'invoice_id' => $invoice->id
+                'invoice_id' => $invoice->id,
             ]);
 
         } catch (Exception $e) {
-            if ($e instanceof \App\Exceptions\InsufficientStockException) {
+            if ($e instanceof InsufficientStockException) {
                 return response()->json([
-                    'status' => 'error', 
-                    'message' => "Stock error: " . $e->getMessage()
+                    'status' => 'error',
+                    'message' => 'Stock error: '.$e->getMessage(),
                 ], 422);
             }
 
             return response()->json([
-                'status' => 'error', 
-                'message' => 'Checkout failed. ' . $e->getMessage()
+                'status' => 'error',
+                'message' => 'Checkout failed. '.$e->getMessage(),
             ], 500);
         }
     }

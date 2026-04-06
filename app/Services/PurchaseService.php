@@ -3,15 +3,15 @@
 namespace App\Services;
 
 use App\Models\Company;
+use App\Models\ProductBatch;
+use App\Models\ProductSku;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
-use App\Models\ProductSku;
-use App\Models\ProductBatch;
 use App\Models\Supplier;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use InvalidArgumentException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class PurchaseService
 {
@@ -31,15 +31,15 @@ class PurchaseService
     {
         return DB::transaction(function () use ($data) {
             $companyId = Auth::user()->company_id;
-            
+
             // 1. Determine Tax Type (Intra-state vs Inter-state)
             $taxType = $this->determineTaxType($companyId, (int) $data['supplier_id']);
             $data['tax_type'] = $taxType;
 
             // 2. Snapshots for compliance
-            $data['company_gst_number']  = Company::find($companyId)->gst_number ?? null;
+            $data['company_gst_number'] = Company::find($companyId)->gst_number ?? null;
             $data['supplier_gst_number'] = Supplier::find($data['supplier_id'])->gstin ?? null;
-                        
+
             // 4. Calculate all math (Items + Global)
             $calculatedData = $this->calculateFinancials($data);
 
@@ -52,19 +52,19 @@ class PurchaseService
 
             $purchase = Purchase::create(array_merge($calculatedData, [
                 'purchase_number' => $purchaseNumber,
-                'company_id'      => $companyId,
-                'created_by'      => Auth::id(),
+                'company_id' => $companyId,
+                'created_by' => Auth::id(),
                 // Make sure company_gst_number and supplier_gst_number are included if calculateFinancials dropped them
-                'company_gst_number'  => $data['company_gst_number'],
+                'company_gst_number' => $data['company_gst_number'],
                 'supplier_gst_number' => $data['supplier_gst_number'],
             ]));
 
             // 6. Create Line Items
             foreach ($items as $itemData) { // 👈 Use the extracted $items array
-                $itemData['company_id']  = $companyId;
+                $itemData['company_id'] = $companyId;
                 // If the whole PO is received, mark line items as fully received
                 $itemData['quantity_received'] = ($purchase->status === 'received') ? $itemData['quantity'] : 0;
-                
+
                 $purchase->items()->create($itemData);
             }
 
@@ -84,43 +84,44 @@ class PurchaseService
     public function updatePurchase(Purchase $purchase, array $data): Purchase
     {
         return DB::transaction(function () use ($purchase, $data) {
-            
-            // 🛡️ GUARD: Do not allow modifying items or status if already received. 
+
+            // 🛡️ GUARD: Do not allow modifying items or status if already received.
             // Standard ERP practice: Requires a Purchase Return to reverse.
             if ($purchase->status === 'received') {
                 if (isset($data['status']) && $data['status'] !== 'received') {
-                    throw new InvalidArgumentException("Cannot revert a fully received purchase. Please create a Purchase Return instead.");
+                    throw new InvalidArgumentException('Cannot revert a fully received purchase. Please create a Purchase Return instead.');
                 }
-                
+
                 // Allow updating notes/references, but NOT items or financial amounts
                 $purchase->update([
                     'supplier_invoice_number' => $data['supplier_invoice_number'] ?? $purchase->supplier_invoice_number,
-                    'supplier_invoice_date'   => $data['supplier_invoice_date'] ?? $purchase->supplier_invoice_date,
-                    'notes'                   => $data['notes'] ?? $purchase->notes,
-                    'updated_by'              => Auth::id(),
+                    'supplier_invoice_date' => $data['supplier_invoice_date'] ?? $purchase->supplier_invoice_date,
+                    'notes' => $data['notes'] ?? $purchase->notes,
+                    'updated_by' => Auth::id(),
                 ]);
+
                 return $purchase;
             }
 
-            // 1. Recalculate Tax Type in case Supplier changed
+            // 1. Capture old status BEFORE update (getOriginal is reset by Eloquent after save)
+            $oldStatus = $purchase->status;
+
+            // 2. Recalculate Tax Type in case Supplier changed
             $data['tax_type'] = $this->determineTaxType($purchase->company_id, (int) $data['supplier_id']);
 
-            // 2. Recalculate all financials
+            // 3. Recalculate all financials
             $calculatedData = $this->calculateFinancials($data);
 
-            // 3. Update Header
+            // 4. Update Header
             $purchase->update(array_merge($calculatedData, [
                 'updated_by' => Auth::id(),
             ]));
 
-            // 4. Sync Line Items (Create, Update, Delete)
+            // 5. Sync Line Items (Create, Update, Delete)
             $this->syncLineItems($purchase, $calculatedData['items']);
 
-            // 5. Handle Stock if status transitioned to Received
-            $oldStatus = $purchase->getOriginal('status');
-            $newStatus = $purchase->status;
-
-            if ($oldStatus !== 'received' && $newStatus === 'received') {
+            // 6. Handle Stock if status transitioned to Received
+            if ($oldStatus !== 'received' && $purchase->status === 'received') {
                 $this->receiveStock($purchase, $calculatedData['items']);
             }
 
@@ -135,7 +136,7 @@ class PurchaseService
     /**
      * Processes inventory addition using the robust InventoryService
      */
-    private function receiveStock(Purchase $purchase,array $itemsData): void
+    private function receiveStock(Purchase $purchase, array $itemsData): void
     {
         $batchEnabled = batch_enabled();
 
@@ -149,52 +150,53 @@ class PurchaseService
 
             if ($batchEnabled) {
 
-                $secureBatchNumber = !empty($item['batch_number']) 
-                    ? $item['batch_number'] 
-                    : 'B-' . now()->format('ym') . '-' . strtoupper(Str::random(5));
+                $secureBatchNumber = ! empty($item['batch_number'])
+                    ? $item['batch_number']
+                    : 'B-'.now()->format('ym').'-'.strtoupper(Str::random(5));
 
                 $batch = ProductBatch::create([
-                    'company_id'         => $purchase->company_id,
-                    'product_sku_id'     => $item['product_sku_id'],
-                    'warehouse_id'       => $purchase->warehouse_id,
-                    'supplier_id'        => $purchase->supplier_id,
-                    'batch_number'       => $secureBatchNumber,
+                    'company_id' => $purchase->company_id,
+                    'product_sku_id' => $item['product_sku_id'],
+                    'warehouse_id' => $purchase->warehouse_id,
+                    'supplier_id' => $purchase->supplier_id,
+                    'batch_number' => $secureBatchNumber,
                     'manufacturing_date' => $item['manufacturing_date'] ?? null,
-                    'expiry_date'        => $item['expiry_date'] ?? null,
-                    'purchase_price'     => $item['unit_cost'],
-                    'qty'                => $item['quantity'],
+                    'expiry_date' => $item['expiry_date'] ?? null,
+                    'purchase_price' => $item['unit_cost'],
+                    'qty' => $item['quantity'],
+                    'remaining_qty' => $item['quantity'],
                 ]);
 
                 $batchId = $batch->id;
                 $batchNumber = $batch->batch_number;
             }
-            
+
             $sku = $skus[$item['product_sku_id']];
 
             $this->inventoryService->addStock(
                 sku: $sku,
-                warehouseId:  $purchase->warehouse_id,
+                warehouseId: $purchase->warehouse_id,
                 qty: $item['quantity'],
                 movementType: 'purchase',
-                reference:    $purchase,
-                batchId:      $batchId,
-                batchNumber:  $batchNumber,
+                reference: $purchase,
+                batchId: $batchId,
+                batchNumber: $batchNumber,
                 unitCost: $item['unit_cost']
             );
-            
+
             // $item->update([
             //     'quantity_received' => $item->quantity
             // ]);
-            
+
             $sku->update([
-                'cost' => $item['unit_cost']
+                'cost' => $item['unit_cost'],
             ]);
-                        
+
             logger()->info('Purchase Stock Added', [
-                'sku_id'     => $sku->id,
-                'warehouse'  => $purchase->warehouse_id,
+                'sku_id' => $sku->id,
+                'warehouse' => $purchase->warehouse_id,
                 'qty' => $item['quantity'],
-                'batch_id'   => $batchId,
+                'batch_id' => $batchId,
             ]);
         }
     }
@@ -212,30 +214,30 @@ class PurchaseService
 
         // 1. Delete items removed from the form
         $itemsToDelete = array_diff($existingItemIds, $providedItemIds);
-        if (!empty($itemsToDelete)) {
+        if (! empty($itemsToDelete)) {
             PurchaseItem::whereIn('id', $itemsToDelete)->delete();
         }
 
         $batchEnabled = batch_enabled();
-        $isReceived   = ($purchase->status === 'received');
+        $isReceived = ($purchase->status === 'received');
 
         // 2. Update or Create
         foreach ($itemsData as $itemData) {
             $itemData['company_id'] = $purchase->company_id;
-            
+
             // 🌟 FIX 1: Properly assign quantity_received like we do in createPurchase!
             $itemData['quantity_received'] = $isReceived ? $itemData['quantity'] : 0;
 
             // 🌟 FIX 2: "if batch enabled then..." -> clear them out if disabled!
-            if (!$batchEnabled) {
-                $itemData['batch_number']       = null;
+            if (! $batchEnabled) {
+                $itemData['batch_number'] = null;
                 $itemData['manufacturing_date'] = null;
-                $itemData['expiry_date']        = null;
+                $itemData['expiry_date'] = null;
             }
 
             if (isset($itemData['id']) && in_array($itemData['id'], $existingItemIds)) {
                 // 🌟 FIX 3: Use Eloquent's find()->update() instead of where()->update()
-                // This forces Laravel to use $fillable, automatically throwing away 
+                // This forces Laravel to use $fillable, automatically throwing away
                 // the extra frontend UI fields (like product_name) so it doesn't crash MySQL.
                 PurchaseItem::find($itemData['id'])->update($itemData);
             } else {
@@ -251,14 +253,14 @@ class PurchaseService
     private function calculateFinancials(array $data): array
     {
         $globalSubtotal = 0;
-        $globalTaxable  = 0;
-        $globalCgst     = 0;
-        $globalSgst     = 0;
-        $globalIgst     = 0;
-        $globalTaxAmt   = 0;
+        $globalTaxable = 0;
+        $globalCgst = 0;
+        $globalSgst = 0;
+        $globalIgst = 0;
+        $globalTaxAmt = 0;
 
         $taxType = $data['tax_type']; // 'cgst_sgst' or 'igst'
-        
+
         foreach ($data['items'] as &$item) {
             $qty = (float) $item['quantity'];
             $cost = (float) $item['unit_cost'];
@@ -287,13 +289,13 @@ class PurchaseService
             }
 
             $item['taxable_amount'] = round($taxableAmt, 4);
-            $item['tax_amount']     = round($taxAmt, 4);
-            $item['total_price']    = round($taxableAmt + $taxAmt, 4);
+            $item['tax_amount'] = round($taxAmt, 4);
+            $item['total_price'] = round($taxableAmt + $taxAmt, 4);
 
             // Split Indian GST
-            $item['cgst_amount']  = 0;
-            $item['sgst_amount']  = 0;
-            $item['igst_amount']  = 0;
+            $item['cgst_amount'] = 0;
+            $item['sgst_amount'] = 0;
+            $item['igst_amount'] = 0;
             $item['cgst_percent'] = 0;
             $item['sgst_percent'] = 0;
             $item['igst_percent'] = 0;
@@ -301,44 +303,44 @@ class PurchaseService
             if ($taxType === 'cgst_sgst') {
                 $item['cgst_percent'] = $taxPct / 2;
                 $item['sgst_percent'] = $taxPct / 2;
-                $item['cgst_amount']  = round($taxAmt / 2, 4);
-                $item['sgst_amount']  = round($taxAmt / 2, 4);
+                $item['cgst_amount'] = round($taxAmt / 2, 4);
+                $item['sgst_amount'] = round($taxAmt / 2, 4);
             } elseif ($taxType === 'igst') {
                 $item['igst_percent'] = $taxPct;
-                $item['igst_amount']  = round($taxAmt, 4);
+                $item['igst_amount'] = round($taxAmt, 4);
             }
 
             // Aggregate up to global totals
             $globalSubtotal += $item['subtotal'];
-            $globalTaxable  += $item['taxable_amount'];
-            $globalTaxAmt   += $item['tax_amount'];
-            $globalCgst     += $item['cgst_amount'];
-            $globalSgst     += $item['sgst_amount'];
-            $globalIgst     += $item['igst_amount'];
+            $globalTaxable += $item['taxable_amount'];
+            $globalTaxAmt += $item['tax_amount'];
+            $globalCgst += $item['cgst_amount'];
+            $globalSgst += $item['sgst_amount'];
+            $globalIgst += $item['igst_amount'];
         }
 
         // Apply Global Extra Charges & Rounding
         $globalDiscount = (float) ($data['discount_amount'] ?? 0); // Flat bill discount
-        $shipping       = (float) ($data['shipping_cost'] ?? 0);
-        $other          = (float) ($data['other_charges'] ?? 0);
-        
+        $shipping = (float) ($data['shipping_cost'] ?? 0);
+        $other = (float) ($data['other_charges'] ?? 0);
+
         $finalTaxable = $globalTaxable - $globalDiscount;
         $totalBeforeRound = $finalTaxable + $globalTaxAmt + $shipping + $other;
-        
+
         // Indian accounting standard: Round to nearest Rupee
         $roundedTotal = round($totalBeforeRound);
         $roundOff = $roundedTotal - $totalBeforeRound;
 
         // Assign to header data
-        $data['subtotal']        = round($globalSubtotal, 2);
-        $data['taxable_amount']  = round($finalTaxable, 2);
-        $data['cgst_amount']     = round($globalCgst, 2);
-        $data['sgst_amount']     = round($globalSgst, 2);
-        $data['igst_amount']     = round($globalIgst, 2);
-        $data['tax_amount']      = round($globalTaxAmt, 2);
-        $data['round_off']       = round($roundOff, 2);
-        $data['total_amount']    = $roundedTotal;
-        $data['balance_amount']  = $roundedTotal; // Assumes unpaid initially
+        $data['subtotal'] = round($globalSubtotal, 2);
+        $data['taxable_amount'] = round($finalTaxable, 2);
+        $data['cgst_amount'] = round($globalCgst, 2);
+        $data['sgst_amount'] = round($globalSgst, 2);
+        $data['igst_amount'] = round($globalIgst, 2);
+        $data['tax_amount'] = round($globalTaxAmt, 2);
+        $data['round_off'] = round($roundOff, 2);
+        $data['total_amount'] = $roundedTotal;
+        $data['balance_amount'] = $roundedTotal; // Assumes unpaid initially
 
         return $data;
     }
@@ -352,8 +354,8 @@ class PurchaseService
         $supplier = Supplier::find($supplierId);
 
         // Fallback if missing data
-        if (!$company || !$supplier || !$company->state_id || !$supplier->state_id) {
-            return 'none'; 
+        if (! $company || ! $supplier || ! $company->state_id || ! $supplier->state_id) {
+            return 'none';
         }
 
         return ($company->state_id === $supplier->state_id) ? 'cgst_sgst' : 'igst';
@@ -365,7 +367,7 @@ class PurchaseService
     private function generatePurchaseNumber(int $companyId): string
     {
         $year = now()->year;
-        
+
         $lastPurchase = Purchase::where('company_id', $companyId)
             ->withTrashed() // 🌟 THE FIX: Look in the trash bin too!
             ->where('purchase_number', 'like', "PO-{$year}-%")
@@ -379,6 +381,6 @@ class PurchaseService
             $sequence = (int) end($parts) + 1;
         }
 
-        return sprintf("PO-%s-%05d", $year, $sequence);
+        return sprintf('PO-%s-%05d', $year, $sequence);
     }
 }

@@ -490,25 +490,17 @@
                     <?php endif; ?>
                     
                     
+                    
+                    <div class="nav-section-label">Sales & Finance</div>                                        
+                    
                     <?php if(has_module('pos') && has_permission('pos.access')): ?>
                         <a href="<?php echo e(url('/admin/pos')); ?>" class="nav-item" target="_blank" data-no-spa>
                             <span class="flex items-center gap-3"><i data-lucide="monitor"
                                     class="nav-icon w-[18px] h-[18px]"></i> POS</span>
                         </a>
                     <?php endif; ?>                   
-
-                    
-                    <?php if(has_module('invoicing') && has_permission('quotations.view')): ?>
-                        <div class="nav-section-label">Sales & Finance</div>    
-                        
-                        <a href="<?php echo e(route('admin.quotations.index')); ?>"
-                            class="nav-item <?php echo e($navCls('admin.quotations.*')); ?>">
-                            <span class="flex items-center gap-3"><i data-lucide="quote"
-                                    class="nav-icon w-[18px] h-[18px]"></i> Quotations</span>
-                        </a>
-                    <?php endif; ?>
-                    
-                    
+                  
+                      
                     <?php if(has_module('invoicing') && has_permission('invoices.view')): ?>
                         <div class="acc-group"
                             data-open="<?php echo e($accOpen(['admin.invoices.*', 'admin.invoice-returns.*'])); ?>">
@@ -528,15 +520,15 @@
                             </div>
                         </div>
                     <?php endif; ?>
-                    
-                    <?php if(has_module('reports') && has_permission('reports.view')): ?>
-                         <a href="<?php echo e(route('admin.reports.index')); ?>"
-                             class="nav-item <?php echo e($navCls('admin.reports.*')); ?>">
-                             <span class="flex items-center gap-3"><i data-lucide="bar-chart-2"
-                                     class="nav-icon w-[18px] h-[18px]"></i> Analytics</span>
-                         </a>
-                     <?php endif; ?>
 
+                    <?php if(has_module('invoicing') && has_permission('quotations.view')): ?>                    
+                        <a href="<?php echo e(route('admin.quotations.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.quotations.*')); ?>">
+                            <span class="flex items-center gap-3"><i data-lucide="quote"
+                                class="nav-icon w-[18px] h-[18px]"></i> Quotations</span>
+                        </a>
+                    <?php endif; ?>
+                                  
                     
                     <?php if(has_module('purchases') && has_permission(['purchases.view', 'purchase_returns.view'])): ?>
                         <div class="acc-group"
@@ -588,6 +580,15 @@
                             </div>
                         </div>
                     <?php endif; ?>
+
+                    <?php if(has_module('reports') && has_permission('reports.view')): ?>
+                         <a href="<?php echo e(route('admin.reports.index')); ?>"
+                             class="nav-item <?php echo e($navCls('admin.reports.*')); ?>">
+                             <span class="flex items-center gap-3"><i data-lucide="bar-chart-2"
+                                     class="nav-icon w-[18px] h-[18px]"></i> Analytics</span>
+                         </a>
+                     <?php endif; ?>
+
                       
                     
                     
@@ -713,13 +714,13 @@
                     
                     <?php if(has_module('hrm')): ?>
                     <?php if(!auth()->user()->hasRole('employee')): ?>
-                    <div class="nav-section-label">Team</div>                        
-
+                    <div class="nav-section-label">Team</div>
+                    
+                         
+                        <a href="<?php echo e(route('admin.hrm.announcements.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.announcements.*')); ?>">
+                            <span class="flex items-center gap-3"><i data-lucide="megaphone" class="nav-icon w-[18px] h-[18px]"></i> Announcements</span>
+                        </a> 
                         
-                        <a href="<?php echo e(route('admin.hrm.employees.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.employees.*')); ?>">
-                            <span class="flex items-center gap-3"><i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Employees</span>
-                        </a>
-
                         
                         <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*'])); ?>">
                             <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*'])); ?>">
@@ -736,6 +737,16 @@
                         </div>
 
                         
+                        
+                        <a href="<?php echo e(route('admin.hrm.tasks.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.tasks.*')); ?>">
+                            <span class="flex items-center gap-3"><i data-lucide="check-square" class="nav-icon w-[18px] h-[18px]"></i> Tasks</span>
+                        </a>
+                         
+                        <a href="<?php echo e(route('admin.hrm.work-logs.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.work-logs.*')); ?>">
+                            <span class="flex items-center gap-3"><i data-lucide="timer" class="nav-icon w-[18px] h-[18px]"></i> Work Logs</span>
+                        </a>  
+
+                        
                         <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*'])); ?>">
                             <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="calendar-off" class="nav-icon w-[18px] h-[18px]"></i> Leaves</span>
@@ -750,7 +761,7 @@
                             </div>
                         </div>
 
-                        
+                         
                         <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*'])); ?>">
                             <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="banknote" class="nav-icon w-[18px] h-[18px]"></i> Payroll</span>
@@ -765,18 +776,10 @@
                         </div>
 
                         
-                        <a href="<?php echo e(route('admin.hrm.tasks.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.tasks.*')); ?>">
-                            <span class="flex items-center gap-3"><i data-lucide="check-square" class="nav-icon w-[18px] h-[18px]"></i> Tasks</span>
+                        <a href="<?php echo e(route('admin.hrm.employees.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.employees.*')); ?>">
+                            <span class="flex items-center gap-3"><i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Employees</span>
                         </a>
-                         
-                        <a href="<?php echo e(route('admin.hrm.work-logs.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.work-logs.*')); ?>">
-                            <span class="flex items-center gap-3"><i data-lucide="timer" class="nav-icon w-[18px] h-[18px]"></i> Work Logs</span>
-                        </a>
-                        
-                        <a href="<?php echo e(route('admin.hrm.announcements.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.announcements.*')); ?>">
-                            <span class="flex items-center gap-3"><i data-lucide="megaphone" class="nav-icon w-[18px] h-[18px]"></i> Announcements</span>
-                        </a>                       
-
+                                                                 
                         
                         <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*'])); ?>">
                             <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*'])); ?>">
@@ -792,25 +795,7 @@
                                     <a href="<?php echo e(route('admin.hrm.attendance-rules.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.attendance-rules.*')); ?>">Attendance Rules</a>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <?php if(has_permission('roles.view')): ?>
-                        <a href="<?php echo e(route('admin.roles.index')); ?>" class="nav-item <?php echo e($navCls('admin.roles.*')); ?>">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="shield-check" class="nav-icon w-[18px] h-[18px]"></i>
-                                Roles & Permissions
-                            </span>
-                        </a>
-                        <?php endif; ?>
-                        
-                        <?php if(has_permission('users.view')): ?>
-                        <a href="<?php echo e(route('admin.users.index')); ?>" class="nav-item <?php echo e($navCls('admin.users.*')); ?>">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="shield-user" class="nav-icon w-[18px] h-[18px]"></i>
-                                Users
-                            </span>
-                        </a>                                        
-                        <?php endif; ?>
+                        </div>                                               
 
                     <?php endif; ?>
                     <?php endif; ?>
@@ -828,18 +813,7 @@
                             </span>
                         </a>
                     <?php endif; ?>
-
                                      
-
-                    <?php if(has_permission('payment-methods.view')): ?>
-                        <a href="<?php echo e(route('admin.payment-methods.index')); ?>"
-                            class="nav-item <?php echo e($navCls('admin.payment-methods.*')); ?>">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="credit-card" class="nav-icon w-[18px] h-[18px]"></i>
-                                Payment Methods
-                            </span>
-                        </a>
-                    <?php endif; ?>
 
                     <?php if(has_module('storefront') && has_permission('merchandising.view')): ?>
                         <a href="<?php echo e(route('admin.merchandising.index')); ?>"
@@ -872,6 +846,35 @@
                     <?php endif; ?>
 
                     <div class="nav-section-label">System</div>
+
+
+                    <?php if(has_permission('payment-methods.view')): ?>
+                        <a href="<?php echo e(route('admin.payment-methods.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.payment-methods.*')); ?>">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="credit-card" class="nav-icon w-[18px] h-[18px]"></i>
+                                Payment Methods
+                            </span>
+                        </a>
+                    <?php endif; ?>
+                    <?php if(has_permission('roles.view')): ?>
+                        <a href="<?php echo e(route('admin.roles.index')); ?>" class="nav-item <?php echo e($navCls('admin.roles.*')); ?>">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="shield-check" class="nav-icon w-[18px] h-[18px]"></i>
+                                Roles & Permissions
+                            </span>
+                        </a>
+                    <?php endif; ?>
+                        
+                    <?php if(has_permission('users.view')): ?>
+                        <a href="<?php echo e(route('admin.users.index')); ?>" class="nav-item <?php echo e($navCls('admin.users.*')); ?>">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="shield-user" class="nav-icon w-[18px] h-[18px]"></i>
+                                Users
+                            </span>
+                        </a>                                        
+                    <?php endif; ?>
+
 
                     <?php if(has_permission('settings.view')): ?>
                         <a href="<?php echo e(route('admin.settings.index')); ?>"

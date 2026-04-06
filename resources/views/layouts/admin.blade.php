@@ -495,25 +495,17 @@
                     @endif
                     
                     
+                    
+                    <div class="nav-section-label">Sales & Finance</div>                                        
+                    
                     @if (has_module('pos') && has_permission('pos.access'))
                         <a href="{{ url('/admin/pos') }}" class="nav-item" target="_blank" data-no-spa>
                             <span class="flex items-center gap-3"><i data-lucide="monitor"
                                     class="nav-icon w-[18px] h-[18px]"></i> POS</span>
                         </a>
                     @endif                   
-
-                    
-                    @if (has_module('invoicing') && has_permission('quotations.view'))
-                        <div class="nav-section-label">Sales & Finance</div>    
-                        
-                        <a href="{{ route('admin.quotations.index') }}"
-                            class="nav-item {{ $navCls('admin.quotations.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="quote"
-                                    class="nav-icon w-[18px] h-[18px]"></i> Quotations</span>
-                        </a>
-                    @endif
-                    
-                    {{-- Invoices --}}
+                  
+                      {{-- Invoices --}}
                     @if (has_module('invoicing') && has_permission('invoices.view'))
                         <div class="acc-group"
                             data-open="{{ $accOpen(['admin.invoices.*', 'admin.invoice-returns.*']) }}">
@@ -533,15 +525,15 @@
                             </div>
                         </div>
                     @endif
-                    
-                    @if (has_module('reports') && has_permission('reports.view'))
-                         <a href="{{ route('admin.reports.index') }}"
-                             class="nav-item {{ $navCls('admin.reports.*') }}">
-                             <span class="flex items-center gap-3"><i data-lucide="bar-chart-2"
-                                     class="nav-icon w-[18px] h-[18px]"></i> Analytics</span>
-                         </a>
-                     @endif
 
+                    @if (has_module('invoicing') && has_permission('quotations.view'))                    
+                        <a href="{{ route('admin.quotations.index') }}"
+                            class="nav-item {{ $navCls('admin.quotations.*') }}">
+                            <span class="flex items-center gap-3"><i data-lucide="quote"
+                                class="nav-icon w-[18px] h-[18px]"></i> Quotations</span>
+                        </a>
+                    @endif
+                                  
                     {{-- Purchases --}}
                     @if (has_module('purchases') && has_permission(['purchases.view', 'purchase_returns.view']))
                         <div class="acc-group"
@@ -593,6 +585,15 @@
                             </div>
                         </div>
                     @endif
+
+                    @if (has_module('reports') && has_permission('reports.view'))
+                         <a href="{{ route('admin.reports.index') }}"
+                             class="nav-item {{ $navCls('admin.reports.*') }}">
+                             <span class="flex items-center gap-3"><i data-lucide="bar-chart-2"
+                                     class="nav-icon w-[18px] h-[18px]"></i> Analytics</span>
+                         </a>
+                     @endif
+
                       
                     
                     
@@ -718,13 +719,13 @@
                     {{-- HRM --}}
                     @if (has_module('hrm'))
                     @if(!auth()->user()->hasRole('employee'))
-                    <div class="nav-section-label">Team</div>                        
-
-                        {{-- Employees --}}
-                        <a href="{{ route('admin.hrm.employees.index') }}" class="nav-item {{ $navCls('admin.hrm.employees.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Employees</span>
-                        </a>
-
+                    <div class="nav-section-label">Team</div>
+                    
+                         {{-- Announcements --}}
+                        <a href="{{ route('admin.hrm.announcements.index') }}" class="nav-item {{ $navCls('admin.hrm.announcements.*') }}">
+                            <span class="flex items-center gap-3"><i data-lucide="megaphone" class="nav-icon w-[18px] h-[18px]"></i> Announcements</span>
+                        </a> 
+                        
                         {{-- Attendance --}}
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*']) }}">
                             <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*']) }}">
@@ -739,6 +740,16 @@
                                 </div>
                             </div>
                         </div>
+
+                        
+                        {{-- Tasks --}}
+                        <a href="{{ route('admin.hrm.tasks.index') }}" class="nav-item {{ $navCls('admin.hrm.tasks.*') }}">
+                            <span class="flex items-center gap-3"><i data-lucide="check-square" class="nav-icon w-[18px] h-[18px]"></i> Tasks</span>
+                        </a>
+                         {{-- Work Logs --}}
+                        <a href="{{ route('admin.hrm.work-logs.index') }}" class="nav-item {{ $navCls('admin.hrm.work-logs.*') }}">
+                            <span class="flex items-center gap-3"><i data-lucide="timer" class="nav-icon w-[18px] h-[18px]"></i> Work Logs</span>
+                        </a>  
 
                         {{-- Leaves --}}
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*']) }}">
@@ -755,7 +766,7 @@
                             </div>
                         </div>
 
-                        {{-- Payroll --}}
+                         {{-- Payroll --}}
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*']) }}">
                             <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*']) }}">
                                 <span class="flex items-center gap-3"><i data-lucide="banknote" class="nav-icon w-[18px] h-[18px]"></i> Payroll</span>
@@ -769,19 +780,11 @@
                             </div>
                         </div>
 
-                        {{-- Tasks --}}
-                        <a href="{{ route('admin.hrm.tasks.index') }}" class="nav-item {{ $navCls('admin.hrm.tasks.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="check-square" class="nav-icon w-[18px] h-[18px]"></i> Tasks</span>
+                        {{-- Employees --}}
+                        <a href="{{ route('admin.hrm.employees.index') }}" class="nav-item {{ $navCls('admin.hrm.employees.*') }}">
+                            <span class="flex items-center gap-3"><i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Employees</span>
                         </a>
-                         {{-- Work Logs --}}
-                        <a href="{{ route('admin.hrm.work-logs.index') }}" class="nav-item {{ $navCls('admin.hrm.work-logs.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="timer" class="nav-icon w-[18px] h-[18px]"></i> Work Logs</span>
-                        </a>
-                        {{-- Announcements --}}
-                        <a href="{{ route('admin.hrm.announcements.index') }}" class="nav-item {{ $navCls('admin.hrm.announcements.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="megaphone" class="nav-icon w-[18px] h-[18px]"></i> Announcements</span>
-                        </a>                       
-
+                                                                 
                         {{-- Setup --}}
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*']) }}">
                             <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*']) }}">
@@ -797,25 +800,7 @@
                                     <a href="{{ route('admin.hrm.attendance-rules.index') }}" class="sub-item {{ $subCls('admin.hrm.attendance-rules.*') }}">Attendance Rules</a>
                                 </div>
                             </div>
-                        </div>
-                        
-                        @if (has_permission('roles.view'))
-                        <a href="{{ route('admin.roles.index') }}" class="nav-item {{ $navCls('admin.roles.*') }}">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="shield-check" class="nav-icon w-[18px] h-[18px]"></i>
-                                Roles & Permissions
-                            </span>
-                        </a>
-                        @endif
-                        
-                        @if (has_permission('users.view'))
-                        <a href="{{ route('admin.users.index') }}" class="nav-item {{ $navCls('admin.users.*') }}">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="shield-user" class="nav-icon w-[18px] h-[18px]"></i>
-                                Users
-                            </span>
-                        </a>                                        
-                        @endif
+                        </div>                                               
 
                     @endif
                     @endif
@@ -833,18 +818,7 @@
                             </span>
                         </a>
                     @endif
-
                                      
-
-                    @if (has_permission('payment-methods.view'))
-                        <a href="{{ route('admin.payment-methods.index') }}"
-                            class="nav-item {{ $navCls('admin.payment-methods.*') }}">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="credit-card" class="nav-icon w-[18px] h-[18px]"></i>
-                                Payment Methods
-                            </span>
-                        </a>
-                    @endif
 
                     @if (has_module('storefront') && has_permission('merchandising.view'))
                         <a href="{{ route('admin.merchandising.index') }}"
@@ -877,6 +851,35 @@
                     @endif
 
                     <div class="nav-section-label">System</div>
+
+
+                    @if (has_permission('payment-methods.view'))
+                        <a href="{{ route('admin.payment-methods.index') }}"
+                            class="nav-item {{ $navCls('admin.payment-methods.*') }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="credit-card" class="nav-icon w-[18px] h-[18px]"></i>
+                                Payment Methods
+                            </span>
+                        </a>
+                    @endif
+                    @if (has_permission('roles.view'))
+                        <a href="{{ route('admin.roles.index') }}" class="nav-item {{ $navCls('admin.roles.*') }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="shield-check" class="nav-icon w-[18px] h-[18px]"></i>
+                                Roles & Permissions
+                            </span>
+                        </a>
+                    @endif
+                        
+                    @if (has_permission('users.view'))
+                        <a href="{{ route('admin.users.index') }}" class="nav-item {{ $navCls('admin.users.*') }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="shield-user" class="nav-icon w-[18px] h-[18px]"></i>
+                                Users
+                            </span>
+                        </a>                                        
+                    @endif
+
 
                     @if (has_permission('settings.view'))
                         <a href="{{ route('admin.settings.index') }}"
