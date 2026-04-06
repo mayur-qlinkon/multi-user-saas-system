@@ -48,5 +48,5 @@ Route::middleware(['auth', 'role:super_admin'])
             
     });
 
-Route::view('/subscriptions', 'platform.billing.index')->name('platform.billing.index');
+
 Route::view('/platform/settings', 'platform.settings')->name('platform.settings.index');

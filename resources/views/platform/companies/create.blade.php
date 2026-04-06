@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.platform')
 
 @section('title', 'Onboard Company')
 @section('header', 'Onboard New Company')

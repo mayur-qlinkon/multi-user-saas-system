@@ -108,7 +108,7 @@
 <div class="pb-10" x-data="{ showFilters: false }">
 
     {{-- ── Stats bar ── --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
 
         <div class="stat-card">
             <div class="stat-icon bg-blue-50">

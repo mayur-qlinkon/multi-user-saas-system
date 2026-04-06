@@ -902,7 +902,7 @@
 
                 </nav>
 
-                <?php if($subscription): ?>
+                <?php if($subscription && is_owner()): ?>
                     <div class="px-3 py-3 flex-shrink-0">
                         <div class="bg-[#fff4ed] border border-[#fce4d6] rounded-xl p-3.5 text-center">
                             <?php if($isLifetime): ?>

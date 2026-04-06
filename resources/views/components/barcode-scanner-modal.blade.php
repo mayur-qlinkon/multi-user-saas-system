@@ -1,5 +1,5 @@
 {{-- Load the Scanner Library --}}
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
 
 {{-- The Modal Overlay --}}
 <div x-show="isScannerModalOpen" style="display: none;"
@@ -9,7 +9,7 @@
     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
     {{-- The Modal Box --}}
-    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+    <div class="bg-white w-full max-w-lg max-h-[90dvh] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-8 scale-95"
         x-transition:enter-end="opacity-100 translate-y-0 scale-100" @click.away="closeScanner()">
@@ -27,7 +27,7 @@
         </div>
 
         {{-- Scanner Body --}}
-        <div class="p-5 flex flex-col items-center">
+        <div class="p-5 flex flex-col items-center flex-1 overflow-y-auto">
             <p class="text-xs text-gray-500 mb-4 text-center">Point your camera at the product barcode. It will add to
                 cart automatically.</p>
 
@@ -64,5 +64,11 @@
 
     #camera-reader__dashboard_section_csr span {
         color: red !important;
+    }
+    #camera-reader video {
+        width: 100% !important;
+        max-height: 50vh !important;
+        object-fit: cover !important;
+        border-radius: 8px !important;
     }
 </style>

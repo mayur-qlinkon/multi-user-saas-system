@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.platform')
 
 @section('title', 'Manage Subscriptions - Qlinkon Super Admin')
 @section('header', 'Client Subscriptions')

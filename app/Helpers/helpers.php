@@ -73,11 +73,12 @@ if (!function_exists('get_setting')) {
         return $settings[$companyId][$key] ?? $default;
     }
 }
-function batch_enabled()
-{    
-    return (bool) Setting::get('enable_batch_tracking', 0);
+if (!function_exists('batch_enabled')) {
+    function batch_enabled()
+    {    
+        return (bool) Setting::get('enable_batch_tracking', 0);
+    }
 }
-
 
 
 if (!function_exists('tenant_subscription')) {
@@ -225,7 +226,7 @@ if (!function_exists('is_maintenance_mode')) {
 if (!function_exists('platform_announcement')) {
     function platform_announcement(): ?string
     {
-        $isActive = \App\Models\SystemSetting::isEnabled('platform_announcement_active');
+        $isActive = SystemSetting::isEnabled('platform_announcement_active');
         if (!$isActive) return null;
  
         $text = SystemSetting::getSetting('platform_announcement_text');

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.platform')
 
 @section('title', $company->name)
 @section('header', $company->name)

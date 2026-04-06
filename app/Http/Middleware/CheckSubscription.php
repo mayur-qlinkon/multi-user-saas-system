@@ -30,7 +30,7 @@ class CheckSubscription
         if (!$hasActiveSubscription) {
             // Redirect to a specific "billing required" page
             // Make sure to create this route later!
-            return redirect()->route('platform.billing.index')
+            return redirect()->route('subscriptions.index')
                              ->with('error', 'Your subscription has expired. Please renew to continue.');
         }
 

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.platform')
 
 @section('title', 'Database Seeders - Platform Admin')
 @section('header', 'Visual Seeder Platform')

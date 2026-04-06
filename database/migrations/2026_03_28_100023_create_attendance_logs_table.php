@@ -19,8 +19,7 @@ return new class extends Migration
             $table->timestamp('punched_at');
 
             $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
-            $table->string('qr_token', 64)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();            
 
             $table->string('device_info', 255)->nullable();
             $table->string('ip_address', 45)->nullable();

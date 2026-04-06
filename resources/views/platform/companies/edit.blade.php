@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.platform')
 
 @section('title', 'Edit — ' . $company->name)
 @section('header', 'Edit Company')

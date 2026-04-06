@@ -314,20 +314,6 @@
             <div class="p-4">
 
                 
-                <div x-show="scanStep === 'location'" class="text-center py-6">
-                    <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="map-pin" class="w-7 h-7 text-blue-500"></i>
-                    </div>
-                    <p class="text-[14px] font-black text-gray-800 mb-1">Location Access Required</p>
-                    <p class="text-[12px] text-gray-400 mb-5">Your GPS location is needed to verify you are at the office.</p>
-                    <button @click="requestLocation()"
-                        class="px-6 py-2.5 text-[13px] font-black text-white rounded-xl border-none cursor-pointer"
-                        style="background: var(--brand-600)">
-                        Allow Location
-                    </button>
-                </div>
-
-                
                 <div x-show="scanStep === 'scan'">
                     <p class="text-[12px] text-gray-400 text-center mb-3">Point your camera at the attendance QR code</p>
                     <div id="qr-reader" class="rounded-xl overflow-hidden" style="min-height: 280px;"></div>
@@ -385,6 +371,10 @@
 
 <script>
 function empDashboard() {
+    // 🌟 CRITICAL FIX: Store the scanner instance OUTSIDE the reactive Alpine object.
+    // This prevents Alpine's Proxy system from breaking the camera's internal feed.
+    let scannerInstance = null;
+
     return {
         showScanner: false,
         scanStep: 'location',   // location | scan | processing | success | error
@@ -392,28 +382,65 @@ function empDashboard() {
         successMessage: '',
         errorMessage: '',
         latitude: null,
-        longitude: null,
-        html5QrCode: null,
+        longitude: null,    
+        isProcessingScan: false,        
+        forceCheckout: false,
 
         init() {
             if (window.lucide) lucide.createIcons();
         },
 
         async openScanner() {
+            // Check for mandatory announcements before allowing scan
             try {
                 const res = await fetch('<?php echo e(route("admin.announcements-popup.pending")); ?>', {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
-                const data = await res.json();
-                if (data.data && data.data.some(a => a.requires_acknowledgement)) {
-                    BizAlert.toast('Please acknowledge all mandatory announcements before marking attendance.', 'error');
-                    return;
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.mandatory_count > 0) {
+                        window.dispatchEvent(new CustomEvent('announcements:recheck'));
+                        if (typeof BizAlert !== 'undefined') {
+                            BizAlert.toast('Please acknowledge all mandatory announcements before marking attendance.', 'error');
+                        }
+                        return;
+                    }
                 }
-            } catch {}
+            } catch (e) {
+                console.warn('Announcement check failed, proceeding with scanner:', e);
+            }
 
+            // Reset states
+            this.showScanner = true;
+            this.errorMessage = '';
+            this.successMessage = '';
+            
+            // ── NEW LOGIC: Check permissions silently ──
+            if (navigator.permissions) {
+                try {
+                    const permission = await navigator.permissions.query({ name: 'geolocation' });
+                    
+                    if (permission.state === 'granted') {
+                        // Permission already given! Skip the button and fetch location directly
+                        this.scanStatus = 'Getting your location...';
+                        this.requestLocation();
+                        return; 
+                    } else if (permission.state === 'denied') {
+                        // Permission blocked in browser settings
+                        this.scanStep = 'error';
+                        this.errorMessage = 'Location access is blocked. Please enable it in your browser settings and try again.';
+                        this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+                        return;
+                    }
+                    // If state is 'prompt', it will fall through to show the UI button
+                } catch (e) {
+                    console.warn("Permissions API not fully supported, falling back to UI prompt.");
+                }
+            }
+
+            // Fallback: Show the UI button for first-time users
             this.scanStep = 'location';
             this.scanStatus = 'Allow location access to continue';
-            this.showScanner = true;
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
         },
 
@@ -423,9 +450,13 @@ function empDashboard() {
         },
 
         stopCamera() {
-            if (this.html5QrCode) {
-                this.html5QrCode.stop().catch(() => {});
-                this.html5QrCode = null;
+            if (scannerInstance) {
+                try {
+                    // Stop the hardware feed and clear the canvas safely
+                    scannerInstance.stop().catch(() => {});
+                    scannerInstance.clear();
+                } catch(e) {}
+                scannerInstance = null;
             }
         },
 
@@ -433,6 +464,7 @@ function empDashboard() {
             if (!navigator.geolocation) {
                 this.scanStep = 'error';
                 this.errorMessage = 'Geolocation is not supported by your browser.';
+                this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
                 return;
             }
             this.scanStatus = 'Getting your location...';
@@ -444,80 +476,165 @@ function empDashboard() {
                 },
                 (err) => {
                     this.scanStep = 'error';
-                    this.errorMessage = 'Location access denied. Please enable GPS and try again.';
+                    if (err.code === err.PERMISSION_DENIED) {
+                        this.errorMessage = 'Location access denied. Please enable GPS in your browser settings and try again.';
+                    } else if (err.code === err.TIMEOUT) {
+                        this.errorMessage = 'Location request timed out. Please check your GPS signal and try again.';
+                    } else {
+                        this.errorMessage = 'Unable to get your location. Please enable GPS and try again.';
+                    }
                     this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
                 },
-                { enableHighAccuracy: true, timeout: 10000 }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         },
 
-        startCamera() {
+       startCamera() {
+            this.stopCamera();
             this.scanStep = 'scan';
             this.scanStatus = 'Scan the QR code shown at reception';
+            // 🌟 RESET the lock when camera starts
+            this.isProcessingScan = false; 
+            
             this.$nextTick(() => {
                 if (window.lucide) lucide.createIcons();
+                if (typeof Html5Qrcode === 'undefined') { /* error handling */ return; }
 
-                this.html5QrCode = new Html5Qrcode('qr-reader');
-
+                scannerInstance = new Html5Qrcode('qr-reader');
                 const config = {
                     fps: 10,
-                    qrbox: { width: 240, height: 240 },
-                    aspectRatio: 1.0,
-                    rememberLastUsedCamera: true,
+                    qrbox: (vw, vh) => {
+                        const minEdge = Math.min(vw, vh);
+                        return { width: minEdge * 0.7, height: minEdge * 0.7 };
+                    }
                 };
 
-                this.html5QrCode.start(
+                scannerInstance.start(
                     { facingMode: 'environment' },
                     config,
                     (decodedText) => {
+                        // 🌟 THE FIX: If we are already processing a scan, ignore everything else!
+                        if (this.isProcessingScan) return; 
+                        
+                        this.isProcessingScan = true; // Lock the door
                         this.stopCamera();
                         this.submitScan(decodedText);
                     },
-                    () => {}  // ignore per-frame errors
-                ).catch((err) => {
-                    this.scanStep = 'error';
-                    this.errorMessage = 'Camera access denied or not available. ' + err;
-                    this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
-                });
+                    (errorMessage) => {} 
+                ).catch((err) => { /* error handling */ });
             });
         },
 
-        async submitScan(qrData) {
+        /**
+         * Extract store_id from QR content.
+         * Supports: URL with /attend/{id}, ?store_id={id}, or plain number.
+         */
+        parseStoreId(qrText) {
+            // URL pattern: /attend/{id}
+            const attendMatch = qrText.match(/\/attend\/(\d+)/);
+            if (attendMatch) return parseInt(attendMatch[1]);
+
+            // Query param: ?store_id={id}
+            try {
+                const url = new URL(qrText);
+                const sid = url.searchParams.get('store_id');
+                if (sid) return parseInt(sid);
+            } catch {}
+
+            // Plain number
+            if (/^\d+$/.test(qrText.trim())) return parseInt(qrText.trim());
+
+            return null;
+        },
+
+       async submitScan(qrData) {
+            const storeId = this.parseStoreId(qrData);
+            if (!storeId) {
+                this.scanStep = 'error';
+                this.errorMessage = 'Invalid QR code. Please scan the attendance QR at your office.';
+                this.isProcessingScan = false; // 🌟 Unlock if invalid
+                this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+                return;
+            }
+
             this.scanStep = 'processing';
             this.scanStatus = 'Recording attendance...';
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
 
             try {
-                const res = await fetch('<?php echo e(route('admin.hrm.attendance.scan')); ?>', {
+                const res = await fetch('<?php echo e(route("admin.hrm.attendance.scan")); ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
                         'Accept': 'application/json',
+                        'X-Device-Info': navigator.userAgent.substring(0, 200),
                     },
                     body: JSON.stringify({
-                        qr_data:   qrData,
+                        store_id:  storeId,
                         latitude:  this.latitude,
                         longitude: this.longitude,
+                        force_checkout: this.forceCheckout // 🌟 Pass the flag to Laravel
                     }),
                 });
+
+                if (res.status === 429) {
+                    throw new Error('Too many attempts. Please wait a minute and try again.');
+                }
+
                 const data = await res.json();
+
+                // 🌟 SCENARIO E: Backend says "Hold up, leaving early?"
+                if (data.requires_confirmation) {
+                    this.scanStep = 'location'; // Reset view in background
+                    this.closeScanner();
+                    this.isProcessingScan = false;
+                    
+                    Swal.fire({
+                        title: 'Leave Early?', 
+                        text: data.message, 
+                        icon: 'warning', 
+                        showCancelButton: true, 
+                        confirmButtonColor: '#ef4444', 
+                        cancelButtonColor: '#6c757d', 
+                        confirmButtonText: 'Yes, Checkout Now'
+                    }).then((result) => { 
+                        if (result.isConfirmed) {
+                            // User clicked Yes. Set flag and re-submit bypassing the camera!
+                            this.forceCheckout = true;
+                            this.showScanner = true; 
+                            this.submitScan(qrData); 
+                        }
+                    });
+                    return;
+                }
 
                 if (data.success) {
                     this.scanStep = 'success';
                     this.successMessage = data.message;
                     this.scanStatus = 'Attendance recorded!';
-                    // Refresh stat cards after 2s
+                    
+                    // 🌟 Optional: Pop a SweetAlert to show the specific warning/success colors
+                    Swal.fire({
+                        icon: data.type === 'error' ? 'error' : (data.type === 'warning' ? 'warning' : 'success'),
+                        title: data.type === 'warning' ? 'Warning' : 'Success',
+                        text: data.message,
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+
                     setTimeout(() => window.location.reload(), 2500);
                 } else {
                     this.scanStep = 'error';
                     this.errorMessage = data.message || 'Something went wrong.';
                     this.scanStatus = 'Scan failed';
+                    this.isProcessingScan = false;
                 }
             } catch (e) {
                 this.scanStep = 'error';
-                this.errorMessage = 'Network error. Please check your connection.';
+                this.errorMessage = e.message === 'Too many attempts. Please wait a minute and try again.' ? e.message : 'Network error. Please check your connection.';
                 this.scanStatus = 'Scan failed';
+                this.isProcessingScan = false; // 🌟 Unlock on network error
             }
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
         },
@@ -526,6 +643,7 @@ function empDashboard() {
             this.stopCamera();
             this.latitude  = null;
             this.longitude = null;
+            this.isProcessingScan = false; // 🌟 Ensure unlock when retrying
             this.openScanner();
         },
     };

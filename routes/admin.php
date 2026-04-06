@@ -10,40 +10,9 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChallanController;
 use App\Http\Controllers\Admin\ChallanReturnController;
 use App\Http\Controllers\Admin\ClientController;
-use App\Http\Controllers\Admin\Crm\CrmDashboardController;
-use App\Http\Controllers\Admin\Crm\CrmImportExportController;
-use App\Http\Controllers\Admin\Crm\CrmLeadController;
-use App\Http\Controllers\Admin\Crm\CrmLeadSourceController;
-use App\Http\Controllers\Admin\Crm\CrmPipelineController;
-use App\Http\Controllers\Admin\Crm\CrmStageController;
-use App\Http\Controllers\Admin\Crm\CrmTagController;
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExpenseCategoryController;
 use App\Http\Controllers\Admin\ExpenseController;
-use App\Http\Controllers\Admin\Hrm\AnnouncementController as HrmAnnouncementController;
-use App\Http\Controllers\Admin\Hrm\AttendanceController as HrmAttendanceController;
-use App\Http\Controllers\Admin\Hrm\AttendanceRuleController as HrmAttendanceRuleController;
-use App\Http\Controllers\Admin\Hrm\DepartmentController as HrmDepartmentController;
-use App\Http\Controllers\Admin\Hrm\DesignationController as HrmDesignationController;
-use App\Http\Controllers\Admin\Hrm\EmployeeController as HrmEmployeeController;
-use App\Http\Controllers\Admin\Hrm\EmployeeDashboardController as HrmEmployeeDashboardController;
-use App\Http\Controllers\Admin\Hrm\HolidayController as HrmHolidayController;
-use App\Http\Controllers\Admin\Hrm\HrmTaskController;
-use App\Http\Controllers\Admin\Hrm\LeaveBalanceController as HrmLeaveBalanceController;
-use App\Http\Controllers\Admin\Hrm\LeaveController as HrmLeaveController;
-use App\Http\Controllers\Admin\Hrm\LeaveTypeController as HrmLeaveTypeController;
-use App\Http\Controllers\Admin\Hrm\MobileScanController as HrmMobileScanController;
-use App\Http\Controllers\Admin\Hrm\MyAttendanceController as HrmMyAttendanceController;
-use App\Http\Controllers\Admin\Hrm\MyLeaveController as HrmMyLeaveController;
-use App\Http\Controllers\Admin\Hrm\MySalarySlipController as HrmMySalarySlipController;
-use App\Http\Controllers\Admin\Hrm\MyTaskController as HrmMyTaskController;
-use App\Http\Controllers\Admin\Hrm\MyWorkLogController as HrmMyWorkLogController;
-use App\Http\Controllers\Admin\Hrm\OfficeLocationController as HrmOfficeLocationController;
-use App\Http\Controllers\Admin\Hrm\SalaryComponentController as HrmSalaryComponentController;
-use App\Http\Controllers\Admin\Hrm\SalarySlipController as HrmSalarySlipController;
-use App\Http\Controllers\Admin\Hrm\ShiftController as HrmShiftController;
-// HRM Controllers
-use App\Http\Controllers\Admin\Hrm\WorkLogController as HrmWorkLogController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryReportController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\InvoiceReturnController;
@@ -67,6 +36,45 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WarehouseController;
+
+
+
+// CRM Controllers
+use App\Http\Controllers\Admin\Crm\CrmDashboardController;
+use App\Http\Controllers\Admin\Crm\CrmImportExportController;
+use App\Http\Controllers\Admin\Crm\CrmLeadController;
+use App\Http\Controllers\Admin\Crm\CrmLeadSourceController;
+use App\Http\Controllers\Admin\Crm\CrmPipelineController;
+use App\Http\Controllers\Admin\Crm\CrmStageController;
+use App\Http\Controllers\Admin\Crm\CrmTagController;
+
+
+
+// HRM Controllers
+use App\Http\Controllers\Admin\Hrm\AnnouncementController as HrmAnnouncementController;
+use App\Http\Controllers\Admin\Hrm\AttendanceController as HrmAttendanceController;
+use App\Http\Controllers\Admin\Hrm\AttendanceRuleController as HrmAttendanceRuleController;
+use App\Http\Controllers\Admin\Hrm\DepartmentController as HrmDepartmentController;
+use App\Http\Controllers\Admin\Hrm\DesignationController as HrmDesignationController;
+use App\Http\Controllers\Admin\Hrm\EmployeeController as HrmEmployeeController;
+use App\Http\Controllers\Admin\Hrm\EmployeeDashboardController as HrmEmployeeDashboardController;
+use App\Http\Controllers\Admin\Hrm\HolidayController as HrmHolidayController;
+use App\Http\Controllers\Admin\Hrm\HrmTaskController;
+use App\Http\Controllers\Admin\Hrm\LeaveBalanceController as HrmLeaveBalanceController;
+use App\Http\Controllers\Admin\Hrm\LeaveController as HrmLeaveController;
+use App\Http\Controllers\Admin\Hrm\LeaveTypeController as HrmLeaveTypeController;
+use App\Http\Controllers\Admin\Hrm\MobileScanController as HrmMobileScanController;
+use App\Http\Controllers\Admin\Hrm\MyAttendanceController as HrmMyAttendanceController;
+use App\Http\Controllers\Admin\Hrm\MyLeaveController as HrmMyLeaveController;
+use App\Http\Controllers\Admin\Hrm\MySalarySlipController as HrmMySalarySlipController;
+use App\Http\Controllers\Admin\Hrm\MyTaskController as HrmMyTaskController;
+use App\Http\Controllers\Admin\Hrm\MyWorkLogController as HrmMyWorkLogController;
+use App\Http\Controllers\Admin\Hrm\OfficeLocationController as HrmOfficeLocationController;
+use App\Http\Controllers\Admin\Hrm\SalaryComponentController as HrmSalaryComponentController;
+use App\Http\Controllers\Admin\Hrm\SalarySlipController as HrmSalarySlipController;
+use App\Http\Controllers\Admin\Hrm\ShiftController as HrmShiftController;
+use App\Http\Controllers\Admin\Hrm\WorkLogController as HrmWorkLogController;
+
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Platform\OnboardingController;
 use Illuminate\Support\Facades\Route;
@@ -84,7 +92,6 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-
         // ════════════════════════════════════════════════
         // SETTINGS
         // ════════════════════════════════════════════════

@@ -4,11 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-    <title><?php echo $__env->yieldContent('title', 'Super Admin - Qlinkon'); ?></title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Super Admin - Qlinkon')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">    
-     <script src="https://cdn.tailwindcss.com"></script>
+    {{-- 1. Load Tailwind FIRST --}}
+    <script src="{{ asset('assets/js/tailwind.min.js') }}"></script>
+
+    {{-- 2. Configure Tailwind SECOND --}}
     <script>
         tailwind.config = {
             theme: {
@@ -29,9 +32,9 @@
 
         }
     </script>    
-    <script src="<?php echo e(asset('assets/js/lucide.min.js')); ?>"></script>
-    <script src="<?php echo e(asset('assets/js/sweetalert2.js')); ?>"></script>    
-    <script defer src="<?php echo e(asset('assets/js/alpinejs.min.js')); ?>"></script>  
+    <script src="{{ asset('assets/js/lucide.min.js') }}"></script>
+    <script src="{{ asset('assets/js/sweetalert2.js') }}"></script>    
+    <script defer src="{{ asset('assets/js/alpinejs.min.js') }}"></script>  
 
     <style>
         :root {
@@ -52,16 +55,16 @@
         }
     </style>
 
-    <?php echo $__env->yieldContent('styles'); ?>
+    @yield('styles')
 
 </head>
 
 <body class="bg-gray-100 text-gray-800">
 
     <div x-data="{ sidebar: false }" class="flex h-screen overflow-hidden">
-        
+        {{-- Mobile overlay --}}
         <div x-show="sidebar" x-cloak @click="sidebar=false" class="fixed inset-0 bg-black/40 z-40 lg:hidden"></div>
-        
+        {{-- Sidebar --}}
 
         <aside
             class="fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-50 transform lg:translate-x-0 transition-transform"
@@ -82,51 +85,52 @@
             </div>
 
             <nav class="p-4 space-y-1 text-sm font-medium">
-                <a href="<?php echo e(route('platform.dashboard')); ?>"
-                    class="flex items-center gap-3 px-3 py-2 rounded-lg <?php echo e(request()->routeIs('platform.dashboard') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100'); ?>">
+                <a href="{{ route('platform.dashboard') }}"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg {{ request()->routeIs('platform.dashboard') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                     Dashboard
                 </a>
 
 
 
-                <a href="<?php echo e(route('platform.companies.index')); ?>"
-                    class="flex items-center gap-3 px-3 py-2 rounded-lg <?php echo e(request()->routeIs('platform.companies.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100'); ?>">
+                <a href="{{ route('platform.companies.index') }}"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg {{ request()->routeIs('platform.companies.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
                     <i data-lucide="building-2" class="w-4 h-4"></i>
                     Companies
-                </a>
+                </a>    
 
-                <a href="<?php echo e(route('platform.modules.index')); ?>"
+
+                <a href="{{ route('platform.plans.index') }}"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg
-             <?php echo e(request()->routeIs('platform.modules.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100'); ?>">
-
-                    <i data-lucide="boxes" class="w-4 h-4"></i>
-                    Modules
-                </a>
-
-
-                <a href="<?php echo e(route('platform.plans.index')); ?>"
-                    class="flex items-center gap-3 px-3 py-2 rounded-lg
-   <?php echo e(request()->routeIs('platform.plans.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100'); ?>">
+                        {{ request()->routeIs('platform.plans.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
 
                     <i data-lucide="layers" class="w-4 h-4"></i>
                     Plans
                 </a>
-                <a href="<?php echo e(route('platform.subscriptions.index')); ?>"
+
+
+                <a href="{{ route('platform.subscriptions.index') }}"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg
-   <?php echo e(request()->routeIs('platform.subscriptions.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100'); ?>">
+                    {{ request()->routeIs('platform.subscriptions.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
 
                     <i data-lucide="credit-card" class="w-4 h-4"></i>
                     Subscriptions
                 </a>
+                 <a href="{{ route('platform.modules.index') }}"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg
+                        {{ request()->routeIs('platform.modules.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
+
+                    <i data-lucide="boxes" class="w-4 h-4"></i>
+                    Modules
+                </a>
                 <a href="#"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg
-   <?php echo e(request()->routeIs('platform.system.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100'); ?>">
+                    {{ request()->routeIs('platform.system.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
 
                     <i data-lucide="settings" class="w-4 h-4"></i>
                     System Settings
                 </a>
-                <a href="<?php echo e(url('/platform/seeders')); ?>" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100">
+                <a href="{{ url('/platform/seeders') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100">
                     <i data-lucide="flower-2" class="w-4 h-4"></i>
                     Seeders
                 </a>
@@ -137,9 +141,9 @@
             </nav>
 
         </aside>
-        
+        {{-- Main --}}
         <div class="flex-1 flex flex-col overflow-hidden">
-            
+            {{-- Topbar --}}
             <header class="bg-white border-b h-16 flex items-center justify-between px-6">
                 <div class="flex items-center gap-4">
                     <button @click="sidebar=!sidebar" class="lg:hidden text-gray-600">
@@ -148,11 +152,11 @@
                     </button>
 
                     <h1 class="font-semibold text-gray-700">
-                        <?php echo $__env->yieldContent('header', 'Dashboard'); ?>
+                        @yield('header', 'Dashboard')
                     </h1>
                 </div>
 
-                
+                {{-- Profile --}}
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open=!open" class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center">
@@ -167,8 +171,8 @@
                         <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">
                             Profile
                         </a>
-                        <form method="POST" action="<?php echo e(route('logout')); ?>">
-                            <?php echo csrf_field(); ?>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
                             <button class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
                                 Logout
                             </button>
@@ -178,9 +182,9 @@
 
             </header>
 
-            
+            {{-- Content --}}
             <main class="flex-1 overflow-y-auto p-6">
-                <?php echo $__env->yieldContent('content'); ?>
+                @yield('content')
             </main>
 
         </div>
@@ -191,9 +195,8 @@
         lucide.createIcons()
     </script>
 
-    <?php echo $__env->yieldContent('scripts'); ?>
+    @yield('scripts')
 
 </body>
 
 </html>
-<?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlinkonSoftware\resources\views/layouts/app.blade.php ENDPATH**/ ?>

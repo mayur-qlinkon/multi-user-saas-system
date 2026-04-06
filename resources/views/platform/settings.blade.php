@@ -1,5 +1,5 @@
 
-@extends('layouts.app')
+@extends('layouts.platform')
 
 @section('title', 'System Settings - Qlinkon')
 @section('header', 'System Settings')

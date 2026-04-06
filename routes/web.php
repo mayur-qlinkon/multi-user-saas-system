@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Admin\SubscriptionController;
 
 Route::get('/force-logout', function () {
     Auth::logout();
@@ -50,7 +51,7 @@ Route::middleware('auth')->group(function () {
 Route::view('/',               'welcome')->name('platform');
 
 
-
+Route::get('/subscriptions', [SubscriptionController::class,'index'])->name('subscriptions.index');
 Route::redirect('/admin/help','https://office.qlinkon.com/help-center')->name('help');
 Route::view('/db',              'tools.DB-SCHEMA')->name('db');
 
