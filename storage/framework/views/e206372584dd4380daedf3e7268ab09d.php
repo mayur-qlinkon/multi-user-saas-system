@@ -349,6 +349,65 @@
             #hamburger-btn.is-open .hb-line:nth-child(3) {
                 transform: translateY(-7px) rotate(-45deg);
             }
+            /* 1. Hide the mini logo by default */
+            .sidebar-logo-mini {
+                display: none !important;
+            }
+
+            /* ── Minimized Desktop Sidebar ── */
+            @media (min-width: 1024px) {
+                #main-sidebar {
+                    transition: width 250ms var(--ease), transform 280ms var(--ease), box-shadow 280ms var(--ease);
+                }
+                
+                #main-sidebar.is-minimized {
+                    width: 76px !important;
+                }
+
+                /* Hide extra elements */
+                #main-sidebar.is-minimized .nav-section-label,
+                #main-sidebar.is-minimized .nav-chevron,
+                #main-sidebar.is-minimized .acc-wrap,
+                #main-sidebar.is-minimized .subscription-box {
+                    display: none !important;
+                }
+
+                /* Squeeze the nav items to only show the icon */
+                #main-sidebar.is-minimized .nav-item {
+                    justify-content: center;
+                    padding-left: 0;
+                    padding-right: 0;
+                }
+                
+                #main-sidebar.is-minimized .nav-item > span {
+                    width: 18px; /* Exact width of the Lucide icon */
+                    overflow: hidden;
+                    white-space: nowrap;
+                    margin: 0 auto;
+                }
+
+                /* Hide the large logo, show a tiny version if needed */
+                #main-sidebar.is-minimized .sidebar-logo-img {
+                    display: none;
+                }
+                /* 2. When minimized, HIDE the full logo */
+                #main-sidebar.is-minimized .sidebar-logo-img {
+                    display: none !important;
+                }
+
+                /* 3. When minimized, SHOW the mini logo */
+                #main-sidebar.is-minimized .sidebar-logo-mini {
+                    display: flex !important;
+                    margin: 0 auto; /* Keeps it perfectly centered */
+                }
+                
+                /* 4. Fix the header padding so the icon centers properly */
+                #main-sidebar.is-minimized .h-\[60px\] {
+                    padding-left: 0;
+                    padding-right: 0;
+                    justify-content: center;
+                }
+            }
         </style>
 
         <?php echo $__env->yieldContent('styles'); ?>
@@ -381,15 +440,21 @@
 
                 <div class="h-[60px] flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0">
                     <a href="<?php echo e(route('admin.dashboard')); ?>" class="flex items-center gap-2.5">
+                       
                         <?php if($logo): ?>
                             <img src="<?php echo e(asset('storage/' . $logo)); ?>" alt="<?php echo e($siteName); ?> logo"
-                                class="h-7 md:h-8 lg:h-9 max-w-[150px] w-auto object-contain" loading="lazy" decoding="async" />
+                                class="sidebar-logo-img h-7 md:h-8 lg:h-9 max-w-[150px] w-auto object-contain" />
                         <?php else: ?>
-                            <div
-                                class="w-8 h-8 bg-brand-600 rounded-lg text-white flex items-center justify-center shadow-sm">
+                            <div class="sidebar-logo-img w-8 h-8 bg-brand-600 rounded-lg text-white flex items-center justify-center shadow-sm">
                                 <i data-lucide="leaf" class="w-[18px] h-[18px] fill-current"></i>
+                                <span class="ml-2 font-bold"><?php echo e($siteName); ?></span>
                             </div>
                         <?php endif; ?>
+
+                        
+                        <div class="sidebar-logo-mini w-8 h-8 bg-brand-600 rounded-lg text-white flex items-center justify-center shadow-sm">
+                            <i data-lucide="leaf" class="w-[18px] h-[18px] fill-current"></i>
+                        </div>
                     </a>
 
                     <button onclick="closeSidebar()"
@@ -906,7 +971,7 @@
                 </nav>
 
                 <?php if($subscription && is_owner()): ?>
-                    <div class="px-3 py-3 flex-shrink-0">
+                    <div class="px-3 py-3 flex-shrink-0 subscription-box">
                         <div class="bg-[#fff4ed] border border-[#fce4d6] rounded-xl p-3.5 text-center">
                             <?php if($isLifetime): ?>
                                 <p class="text-[11px] font-semibold text-gray-600">Plan: <span
@@ -937,6 +1002,11 @@
                             <span class="hb-line"></span>
                             <span class="hb-line"></span>
                             <span class="hb-line"></span>
+                        </button>
+                        
+                        <button onclick="toggleDesktopSidebar()" 
+                            class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors">
+                            <i data-lucide="menu" class="w-5 h-5"></i>
                         </button>
                         <div id="page-header-title" class="hidden sm:block"><?php echo $__env->yieldContent('header-title'); ?></div>
                     </div>
@@ -1756,6 +1826,18 @@
                 }
             };
         };
+        /* ── Desktop Minimized Sidebar ── */
+            function toggleDesktopSidebar() {
+                const sidebar = document.getElementById('main-sidebar');
+                sidebar.classList.toggle('is-minimized');
+                // Save preference so it remembers across page loads
+                localStorage.setItem('sidebar_minimized', sidebar.classList.contains('is-minimized'));
+            }
+
+            // Restore state immediately on load
+            if (localStorage.getItem('sidebar_minimized') === 'true') {
+                document.getElementById('main-sidebar').classList.add('is-minimized');
+            }
         </script>
 
         <style>

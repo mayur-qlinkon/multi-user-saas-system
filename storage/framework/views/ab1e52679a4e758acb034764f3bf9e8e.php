@@ -1,0 +1,424 @@
+
+
+<?php $__env->startSection('title', 'Inventory Report - Qlinkon BIZNESS'); ?>
+
+<?php $__env->startSection('header-title'); ?>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">REPORTS / Inventory</h1>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startSection('content'); ?>
+    <div class="pb-20" x-data="{ 
+        activeTab: new URLSearchParams(window.location.search).get('tab') || 'master',
+        expandedRows: [],
+        toggleRow(id) {
+            if (this.expandedRows.includes(id)) {
+                this.expandedRows = this.expandedRows.filter(rowId => rowId !== id);
+            } else {
+                this.expandedRows.push(id);
+            }
+        },
+        setTab(tab) {
+            this.activeTab = tab;
+            // Update URL without reloading so pagination links grab the correct tab
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tab);
+            window.history.pushState({}, '', url);
+        }
+    }">
+
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-4">
+                <div class="bg-blue-50 p-4 rounded-lg text-blue-600">
+                    <i data-lucide="boxes" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Total Valuation</p>
+                    <h2 class="text-3xl font-black text-gray-900">₹ <?php echo e(number_format($totalValuation, 2)); ?></h2>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-4">
+                <div class="bg-red-50 p-4 rounded-lg text-red-600">
+                    <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Low Stock Alerts</p>
+                    <h2 class="text-3xl font-black text-gray-900"><?php echo e($lowStockAlerts->total()); ?> <span class="text-sm font-medium text-gray-500">Items</span></h2>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-4">
+                <div class="bg-green-50 p-4 rounded-lg text-green-600">
+                    <i data-lucide="arrow-left-right" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Recent Movements</p>
+                    <h2 class="text-3xl font-black text-gray-900"><?php echo e($movements->total()); ?> <span class="text-sm font-medium text-gray-500">Logs</span></h2>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            
+            
+            <div class="flex border-b border-gray-200 bg-gray-50 px-2 pt-2 gap-2 overflow-x-auto no-scrollbar">
+                <button @click="setTab('master')" 
+                    :class="activeTab === 'master' ? 'bg-white text-blue-600 border-t-2 border-t-blue-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
+                    class="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-all whitespace-nowrap">
+                    <i data-lucide="database" class="w-4 h-4 inline-block mr-1.5 pb-0.5"></i> Master Stock
+                </button>
+                <button @click="setTab('alerts')" 
+                    :class="activeTab === 'alerts' ? 'bg-white text-red-600 border-t-2 border-t-red-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
+                    class="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-all whitespace-nowrap flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 inline-block pb-0.5"></i> 
+                    Reorder Alerts
+                    <?php if($lowStockAlerts->total() > 0): ?>
+                        <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full"><?php echo e($lowStockAlerts->total()); ?></span>
+                    <?php endif; ?>
+                </button>
+                <button @click="setTab('ledger')"
+                    :class="activeTab === 'ledger' ? 'bg-white text-gray-900 border-t-2 border-t-gray-800 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
+                    class="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-all whitespace-nowrap">
+                    <i data-lucide="history" class="w-4 h-4 inline-block mr-1.5 pb-0.5"></i> Movement Ledger
+                </button>
+                <?php if(batch_enabled()): ?>
+                <button @click="setTab('batches')"
+                    :class="activeTab === 'batches' ? 'bg-white text-indigo-600 border-t-2 border-t-indigo-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
+                    class="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-all whitespace-nowrap">
+                    <i data-lucide="layers" class="w-4 h-4 inline-block mr-1.5 pb-0.5"></i> Batch Tracking
+                </button>
+                <?php endif; ?>
+            </div>
+
+            
+            <div x-show="activeTab === 'master'" x-cloak class="p-0">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4 w-12"></th>
+                                <th class="px-6 py-4">Product & SKU</th>
+                                <th class="px-6 py-4">Category</th>
+                                <th class="px-6 py-4 text-right">Unit COGS</th>
+                                <th class="px-6 py-4 text-right">Total Qty</th>
+                                <th class="px-6 py-4 text-right">Total Value</th>
+                                <th class="px-6 py-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php $__empty_1 = true; $__currentLoopData = $masterStock; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sku): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <?php
+                                    $isLow = $sku->total_qty <= $sku->stock_alert;
+                                    $isOut = $sku->total_qty <= 0;
+                                ?>
+                                <tr class="hover:bg-gray-50 transition-colors cursor-pointer" @click="toggleRow(<?php echo e($sku->id); ?>)">
+                                    <td class="px-6 py-4 text-center">
+                                        <i data-lucide="chevron-down" 
+                                           class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                                           :class="expandedRows.includes(<?php echo e($sku->id); ?>) ? 'rotate-180' : ''"></i>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-gray-900 text-sm"><?php echo e($sku->product?->name ?? 'Unknown Product'); ?></div>
+                                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">SKU: <?php echo e($sku->sku); ?></div>
+                                    </td>
+                                    <td class="px-6 py-4 text-xs font-medium text-gray-600">
+                                        <?php echo e($sku->product->category->name ?? 'Uncategorized'); ?>
+
+                                    </td>
+                                    <td class="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                                        ₹ <?php echo e(number_format($sku->cost, 2)); ?>
+
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <span class="text-sm font-black <?php echo e($isOut ? 'text-red-600' : 'text-gray-900'); ?>">
+                                            <?php echo e((float) $sku->total_qty); ?> 
+                                        </span>
+                                        <span class="text-[10px] text-gray-500 ml-1"><?php echo e($sku->product->productUnit->short_name ?? 'Units'); ?></span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right text-sm font-black text-brand-600">
+                                        ₹ <?php echo e(number_format($sku->total_qty * $sku->cost, 2)); ?>
+
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <?php if($isOut): ?>
+                                            <span class="bg-red-50 text-red-700 border border-red-200 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Out of Stock</span>
+                                        <?php elseif($isLow): ?>
+                                            <span class="bg-orange-50 text-orange-700 border border-orange-200 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Low Stock</span>
+                                        <?php else: ?>
+                                            <span class="bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Healthy</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                
+                                
+                                <tr x-show="expandedRows.includes(<?php echo e($sku->id); ?>)" x-cloak class="bg-gray-50 border-b border-gray-200">
+                                    <td colspan="7" class="px-14 py-4">
+                                        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                                            <div class="bg-gray-100 px-4 py-2 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                                Warehouse Breakdown
+                                            </div>
+                                            <table class="w-full text-left text-xs">
+                                                <tbody class="divide-y divide-gray-100">
+                                                    <?php $__empty_2 = true; $__currentLoopData = $sku->stocks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $stock): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_2 = false; ?>
+                                                        <tr>
+                                                            <td class="px-4 py-2 font-medium text-gray-800">
+                                                                <?php echo e($stock->warehouse->name); ?>
+
+                                                                <span class="text-gray-400 ml-1">(<?php echo e($stock->warehouse->store->name ?? 'Primary'); ?>)</span>
+                                                            </td>
+                                                            <td class="px-4 py-2 text-right font-bold text-gray-900">
+                                                                <?php echo e((float) $stock->qty); ?>
+
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_2): ?>
+                                                        <tr>
+                                                            <td colspan="2" class="px-4 py-3 text-center text-gray-400 italic">No physical stock recorded in any warehouse.</td>
+                                                        </tr>
+                                                    <?php endif; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">No inventory data available.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 border-t border-gray-100">
+                    <?php echo e($masterStock->appends(['tab' => 'master'])->links()); ?>
+
+                </div>
+            </div>
+
+            
+            <div x-show="activeTab === 'alerts'" x-cloak class="p-0">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-red-50 border-b border-red-100 text-[11px] font-bold text-red-800 uppercase tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4">Product & SKU</th>
+                                <th class="px-6 py-4 text-center">Alert Threshold</th>
+                                <th class="px-6 py-4 text-center">Current Qty</th>
+                                <th class="px-6 py-4 text-center">Deficit</th>
+                                <th class="px-6 py-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php $__empty_1 = true; $__currentLoopData = $lowStockAlerts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $alert): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <?php $deficit = $alert->stock_alert - $alert->current_qty; ?>
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-gray-900 text-sm"><?php echo e($alert->product->name); ?></div>
+                                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">SKU: <?php echo e($alert->sku); ?></div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-semibold text-gray-600">
+                                        <?php echo e((float) $alert->stock_alert); ?>
+
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="font-black text-lg <?php echo e($alert->current_qty <= 0 ? 'text-red-600' : 'text-orange-600'); ?>">
+                                            <?php echo e((float) $alert->current_qty); ?>
+
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">
+                                            -<?php echo e((float) $deficit); ?> Short
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        
+                                        <a href="<?php echo e(route('admin.purchases.create', ['sku_id' => $alert->id, 'qty' => $deficit])); ?>" 
+                                        class="inline-block bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm text-center">
+                                            Reorder
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                <tr>
+                                    <td colspan="5" class="px-6 py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center text-green-600">
+                                            <i data-lucide="check-circle" class="w-12 h-12 mb-3 opacity-50"></i>
+                                            <p class="font-bold text-lg">All Stock is Healthy!</p>
+                                            <p class="text-sm text-gray-500 mt-1">No items are currently below their alert thresholds.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 border-t border-gray-100">
+                    <?php echo e($lowStockAlerts->appends(['tab' => 'alerts'])->links()); ?>
+
+                </div>
+            </div>
+
+            
+            <div x-show="activeTab === 'ledger'" x-cloak class="p-0">
+                
+                
+                <div class="p-4 border-b border-gray-100 bg-white flex justify-end">
+                    <form method="GET" class="relative w-full md:w-72">
+                        <input type="hidden" name="tab" value="ledger">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" name="search_movement" value="<?php echo e(request('search_movement')); ?>" placeholder="Search SKU or Ref ID..."
+                            class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-gray-500 outline-none">
+                    </form>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">Date & Time</th>
+                                <th class="px-4 py-3">Product</th>
+                                <th class="px-4 py-3">Warehouse</th>
+                                <th class="px-4 py-3">Movement Type</th>
+                                <th class="px-4 py-3 text-right">Qty</th>
+                                <th class="px-4 py-3 text-right">Balance</th>
+                                <th class="px-4 py-3">User</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php $__empty_1 = true; $__currentLoopData = $movements; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $log): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <tr class="hover:bg-gray-50 transition-colors text-sm">
+                                    <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                        <div class="font-bold text-gray-800"><?php echo e($log->created_at->format('d M Y')); ?></div>
+                                        <div class="text-[10px]"><?php echo e($log->created_at->format('h:i A')); ?></div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-bold text-gray-900 line-clamp-1"><?php echo e($log->sku->product->name ?? 'Unknown'); ?></div>
+                                        <div class="text-[10px] text-gray-500 font-mono mt-0.5">SKU: <?php echo e($log->sku->sku ?? '-'); ?></div>
+                                    </td>
+                                    <td class="px-4 py-3 font-medium text-gray-700">
+                                        <?php echo e($log->warehouse->name ?? 'Unknown'); ?>
+
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <?php
+                                            $badgeClass = match($log->movement_type) {
+                                                'transfer_in', 'opening' => 'bg-blue-50 text-blue-700 border-blue-200',
+                                                'transfer_out' => 'bg-purple-50 text-purple-700 border-purple-200',
+                                                'sale' => 'bg-green-50 text-green-700 border-green-200',
+                                                'adjustment' => 'bg-orange-50 text-orange-700 border-orange-200',
+                                                default => 'bg-gray-50 text-gray-700 border-gray-200',
+                                            };
+                                        ?>
+                                        <span class="inline-block border px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest <?php echo e($badgeClass); ?>">
+                                            <?php echo e(str_replace('_', ' ', $log->movement_type)); ?>
+
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-black text-lg <?php echo e($log->quantity > 0 ? 'text-green-600' : 'text-red-600'); ?>">
+                                        <?php echo e($log->quantity > 0 ? '+' : ''); ?><?php echo e((float) $log->quantity); ?>
+
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-bold text-gray-900">
+                                        <?php echo e((float) $log->balance_after); ?>
+
+                                    </td>
+                                    <td class="px-4 py-3 text-xs text-gray-500 font-medium">
+                                        <?php echo e($log->user->name ?? 'System'); ?>
+
+                                    </td>
+                                </tr>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">No movements recorded yet.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 border-t border-gray-100">
+                    <?php echo e($movements->appends(['tab' => 'ledger', 'search_movement' => request('search_movement')])->links()); ?>
+
+                </div>
+            </div>
+
+            
+            <?php if(batch_enabled() && $batchReport): ?>
+            <div x-show="activeTab === 'batches'" x-cloak class="p-0">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4">Product & SKU</th>
+                                <th class="px-6 py-4">Batch #</th>
+                                <th class="px-6 py-4">Warehouse</th>
+                                <th class="px-6 py-4">Supplier</th>
+                                <th class="px-6 py-4 text-center">Mfg Date</th>
+                                <th class="px-6 py-4 text-center">Expiry Date</th>
+                                <th class="px-6 py-4 text-right">Orig Qty</th>
+                                <th class="px-6 py-4 text-right">Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php $__empty_1 = true; $__currentLoopData = $batchReport; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $batch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <?php
+                                    $isExpired = $batch->expiry_date && $batch->expiry_date->isPast();
+                                    $isExpiringSoon = $batch->expiry_date && !$isExpired && $batch->expiry_date->diffInDays(now()) <= 30;
+                                ?>
+                                <tr class="hover:bg-gray-50 transition-colors <?php echo e($isExpired ? 'bg-red-50' : ''); ?>">
+                                    <td class="px-6 py-4">
+                                        <div class="font-bold text-gray-900"><?php echo e($batch->sku->product->name ?? 'Unknown'); ?></div>
+                                        <div class="text-[10px] text-gray-500 font-mono mt-0.5"><?php echo e($batch->sku->sku ?? '-'); ?></div>
+                                    </td>
+                                    <td class="px-6 py-4 font-mono text-sm font-bold text-gray-800">
+                                        <?php echo e($batch->batch_number ?? '-'); ?>
+
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-700"><?php echo e($batch->warehouse->name ?? '-'); ?></td>
+                                    <td class="px-6 py-4 text-gray-700"><?php echo e($batch->supplier->name ?? '-'); ?></td>
+                                    <td class="px-6 py-4 text-center text-gray-600">
+                                        <?php echo e($batch->manufacturing_date ? $batch->manufacturing_date->format('d/m/Y') : '-'); ?>
+
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <?php if($batch->expiry_date): ?>
+                                            <span class="font-semibold <?php echo e($isExpired ? 'text-red-600' : ($isExpiringSoon ? 'text-orange-500' : 'text-gray-700')); ?>">
+                                                <?php echo e($batch->expiry_date->format('d/m/Y')); ?>
+
+                                                <?php if($isExpired): ?>
+                                                    <span class="ml-1 text-[9px] bg-red-100 text-red-700 px-1 py-0.5 rounded">EXPIRED</span>
+                                                <?php elseif($isExpiringSoon): ?>
+                                                    <span class="ml-1 text-[9px] bg-orange-100 text-orange-700 px-1 py-0.5 rounded">EXPIRING</span>
+                                                <?php endif; ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-gray-400">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-right text-gray-700"><?php echo e((float) $batch->qty); ?></td>
+                                    <td class="px-6 py-4 text-right font-bold <?php echo e($batch->remaining_qty <= 0 ? 'text-red-500' : 'text-green-600'); ?>">
+                                        <?php echo e((float) $batch->remaining_qty); ?>
+
+                                    </td>
+                                </tr>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                <tr>
+                                    <td colspan="8" class="px-6 py-12 text-center text-gray-500 font-medium">No active batches found.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 border-t border-gray-100">
+                    <?php echo e($batchReport->appends(['tab' => 'batches'])->links()); ?>
+
+                </div>
+            </div>
+            <?php endif; ?>
+
+        </div>
+    </div>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlinkonSoftware\resources\views/admin/reports/inventory.blade.php ENDPATH**/ ?>

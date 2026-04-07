@@ -439,9 +439,9 @@
                 ];
             ?>
 
-            <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $code => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+           <?php $__currentLoopData = $languages; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $code => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <button
-                    onclick="translatePage('<?php echo e($code); ?>')"
+                    @click="translatePage('<?php echo e($code); ?>'); open = false"
                     class="w-full text-left px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                     <?php echo e($label); ?>
 

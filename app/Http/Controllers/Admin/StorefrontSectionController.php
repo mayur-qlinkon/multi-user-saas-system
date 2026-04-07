@@ -249,6 +249,7 @@ class StorefrontSectionController extends Controller
             ], 500);
         }
     }
+    
 
     // ════════════════════════════════════════════════════
     //  PRIVATE — Tenant Guard
@@ -270,4 +271,5 @@ class StorefrontSectionController extends Controller
             abort(403, 'Access denied.');
         }
     }
+    
 }

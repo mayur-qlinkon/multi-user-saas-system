@@ -149,7 +149,19 @@
                     $cols = $section->columns ?? 4;
                 ?>
 
-                <section class="mb-10">
+                <section class="mb-10"
+                    x-data
+                    x-intersect.once="
+                        fetch('<?php echo e(route('storefront.analytics.section.view', ['slug' => $company->slug])); ?>', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content 
+                            },
+                            body: JSON.stringify({ section_id: <?php echo e($section->id); ?> })
+                        })
+                    "
+                >
 
                     
                     <?php if($section->show_section_title): ?>
@@ -268,7 +280,15 @@
                                 <a href="<?php echo e(route('storefront.product', [
                                     'slug' => $company->slug,
                                     'productSlug' => $product->slug,
-                                ])); ?>"
+                                    ])); ?>"
+                                    @click="fetch('<?php echo e(route('storefront.analytics.section.click', ['slug' => $company->slug, 'id'=>$section->id])); ?>', {
+                                            method: 'POST',
+                                            keepalive: true,
+                                            headers: {
+                                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                                'Accept': 'application/json'
+                                            }
+                                        })"
                                     class="group block cursor-pointer bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all overflow-hidden">
 
                                     

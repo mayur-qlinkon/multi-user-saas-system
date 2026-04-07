@@ -6,8 +6,11 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Product;
+use App\Models\StorefrontSection;
+
 use App\Services\BannerService;
 use App\Services\StorefrontSectionService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -373,4 +376,24 @@ class StorefrontController extends Controller
             return new \Illuminate\Database\Eloquent\Collection();
         }
     }
+    public function trackView(string $slug, Request $request)
+    {
+        // Optional: You can resolve the company here if you want extra security
+        // $company = $this->resolveCompany($slug);
+        
+        $sectionId = $request->input('section_id');
+        
+        if ($sectionId) {
+            StorefrontSection::where('id', $sectionId)->increment('view_count');
+        }
+        
+        return response()->json(['status' => 'logged']);
+    }
+   public function trackClick(string $slug, $id)
+    {
+        StorefrontSection::where('id', $id)->increment('click_count');
+        
+        return response()->json(['status' => 'logged']);
+    }
+    
 }

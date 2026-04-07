@@ -430,9 +430,9 @@
                 ];
             @endphp
 
-            @foreach($languages as $code => $label)
+           @foreach($languages as $code => $label)
                 <button
-                    onclick="translatePage('{{ $code }}')"
+                    @click="translatePage('{{ $code }}'); open = false"
                     class="w-full text-left px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                     {{ $label }}
                 </button>

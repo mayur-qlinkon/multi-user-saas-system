@@ -45,6 +45,8 @@ Route::prefix('{slug}')
             Route::get('/product/{productSlug}', 'show')->name('product');;
             Route::get('/search',                  'search')  ->name('search');
             Route::get('/suggest', 'suggest')->name('suggest');
+            Route::post('/analytics/section/view',  'trackView')->name('analytics.section.view');
+            Route::post('/analytics/section/{id}/click',  'trackClick')->name('analytics.section.click');
         });
 
         Route::prefix('orders')

@@ -185,7 +185,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 // ── AJAX ──
                 Route::post('/reorder', 'reorder')->name('reorder');
                 Route::post('/{storefrontSection}/toggle', 'toggleActive')->name('toggle');
-                Route::post('/{storefrontSection}/duplicate', 'duplicate')->name('duplicate');
+                Route::post('/{storefrontSection}/duplicate', 'duplicate')->name('duplicate');                
             });
         Route::prefix('storefront-sections/{storefrontSection}/products')
             ->name('storefront-sections.products.')
