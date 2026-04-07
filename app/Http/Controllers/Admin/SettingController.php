@@ -4,15 +4,21 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Models\Role;
 use App\Models\Setting;
 use App\Models\State;
+use App\Models\User;
 use App\Services\ImageUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use Spatie\Activitylog\Models\Activity;
 
 class SettingController extends Controller
 {
@@ -32,9 +38,9 @@ class SettingController extends Controller
 
     // ── File upload fields with their config ──
     private const FILE_FIELDS = [
-        'logo'      => ['path' => 'settings/logos',      'width' => 600,  'format' => 'webp', 'quality' => 90],
-        'icon'      => ['path' => 'settings/logos',      'width' => 800,  'format' => 'webp', 'quality' => 90],
-        'favicon'   => ['path' => 'settings/favicons',   'width' => 64,   'format' => 'webp', 'quality' => 90],
+        'logo' => ['path' => 'settings/logos',      'width' => 600,  'format' => 'webp', 'quality' => 90],
+        'icon' => ['path' => 'settings/logos',      'width' => 800,  'format' => 'webp', 'quality' => 90],
+        'favicon' => ['path' => 'settings/favicons',   'width' => 64,   'format' => 'webp', 'quality' => 90],
         'signature' => ['path' => 'settings/signatures', 'width' => 400,  'format' => 'webp', 'quality' => 85],
     ];
 
@@ -42,7 +48,7 @@ class SettingController extends Controller
     private const BOOLEAN_FIELDS = [
         'storefront_online',
         'round_off',
-        'enable_batch_tracking'
+        'enable_batch_tracking',
     ];
 
     // ── Fields to skip entirely (never save to DB) ──
@@ -56,26 +62,43 @@ class SettingController extends Controller
     // ════════════════════════════════════════════════════
     //  INDEX
     // ════════════════════════════════════════════════════
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         try {
-            $company = Company::find(Auth::user()->company_id);
-            $states  = State::orderBy('name')->get();
+            $companyId = Auth::user()->company_id;
+            $company = Company::find($companyId);
+            $states = State::orderBy('name')->get();
 
-            return view('admin.settings', compact('company', 'states'));
+            $roles = Role::where('company_id', $companyId)->orderBy('name')->get();
+
+            $users = User::where('company_id', $companyId)
+                ->with('roles:id,name')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+
+            $raw = get_setting('notify_new_order', null, $companyId);
+            $notificationConfig = [
+                'notify_new_order' => $raw
+                    ? (json_decode($raw, true) ?: ['roles' => ['owner'], 'users' => []])
+                    : ['roles' => ['owner'], 'users' => []],
+            ];
+
+            return view('admin.settings', compact('company', 'states', 'roles', 'users', 'notificationConfig'));
 
         } catch (\Throwable $e) {
             Log::error('[Settings] Failed to load settings page', [
-                'user_id'    => Auth::id(),
+                'user_id' => Auth::id(),
                 'company_id' => Auth::user()->company_id ?? null,
-                'error'      => $e->getMessage(),
-                'trace'      => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            // Graceful fallback — return page with empty data rather than crashing
             return view('admin.settings', [
                 'company' => null,
-                'states'  => collect(),
+                'states' => collect(),
+                'roles' => collect(),
+                'users' => collect(),
+                'notificationConfig' => ['notify_new_order' => ['roles' => ['owner'], 'users' => []]],
             ]);
         }
     }
@@ -89,25 +112,25 @@ class SettingController extends Controller
 
         // ── Basic validation ──
         $request->validate([
-            'gst_number'           => 'nullable|string|max:15',
-            'pan_number'           => 'nullable|string|max:10',
-            'company_email'        => 'nullable|email|max:255',
-            'company_phone'        => 'nullable|digits:10',
-            'upi_id'               => 'nullable|string|max:100',
+            'gst_number' => 'nullable|string|max:15',
+            'pan_number' => 'nullable|string|max:10',
+            'company_email' => 'nullable|email|max:255',
+            'company_phone' => 'nullable|digits:10',
+            'upi_id' => 'nullable|string|max:100',
             'invoice_start_number' => 'nullable|integer|min:1',
-            'ifsc'                 => 'nullable|string|max:11',
-            'logo'                 => 'nullable|file|image|mimes:jpg,jpeg,png,svg,webp|max:2048',
-            'icon'                 => 'nullable|file|image|mimes:jpg,jpeg,png,svg,webp|max:2048',
-            'favicon'              => 'nullable|file|image|mimes:png,ico,svg,webp|max:512',
-            'signature'            => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:1024',
+            'ifsc' => 'nullable|string|max:11',
+            'logo' => 'nullable|file|image|mimes:jpg,jpeg,png,svg,webp|max:2048',
+            'icon' => 'nullable|file|image|mimes:jpg,jpeg,png,svg,webp|max:2048',
+            'favicon' => 'nullable|file|image|mimes:png,ico,svg,webp|max:512',
+            'signature' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:1024',
         ]);
 
         DB::beginTransaction();
 
         try {
-            $company      = Company::findOrFail($companyId);
-            $allInput     = $request->except(self::SKIP_FIELDS);
-            $companyData  = [];
+            $company = Company::findOrFail($companyId);
+            $allInput = $request->except(self::SKIP_FIELDS);
+            $companyData = [];
             $settingsData = [];
 
             // ── Ensure boolean fields default to 0 when unchecked ──
@@ -120,32 +143,33 @@ class SettingController extends Controller
                 // ── Handle file uploads ──
                 if ($request->hasFile($key) && isset(self::FILE_FIELDS[$key])) {
                     try {
-                        $config   = self::FILE_FIELDS[$key];
+                        $config = self::FILE_FIELDS[$key];
                         $oldValue = Setting::where('company_id', $companyId)
-                                          ->where('key', $key)
-                                          ->value('value');
+                            ->where('key', $key)
+                            ->value('value');
 
                         $value = $this->imageService->upload(
-                            file:    $request->file($key),
-                            path:    $config['path'],
+                            file: $request->file($key),
+                            path: $config['path'],
                             options: [
                                 'old_file' => $oldValue,
-                                'width'    => $config['width'],
-                                'format'   => $config['format'],
-                                'quality'  => $config['quality'],
+                                'width' => $config['width'],
+                                'format' => $config['format'],
+                                'quality' => $config['quality'],
                             ]
                         );
 
                         Log::info("[Settings] File uploaded for key '{$key}'", [
                             'company_id' => $companyId,
-                            'path'       => $value,
+                            'path' => $value,
                         ]);
 
                     } catch (\Throwable $e) {
                         Log::error("[Settings] File upload failed for key '{$key}'", [
                             'company_id' => $companyId,
-                            'error'      => $e->getMessage(),
+                            'error' => $e->getMessage(),
                         ]);
+
                         // Skip this field — don't overwrite existing file with null
                         continue;
                     }
@@ -154,11 +178,11 @@ class SettingController extends Controller
                 // ── Route to company table or settings table ──
                 if (in_array($key, self::COMPANY_FIELDS)) {
                     // Map blade field name → company column name
-                    $column = match($key) {
-                        'company_name'  => 'name',
+                    $column = match ($key) {
+                        'company_name' => 'name',
                         'company_email' => 'email',
                         'company_phone' => 'phone',
-                        default         => $key,
+                        default => $key,
                     };
                     $companyData[$column] = $value ?: null;
                 } else {
@@ -168,17 +192,17 @@ class SettingController extends Controller
             }
 
             // ── Update company table ──
-            if (!empty($companyData)) {
+            if (! empty($companyData)) {
                 $company->update($companyData);
 
                 Log::info('[Settings] Company record updated', [
                     'company_id' => $companyId,
-                    'fields'     => array_keys($companyData),
+                    'fields' => array_keys($companyData),
                 ]);
             }
 
             // ── Bulk upsert settings ──
-            if (!empty($settingsData)) {
+            if (! empty($settingsData)) {
                 $this->upsertSettings($companyId, $settingsData);
             }
 
@@ -193,8 +217,8 @@ class SettingController extends Controller
             Cache::forget("company_settings_{$companyId}");
 
             Log::info('[Settings] Settings saved successfully', [
-                'company_id'    => $companyId,
-                'user_id'       => Auth::id(),
+                'company_id' => $companyId,
+                'user_id' => Auth::id(),
                 'setting_count' => count($settingsData),
             ]);
 
@@ -203,12 +227,13 @@ class SettingController extends Controller
                 'message' => 'Settings saved successfully!',
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed.',
-                'errors'  => $e->errors(),
+                'errors' => $e->errors(),
             ], 422);
 
         } catch (\Throwable $e) {
@@ -216,9 +241,9 @@ class SettingController extends Controller
 
             Log::error('[Settings] Update failed', [
                 'company_id' => $companyId,
-                'user_id'    => Auth::id(),
-                'error'      => $e->getMessage(),
-                'trace'      => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
@@ -226,6 +251,37 @@ class SettingController extends Controller
                 'message' => 'Something went wrong while saving. Please try again.',
             ], 500);
         }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  UPDATE NOTIFICATION SETTINGS
+    // ════════════════════════════════════════════════════
+    public function updateNotifications(Request $request): JsonResponse
+    {
+        $companyId = Auth::user()->company_id;
+
+        // Add new event keys here as the system grows.
+        $events = ['notify_new_order'];
+
+        DB::transaction(function () use ($request, $companyId, $events) {
+            foreach ($events as $eventKey) {
+                $roles = array_values(array_filter((array) $request->input("{$eventKey}_roles", [])));
+                $users = array_values(array_map('intval', array_filter((array) $request->input("{$eventKey}_users", []))));
+
+                Setting::updateOrCreate(
+                    ['company_id' => $companyId, 'key' => $eventKey],
+                    [
+                        'value' => json_encode(['roles' => $roles, 'users' => $users]),
+                        'group' => 'notifications',
+                        'type' => 'json',
+                    ]
+                );
+            }
+        });
+
+        Cache::forget("company_settings_{$companyId}");
+
+        return response()->json(['success' => true, 'message' => 'Notification preferences saved.']);
     }
 
     // ════════════════════════════════════════════════════
@@ -245,7 +301,7 @@ class SettingController extends Controller
 
             Log::info('[Settings] Cache cleared', [
                 'company_id' => $companyId,
-                'user_id'    => Auth::id(),
+                'user_id' => Auth::id(),
             ]);
 
             return response()->json([
@@ -256,7 +312,7 @@ class SettingController extends Controller
         } catch (\Throwable $e) {
             Log::error('[Settings] Cache clear failed', [
                 'company_id' => $companyId,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -281,17 +337,19 @@ class SettingController extends Controller
             if ($value === null || $value === '') {
                 // Only wipe if key already exists (user intentionally cleared it)
                 Setting::where('company_id', $companyId)
-                       ->where('key', $key)
-                       ->update(['value' => null]);
+                    ->where('key', $key)
+                    ->update(['value' => null]);
+
                 continue;
             }
 
             Setting::updateOrCreate(
                 ['company_id' => $companyId, 'key' => $key],
-                ['value'      => $value]
+                ['value' => $value]
             );
         }
     }
+
     // ════════════════════════════════════════════════════
     //  RESET ALL SETTINGS
     // ════════════════════════════════════════════════════
@@ -305,20 +363,20 @@ class SettingController extends Controller
 
             // Re-seed default settings
             $defaults = [
-                'primary_color'        => '#008a62',
-                'primary_hover_color'  => '#007050',
-                'storefront_online'    => '1',
+                'primary_color' => '#008a62',
+                'primary_hover_color' => '#007050',
+                'storefront_online' => '1',
                 'enable_batch_tracking' => '0',
-                'invoice_prefix'       => 'INV-',
-                'quotation_prefix'     => 'QTN-',
+                'invoice_prefix' => 'INV-',
+                'quotation_prefix' => 'QTN-',
                 'invoice_start_number' => '1',
-                'default_tax_type'     => 'cgst_sgst',
-                'payment_terms'        => 'immediate',
-                'round_off'            => '1',
-                'currency'             => 'INR',
-                'fy_start'             => 'april',
-                'registration_type'    => 'regular',
-                '_last_saved'          => now()->format('d M Y, h:i A'),
+                'default_tax_type' => 'cgst_sgst',
+                'payment_terms' => 'immediate',
+                'round_off' => '1',
+                'currency' => 'INR',
+                'fy_start' => 'april',
+                'registration_type' => 'regular',
+                '_last_saved' => now()->format('d M Y, h:i A'),
             ];
 
             $this->upsertSettings($companyId, $defaults);
@@ -328,7 +386,7 @@ class SettingController extends Controller
 
             Log::warning('[Settings] All settings reset to defaults', [
                 'company_id' => $companyId,
-                'user_id'    => Auth::id(),
+                'user_id' => Auth::id(),
             ]);
 
             return response()->json([
@@ -339,8 +397,8 @@ class SettingController extends Controller
         } catch (\Throwable $e) {
             Log::error('[Settings] Reset failed', [
                 'company_id' => $companyId,
-                'error'      => $e->getMessage(),
-                'trace'      => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
@@ -353,12 +411,12 @@ class SettingController extends Controller
     // ════════════════════════════════════════════════════
     //  SETTINGS AUDIT TRAIL
     // ════════════════════════════════════════════════════
-    public function auditTrail(Request $request): \Illuminate\View\View
+    public function auditTrail(Request $request): View
     {
         $companyId = Auth::user()->company_id;
 
         try {
-            $logs = \Spatie\Activitylog\Models\Activity::with('causer')
+            $logs = Activity::with('causer')
                 ->where('subject_type', Setting::class)
                 ->whereHasMorph('subject', [Setting::class], function ($q) use ($companyId) {
                     $q->where('company_id', $companyId);
@@ -371,10 +429,10 @@ class SettingController extends Controller
         } catch (\Throwable $e) {
             Log::error('[Settings] Audit trail load failed', [
                 'company_id' => $companyId,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
-            return view('admin.audit-logs.audit', ['logs' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 30)]);
+            return view('admin.audit-logs.audit', ['logs' => new LengthAwarePaginator([], 0, 30)]);
         }
     }
 }

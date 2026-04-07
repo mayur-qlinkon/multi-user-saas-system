@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\State;
 use App\Models\Store;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,7 @@ class StoreController extends Controller
     private function isMultiStorePlan(): bool
     {
         $subscription = tenant_subscription();
+
         return $subscription && $subscription->plan && $subscription->plan->store_limit > 1;
     }
 
@@ -32,7 +34,7 @@ class StoreController extends Controller
         // Tenantable trait automatically restricts this to their company_id
         $stores = Store::with('state')->latest()->paginate(15);
         $canAddMore = check_plan_limit('stores');
-        
+
         return view('admin.stores.index', compact('stores', 'canAddMore'));
     }
 
@@ -41,7 +43,7 @@ class StoreController extends Controller
      */
     public function create()
     {
-        if (!check_plan_limit('stores')) {
+        if (! check_plan_limit('stores')) {
             return redirect()->route('admin.stores.index')
                 ->with('error', 'You have reached your subscription limit for stores. Please upgrade your plan to add more.');
         }
@@ -57,7 +59,7 @@ class StoreController extends Controller
      */
     public function store(Request $request)
     {
-        if (!check_plan_limit('stores')) {
+        if (! check_plan_limit('stores')) {
             abort(403, 'Store limit reached. Please upgrade your plan.');
         }
 
@@ -65,43 +67,43 @@ class StoreController extends Controller
 
         // 1. Basic Rules (Always Applied)
         $rules = [
-            'name'      => ['required', 'string', 'max:255'],
-            'email'     => ['nullable', 'email', 'max:255'],
-            'phone'     => ['nullable', 'string', 'max:20'],
-            'address'   => ['nullable', 'string'],
-            'city'      => ['nullable', 'string', 'max:100'],
-            'state_id'  => ['nullable', 'exists:states,id'],
-            'zip_code'  => ['nullable', 'string', 'max:20'],
-            'country'   => ['nullable', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state_id' => ['nullable', 'exists:states,id'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
             'is_active' => ['nullable', 'boolean'],
-            'logo'      => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'signature' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
 
         // 2. Billing & Override Rules (Only Applied if Multi-Store Plan)
         if ($isMultiStore) {
             $rules = array_merge($rules, [
-                'gst_number'            => ['nullable', 'string', 'max:15'],
-                'upi_id'                => ['nullable', 'string', 'max:255'],
-                'bank_name'             => ['nullable', 'string', 'max:255'],
-                'account_name'          => ['nullable', 'string', 'max:255'],
-                'account_number'        => ['nullable', 'string', 'max:255'],
-                'ifsc_code'             => ['nullable', 'string', 'max:255'],
-                'branch_name'           => ['nullable', 'string', 'max:255'],
-                'invoice_prefix'        => ['nullable', 'string', 'max:10'],
-                'quotation_prefix'      => ['nullable', 'string', 'max:10'],
-                'purchase_prefix'       => ['nullable', 'string', 'max:10'],
-                'default_tax_type'      => ['nullable', 'string', 'max:50'],
+                'gst_number' => ['nullable', 'string', 'max:15'],
+                'upi_id' => ['nullable', 'string', 'max:255'],
+                'bank_name' => ['nullable', 'string', 'max:255'],
+                'account_name' => ['nullable', 'string', 'max:255'],
+                'account_number' => ['nullable', 'string', 'max:255'],
+                'ifsc_code' => ['nullable', 'string', 'max:255'],
+                'branch_name' => ['nullable', 'string', 'max:255'],
+                'invoice_prefix' => ['nullable', 'string', 'max:10'],
+                'quotation_prefix' => ['nullable', 'string', 'max:10'],
+                'purchase_prefix' => ['nullable', 'string', 'max:10'],
+                'default_tax_type' => ['nullable', 'string', 'max:50'],
                 'default_payment_terms' => ['nullable', 'string', 'max:50'],
-                'round_off_amounts'     => ['nullable', 'boolean'],
-                'invoice_footer_note'   => ['nullable', 'string'],
-                'invoice_terms'         => ['nullable', 'string'],
+                'round_off_amounts' => ['nullable', 'boolean'],
+                'invoice_footer_note' => ['nullable', 'string'],
+                'invoice_terms' => ['nullable', 'string'],
             ]);
         }
 
         $validated = $request->validate($rules);
         $validated['company_id'] = Auth::user()->company_id;
-        $validated['is_active']  = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active', true);
 
         if ($isMultiStore) {
             $validated['round_off_amounts'] = $request->boolean('round_off_amounts', true);
@@ -119,14 +121,26 @@ class StoreController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                Store::create($validated);
+                $store = Store::create($validated);
+
+                // Auto-attach all owner-role users in this company so they can access the new store.
+                $ownerIds = User::where('company_id', $validated['company_id'])
+                    ->whereHas('roles', fn ($q) => $q->where('slug', 'owner'))
+                    ->pluck('id')
+                    ->toArray();
+
+                // Always include the creating user even if they have a non-owner role.
+                $userIds = array_unique(array_merge($ownerIds, [Auth::id()]));
+
+                $store->users()->syncWithoutDetaching($userIds);
             });
 
             return redirect()->route('admin.stores.index')
                 ->with('success', 'Store branch created successfully.');
 
         } catch (Exception $e) {
-            Log::error('Error creating store: ' . $e->getMessage());
+            Log::error('Error creating store: '.$e->getMessage());
+
             return back()->withInput()
                 ->with('error', 'An error occurred while creating the store. Please check the logs and try again.');
         }
@@ -143,7 +157,7 @@ class StoreController extends Controller
         }
 
         $isMultiStore = $this->isMultiStorePlan();
-        
+
         return view('admin.stores.show', compact('store', 'isMultiStore'));
     }
 
@@ -175,37 +189,37 @@ class StoreController extends Controller
 
         // 1. Basic Rules
         $rules = [
-            'name'      => ['required', 'string', 'max:255'],
-            'email'     => ['nullable', 'email', 'max:255'],
-            'phone'     => ['nullable', 'string', 'max:20'],
-            'address'   => ['nullable', 'string'],
-            'city'      => ['nullable', 'string', 'max:100'],
-            'state_id'  => ['nullable', 'exists:states,id'],
-            'zip_code'  => ['nullable', 'string', 'max:20'],
-            'country'   => ['nullable', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state_id' => ['nullable', 'exists:states,id'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
             'is_active' => ['nullable', 'boolean'],
-            'logo'      => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'signature' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
 
         // 2. Billing & Override Rules (Only if Multi-Store Plan)
         if ($isMultiStore) {
             $rules = array_merge($rules, [
-                'gst_number'            => ['nullable', 'string', 'max:15'],
-                'upi_id'                => ['nullable', 'string', 'max:255'],
-                'bank_name'             => ['nullable', 'string', 'max:255'],
-                'account_name'          => ['nullable', 'string', 'max:255'],
-                'account_number'        => ['nullable', 'string', 'max:255'],
-                'ifsc_code'             => ['nullable', 'string', 'max:255'],
-                'branch_name'           => ['nullable', 'string', 'max:255'],
-                'invoice_prefix'        => ['nullable', 'string', 'max:10'],
-                'quotation_prefix'      => ['nullable', 'string', 'max:10'],
-                'purchase_prefix'       => ['nullable', 'string', 'max:10'],
-                'default_tax_type'      => ['nullable', 'string', 'max:50'],
+                'gst_number' => ['nullable', 'string', 'max:15'],
+                'upi_id' => ['nullable', 'string', 'max:255'],
+                'bank_name' => ['nullable', 'string', 'max:255'],
+                'account_name' => ['nullable', 'string', 'max:255'],
+                'account_number' => ['nullable', 'string', 'max:255'],
+                'ifsc_code' => ['nullable', 'string', 'max:255'],
+                'branch_name' => ['nullable', 'string', 'max:255'],
+                'invoice_prefix' => ['nullable', 'string', 'max:10'],
+                'quotation_prefix' => ['nullable', 'string', 'max:10'],
+                'purchase_prefix' => ['nullable', 'string', 'max:10'],
+                'default_tax_type' => ['nullable', 'string', 'max:50'],
                 'default_payment_terms' => ['nullable', 'string', 'max:50'],
-                'round_off_amounts'     => ['nullable', 'boolean'],
-                'invoice_footer_note'   => ['nullable', 'string'],
-                'invoice_terms'         => ['nullable', 'string'],
+                'round_off_amounts' => ['nullable', 'boolean'],
+                'invoice_footer_note' => ['nullable', 'string'],
+                'invoice_terms' => ['nullable', 'string'],
             ]);
         }
 
@@ -240,11 +254,13 @@ class StoreController extends Controller
                 ->with('success', 'Store branch updated successfully.');
 
         } catch (Exception $e) {
-            Log::error('Error updating store: ' . $e->getMessage());
+            Log::error('Error updating store: '.$e->getMessage());
+
             return back()->withInput()
                 ->with('error', 'An error occurred while updating the store. Please try again.');
         }
     }
+
     /**
      * Switch current active store in session.
      * Validates the store belongs to the user (not just the company)
@@ -273,7 +289,6 @@ class StoreController extends Controller
         return back();
     }
 
-
     /**
      * Remove the specified store from storage.
      */
@@ -290,13 +305,15 @@ class StoreController extends Controller
         }
 
         try {
-            // Note: If you have foreign key constraints (like invoices linked to a store), 
+            // Note: If you have foreign key constraints (like invoices linked to a store),
             // you might want to soft-delete or handle that gracefully here.
             $store->delete();
+
             return redirect()->route('admin.stores.index')->with('success', 'Store branch deleted successfully.');
-            
+
         } catch (Exception $e) {
-            Log::error('Error deleting store: ' . $e->getMessage());
+            Log::error('Error deleting store: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete store. It may be linked to existing records.');
         }
     }

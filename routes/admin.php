@@ -98,6 +98,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
         Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'update')->name('update');
+            Route::post('/notifications', 'updateNotifications')->name('notifications.update');
             Route::post('/clear-cache', 'clearCache')->name('clear-cache');
             Route::post('/reset', 'resetAll')->name('reset');
             Route::get('/audit', 'auditTrail')->name('audit');

@@ -1,15 +1,15 @@
-@extends('layouts.admin')
 
-@section('title', 'Settings — Qlinkon BIZNESS')
 
-@section('header-title')
+<?php $__env->startSection('title', 'Settings — Qlinkon BIZNESS'); ?>
+
+<?php $__env->startSection('header-title'); ?>
     <div>        
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Settings</h1>
         <p class="text-xs text-gray-400 font-medium mt-0.5">Company configuration & preferences</p>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
     <style>
         [x-cloak] {
             display: none !important;
@@ -317,12 +317,12 @@
             box-shadow: 0 2px 12px color-mix(in srgb, var(--brand-600) 12%, transparent);
         }
     </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="pb-10" x-data="settingsApp()">
 
-        {{-- ── Top Bar ── --}}
+        
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>                
                 <p class="text-sm text-gray-400 font-medium mt-0.5">Manage legal details, branding, billing and integrations
@@ -335,10 +335,10 @@
             </button>
         </div>
 
-        {{-- ── Main Card ── --}}
+        
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
-            {{-- Tab Bar --}}
+            
             <div class="flex overflow-x-auto border-b border-gray-100 bg-gray-50/60 hide-scrollbar px-2">
                 <template x-for="tab in tabs" :key="tab.id">
                     <button type="button" class="tab-btn" :class="{ active: activeTab === tab.id }"
@@ -350,12 +350,10 @@
             </div>
 
             <form id="settings-form" @submit.prevent="submitForm">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="p-6 sm:p-8">
 
-                    {{-- ════════════════════════════════
-                 TAB 1 — COMPANY
-            ════════════════════════════════ --}}
+                    
                     <div x-show="activeTab === 'company'" x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 translate-y-1"
                         x-transition:enter-end="opacity-100 translate-y-0">
@@ -365,65 +363,65 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                             <div class="md:col-span-2">
                                 <label class="field-label">Company / Legal Name <span class="text-red-500">*</span></label>
-                                <input type="text" name="company_name" value="{{ $company->name ?? '' }}"
+                                <input type="text" name="company_name" value="<?php echo e($company->name ?? ''); ?>"
                                     placeholder="As registered with ROC / GST" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">GSTIN <span class="text-red-500">*</span></label>
-                                <input type="text" name="gst_number" value="{{ $company->gst_number ?? '' }}"
+                                <input type="text" name="gst_number" value="<?php echo e($company->gst_number ?? ''); ?>"
                                     placeholder="15-digit GSTIN" maxlength="15" class="field-input uppercase">
                                 <p class="text-[11px] text-gray-400 mt-1.5">Used on all tax invoices and e-way bills</p>
                             </div>
                             <div>
                                 <label class="field-label">PAN Number</label>
-                                <input type="text" name="pan_number" value="{{ get_setting('pan_number') }}"
+                                <input type="text" name="pan_number" value="<?php echo e(get_setting('pan_number')); ?>"
                                     placeholder="10-digit PAN" maxlength="10" class="field-input uppercase">
                             </div>
                             <div>
                                 <label class="field-label">Registration Type</label>
                                 <select name="registration_type" class="field-input">
                                     <option value="regular"
-                                        {{ get_setting('registration_type') === 'regular' ? 'selected' : '' }}>Regular
+                                        <?php echo e(get_setting('registration_type') === 'regular' ? 'selected' : ''); ?>>Regular
                                     </option>
                                     <option value="composition"
-                                        {{ get_setting('registration_type') === 'composition' ? 'selected' : '' }}>
+                                        <?php echo e(get_setting('registration_type') === 'composition' ? 'selected' : ''); ?>>
                                         Composition</option>
                                     <option value="unregistered"
-                                        {{ get_setting('registration_type') === 'unregistered' ? 'selected' : '' }}>
+                                        <?php echo e(get_setting('registration_type') === 'unregistered' ? 'selected' : ''); ?>>
                                         Unregistered</option>
                                     <option value="sez"
-                                        {{ get_setting('registration_type') === 'sez' ? 'selected' : '' }}>SEZ</option>
+                                        <?php echo e(get_setting('registration_type') === 'sez' ? 'selected' : ''); ?>>SEZ</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="field-label">Financial Year Start</label>
                                 <select name="fy_start" class="field-input">
                                     <option value="april"
-                                        {{ get_setting('fy_start', 'april') === 'april' ? 'selected' : '' }}>April (Standard
+                                        <?php echo e(get_setting('fy_start', 'april') === 'april' ? 'selected' : ''); ?>>April (Standard
                                         — Indian FY)</option>
-                                    <option value="january" {{ get_setting('fy_start') === 'january' ? 'selected' : '' }}>
+                                    <option value="january" <?php echo e(get_setting('fy_start') === 'january' ? 'selected' : ''); ?>>
                                         January</option>
                                 </select>
                                 <p class="text-[11px] text-gray-400 mt-1.5">Affects reports and GST return periods</p>
                             </div>
                             <div>
                                 <label class="field-label">Company Email</label>
-                                <input type="email" name="company_email" value="{{ $company->email ?? '' }}"
+                                <input type="email" name="company_email" value="<?php echo e($company->email ?? ''); ?>"
                                     placeholder="billing@company.com" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Company Phone</label>
-                                <input type="tel" name="company_phone" value="{{ $company->phone ?? '' }}"
+                                <input type="tel" name="company_phone" value="<?php echo e($company->phone ?? ''); ?>"
                                     placeholder="10-digit number" maxlength="10" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Currency</label>
                                 <select name="currency" class="field-input">
-                                    <option value="INR" {{ ($company->currency ?? 'INR') === 'INR' ? 'selected' : '' }}>
+                                    <option value="INR" <?php echo e(($company->currency ?? 'INR') === 'INR' ? 'selected' : ''); ?>>
                                         ₹ INR — Indian Rupee</option>
-                                    <option value="USD" {{ ($company->currency ?? '') === 'USD' ? 'selected' : '' }}>$
+                                    <option value="USD" <?php echo e(($company->currency ?? '') === 'USD' ? 'selected' : ''); ?>>$
                                         USD — US Dollar</option>
-                                    <option value="EUR" {{ ($company->currency ?? '') === 'EUR' ? 'selected' : '' }}>€
+                                    <option value="EUR" <?php echo e(($company->currency ?? '') === 'EUR' ? 'selected' : ''); ?>>€
                                         EUR — Euro</option>
                                 </select>
                             </div>
@@ -431,12 +429,12 @@
                                 <label class="field-label">Default State (Place of Supply)</label>
                                 <select name="state_id" class="field-input">
                                     <option value="">Select State</option>
-                                    @foreach ($states ?? [] as $state)
-                                        <option value="{{ $state->id }}"
-                                            {{ ($company->state_id ?? '') == $state->id ? 'selected' : '' }}>
-                                            {{ $state->name }} ({{ $state->code }})
+                                    <?php $__currentLoopData = $states ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $state): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($state->id); ?>"
+                                            <?php echo e(($company->state_id ?? '') == $state->id ? 'selected' : ''); ?>>
+                                            <?php echo e($state->name); ?> (<?php echo e($state->code); ?>)
                                         </option>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
                                 <p class="text-[11px] text-gray-400 mt-1.5">Default place of supply on new invoices</p>
                             </div>
@@ -448,29 +446,27 @@
                             <div class="md:col-span-3">
                                 <label class="field-label">Street Address</label>
                                 <textarea name="address" class="field-input" rows="2"
-                                    placeholder="Office / factory address as per GST registration">{{ $company->address ?? '' }}</textarea>
+                                    placeholder="Office / factory address as per GST registration"><?php echo e($company->address ?? ''); ?></textarea>
                             </div>
                             <div>
                                 <label class="field-label">City</label>
-                                <input type="text" name="city" value="{{ $company->city ?? '' }}"
+                                <input type="text" name="city" value="<?php echo e($company->city ?? ''); ?>"
                                     placeholder="e.g. Ahmedabad" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">PIN Code</label>
-                                <input type="text" name="zip_code" value="{{ $company->zip_code ?? '' }}"
+                                <input type="text" name="zip_code" value="<?php echo e($company->zip_code ?? ''); ?>"
                                     placeholder="6-digit PIN" maxlength="6" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Country</label>
-                                <input type="text" name="country" value="{{ $company->country ?? 'India' }}"
+                                <input type="text" name="country" value="<?php echo e($company->country ?? 'India'); ?>"
                                     class="field-input" readonly>
                             </div>
                         </div>
                     </div>
 
-                    {{-- ════════════════════════════════
-                 TAB 2 — BRANDING
-            ════════════════════════════════ --}}
+                    
                     <div x-show="activeTab === 'branding'" x-cloak x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 translate-y-1"
                         x-transition:enter-end="opacity-100 translate-y-0">
@@ -522,7 +518,7 @@
                                         class="text-gray-400 normal-case font-normal">(shown in sidebar)</span></label>
                                 <div class="upload-zone">
                                     <img :src="previews.logo ||
-                                        '{{ get_setting('logo') ? asset('storage/' . get_setting('logo')) : asset('assets/images/placeholder.png') }}'"
+                                        '<?php echo e(get_setting('logo') ? asset('storage/' . get_setting('logo')) : asset('assets/images/placeholder.png')); ?>'"
                                         class="w-24 h-12 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="logo" @change="previewFile($event, 'logo')"
@@ -537,7 +533,7 @@
                                         class="text-gray-400 normal-case font-normal">(public storefront)</span></label>
                                 <div class="upload-zone">
                                     <img :src="previews.icon ||
-                                        '{{ get_setting('icon') ? asset('storage/' . get_setting('icon')) : asset('assets/images/placeholder.png') }}'"
+                                        '<?php echo e(get_setting('icon') ? asset('storage/' . get_setting('icon')) : asset('assets/images/placeholder.png')); ?>'"
                                         class="w-24 h-12 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="icon" @change="previewFile($event, 'icon')"
@@ -551,7 +547,7 @@
                                 <label class="field-label">Browser Favicon</label>
                                 <div class="upload-zone">
                                     <img :src="previews.favicon ||
-                                        '{{ get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : asset('assets/images/placeholder.png') }}'"
+                                        '<?php echo e(get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : asset('assets/images/placeholder.png')); ?>'"
                                         class="w-10 h-10 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="favicon" @change="previewFile($event, 'favicon')"
@@ -566,7 +562,7 @@
                                         class="text-gray-400 normal-case font-normal">(invoice footer)</span></label>
                                 <div class="upload-zone">
                                     <img :src="previews.signature ||
-                                        '{{ get_setting('signature') ? asset('storage/' . get_setting('signature')) : asset('assets/images/placeholder.png') }}'"
+                                        '<?php echo e(get_setting('signature') ? asset('storage/' . get_setting('signature')) : asset('assets/images/placeholder.png')); ?>'"
                                         class="w-24 h-12 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="signature" @change="previewFile($event, 'signature')"
@@ -582,7 +578,7 @@
                             Promotions</p>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <a href="{{ route('admin.banners.index') }}" class="banner-link-card group">
+                            <a href="<?php echo e(route('admin.banners.index')); ?>" class="banner-link-card group">
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -596,7 +592,7 @@
                                 <i data-lucide="arrow-right"
                                     class="w-4 h-4 text-gray-300 group-hover:text-brand-600 transition-colors"></i>
                             </a>
-                            <a href="{{ route('admin.banners.index', ['type' => 'promo']) }}"
+                            <a href="<?php echo e(route('admin.banners.index', ['type' => 'promo'])); ?>"
                                 class="banner-link-card group">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -611,7 +607,7 @@
                                 <i data-lucide="arrow-right"
                                     class="w-4 h-4 text-gray-300 group-hover:text-brand-600 transition-colors"></i>
                             </a>
-                            <a href="{{ route('admin.banners.index', ['type' => 'popup']) }}"
+                            <a href="<?php echo e(route('admin.banners.index', ['type' => 'popup'])); ?>"
                                 class="banner-link-card group">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -633,9 +629,7 @@
                         </p>
                     </div>
 
-                    {{-- ════════════════════════════════
-                 TAB 3 — BILLING
-            ════════════════════════════════ --}}
+                    
                     <div x-show="activeTab === 'billing'" x-cloak x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 translate-y-1"
                         x-transition:enter-end="opacity-100 translate-y-0">
@@ -645,32 +639,32 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                             <div class="md:col-span-2">
                                 <label class="field-label">Bank Name</label>
-                                <input type="text" name="bank_name" value="{{ get_setting('bank_name') }}"
+                                <input type="text" name="bank_name" value="<?php echo e(get_setting('bank_name')); ?>"
                                     placeholder="e.g. HDFC Bank" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Account Holder Name</label>
-                                <input type="text" name="bank_holder" value="{{ get_setting('bank_holder') }}"
+                                <input type="text" name="bank_holder" value="<?php echo e(get_setting('bank_holder')); ?>"
                                     placeholder="As per bank records" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Account Number</label>
-                                <input type="text" name="bank_ac" value="{{ get_setting('bank_ac') }}"
+                                <input type="text" name="bank_ac" value="<?php echo e(get_setting('bank_ac')); ?>"
                                     placeholder="Account number" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">IFSC Code</label>
-                                <input type="text" name="ifsc" value="{{ get_setting('ifsc') }}"
+                                <input type="text" name="ifsc" value="<?php echo e(get_setting('ifsc')); ?>"
                                     placeholder="e.g. HDFC0001234" maxlength="11" class="field-input uppercase">
                             </div>
                             <div>
                                 <label class="field-label">Branch Name</label>
-                                <input type="text" name="bank_branch" value="{{ get_setting('bank_branch') }}"
+                                <input type="text" name="bank_branch" value="<?php echo e(get_setting('bank_branch')); ?>"
                                     placeholder="e.g. Navrangpura" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">UPI ID</label>
-                                <input type="text" name="upi_id" value="{{ get_setting('upi_id') }}"
+                                <input type="text" name="upi_id" value="<?php echo e(get_setting('upi_id')); ?>"
                                     placeholder="yourshop@upi" class="field-input">
                                 <p class="text-[11px] text-gray-400 mt-1.5">Used to generate QR code on invoices</p>
                             </div>
@@ -683,30 +677,30 @@
                             <div>
                                 <label class="field-label">Invoice Prefix</label>
                                 <input type="text" name="invoice_prefix"
-                                    value="{{ get_setting('invoice_prefix', 'INV-') }}" placeholder="e.g. INV-"
+                                    value="<?php echo e(get_setting('invoice_prefix', 'INV-')); ?>" placeholder="e.g. INV-"
                                     class="field-input">
                                 <p class="text-[11px] text-gray-400 mt-1.5">e.g. INV-0001</p>
                             </div>
                             <div>
                                 <label class="field-label">Next Invoice Number</label>
                                 <input type="number" name="invoice_start_number" min="1"
-                                    value="{{ get_setting('invoice_start_number', 1) }}" class="field-input">
+                                    value="<?php echo e(get_setting('invoice_start_number', 1)); ?>" class="field-input">
                                 <p class="text-[11px] text-gray-400 mt-1.5">Auto-increments from this number</p>
                             </div>
                             <div>
                                 <label class="field-label">Quotation Prefix</label>
                                 <input type="text" name="quotation_prefix"
-                                    value="{{ get_setting('quotation_prefix', 'QTN-') }}" placeholder="e.g. QTN-"
+                                    value="<?php echo e(get_setting('quotation_prefix', 'QTN-')); ?>" placeholder="e.g. QTN-"
                                     class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Default Tax Type</label>
                                 <select name="default_tax_type" class="field-input">
                                     <option value="cgst_sgst"
-                                        {{ get_setting('default_tax_type', 'cgst_sgst') === 'cgst_sgst' ? 'selected' : '' }}>
+                                        <?php echo e(get_setting('default_tax_type', 'cgst_sgst') === 'cgst_sgst' ? 'selected' : ''); ?>>
                                         CGST + SGST (Intra-state)</option>
                                     <option value="igst"
-                                        {{ get_setting('default_tax_type') === 'igst' ? 'selected' : '' }}>IGST
+                                        <?php echo e(get_setting('default_tax_type') === 'igst' ? 'selected' : ''); ?>>IGST
                                         (Inter-state)</option>
                                 </select>
                             </div>
@@ -714,24 +708,24 @@
                                 <label class="field-label">Default Payment Terms</label>
                                 <select name="payment_terms" class="field-input">
                                     <option value="immediate"
-                                        {{ get_setting('payment_terms', 'immediate') === 'immediate' ? 'selected' : '' }}>
+                                        <?php echo e(get_setting('payment_terms', 'immediate') === 'immediate' ? 'selected' : ''); ?>>
                                         Immediate</option>
                                     <option value="net7"
-                                        {{ get_setting('payment_terms') === 'net7' ? 'selected' : '' }}>Net 7 Days</option>
+                                        <?php echo e(get_setting('payment_terms') === 'net7' ? 'selected' : ''); ?>>Net 7 Days</option>
                                     <option value="net15"
-                                        {{ get_setting('payment_terms') === 'net15' ? 'selected' : '' }}>Net 15 Days
+                                        <?php echo e(get_setting('payment_terms') === 'net15' ? 'selected' : ''); ?>>Net 15 Days
                                     </option>
                                     <option value="net30"
-                                        {{ get_setting('payment_terms') === 'net30' ? 'selected' : '' }}>Net 30 Days
+                                        <?php echo e(get_setting('payment_terms') === 'net30' ? 'selected' : ''); ?>>Net 30 Days
                                     </option>
                                 </select>
                             </div>
                             <div>
                                 <label class="field-label">Round Off Amounts</label>
                                 <select name="round_off" class="field-input">
-                                    <option value="1" {{ get_setting('round_off', '1') === '1' ? 'selected' : '' }}>
+                                    <option value="1" <?php echo e(get_setting('round_off', '1') === '1' ? 'selected' : ''); ?>>
                                         Yes — Round to nearest ₹1</option>
-                                    <option value="0" {{ get_setting('round_off') === '0' ? 'selected' : '' }}>No —
+                                    <option value="0" <?php echo e(get_setting('round_off') === '0' ? 'selected' : ''); ?>>No —
                                         Keep decimals</option>
                                 </select>
                             </div>
@@ -744,19 +738,17 @@
                             <div>
                                 <label class="field-label">Default Invoice Footer Note</label>
                                 <textarea name="invoice_footer_note" class="field-input" rows="2"
-                                    placeholder="e.g. Thank you for your business! Goods once sold will not be taken back.">{{ get_setting('invoice_footer_note') }}</textarea>
+                                    placeholder="e.g. Thank you for your business! Goods once sold will not be taken back."><?php echo e(get_setting('invoice_footer_note')); ?></textarea>
                             </div>
                             <div>
                                 <label class="field-label">Default Terms & Conditions</label>
                                 <textarea name="default_terms" class="field-input" rows="3"
-                                    placeholder="Standard terms printed on every invoice...">{{ get_setting('default_terms') }}</textarea>
+                                    placeholder="Standard terms printed on every invoice..."><?php echo e(get_setting('default_terms')); ?></textarea>
                             </div>
                         </div>
                     </div>
 
-                    {{-- ════════════════════════════════
-                 TAB 4 — STOREFRONT
-            ════════════════════════════════ --}}
+                    
                     <div x-show="activeTab === 'storefront'" x-cloak x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 translate-y-1"
                         x-transition:enter-end="opacity-100 translate-y-0">
@@ -769,7 +761,7 @@
                                 <div class="toggle-wrap">
                                     <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
                                         <input type="checkbox" name="storefront_online" value="1"
-                                            {{ get_setting('storefront_online') ? 'checked' : '' }} class="sr-only peer">
+                                            <?php echo e(get_setting('storefront_online') ? 'checked' : ''); ?> class="sr-only peer">
                                         <div
                                             class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600">
                                         </div>
@@ -783,7 +775,7 @@
                             <div>
                                 <label class="field-label">Shop Tagline</label>
                                 <input type="text" name="storefront_tagline"
-                                    value="{{ get_setting('storefront_tagline') }}"
+                                    value="<?php echo e(get_setting('storefront_tagline')); ?>"
                                     placeholder="e.g. Fresh Plants, Delivered to Your Door" class="field-input">
                             </div>
                            <div>
@@ -791,7 +783,7 @@
                                 <input 
                                     type="tel" 
                                     name="call_number" 
-                                    value="{{ get_setting('call_number') }}"
+                                    value="<?php echo e(get_setting('call_number')); ?>"
                                     placeholder="10-digit number"
                                     class="field-input"
                                     pattern="[0-9]{10}"
@@ -807,18 +799,18 @@
                                     pattern="[0-9]{10}"
                                     maxlength="10"
                                     minlength="10"
-                                    inputmode="numeric" value="{{ get_setting('whatsapp') }}"
+                                    inputmode="numeric" value="<?php echo e(get_setting('whatsapp')); ?>"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                     placeholder="With country code, e.g. 919099001122" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Website URL</label>
-                                <input type="url" name="website" value="{{ get_setting('website') }}"
+                                <input type="url" name="website" value="<?php echo e(get_setting('website')); ?>"
                                     placeholder="https://yourstore.com" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Company Address (Public)</label>
-                                <input type="text" name="address" value="{{ get_setting('address') }}"
+                                <input type="text" name="address" value="<?php echo e(get_setting('address')); ?>"
                                     placeholder="Shown on contact page" class="field-input">
                             </div>
                         </div>
@@ -826,7 +818,7 @@
                         <p class="section-title"><i data-lucide="share-2" class="w-4 h-4"></i> Social Profiles</p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-                            @php
+                            <?php
                                 $socials = [
                                     [
                                         'name' => 'instagram',
@@ -865,15 +857,15 @@
                                         'placeholder' => 'https://maps.google.com/?cid=...',
                                     ],
                                 ];
-                            @endphp
-                            @foreach ($socials as $social)
+                            ?>
+                            <?php $__currentLoopData = $socials; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $social): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div>
-                                    <label class="field-label">{{ $social['icon'] }} {{ $social['label'] }}</label>
-                                    <input type="url" name="{{ $social['name'] }}"
-                                        value="{{ get_setting($social['name']) }}"
-                                        placeholder="{{ $social['placeholder'] }}" class="field-input">
+                                    <label class="field-label"><?php echo e($social['icon']); ?> <?php echo e($social['label']); ?></label>
+                                    <input type="url" name="<?php echo e($social['name']); ?>"
+                                        value="<?php echo e(get_setting($social['name'])); ?>"
+                                        placeholder="<?php echo e($social['placeholder']); ?>" class="field-input">
                                 </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
 
                         <p class="section-title"><i data-lucide="search" class="w-4 h-4"></i> SEO & Meta</p>
@@ -881,25 +873,23 @@
                         <div class="grid grid-cols-1 gap-5">
                             <div>
                                 <label class="field-label">Meta Title</label>
-                                <input type="text" name="seo_title" value="{{ get_setting('seo_title') }}"
+                                <input type="text" name="seo_title" value="<?php echo e(get_setting('seo_title')); ?>"
                                     placeholder="60 characters recommended" class="field-input">
                             </div>
                             <div>
                                 <label class="field-label">Meta Description</label>
                                 <textarea name="seo_description" class="field-input" rows="3"
-                                    placeholder="160 characters recommended — shown in Google search results">{{ get_setting('seo_description') }}</textarea>
+                                    placeholder="160 characters recommended — shown in Google search results"><?php echo e(get_setting('seo_description')); ?></textarea>
                             </div>
                         </div>
                     </div>
 
-                    {{-- ════════════════════════════════
-                 TAB 5 — SYSTEM
-            ════════════════════════════════ --}}
+                    
                     <div x-show="activeTab === 'system'" x-cloak x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 translate-y-1"
                         x-transition:enter-end="opacity-100 translate-y-0">
 
-                        {{-- ── INVENTORY SETTINGS ── --}}
+                        
                         <p class="section-title">
                             <i data-lucide="boxes" class="w-4 h-4"></i>
                             Inventory Configuration
@@ -915,7 +905,8 @@
                                     <!-- Toggle -->
                                     <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
                                         <input type="checkbox" name="enable_batch_tracking" value="1"
-                                            {{ get_setting('enable_batch_tracking', 0) ? 'checked' : '' }}
+                                            <?php echo e(get_setting('enable_batch_tracking', 0) ? 'checked' : ''); ?>
+
                                             class="sr-only peer">
 
                                         <div class="w-11 h-6 bg-gray-200 rounded-full peer 
@@ -971,7 +962,7 @@
                         </div>
                         <p class="section-title"><i data-lucide="history" class="w-4 h-4"></i> Audit Trail</p>
 
-                        <a href="{{ route('admin.settings.audit') }}" class="banner-link-card group mb-8 block">
+                        <a href="<?php echo e(route('admin.settings.audit')); ?>" class="banner-link-card group mb-8 block">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -993,27 +984,28 @@
                         <div class="bg-gray-50 rounded-xl border border-gray-100 px-5 py-2 mb-6">
                             <div class="info-row">
                                 <span class="text-gray-500 font-medium">Tenant ID</span>
-                                <span class="font-mono font-bold text-gray-900">#{{ auth()->user()->company_id }}</span>
+                                <span class="font-mono font-bold text-gray-900">#<?php echo e(auth()->user()->company_id); ?></span>
                             </div>
                             <div class="info-row">
                                 <span class="text-gray-500 font-medium">Environment</span>
                                 <span
                                     class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
-                            {{ app()->environment('production') ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
-                                    {{ app()->environment() }}
+                            <?php echo e(app()->environment('production') ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'); ?>">
+                                    <?php echo e(app()->environment()); ?>
+
                                 </span>
                             </div>
                             <div class="info-row">
                                 <span class="text-gray-500 font-medium">Laravel Version</span>
-                                <span class="font-mono text-gray-900 font-bold">{{ app()->version() }}</span>
+                                <span class="font-mono text-gray-900 font-bold"><?php echo e(app()->version()); ?></span>
                             </div>
                             <div class="info-row">
                                 <span class="text-gray-500 font-medium">PHP Version</span>
-                                <span class="font-mono text-gray-900 font-bold">{{ phpversion() }}</span>
+                                <span class="font-mono text-gray-900 font-bold"><?php echo e(phpversion()); ?></span>
                             </div>
                             <div class="info-row">
                                 <span class="text-gray-500 font-medium">Timezone</span>
-                                <span class="font-mono text-gray-900 font-bold">{{ config('app.timezone') }}</span>
+                                <span class="font-mono text-gray-900 font-bold"><?php echo e(config('app.timezone')); ?></span>
                             </div>
                         </div>
 
@@ -1040,9 +1032,7 @@
                 </div>
             </form>
 
-            {{-- ════════════════════════════════
-                 TAB: NOTIFICATIONS (own form / save, outside main form)
-            ════════════════════════════════ --}}
+            
             <div x-show="activeTab === 'notifications'" x-cloak
                 x-transition:enter="transition ease-out duration-150"
                 x-transition:enter-start="opacity-0 translate-y-1"
@@ -1056,7 +1046,7 @@
                     is notified by default.
                 </p>
 
-                {{-- Event Card: New Order Inquiry --}}
+                
                 <div class="border border-gray-200 rounded-2xl mb-6">
                     <div class="bg-gray-50/80 rounded-t-2xl px-6 py-4 border-b border-gray-100 flex items-center gap-3">
                         <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -1070,19 +1060,19 @@
 
                     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                        {{-- ── Roles Multi-Select ── --}}
+                        
                         <div>
                             <label class="field-label">Notify by Role</label>
                             <div class="relative" @click.outside="msConfig.roles.open = false; msConfig.roles.search = ''">
 
-                                {{-- Chip container + search input --}}
+                                
                                 <div
                                     @click="msConfig.roles.open = true; $nextTick(() => $refs.rolesSearch.focus())"
                                     class="field-input flex flex-wrap gap-1.5 items-center cursor-text transition-all"
                                     style="min-height:44px; padding:6px 10px;"
                                     :class="msConfig.roles.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''"
                                 >
-                                    {{-- Selected chips --}}
+                                    
                                     <template x-for="val in notifConfig.notify_new_order.roles" :key="val">
                                         <span class="inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-1 rounded-lg leading-none flex-shrink-0"
                                             style="background:color-mix(in srgb,var(--brand-600) 12%,transparent); color:var(--brand-600);">
@@ -1094,7 +1084,7 @@
                                         </span>
                                     </template>
 
-                                    {{-- Search input --}}
+                                    
                                     <input x-ref="rolesSearch" type="text" x-model="msConfig.roles.search"
                                         @focus="msConfig.roles.open = true"
                                         @keydown.escape="msConfig.roles.open = false; msConfig.roles.search = ''"
@@ -1105,7 +1095,7 @@
                                         :class="msConfig.roles.open ? 'rotate-180' : ''"></i>
                                 </div>
 
-                                {{-- Dropdown --}}
+                                
                                 <div x-show="msConfig.roles.open" x-cloak
                                     x-transition:enter="transition ease-out duration-100"
                                     x-transition:enter-start="opacity-0 -translate-y-1 scale-y-95"
@@ -1127,19 +1117,19 @@
                             <p class="text-[11px] text-gray-400 mt-1.5">Selects all users who currently hold this role</p>
                         </div>
 
-                        {{-- ── Users Multi-Select ── --}}
+                        
                         <div>
                             <label class="field-label">Notify Specific Users</label>
                             <div class="relative" @click.outside="msConfig.users.open = false; msConfig.users.search = ''">
 
-                                {{-- Chip container + search input --}}
+                                
                                 <div
                                     @click="msConfig.users.open = true; $nextTick(() => $refs.usersSearch.focus())"
                                     class="field-input flex flex-wrap gap-1.5 items-center cursor-text transition-all"
                                     style="min-height:44px; padding:6px 10px;"
                                     :class="msConfig.users.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''"
                                 >
-                                    {{-- Selected chips --}}
+                                    
                                     <template x-for="val in notifConfig.notify_new_order.users" :key="val">
                                         <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-[12px] font-semibold px-2.5 py-1 rounded-lg leading-none flex-shrink-0">
                                             <span x-text="msLabel('users', val)"></span>
@@ -1150,7 +1140,7 @@
                                         </span>
                                     </template>
 
-                                    {{-- Search input --}}
+                                    
                                     <input x-ref="usersSearch" type="text" x-model="msConfig.users.search"
                                         @focus="msConfig.users.open = true"
                                         @keydown.escape="msConfig.users.open = false; msConfig.users.search = ''"
@@ -1161,7 +1151,7 @@
                                         :class="msConfig.users.open ? 'rotate-180' : ''"></i>
                                 </div>
 
-                                {{-- Dropdown --}}
+                                
                                 <div x-show="msConfig.users.open" x-cloak
                                     x-transition:enter="transition ease-out duration-100"
                                     x-transition:enter-start="opacity-0 -translate-y-1 scale-y-95"
@@ -1197,13 +1187,13 @@
                 </div>
             </div>
 
-            {{-- Bottom Save Bar — hidden on the Notifications tab (which has its own save button) --}}
+            
             <div x-show="activeTab !== 'notifications'"
                 class="border-t border-gray-100 bg-gray-50/80 px-8 py-4 flex items-center justify-between">
                 <p class="text-xs text-gray-400 font-medium flex items-center gap-2">
                     <i data-lucide="clock" class="w-3.5 h-3.5"></i>
                     Last saved: <span
-                        class="font-semibold text-gray-600">{{ get_setting('_last_saved') ?? 'Never' }}</span>
+                        class="font-semibold text-gray-600"><?php echo e(get_setting('_last_saved') ?? 'Never'); ?></span>
                 </p>
                 <button type="button" @click="submitForm()" :disabled="isSaving" class="save-btn">
                     <i data-lucide="loader-2" x-show="isSaving" x-cloak class="w-4 h-4 animate-spin"></i>
@@ -1214,9 +1204,9 @@
 
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script>
         function settingsApp() {
             return {
@@ -1227,20 +1217,20 @@
 
                 notifConfig: {
                     notify_new_order: {
-                        roles: @json(array_values($notificationConfig['notify_new_order']['roles'] ?? ['owner'])),
-                        users: @json(array_map('strval', $notificationConfig['notify_new_order']['users'] ?? [])),
+                        roles: <?php echo json_encode(array_values($notificationConfig['notify_new_order']['roles'] ?? ['owner']), 15, 512) ?>,
+                        users: <?php echo json_encode(array_map('strval', $notificationConfig['notify_new_order']['users'] ?? []), 512) ?>,
                     },
                 },
 
                 // Multi-select state: options are server-rendered once, search/open are runtime state.
                 msConfig: {
                     roles: {
-                        options: @json($roles->map(fn ($r) => ['value' => $r->slug, 'label' => $r->name])),
+                        options: <?php echo json_encode($roles->map(fn ($r) => ['value' => $r->slug, 'label' => $r->name]), 512) ?>,
                         search: '',
                         open: false,
                     },
                     users: {
-                        options: @json($users->map(fn ($u) => ['value' => (string) $u->id, 'label' => $u->name, 'sub' => $u->roles->first()?->name ?? ''])),
+                        options: <?php echo json_encode($users->map(fn ($u) => ['value' => (string) $u->id, 'label' => $u->name, 'sub' => $u->roles->first()?->name ?? ''])) ?>,
                         search: '',
                         open: false,
                     },
@@ -1279,8 +1269,8 @@
                 ],
 
                 theme: {
-                    primary: '{{ get_setting('primary_color', '#008a62') }}',
-                    hover: '{{ get_setting('primary_hover_color', '#007050') }}',
+                    primary: '<?php echo e(get_setting('primary_color', '#008a62')); ?>',
+                    hover: '<?php echo e(get_setting('primary_hover_color', '#007050')); ?>',
                 },
 
                 previews: {
@@ -1312,7 +1302,7 @@
                     data.set('primary_hover_color', this.theme.hover);
 
                     try {
-                        const res = await fetch("{{ route('admin.settings.update') }}", {
+                        const res = await fetch("<?php echo e(route('admin.settings.update')); ?>", {
                             method: 'POST',
                             headers: {
                                 'X-Requested-With': 'XMLHttpRequest',
@@ -1376,7 +1366,7 @@
                     this.notifConfig.notify_new_order.users.forEach(u => formData.append('notify_new_order_users[]', u));
 
                     try {
-                        const res = await fetch("{{ route('admin.settings.notifications.update') }}", {
+                        const res = await fetch("<?php echo e(route('admin.settings.notifications.update')); ?>", {
                             method: 'POST',
                             headers: {
                                 'X-Requested-With': 'XMLHttpRequest',
@@ -1396,10 +1386,10 @@
                 async clearCache() {
                     this.isClearingCache = true;
                     try {
-                        const res = await fetch("{{ route('admin.settings.clear-cache') }}", {
+                        const res = await fetch("<?php echo e(route('admin.settings.clear-cache')); ?>", {
                             method: 'POST',
                             headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
                                 'Accept': 'application/json',
                             },
                         });
@@ -1424,7 +1414,7 @@
                     BizAlert.loading('Resetting...');
 
                     try {
-                        const res = await fetch("{{ route('admin.settings.reset') }}", {
+                        const res = await fetch("<?php echo e(route('admin.settings.reset')); ?>", {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1455,4 +1445,6 @@
             }
         }
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlinkonSoftware\resources\views/admin/settings.blade.php ENDPATH**/ ?>

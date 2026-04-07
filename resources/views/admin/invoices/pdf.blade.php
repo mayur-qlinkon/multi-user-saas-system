@@ -101,9 +101,22 @@
             return number_format((float) $amount, 2, '.', ',');
         };
 
-        // 🌟 Legal Entity & Operational Branch Details
+        // Legal Entity & Operational Branch Details
         $company = $invoice->company ?? auth()->user()->company;
-        $store = $invoice->store;
+        $store   = $invoice->store;
+
+        // Billing priority: invoice snapshot → store accessor (store accessors already fall back to get_setting)
+        $billingGstin        = $invoice->gst_number     ?? $store->gst_number     ?? get_setting('gst_number');
+        $billingUpiId        = $invoice->upi_id         ?? $store->upi_id;
+        $billingBankName     = $invoice->bank_name      ?? $store->bank_name;
+        $billingAccName      = $invoice->account_name   ?? $store->account_name;
+        $billingAccNo        = $invoice->account_number ?? $store->account_number;
+        $billingIfsc         = $invoice->ifsc_code      ?? $store->ifsc_code;
+        $billingSignatureUrl = $invoice->signature
+            ? asset('storage/' . $invoice->signature)
+            : $store->signature_url;
+        $billingFooterNote   = $invoice->invoice_footer_note ?? $store->invoice_footer_note;
+        $billingTerms        = $invoice->terms_conditions    ?? $store->invoice_terms;
 
         $customerName = $invoice->client ? $invoice->client->name : $invoice->customer_name ?? 'Guest Customer';
         $customerPhone = $invoice->client ? $invoice->client->phone : 'N/A';
@@ -125,8 +138,8 @@
                 {{-- 🌟 1. Legal Entity (Company) --}}
                 <h2 style="margin:0; font-size: 18px;" class="uppercase">{{ $company->name ?? 'Company Name' }}</h2>
                 <div class="text-gray" style="line-height: 1.4; margin-top: 6px;">
-                    @if (isset($company->gst_number) || isset($company->gstin))
-                        GSTIN: <strong style="color: #333;">{{ $company->gst_number ?? $company->gstin }}</strong><br>
+                    @if ($billingGstin)
+                        GSTIN: <strong style="color: #333;">{{ $billingGstin }}</strong><br>
                     @endif
                     @if ($company->email)
                         Email: {{ $company->email }}<br>
@@ -243,40 +256,30 @@
                     <div class="mb-2 text-gray"><strong style="color:#333;">Note:</strong> {{ $invoice->notes }}</div>
                 @endif
 
-                <div style="margin-top: 20px;">
-
-                    <div
-                        style="font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px;">
-                        Bank Details</div>
-                    <div class="text-gray" style="line-height: 1.5; font-size: 11px;">
-                        <strong>Bank:</strong> HDFC Bank<br>
-                        <strong>A/C Name:</strong> {{ $company->name }}<br>
-                        <strong>A/C No:</strong> 50200012345678<br>
-                        <strong>IFSC:</strong> HDFC0001234
+                @if ($billingBankName || $billingAccNo)
+                    <div style="margin-top: 20px;">
+                        <div style="font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px;">
+                            Bank Details</div>
+                        <div class="text-gray" style="line-height: 1.5; font-size: 11px;">
+                            @if ($billingBankName)<strong>Bank:</strong> {{ $billingBankName }}<br>@endif
+                            @if ($billingAccName)<strong>A/C Name:</strong> {{ $billingAccName }}<br>@endif
+                            @if ($billingAccNo)<strong>A/C No:</strong> {{ $billingAccNo }}<br>@endif
+                            @if ($billingIfsc)<strong>IFSC:</strong> {{ $billingIfsc }}@endif
+                        </div>
                     </div>
-                </div>
+                @endif
 
-                @if ($balanceDue > 0)
+                @if ($balanceDue > 0 && $billingUpiId)
                     <div style="margin-top: 15px;">
-                        <div
-                            style="font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px;">
+                        <div style="font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px;">
                             Pay via UPI</div>
                         @php
-                            $upiId = 'dev@okicici';
-                            $merchantName = urlencode($company->name);
-                            $upiString = "upi://pay?pa={$upiId}&pn={$merchantName}&am={$balanceDue}&cu=INR";
-
-                            // 🌟 FIX: Generate as SVG, then encode to Base64 so DomPDF treats it as an image
-                            $qrSvg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-                                ->size(80)
-                                ->generate($upiString);
-                            $qrBase64 = base64_encode($qrSvg);
+                            $upiString = 'upi://pay?pa=' . $billingUpiId . '&pn=' . urlencode($billingAccName ?: $company->name) . '&am=' . $balanceDue . '&cu=INR';
+                            $qrSvg     = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(80)->generate($upiString);
+                            $qrBase64  = base64_encode($qrSvg);
                         @endphp
-                        <div>
-                            {{-- 🌟 Wrap the Base64 string in an actual HTML <img> tag --}}
-                            <img src="data:image/svg+xml;base64,{{ $qrBase64 }}" alt="UPI QR Code"
-                                style="width: 80px; height: 80px;">
-                        </div>
+                        <img src="data:image/svg+xml;base64,{{ $qrBase64 }}" alt="UPI QR Code"
+                            style="width: 80px; height: 80px;">
                     </div>
                 @endif
             </td>
@@ -361,6 +364,10 @@
                 </table>
 
                 <div class="text-right" style="margin-top: 50px;">
+                    @if ($billingSignatureUrl)
+                        <img src="{{ $billingSignatureUrl }}" alt="Authorized Signature"
+                            style="max-height: 80px; display: block; margin-left: auto; margin-bottom: 4px;">
+                    @endif
                     <div
                         style="border-top: 1px solid #333; display: inline-block; padding-top: 5px; width: 150px; font-size: 10px; font-weight: bold; text-transform: uppercase;">
                         Authorized Signatory
@@ -370,10 +377,14 @@
         </tr>
     </table>
 
-    @if ($invoice->terms_conditions)
+    @if ($billingFooterNote || $billingTerms)
         <div style="margin-top: 40px; font-size: 10px; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
-            <strong>Terms & Conditions:</strong><br>
-            {!! nl2br(e($invoice->terms_conditions)) !!}
+            @if ($billingFooterNote)
+                <div style="margin-bottom: 8px; line-height: 1.5;">{!! nl2br(e($billingFooterNote)) !!}</div>
+            @endif
+            @if ($billingTerms)
+                <div><strong>Terms & Conditions:</strong><br>{!! nl2br(e($billingTerms)) !!}</div>
+            @endif
         </div>
     @endif
 

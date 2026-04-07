@@ -1,8 +1,8 @@
-@extends('layouts.admin')
 
-@section('title', 'Challan: ' . $challan->challan_number)
 
-@push('styles')
+<?php $__env->startSection('title', 'Challan: ' . $challan->challan_number); ?>
+
+<?php $__env->startPush('styles'); ?>
     <style>
         /* 🖨️ PRO-GRADE A4 PRINT OPTIMIZATION */
         @media print {
@@ -47,10 +47,10 @@
             }
         }
     </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
-    @php
+<?php $__env->startSection('content'); ?>
+    <?php
         // Resolve Company and Store
         $company = $challan->company ?? auth()->user()->company;
         $store = $challan->store;
@@ -76,14 +76,14 @@
             'red'    => 'text-red-600',
         ];
         $statusColorClass = $colorMap[$challan->status_color] ?? $colorMap['gray'];
-    @endphp
+    ?>
 
     <div class="pb-10">
         
-        {{-- ACTION BAR --}}
+        
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
             <div class="flex items-center gap-3">
-                <a href="{{ route('admin.challans.index') }}"
+                <a href="<?php echo e(route('admin.challans.index')); ?>"
                     class="text-gray-500 hover:text-gray-800 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
@@ -91,45 +91,45 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                @if ($challan->status !== 'cancelled')
-                    <a href="{{ route('admin.challans.edit', $challan->id) }}"
+                <?php if($challan->status !== 'cancelled'): ?>
+                    <a href="<?php echo e(route('admin.challans.edit', $challan->id)); ?>"
                         class="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm">
                         <i data-lucide="pencil" class="w-4 h-4"></i> Edit
                     </a>
-                @endif
+                <?php endif; ?>
 
                 <button onclick="window.print()"
                     class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
                     <i data-lucide="printer" class="w-4 h-4"></i> Print
                 </button>
 
-                <a href="{{ route('admin.challans.pdf', $challan->id) }}" target="_blank"
+                <a href="<?php echo e(route('admin.challans.pdf', $challan->id)); ?>" target="_blank"
                     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm">
                     <i data-lucide="download" class="w-4 h-4"></i> PDF
                 </a>
 
-                @php
+                <?php
                     $canConvert = $challan->direction === 'outward'
                         && ! in_array($challan->status, ['draft', 'cancelled', 'converted_to_invoice', 'fully_returned'])
                         && $challan->items->sum('qty_pending') > 0;
-                @endphp
-                @if ($canConvert)
-                    <a href="{{ route('admin.invoices.create', ['challan_id' => $challan->id]) }}"
+                ?>
+                <?php if($canConvert): ?>
+                    <a href="<?php echo e(route('admin.invoices.create', ['challan_id' => $challan->id])); ?>"
                         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm">
                         <i data-lucide="file-plus" class="w-4 h-4"></i> Invoice
                     </a>
-                @endif
+                <?php endif; ?>
 
-                @php
+                <?php
                     $waText = urlencode(
                         "Hello {$partyName},\nHere is your {$challan->type_label} Document #{$challan->challan_number} dated " .
                         $challan->challan_date->format('d M Y') .
                         ".\nThank you for your business!",
                     );
                     $waPhone = preg_replace('/[^0-9]/', '', $partyPhone);
-                @endphp
-                @if(strlen($waPhone) >= 10)
-                    <a href="https://wa.me/{{ $waPhone }}?text={{ $waText }}" target="_blank"
+                ?>
+                <?php if(strlen($waPhone) >= 10): ?>
+                    <a href="https://wa.me/<?php echo e($waPhone); ?>?text=<?php echo e($waText); ?>" target="_blank"
                         class="bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.669.149-.198.297-.768.966-.941 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.058-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.148-.173.198-.297.297-.495.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.371-.273.297-1.04 1.016-1.04 2.479 0 1.463 1.064 2.876 1.213 3.074.148.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.718 2.007-1.411.248-.694.248-1.289.173-1.411-.074-.124-.272-.198-.57-.347z" />
@@ -137,12 +137,12 @@
                         </svg>
                         WhatsApp
                     </a>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
 
-        {{-- Return Overdue Alert --}}
-        @if ($challan->is_returnable && $challan->is_return_overdue)
+        
+        <?php if($challan->is_returnable && $challan->is_return_overdue): ?>
             <div class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 no-print flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="bg-red-600 p-2 rounded-lg text-white">
@@ -150,137 +150,145 @@
                     </div>
                     <div>
                         <h4 class="text-sm font-bold text-red-800">Return Overdue</h4>
-                        <p class="text-xs text-red-600 font-medium">This challan was due for return on {{ $challan->return_due_date->format('d M, Y') }}.</p>
+                        <p class="text-xs text-red-600 font-medium">This challan was due for return on <?php echo e($challan->return_due_date->format('d M, Y')); ?>.</p>
                     </div>
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
 
-        {{-- 📄 THE DOCUMENT --}}
+        
         <div id="print-area" class="w-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden text-gray-800 print:shadow-none print:border-none">
             <div class="p-8 md:p-12">
 
-                {{-- 🌟 HEADER: Title on Left, Company on Right --}}
+                
                 <div class="p-8 pb-4 flex justify-between items-start">
                     <div>
                         <div class="inline-block bg-gray-800 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest mb-3">
-                            {{ $challan->type_label }}
+                            <?php echo e($challan->type_label); ?>
+
                         </div>
                         <h1 class="text-3xl font-black uppercase tracking-tighter text-gray-900 leading-none">
-                            # {{ $challan->challan_number }}
+                            # <?php echo e($challan->challan_number); ?>
+
                         </h1>
                         <div class="text-[12px] text-gray-500 font-bold mt-2">
-                            Date: {{ $challan->challan_date->format('d M Y') }}
+                            Date: <?php echo e($challan->challan_date->format('d M Y')); ?>
+
                         </div>
                     </div>
 
                     <div class="text-right flex flex-col items-end">
-                        <h2 class="text-xl font-black text-gray-900 uppercase leading-none">{{ $company->name }}</h2>
+                        <h2 class="text-xl font-black text-gray-900 uppercase leading-none"><?php echo e($company->name); ?></h2>
                         <div class="text-gray-600 text-[12px] mt-1 font-medium">
-                            @if ($company->gst_number)
-                                GSTIN: <span class="font-bold text-gray-900 uppercase">{{ $company->gst_number }}</span><br>
-                            @endif
-                            Email: {{ $company->email }}<br>
-                            Phone: {{ $company->phone }}
+                            <?php if($company->gst_number): ?>
+                                GSTIN: <span class="font-bold text-gray-900 uppercase"><?php echo e($company->gst_number); ?></span><br>
+                            <?php endif; ?>
+                            Email: <?php echo e($company->email); ?><br>
+                            Phone: <?php echo e($company->phone); ?>
+
                         </div>
 
-                        @if ($store)
+                        <?php if($store): ?>
                             <div class="mt-4 text-right">
                                 <h3 class="text-[10px] font-black text-gray-700 uppercase tracking-widest leading-none mb-1">
-                                    Dispatched From: <span class="text-black">{{ $store->name }}</span>
+                                    Dispatched From: <span class="text-black"><?php echo e($store->name); ?></span>
                                 </h3>
                                 <div class="text-gray-800 text-[12px] leading-tight font-medium">
-                                    {{ $store->address }}<br>
-                                    {{ $store->city }}, {{ $store->state->name ?? '' }}
+                                    <?php echo e($store->address); ?><br>
+                                    <?php echo e($store->city); ?>, <?php echo e($store->state->name ?? ''); ?>
+
                                 </div>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                {{-- The Heavy Separator Line --}}
+                
                 <div class="mx-8 border-t-2 border-gray-900"></div>
 
-                {{-- 🌟 INFO BLOCK: Billed To on Left, Metadata on Right --}}
+                
                 <div class="p-8 grid grid-cols-2 gap-12">
-                    {{-- Customer Details --}}
+                    
                     <div>
                         <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                            {{ $challan->direction === 'outward' ? 'Dispatched To / Billed To' : 'Received From' }}
+                            <?php echo e($challan->direction === 'outward' ? 'Dispatched To / Billed To' : 'Received From'); ?>
+
                         </h3>
                         <div class="text-sm text-gray-800">
-                            <div class="font-black text-base mb-0.5 uppercase">{{ $partyName }}</div>
-                            @if ($partyGSTIN)
-                                <div class="font-bold text-gray-900 uppercase">GSTIN: {{ $partyGSTIN }}</div>
-                            @endif
-                            @if ($partyAddress !== 'N/A')
+                            <div class="font-black text-base mb-0.5 uppercase"><?php echo e($partyName); ?></div>
+                            <?php if($partyGSTIN): ?>
+                                <div class="font-bold text-gray-900 uppercase">GSTIN: <?php echo e($partyGSTIN); ?></div>
+                            <?php endif; ?>
+                            <?php if($partyAddress !== 'N/A'): ?>
                                 <div class="text-gray-600 leading-snug font-medium mt-1">
-                                    {!! nl2br(e($partyAddress)) !!}
+                                    <?php echo nl2br(e($partyAddress)); ?>
+
                                 </div>
-                            @endif
-                            @if ($partyState !== 'N/A')
-                                <div class="text-gray-600 leading-snug font-medium mt-1">State: {{ $partyState }}</div>
-                            @endif
-                            @if ($partyPhone !== 'N/A')
-                                <div class="text-gray-600 leading-snug font-medium">Phone: {{ $partyPhone }}</div>
-                            @endif
+                            <?php endif; ?>
+                            <?php if($partyState !== 'N/A'): ?>
+                                <div class="text-gray-600 leading-snug font-medium mt-1">State: <?php echo e($partyState); ?></div>
+                            <?php endif; ?>
+                            <?php if($partyPhone !== 'N/A'): ?>
+                                <div class="text-gray-600 leading-snug font-medium">Phone: <?php echo e($partyPhone); ?></div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
-                    {{-- Document Data --}}
+                    
                     <div class="space-y-1">
                         <div class="grid grid-cols-2 text-[13px]">
                             <span class="font-bold text-gray-500">Direction:</span>
-                            <span class="text-right font-bold text-gray-900 uppercase">{{ $challan->direction }}</span>
+                            <span class="text-right font-bold text-gray-900 uppercase"><?php echo e($challan->direction); ?></span>
                         </div>
                         <div class="grid grid-cols-2 text-[13px]">
                             <span class="font-bold text-gray-500">Status:</span>
-                            <span class="text-right font-black uppercase {{ $statusColorClass }}">{{ $challan->status_label }}</span>
+                            <span class="text-right font-black uppercase <?php echo e($statusColorClass); ?>"><?php echo e($challan->status_label); ?></span>
                         </div>
                         
-                        @if($challan->transport_name)
+                        <?php if($challan->transport_name): ?>
                             <div class="grid grid-cols-2 text-[13px]">
                                 <span class="font-bold text-gray-500">Transporter:</span>
-                                <span class="text-right font-bold text-gray-900 uppercase">{{ $challan->transport_name }}</span>
+                                <span class="text-right font-bold text-gray-900 uppercase"><?php echo e($challan->transport_name); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($challan->vehicle_number)
+                        <?php if($challan->vehicle_number): ?>
                             <div class="grid grid-cols-2 text-[13px]">
                                 <span class="font-bold text-gray-500">Vehicle No:</span>
-                                <span class="text-right font-bold text-gray-900 uppercase">{{ $challan->vehicle_number }}</span>
+                                <span class="text-right font-bold text-gray-900 uppercase"><?php echo e($challan->vehicle_number); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($challan->eway_bill_number)
+                        <?php if($challan->eway_bill_number): ?>
                             <div class="grid grid-cols-2 text-[13px]">
                                 <span class="font-bold text-gray-500">E-Way Bill:</span>
-                                <span class="text-right font-bold text-gray-900">{{ $challan->eway_bill_number }}</span>
+                                <span class="text-right font-bold text-gray-900"><?php echo e($challan->eway_bill_number); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($challan->is_returnable && $challan->return_due_date)
+                        <?php if($challan->is_returnable && $challan->return_due_date): ?>
                             <div class="grid grid-cols-2 text-[13px] pt-1 border-t border-gray-100">
                                 <span class="font-bold text-gray-500">Return Due:</span>
-                                <span class="text-right font-black {{ $challan->is_return_overdue ? 'text-red-600' : 'text-gray-900' }}">
-                                    {{ $challan->return_due_date->format('d M Y') }}
+                                <span class="text-right font-black <?php echo e($challan->is_return_overdue ? 'text-red-600' : 'text-gray-900'); ?>">
+                                    <?php echo e($challan->return_due_date->format('d M Y')); ?>
+
                                 </span>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                {{-- 🌟 ITEMS TABLE --}}
+                
                 <div class="overflow-x-auto mb-10 px-8">
                     <table class="w-full text-sm border-collapse">
                         <thead class="bg-gray-100 text-gray-700">
                             <tr>
                                 <th class="py-3 px-4 text-left font-bold border-b">Description</th>
                                 <th class="py-3 px-4 text-center font-bold border-b">HSN/SAC</th>
-                                @if(batch_enabled())
+                                <?php if(batch_enabled()): ?>
                                     <th class="py-3 px-4 text-center font-bold border-b">Batch #</th>
                                     <th class="py-3 px-4 text-center font-bold border-b">Expiry</th>
-                                @endif
+                                <?php endif; ?>
                                 <th class="py-3 px-4 text-right font-bold border-b">Qty Sent</th>
                                 <th class="py-3 px-4 text-right font-bold border-b text-orange-600">Returned</th>
                                 <th class="py-3 px-4 text-right font-bold border-b text-green-600">Invoiced</th>
@@ -288,76 +296,81 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($challan->items as $item)
+                            <?php $__currentLoopData = $challan->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50/50">
                                     <td class="py-4 px-4 text-gray-800">
-                                        <div class="font-bold">{{ $item->product_name }}</div>
-                                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">SKU: {{ $item->sku_code ?? '-' }}</div>
+                                        <div class="font-bold"><?php echo e($item->product_name); ?></div>
+                                        <div class="text-[11px] text-gray-500 font-mono mt-0.5">SKU: <?php echo e($item->sku_code ?? '-'); ?></div>
                                     </td>
-                                    <td class="py-4 px-4 text-center text-gray-500">{{ $item->hsn_code ?? '-' }}</td>
+                                    <td class="py-4 px-4 text-center text-gray-500"><?php echo e($item->hsn_code ?? '-'); ?></td>
                                     
-                                    @if(batch_enabled())
-                                        <td class="py-4 px-4 text-center font-mono text-[12px] text-gray-700">{{ $item->batch_number ?? '-' }}</td>
+                                    <?php if(batch_enabled()): ?>
+                                        <td class="py-4 px-4 text-center font-mono text-[12px] text-gray-700"><?php echo e($item->batch_number ?? '-'); ?></td>
                                         <td class="py-4 px-4 text-center text-[12px]">
-                                            @if($item->expiry_date)
-                                                <span class="{{ $item->expiry_date->isPast() ? 'text-red-600 font-bold' : 'text-gray-600' }}">
-                                                    {{ $item->expiry_date->format('d M Y') }}
-                                                </span>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                    @endif
+                                            <?php if($item->expiry_date): ?>
+                                                <span class="<?php echo e($item->expiry_date->isPast() ? 'text-red-600 font-bold' : 'text-gray-600'); ?>">
+                                                    <?php echo e($item->expiry_date->format('d M Y')); ?>
 
-                                    <td class="py-4 px-4 text-right font-bold text-gray-900">{{ (float) $item->qty_sent }}</td>
-                                    <td class="py-4 px-4 text-right font-semibold {{ $item->qty_returned > 0 ? 'text-orange-600' : 'text-gray-400' }}">
-                                        {{ (float) $item->qty_returned }}
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-gray-400">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    <?php endif; ?>
+
+                                    <td class="py-4 px-4 text-right font-bold text-gray-900"><?php echo e((float) $item->qty_sent); ?></td>
+                                    <td class="py-4 px-4 text-right font-semibold <?php echo e($item->qty_returned > 0 ? 'text-orange-600' : 'text-gray-400'); ?>">
+                                        <?php echo e((float) $item->qty_returned); ?>
+
                                     </td>
-                                    <td class="py-4 px-4 text-right font-semibold {{ $item->qty_invoiced > 0 ? 'text-green-600' : 'text-gray-400' }}">
-                                        {{ (float) $item->qty_invoiced }}
+                                    <td class="py-4 px-4 text-right font-semibold <?php echo e($item->qty_invoiced > 0 ? 'text-green-600' : 'text-gray-400'); ?>">
+                                        <?php echo e((float) $item->qty_invoiced); ?>
+
                                     </td>
-                                    <td class="py-4 px-4 text-right font-bold {{ $item->qty_pending > 0 ? 'text-blue-600' : 'text-gray-400' }}">
-                                        {{ (float) $item->qty_pending }}
+                                    <td class="py-4 px-4 text-right font-bold <?php echo e($item->qty_pending > 0 ? 'text-blue-600' : 'text-gray-400'); ?>">
+                                        <?php echo e((float) $item->qty_pending); ?>
+
                                     </td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
 
-                {{-- 🌟 FINAL FIXED SUMMARY --}}
+                
                 <div class="px-8 pb-12 flex justify-between items-start gap-10 page-break-avoid border-t border-gray-200 pt-6">
 
-                    {{-- Left side: Notes --}}
+                    
                     <div class="flex-1 space-y-4">
-                        @if ($challan->purpose_note)
+                        <?php if($challan->purpose_note): ?>
                             <div class="text-[12px] text-gray-600">
                                 <strong class="text-gray-800 uppercase tracking-widest text-[10px]">Purpose of Challan:</strong>
-                                <p class="mt-1 leading-relaxed">{{ $challan->purpose_note }}</p>
+                                <p class="mt-1 leading-relaxed"><?php echo e($challan->purpose_note); ?></p>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if ($challan->internal_notes)
+                        <?php if($challan->internal_notes): ?>
                             <div class="no-print bg-yellow-50 p-3 rounded-lg border border-yellow-200 mt-2">
                                 <h4 class="text-[10px] font-black text-yellow-700 uppercase tracking-widest mb-1">Internal Notes (Hidden on Print)</h4>
-                                <p class="text-[12px] text-yellow-800">{{ $challan->internal_notes }}</p>
+                                <p class="text-[12px] text-yellow-800"><?php echo e($challan->internal_notes); ?></p>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
-                    {{-- Right side: Narrow Totals Block (Forced 300px width) --}}
+                    
                     <div style="width: 300px;" class="flex flex-col items-end">
                         <table class="w-full text-[13px] border-collapse">
-                            {{-- Thick line for the total --}}
+                            
                             <tr class="border-t-2 border-gray-900">
                                 <td class="py-3 text-[14px] font-black text-gray-900 uppercase">Total Quantity</td>
                                 <td class="py-3 text-right text-[16px] font-black text-gray-900 whitespace-nowrap">
-                                    {{ (float) $challan->total_qty }}
+                                    <?php echo e((float) $challan->total_qty); ?>
+
                                 </td>
                             </tr>
                         </table>
 
-                        {{-- Signatures section --}}
+                        
                         <div class="mt-20 w-full flex justify-between gap-8">
                             <div class="inline-block min-w-[120px] text-center">
                                 <div class="border-t border-gray-400 pt-1 text-[10px] font-bold text-gray-800 uppercase tracking-wider">
@@ -369,7 +382,7 @@
                                     Authorized Sign
                                 </div>
                                 <div class="mt-1 text-[8px] text-gray-400 font-bold uppercase tracking-widest leading-none">
-                                    {{ config('app.name') }} ERP
+                                    <?php echo e(config('app.name')); ?> ERP
                                 </div>
                             </div>
                         </div>
@@ -379,4 +392,5 @@
             </div>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlinkonSoftware\resources\views/admin/challans/show.blade.php ENDPATH**/ ?>
