@@ -21,7 +21,13 @@
       "Bash(find /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware -type f -name *challan*)",
       "Bash(vendor/bin/pint app/Models/Store.php --format agent)",
       "Bash(vendor/bin/pint app/Http/Controllers/Admin/StoreController.php --format agent)",
-      "Bash(vendor/bin/pint app/Listeners/Orders/HandleNewOrderNotification.php app/Http/Controllers/Admin/SettingController.php --format agent)"
+      "Bash(vendor/bin/pint app/Listeners/Orders/HandleNewOrderNotification.php app/Http/Controllers/Admin/SettingController.php --format agent)",
+      "Bash(grep -E \"\\\\.php$\")",
+      "Bash(find /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware/app/Notifications -type f -name *.php)",
+      "Bash(vendor/bin/pint database/migrations/2026_04_07_140853_create_email_templates_table.php app/Models/EmailTemplate.php app/Mail/TemplateMail.php app/Services/EmailService.php --format agent)",
+      "Bash(del \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlinkonSoftware\\\\database\\\\migrations\\\\2026_04_07_143420_create_inquiries_table.php\")",
+      "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/Platform/SystemSettingController.php app/Http/Controllers/Platform/ContactInquiryController.php app/Http/Controllers/LandingController.php app/Http/Middleware/MaintenanceMode.php app/Models/ContactInquiry.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Mail/OtpMail.php app/Services/Auth/PasswordResetService.php app/Http/Controllers/Auth/ForgotPasswordController.php routes/web.php)"
     ]
   }
 }

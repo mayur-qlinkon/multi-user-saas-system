@@ -5,89 +5,96 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
 use App\Services\ImageUploadService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class SystemSettingController extends Controller
 {
-    protected ImageUploadService $imageService;
+    /**
+     * Keys that are allowed to be saved via the UI form.
+     * Any key not in this list is silently ignored — prevents mass-assignment.
+     *
+     * @var string[]
+     */
+    private const ALLOWED_TEXT_KEYS = [
+        // General
+        'app_name', 'support_email', 'support_phone', 'timezone',
+        // Mail / SMTP
+        'mail_driver', 'mail_host', 'mail_port', 'mail_username',
+        'mail_encryption', 'mail_from_email', 'mail_from_name',
+        // Security
+        'password_reset_expiry_minutes', 'otp_length',
+    ];
 
-    public function __construct(ImageUploadService $imageService)
+    /** @var string[] Keys stored as password — never returned to the UI */
+    private const PASSWORD_KEYS = ['mail_password'];
+
+    /** @var string[] Keys treated as booleans (checkbox/toggle) */
+    private const BOOLEAN_KEYS = [
+        'maintenance_mode',
+        'allow_public_registration',
+        'force_email_verification',
+        'enable_2fa',
+    ];
+
+    /** @var string[] Keys treated as file uploads */
+    private const FILE_KEYS = ['app_logo', 'app_favicon'];
+
+    public function __construct(private readonly ImageUploadService $imageService) {}
+
+    /**
+     * Display the system settings page.
+     */
+    public function index(): View
     {
-        $this->imageService = $imageService;
+        $flatSettings = SystemSetting::allCached();
+
+        return view('platform.settings', compact('flatSettings'));
     }
 
     /**
-     * Display the system settings dashboard.
+     * Bulk-update system settings.
      */
-    public function index()
+    public function update(Request $request): RedirectResponse
     {
-        // Fetch all settings grouped by category for tabbed UI navigation
-        $settingsGroups = SystemSetting::all()->groupBy('group');
-
-        // Pluck a flat key-value array. This makes it incredibly easy to map 
-        // values into your Blade form inputs using: $flatSettings['app_name'] ?? ''
-        $flatSettings = SystemSetting::pluck('value', 'key')->toArray();
-
-        return view('admin.settings.index', compact('settingsGroups', 'flatSettings'));
-    }
-
-    /**
-     * Bulk update system settings dynamically.
-     */
-    public function update(Request $request)
-    {
-        // 🌟 SAFETY 1: Define expected boolean keys. 
-        // If they aren't in the request payload, we force them to false.
-        $booleanKeys = [
-            'maintenance_mode',
-            'allow_public_registration',
-            'force_email_verification',
-            'enable_2fa'
-        ];
-
         try {
             DB::beginTransaction();
 
-            $data = $request->except(['_token', '_method']);
-
-            // 1. Process Standard Text / Number Inputs
-            foreach ($data as $key => $value) {
-                // Skip file uploads and booleans in this loop
-                if ($request->hasFile($key) || in_array($key, $booleanKeys)) {
-                    continue;
+            // 1. Text / numeric keys — only whitelisted keys are accepted.
+            foreach (self::ALLOWED_TEXT_KEYS as $key) {
+                if ($request->has($key)) {
+                    SystemSetting::setSetting($key, (string) $request->input($key), $this->determineGroup($key));
                 }
-
-                $group = $this->determineGroup($key);
-                SystemSetting::setSetting($key, $value, $group);
             }
 
-            // 2. Process Booleans (Toggles / Checkboxes)
-            foreach ($booleanKeys as $boolKey) {
-                $group = $this->determineGroup($boolKey);
-                $value = $request->has($boolKey) ? true : false;
-                
-                SystemSetting::setSetting($boolKey, $value, $group, 'boolean');
+            // 2. Password keys — only save if the field is non-empty (user typed a new value).
+            foreach (self::PASSWORD_KEYS as $key) {
+                $value = $request->input($key);
+                if (! empty($value)) {
+                    SystemSetting::setSetting($key, (string) $value, $this->determineGroup($key));
+                }
             }
 
-            // 3. Process File Uploads (Logos, Favicons)
-            $fileKeys = ['app_logo_light', 'app_logo_dark', 'app_favicon'];
+            // 3. Boolean toggles — absent from POST = false.
+            foreach (self::BOOLEAN_KEYS as $key) {
+                SystemSetting::setSetting($key, $request->boolean($key), $this->determineGroup($key), 'boolean');
+            }
 
-            foreach ($fileKeys as $fileKey) {
+            // 4. File uploads.
+            foreach (self::FILE_KEYS as $fileKey) {
                 if ($request->hasFile($fileKey)) {
-                    
-                    // Safely delete the old asset from storage to save space
                     $oldPath = SystemSetting::getSetting($fileKey);
                     if ($oldPath && method_exists($this->imageService, 'delete')) {
                         $this->imageService->delete($oldPath);
                     }
 
-                    // Upload new asset (Force WebP for lightning-fast loading)
                     $path = $this->imageService->upload($request->file($fileKey), 'settings', [
                         'format' => 'webp',
                         'quality' => 90,
-                        'crop' => false // Don't crop logos!
+                        'crop' => false,
                     ]);
 
                     SystemSetting::setSetting($fileKey, $path, 'branding', 'string');
@@ -96,37 +103,30 @@ class SystemSettingController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'System settings updated successfully.');
+            return redirect()->back()->with('success', 'Settings saved successfully.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('[SystemSettingController] Update Failed: ' . $e->getMessage());
+            Log::error('[SystemSettingController] Update failed: '.$e->getMessage());
 
             return redirect()->back()
-                ->withErrors(['error' => 'Failed to update settings. Please check system logs.'])
+                ->withErrors(['error' => 'Failed to save settings. Check system logs.'])
                 ->withInput();
         }
     }
 
     /**
-     * 🌟 SAFETY 2: Auto-categorize settings to keep the DB organized.
-     * Maps input field names to their logical database group.
+     * Auto-categorise a key to its database group.
      */
     private function determineGroup(string $key): string
     {
-        if (str_starts_with($key, 'stripe_') || str_starts_with($key, 'razorpay_') || str_starts_with($key, 'currency_')) {
-            return 'billing';
-        }
         if (str_starts_with($key, 'mail_') || str_starts_with($key, 'smtp_')) {
             return 'mail';
         }
-        if (str_starts_with($key, 'aws_') || str_starts_with($key, 'pusher_')) {
-            return 'cloud';
-        }
-        if (str_starts_with($key, 'app_logo') || str_starts_with($key, 'app_color') || $key === 'app_favicon') {
+        if (str_starts_with($key, 'app_logo') || $key === 'app_favicon') {
             return 'branding';
         }
-        if (in_array($key, ['allow_public_registration', 'force_email_verification', 'enable_2fa'])) {
+        if (in_array($key, ['allow_public_registration', 'force_email_verification', 'enable_2fa', 'password_reset_expiry_minutes', 'otp_length'])) {
             return 'security';
         }
 

@@ -10,6 +10,17 @@
     $daysLeft = $expiresAt ? (int) ceil(now()->floatDiffInDays(\Carbon\Carbon::parse($expiresAt))) : 0;
 
     $companySlug = auth()->user()->company?->slug;
+
+    $notifItems = $unreadNotifications->map(fn ($n) => [
+        'id'      => $n->id,
+        'title'   => $n->data['title']   ?? 'Notification',
+        'message' => $n->data['message'] ?? '',
+        'icon'    => $n->data['icon']    ?? 'bell',
+        'color'   => $n->data['color']   ?? 'blue',
+        'link'    => $n->data['link']    ?? '#',
+        'time'    => $n->created_at->diffForHumans(),
+    ])->values()->all();
+    $notifLatestId = ! empty($notifItems) ? $notifItems[0]['id'] : null;
 @endphp
 
 {{-- ════════════════════════════════════════════════════════════
@@ -1049,88 +1060,83 @@
                             </div>
                         @endif
 
-                        {{-- 2. Notification Bell (Static Mockup) --}}
-                        <div x-data="{ 
-                                open: false,
-                                unreadCount: {{ $unreadCount }},
-                                async markAsRead(id, link) {
-                                    try {
-                                        await fetch(`/admin/notifications/${id}/read`, {
-                                            method: 'POST',
-                                            headers: {
-                                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                'X-Requested-With': 'XMLHttpRequest'
-                                            }
-                                        });
-                                        window.location.href = link;
-                                    } catch (e) {
-                                        window.location.href = link; // Redirect anyway if AJAX fails
-                                    }
-                                }
-                            }" class="relative flex items-center">
-                            <button @click="open = !open" @click.away="open = false" type="button"
+                        {{-- 2. Notification Bell (AJAX + Alpine) --}}
+                        <div x-data="notificationBell()" x-init="init()" @click.outside="open = false" class="relative flex items-center">
+
+                            {{-- Bell trigger --}}
+                            <button @click="open = !open" type="button"
                                 class="relative flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors focus:outline-none">
                                 <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
-                                
-                                {{-- Pulsing Red Dot --}}
-                                @if($unreadCount > 0)
-                                    <span class="absolute -top-1 -right-1 flex h-4 w-4">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border border-white text-[9px] text-white font-bold items-center justify-center">
-                                            {{ $unreadCount > 9 ? '9+' : $unreadCount }}
-                                        </span>
-                                    </span>
-                                @endif
+
+                                {{-- Pulsing badge --}}
+                                <span x-show="unreadCount > 0" x-cloak class="absolute -top-1 -right-1 flex h-4 w-4">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span x-text="unreadCount > 9 ? '9+' : unreadCount"
+                                        class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border border-white text-[9px] text-white font-bold items-center justify-center"></span>
+                                </span>
                             </button>
 
                             {{-- Dropdown --}}
-                            <div x-cloak x-show="open" x-transition:enter="transition ease-out duration-150"
+                            <div x-cloak x-show="open"
+                                x-transition:enter="transition ease-out duration-150"
                                 x-transition:enter-start="opacity-0 translate-y-1 scale-95"
                                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                                 x-transition:leave="transition ease-in duration-100"
                                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                                 x-transition:leave-end="opacity-0 translate-y-1 scale-95"
                                 class="absolute right-0 top-full mt-2.5 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 origin-top-right">
-                                
+
+                                {{-- Header --}}
                                 <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                                     <h3 class="text-[11px] font-black text-gray-500 uppercase tracking-wider">Notifications</h3>
-                                    @if($unreadCount > 0)
-                                        <span class="text-[9px] font-bold bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100">
-                                            {{ $unreadCount }} New
-                                        </span>
-                                    @endif
+                                    <span x-show="unreadCount > 0" x-cloak
+                                        class="text-[9px] font-bold bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100"
+                                        x-text="unreadCount + ' New'"></span>
                                 </div>
-                                
-                                <div class="max-h-[320px] overflow-y-auto nav-scroll">
-                                    @forelse($unreadNotifications as $notification)
-                                        @php $data = $notification->data; @endphp
-                                        <a href="javascript:void(0)" 
-                                        @click="markAsRead('{{ $notification->id }}', '{{ $data['link'] }}')"
-                                        class="block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+
+                                {{-- List --}}
+                                <div id="notif-list" class="max-h-[320px] overflow-y-auto nav-scroll">
+
+                                    {{-- Items --}}
+                                    <template x-for="item in notifications" :key="item.id">
+                                        <a href="javascript:void(0)"
+                                            @click="markAsRead(item.id, item.link)"
+                                            class="block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
                                             <div class="flex gap-3">
-                                                <div class="w-8 h-8 rounded-lg bg-{{ $data['color'] ?? 'blue' }}-50 flex items-center justify-center flex-shrink-0">
-                                                    <i data-lucide="{{ $data['icon'] ?? 'bell' }}" class="w-4 h-4 text-{{ $data['color'] ?? 'blue' }}-600"></i>
+
+                                                {{-- Icon cell: Alpine manages wrapper attrs; x-ignore keeps <i> safe from Alpine --}}
+                                                <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
+                                                    :class="`bg-${item.color}-50`"
+                                                    :data-lucide-icon="item.icon"
+                                                    :data-lucide-color="item.color">
+                                                    <div x-ignore class="notif-icon-cell flex items-center justify-center w-full h-full">
+                                                        <i class="w-4 h-4"></i>
+                                                    </div>
                                                 </div>
+
                                                 <div class="min-w-0">
-                                                    <p class="text-[12px] text-gray-800 font-semibold leading-snug truncate">{{ $data['title'] }}</p>
-                                                    <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">{{ $data['message'] }}</p>
+                                                    <p class="text-[12px] text-gray-800 font-semibold leading-snug truncate" x-text="item.title"></p>
+                                                    <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2 leading-relaxed" x-text="item.message"></p>
                                                     <p class="text-[9px] text-gray-400 mt-1.5 flex items-center gap-1 font-medium">
-                                                        <i data-lucide="clock" class="w-3 h-3"></i> {{ $notification->created_at->diffForHumans() }}
+                                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                                        <span x-text="item.time"></span>
                                                     </p>
                                                 </div>
                                             </div>
                                         </a>
-                                    @empty
-                                        <div class="py-10 text-center">
-                                            <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-2">
-                                                <i data-lucide="check-circle" class="w-5 h-5 text-gray-300"></i>
-                                            </div>
-                                            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">All caught up!</p>
+                                    </template>
+
+                                    {{-- Empty state --}}
+                                    <div x-show="notifications.length === 0" x-cloak class="py-10 text-center">
+                                        <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                                            <i data-lucide="check-circle" class="w-5 h-5 text-gray-300"></i>
                                         </div>
-                                    @endforelse
+                                        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">All caught up!</p>
+                                    </div>
                                 </div>
 
-                                <a href="{{ route('admin.notifications.index') }}" class="block px-4 py-2.5 border-t border-gray-100 text-center bg-gray-50/50 hover:bg-gray-100 transition-colors">
+                                <a href="{{ route('admin.notifications.index') }}"
+                                    class="block px-4 py-2.5 border-t border-gray-100 text-center bg-gray-50/50 hover:bg-gray-100 transition-colors">
                                     <span class="text-[11px] font-bold text-gray-600">View All History</span>
                                 </a>
                             </div>
@@ -1847,6 +1853,107 @@
                 to   { opacity: 1; transform: translateY(0)    scale(1); }
             }
         </style>
+
+        <script>
+            window.notificationBell = function () {
+                return {
+                    open:          false,
+                    unreadCount:   @json($unreadCount),
+                    notifications: @json($notifItems),
+                    latestId:      @json($notifLatestId),
+                    _timer:        null,
+
+                    init() {
+                        this._renderIcons();
+                        this._timer = setInterval(() => this._poll(), 30_000);
+                    },
+
+                    // ── Polling ──────────────────────────────────────────────
+                    async _poll() {
+                        try {
+                            const res = await fetch('{{ route('admin.notifications.fetch-recent') }}', {
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                },
+                            });
+                            if (! res.ok) { return; }
+                            const data = await res.json();
+
+                            const prevCount    = this.unreadCount;
+                            const prevLatestId = this.latestId;
+
+                            this.notifications = data.items  ?? [];
+                            this.unreadCount   = data.count  ?? 0;
+                            this.latestId      = data.latest_id ?? null;
+
+                            if (
+                                data.latest_id &&
+                                data.latest_id !== prevLatestId &&
+                                data.count > prevCount
+                            ) {
+                                this._notify(data.items?.[0]);
+                            }
+
+                            this._renderIcons();
+                        } catch (_) { /* network blip — silently ignore */ }
+                    },
+
+                    // ── New-notification alert ───────────────────────────────
+                    _notify(item) {
+                        const title = item?.title ?? 'New Notification';
+                        const msg   = item?.message ?? '';
+
+                        if (typeof BizAlert !== 'undefined' && BizAlert.toast) {
+                            BizAlert.toast(title + (msg ? ': ' + msg : ''), 'info');
+                        }
+                        
+                        // Play sound from assets if the browser allows it.
+                        try {
+                            // Make sure the path matches your actual file name and location
+                            const audio = new Audio('{{ asset('assets/audio/notification.wav') }}');
+                            audio.play().catch(e => console.warn('Audio auto-play blocked by browser', e));
+                        } catch (_) { /* audio not available */ }
+                    },
+
+                    // ── Lucide icon renderer ─────────────────────────────────
+                    _renderIcons() {
+                        this.$nextTick(() => {
+                            document
+                                .querySelectorAll('#notif-list [data-lucide-icon] .notif-icon-cell i')
+                                .forEach(el => {
+                                    const wrapper   = el.closest('[data-lucide-icon]');
+                                    const iconName  = wrapper?.getAttribute('data-lucide-icon') || 'bell';
+                                    const color     = wrapper?.getAttribute('data-lucide-color') || 'blue';
+                                    el.setAttribute('data-lucide', iconName);
+                                    el.className = `w-4 h-4 text-${color}-600`;
+                                });
+
+                            if (window.lucide) {
+                                lucide.createIcons({
+                                    nodes: document.querySelectorAll('#notif-list [data-lucide]'),
+                                });
+                            }
+                        });
+                    },
+
+                    // ── Mark as read + navigate ──────────────────────────────
+                    async markAsRead(id, link) {
+                        try {
+                            await fetch(`/admin/notifications/${id}/read`, {
+                                method:  'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN':      '{{ csrf_token() }}',
+                                    'X-Requested-With':  'XMLHttpRequest',
+                                },
+                            });
+                        } catch (_) { /* best-effort */ }
+
+                        window.location.href = link || '#';
+                    },
+                };
+            };
+        </script>
 
         @stack('scripts')
     </body>

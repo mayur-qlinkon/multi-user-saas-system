@@ -123,10 +123,15 @@
                     <i data-lucide="boxes" class="w-4 h-4"></i>
                     Modules
                 </a>
-                <a href="#"
+                <a href="{{ route('platform.inquiries.index') }}"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg
+                    {{ request()->routeIs('platform.inquiries.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
+                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                    Inquiries
+                </a>
+                <a href="{{ route('platform.system.index') }}"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg
                     {{ request()->routeIs('platform.system.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
-
                     <i data-lucide="settings" class="w-4 h-4"></i>
                     System Settings
                 </a>

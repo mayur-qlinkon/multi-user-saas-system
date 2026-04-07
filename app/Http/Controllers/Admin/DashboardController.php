@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\InvoiceReturn;
 use App\Models\Payment;
+use App\Models\ProductSku;
 use App\Models\Purchase;
 use App\Models\PurchaseReturn;
-use App\Models\ProductSku;
-use App\Models\Expense;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class DashboardController extends Controller
 {
@@ -22,40 +22,40 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $companyId = $user->company_id;
-        
+
         // 🛡️ Default safe fallback data payload
         $data = [
-            'is_owner'           => false,
-            'financials'         => [
-                'sales_this_month'       => 0,
-                'sales_today'            => 0,
-                'sales_returns_month'    => 0,
-                'received_today'         => 0,
+            'is_owner' => false,
+            'financials' => [
+                'sales_this_month' => 0,
+                'sales_today' => 0,
+                'sales_returns_month' => 0,
+                'received_today' => 0,
                 // Placeholders for next steps
-                'purchases_this_month'   => 0,
-                'purchases_today'        => 0,
+                'purchases_this_month' => 0,
+                'purchases_today' => 0,
                 'purchase_returns_month' => 0,
-                'expense_today'          => 0,
+                'expense_today' => 0,
             ],
-            'charts'             => [
-                'weekly_sales'  => [],
+            'charts' => [
+                'weekly_sales' => [],
                 'top_customers' => collect(),
-                'top_products'  => collect(),
+                'top_products' => collect(),
             ],
-            'tables'             => [
-                'recent_sales'   => collect(),
+            'tables' => [
+                'recent_sales' => collect(),
                 'low_stock_skus' => collect(),
-            ]
+            ],
         ];
 
         try {
             $isOwner = $user->hasRole('owner') || $user->id === 1;
             $data['is_owner'] = $isOwner;
 
-            // 1. Fetch Sales & Financial Metrics (Owner / Admin Only)            
+            // 1. Fetch Sales & Financial Metrics (Owner / Admin Only)
             if ($isOwner) {
                 $data['financials'] = array_merge(
-                    $data['financials'], 
+                    $data['financials'],
                     $this->getSalesMetrics($companyId),
                     $this->getPurchasesAndExpensesMetrics($companyId)
                 );
@@ -72,7 +72,7 @@ class DashboardController extends Controller
             Log::error('Dashboard Aggregation Failed', [
                 'user_id' => $user->id ?? 'Unknown',
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             $request->session()->flash('warning', 'Some dashboard metrics could not be loaded at this time.');
         }
@@ -87,8 +87,17 @@ class DashboardController extends Controller
     /**
      * Gathers Invoice, Sales, and Returns metrics for the top cards.
      */
-    private function getSalesMetrics(int $companyId): array
+    private function getSalesMetrics(?int $companyId): array
     {
+        // Fallback for super admins with no company
+        if (! $companyId) {
+            return [
+                'sales_this_month' => 0.0,
+                'sales_today' => 0.0,
+                'sales_returns_month' => 0.0,
+                'received_today' => 0.0,
+            ];
+        }
         $startOfMonth = now()->startOfMonth();
         $today = now()->startOfDay();
 
@@ -118,16 +127,17 @@ class DashboardController extends Controller
             ->sum('amount');
 
         return [
-            'sales_this_month'    => (float) $salesThisMonth,
-            'sales_today'         => (float) $salesToday,
+            'sales_this_month' => (float) $salesThisMonth,
+            'sales_today' => (float) $salesToday,
             'sales_returns_month' => (float) $salesReturnsMonth,
-            'received_today'      => (float) $receivedToday,
+            'received_today' => (float) $receivedToday,
         ];
     }
+
     /**
      * Gathers Purchase and Expense metrics for the top cards.
      */
-    private function getPurchasesAndExpensesMetrics(int $companyId): array
+    private function getPurchasesAndExpensesMetrics(?int $companyId): array
     {
         $startOfMonth = now()->startOfMonth();
         $today = now()->startOfDay();
@@ -157,17 +167,17 @@ class DashboardController extends Controller
             ->sum('total_amount');
 
         return [
-            'purchases_this_month'   => (float) $purchasesThisMonth,
-            'purchases_today'        => (float) $purchasesToday,
+            'purchases_this_month' => (float) $purchasesThisMonth,
+            'purchases_today' => (float) $purchasesToday,
             'purchase_returns_month' => (float) $purchaseReturnsMonth,
-            'expense_today'          => (float) $expenseToday,
+            'expense_today' => (float) $expenseToday,
         ];
     }
 
     /**
      * Gathers aggregated data for the Bar and Pie Charts.
      */
-    private function getChartData(int $companyId): array
+    private function getChartData(?int $companyId): array
     {
         $startOfMonth = now()->startOfMonth();
         $last7Days = now()->subDays(6)->startOfDay();
@@ -191,7 +201,7 @@ class DashboardController extends Controller
             ->pluck('total', 'date')
             ->toArray();
 
-        // 🥧 Top 5 Customers Pie Chart (Handles Walk-in Customers gracefully)        
+        // 🥧 Top 5 Customers Pie Chart (Handles Walk-in Customers gracefully)
         $topCustomers = DB::table('invoices')
             ->leftJoin('clients', 'invoices.customer_id', '=', 'clients.id')
             ->where('invoices.company_id', $companyId)
@@ -220,17 +230,17 @@ class DashboardController extends Controller
             ->get();
 
         return [
-            'weekly_sales'  => $weeklySales,
+            'weekly_sales' => $weeklySales,
             'weekly_purchases' => $weeklyPurchases,
             'top_customers' => $topCustomers,
-            'top_products'  => $topProducts,
+            'top_products' => $topProducts,
         ];
     }
 
     /**
      * Gathers recent sales table data with calculated due amounts.
      */
-    private function getRecentSales(int $companyId)
+    private function getRecentSales(?int $companyId)
     {
         return Invoice::with('client')
             ->where('company_id', $companyId)
@@ -243,12 +253,12 @@ class DashboardController extends Controller
                 $dueAmount = $invoice->grand_total - $paidAmount;
 
                 return [
-                    'reference'      => $invoice->invoice_number,
-                    'customer'       => $invoice->customer_name ?: ($invoice->client->name ?? 'Walk-in Customer'),
-                    'status'         => $invoice->status,
-                    'grand_total'    => $invoice->grand_total,
-                    'paid'           => $paidAmount,
-                    'due'            => $dueAmount > 0 ? $dueAmount : 0,
+                    'reference' => $invoice->invoice_number,
+                    'customer' => $invoice->customer_name ?: ($invoice->client->name ?? 'Walk-in Customer'),
+                    'status' => $invoice->status,
+                    'grand_total' => $invoice->grand_total,
+                    'paid' => $paidAmount,
+                    'due' => $dueAmount > 0 ? $dueAmount : 0,
                     'payment_status' => $invoice->payment_status,
                 ];
             });
@@ -257,7 +267,7 @@ class DashboardController extends Controller
     /**
      * Gathers system alerts (Low Stock).
      */
-    private function getLowStockAlerts(int $companyId)
+    private function getLowStockAlerts(?int $companyId)
     {
         return ProductSku::with('product')
             ->where('company_id', $companyId)
@@ -269,6 +279,4 @@ class DashboardController extends Controller
             ->take(8)
             ->get();
     }
-    
-
 }
