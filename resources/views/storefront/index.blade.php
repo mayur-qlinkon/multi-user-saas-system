@@ -262,15 +262,17 @@
                             @foreach ($sectionProducts as $product)
                                 @php
                                     $firstSku = $product->skus->first();
+                                    $isCatalog = $product->product_type === 'catalog';
+                                    $showPrice = ! $isCatalog && get_setting('enable_product_pricing', 1);
                                     $price = $firstSku?->price ?? 0; // Our Selling Price
                                     $mrp = $firstSku?->mrp ?? 0;     // Maximum Retail Price
-                                    
+
                                     $isFeatured = $product->categoryPivots->first()?->is_featured ?? false;
                                     $isNew = $product->created_at->diffInDays(now()) <= 14;
-                                    
+
                                     // Calculate discount based on MRP vs Selling Price
-                                    $discount = $mrp > 0 && $price < $mrp 
-                                        ? round((($mrp - $price) / $mrp) * 100) 
+                                    $discount = $showPrice && $mrp > 0 && $price < $mrp
+                                        ? round((($mrp - $price) / $mrp) * 100)
                                         : 0;
                                 @endphp
 
@@ -316,16 +318,19 @@
                                             class="text-[13px] sm:text-[14px] font-semibold text-gray-800 leading-[1.3] line-clamp-2 mb-2 group-hover:text-brand-600 transition-colors">
                                             {{ $product->name }}
                                         </h3>
-                                        <div class="flex items-baseline gap-1.5 flex-wrap">
-                                            <span class="font-bold text-[15px] text-gray-900">
-                                                ₹{{ number_format($price, 2) }}
-                                            </span>
-                                            @if ($discount > 0)
-                                                {{-- 🌟 Changed $cost to $mrp here --}}
-                                                <span class="text-[11px] text-gray-400 line-through">₹{{ number_format($mrp, 2) }}</span>
-                                                <span class="text-[11px] font-bold text-green-600">{{ $discount }}% off</span>
-                                            @endif
-                                        </div>
+                                        @if ($showPrice)
+                                            <div class="flex items-baseline gap-1.5 flex-wrap">
+                                                <span class="font-bold text-[15px] text-gray-900">
+                                                    ₹{{ number_format($price, 2) }}
+                                                </span>
+                                                @if ($discount > 0)
+                                                    <span class="text-[11px] text-gray-400 line-through">₹{{ number_format($mrp, 2) }}</span>
+                                                    <span class="text-[11px] font-bold text-green-600">{{ $discount }}% off</span>
+                                                @endif
+                                            </div>
+                                        @elseif ($isCatalog)
+                                            <span class="text-[12px] font-semibold text-brand-600">View Details</span>
+                                        @endif
                                     </div>
                                 </a>
                             @endforeach

@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Attribute;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Supplier;
+use App\Models\Unit;
+use App\Models\Warehouse;
 use App\Services\ProductService;
-use App\Models\{Category, Unit, Supplier, Warehouse, Attribute, Product};
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -18,6 +23,7 @@ class ProductController extends Controller
     {
         $this->productService = $productService;
     }
+
     /**
      * Display a listing of the products.
      */
@@ -25,10 +31,10 @@ class ProductController extends Controller
     {
         // Get all filters from the URL query string (e.g., ?search=shirt&category_id=2)
         $filters = $request->only(['search', 'category_id', 'status']);
-        
+
         // Fetch products using the Service
         $products = $this->productService->getProductsList($filters);
-        
+
         // Fetch categories for the filter dropdown
         $categories = Category::where('is_active', true)->get();
 
@@ -45,7 +51,7 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Product status updated successfully.',
-            'is_active' => $product->is_active
+            'is_active' => $product->is_active,
         ]);
     }
 
@@ -57,15 +63,18 @@ class ProductController extends Controller
         $this->productService->deleteProduct($product);
 
         return redirect()->route('admin.products.index')
-                         ->with('success', 'Product deleted successfully.');
+            ->with('success', 'Product deleted successfully.');
     }
 
     public function create()
     {
+        if (! check_plan_limit('products')) {
+            return back()->with('error', 'You have reached your plan\'s Product limit. Please upgrade your subscription to add more products.');
+        }
         // Fetch all necessary dropdown data for the UI
         $categories = Category::where('is_active', true)->get();
-        $units      = Unit::where('is_active', true)->get();
-        $suppliers  = Supplier::where('is_active', true)->get();
+        $units = Unit::where('is_active', true)->get();
+        $suppliers = Supplier::where('is_active', true)->get();
         $warehouses = Warehouse::where('is_active', true)->get();
         $attributes = Attribute::with('values')->where('is_active', true)->get();
 
@@ -76,14 +85,17 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request)
     {
-        // We pass the fully validated data and the company ID to the Service layer
+        if (! check_plan_limit('products')) {
+            return back()->with('error', 'You have reached your plan\'s Product limit. Please upgrade your subscription to add more products.');
+        }
+
         $this->productService->createProduct(
-            $request->validated(), 
+            $request->validated(),
             Auth::user()->company_id
         );
 
         return redirect()->route('admin.products.index')
-                         ->with('success', 'Product created successfully!');
+            ->with('success', 'Product created successfully!');
     }
 
     /**
@@ -95,8 +107,8 @@ class ProductController extends Controller
         $product->load(['skus.skuValues', 'media']);
 
         $categories = Category::where('is_active', true)->get();
-        $units      = Unit::where('is_active', true)->get();
-        $suppliers  = Supplier::where('is_active', true)->get();
+        $units = Unit::where('is_active', true)->get();
+        $suppliers = Supplier::where('is_active', true)->get();
         $attributes = Attribute::with('values')->where('is_active', true)->get();
 
         return view('admin.products.edit', compact(
@@ -110,14 +122,15 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product)
     {
         $this->productService->updateProduct(
-            $product, 
-            $request->validated(), 
+            $product,
+            $request->validated(),
             Auth::user()->company_id
         );
 
         return redirect()->route('admin.products.index')
-                         ->with('success', 'Product updated successfully!');
+            ->with('success', 'Product updated successfully!');
     }
+
     /**
      * Display the specified product.
      */
@@ -125,12 +138,12 @@ class ProductController extends Controller
     {
         // Eager load EVERYTHING we need for the view
         $product->load([
-            'category', 
-            'supplier', 
+            'category',
+            'supplier',
             'media',
-            'skus.skuValues.attribute', 
+            'skus.skuValues.attribute',
             'skus.skuValues.attributeValue',
-            'skus.stocks.warehouse' // Gets live stock grouped by warehouse
+            'skus.stocks.warehouse', // Gets live stock grouped by warehouse
         ]);
 
         // Load units separately (since they are referenced directly on the product)
@@ -138,6 +151,7 @@ class ProductController extends Controller
 
         return view('admin.products.show', compact('product'));
     }
+
     public function duplicate(Product $product)
     {
         $newProduct = $this->productService->duplicateProduct($product);
@@ -146,5 +160,4 @@ class ProductController extends Controller
             ->route('admin.products.edit', $newProduct->id)
             ->with('success', "'{$product->name}' duplicated. Review and activate when ready.");
     }
-    
 }

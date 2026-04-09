@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes; // The Iron Wall
 use Illuminate\Support\Str;
-use App\Traits\Tenantable; // The Iron Wall
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, Tenantable,LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes,Tenantable;
 
     protected $fillable = [
         // REMOVED store_id. Products belong to the company globally!
@@ -24,6 +25,7 @@ class Product extends Model
         'name',
         'slug',
         'type', // 'single' or 'variable'
+        'product_type', // 'sellable' or 'catalog'
         'barcode_symbology',
         'hsn_code',
         'product_unit_id',
@@ -35,47 +37,55 @@ class Product extends Model
         'specifications',
         'product_guide',
         'is_active',
-        'show_in_storefront'
+        'show_in_storefront',
     ];
 
     protected $casts = [
         'specifications' => 'array',
-        'product_guide'  => 'array',
-        'is_active'      => 'boolean',
+        'product_guide' => 'array',
+        'is_active' => 'boolean',
         'show_in_storefront' => 'boolean',
     ];
 
     // In Product model — add this property
     protected $appends = ['primary_image_url'];
-    
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logAll() // Logs every fillable attribute
             ->logOnlyDirty() // ONLY logs attributes that actually changed
             ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn(string $eventName) => "Product has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Product has been {$eventName}");
     }
 
     protected static function boot()
     {
         parent::boot();
-        
+
         // Auto-generate a unique slug if one wasn't provided
         static::creating(function ($product) {
             if (empty($product->slug)) {
-                $product->slug = Str::slug($product->name) . '-' . Str::random(5);
+                $product->slug = Str::slug($product->name).'-'.Str::random(5);
             }
         });
     }
 
+    // --- Helpers ---
+
+    public function isCatalog(): bool
+    {
+        return $this->product_type === 'catalog';
+    }
+
     // --- Core Relationships ---
-    
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
-     /**
+
+    /**
      * Categories this product belongs to (via pivot).
      */
     public function categories(): BelongsToMany
@@ -84,23 +94,25 @@ class Product extends Model
             Category::class,
             'category_products'
         )
-        ->withPivot(['is_active', 'is_featured', 'sort_order', 'added_by'])
-        ->withTimestamps()
-        ->orderByPivot('sort_order', 'asc');
+            ->withPivot(['is_active', 'is_featured', 'sort_order', 'added_by'])
+            ->withTimestamps()
+            ->orderByPivot('sort_order', 'asc');
     }
 
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
     }
-     /**
+
+    /**
      * Pivot relationship — products through category_products table.
      * Gives access to per-category sort_order, is_featured, is_active.
      */
     public function categoryPivots(): HasMany
     {
-        return $this->hasMany(\App\Models\CategoryProduct::class);
+        return $this->hasMany(CategoryProduct::class);
     }
+
     public function sectionPivots(): HasMany
     {
         return $this->hasMany(StorefrontSectionProduct::class);
@@ -124,7 +136,7 @@ class Product extends Model
     }
 
     // --- Architecture Relationships ---
-    
+
     public function media(): HasMany
     {
         return $this->hasMany(ProductMedia::class)->orderBy('sort_order', 'asc');
@@ -144,22 +156,22 @@ class Product extends Model
     {
         // First, explicitly look for an 'image' that is marked as primary
         $primaryMedia = $this->media->where('media_type', 'image')->where('is_primary', true)->first();
-        
+
         // If no primary is set, fallback to the first available image
-        if (!$primaryMedia) {
+        if (! $primaryMedia) {
             $primaryMedia = $this->media->where('media_type', 'image')->first();
         }
 
         // Fallback to a default placeholder if no images exist at all
-        return $primaryMedia ? asset('storage/' . $primaryMedia->media_path) : asset('assets/images/no-product.png');
+        return $primaryMedia ? asset('storage/'.$primaryMedia->media_path) : asset('assets/images/no-product.png');
     }
-     /**
+
+    /**
      * Scope — only products visible on storefront.
      * Apply this on EVERY public-facing query.
      */
-    public function scopeStorefrontVisible(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeStorefrontVisible(Builder $query): Builder
     {
         return $query->where('show_in_storefront', true)->where('is_active', true);
     }
- 
 }

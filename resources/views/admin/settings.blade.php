@@ -947,6 +947,41 @@
 
                         </div>
 
+                        {{-- ── STOREFRONT PRICING ── --}}
+                        @if(has_module('plant_education'))
+                        <p class="section-title">
+                            <i data-lucide="tag" class="w-4 h-4"></i>
+                            Storefront Pricing
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                            <div>
+                                <label class="field-label">Show Pricing</label>
+                                <div class="toggle-wrap">
+                                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                        <input type="checkbox" name="enable_product_pricing" value="1"
+                                            {{ get_setting('enable_product_pricing', 1) ? 'checked' : '' }}
+                                            class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer
+                                            peer-checked:bg-brand-600
+                                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                            after:bg-white after:border after:rounded-full after:h-5 after:w-5
+                                            after:transition-all peer-checked:after:translate-x-full">
+                                        </div>
+                                    </label>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-700">
+                                            Display Prices on Public Storefront
+                                        </p>
+                                        <p class="text-[11px] text-gray-400">
+                                            When disabled, product prices are hidden on all public storefront pages. Useful for inquiry-based businesses.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <p class="section-title"><i data-lucide="zap" class="w-4 h-4"></i> Performance & Cache</p>
 
                         <div class="warning-zone mb-6 flex items-start gap-4">

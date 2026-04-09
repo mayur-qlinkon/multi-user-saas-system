@@ -54,12 +54,18 @@ class EmployeeController extends Controller
         $departments = Department::active()->ordered()->get();
         $designations = Designation::active()->ordered()->get();
         $stores = Store::where('is_active', true)->get();
+        $canAddMore = check_plan_limit('employees');
 
-        return view('admin.hrm.employees.index', compact('employees', 'departments', 'designations', 'stores'));
+        return view('admin.hrm.employees.index', compact('employees', 'departments', 'designations', 'stores', 'canAddMore'));
     }
 
     public function create()
     {
+        if (! check_plan_limit('employees')) {
+            return redirect()->route('admin.hrm.employees.index')
+                ->with('error', 'You have reached your subscription limit for employees. Please upgrade your plan to add more.');
+        }
+
         $departments = Department::active()->ordered()->get();
         $designations = Designation::active()->ordered()->get();
         $shifts = Shift::active()->ordered()->get();
@@ -81,6 +87,16 @@ class EmployeeController extends Controller
 
     public function store(StoreEmployeeRequest $request)
     {
+        if (! check_plan_limit('employees')) {
+            $message = 'Employee limit reached for your current plan. Please upgrade to add more employees.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+
+            return back()->withErrors(['error' => $message]);
+        }
+
         try {
             $employee = $this->employeeService->create($request->validated());
 

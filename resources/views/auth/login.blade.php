@@ -58,8 +58,8 @@
                             d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
                 </span>
-                <input id="email" type="email" name="email" value="{{ old('email') }}"
-                    placeholder="you@company.com" required autofocus autocomplete="email"
+                <input id="email" type="text" name="email" value="{{ old('email') }}"
+                    placeholder="Email or Employee Code" required autofocus autocomplete="username"
                     class="w-full rounded-xl text-sm pl-10 pr-4 py-3 border outline-none transition-all
                     {{ $errors->has('email') ? 'border-red-400 bg-red-50 text-red-700' : 'border-gray-300 bg-white text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10' }}">
             </div>

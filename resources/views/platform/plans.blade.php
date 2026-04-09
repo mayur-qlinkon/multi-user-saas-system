@@ -103,6 +103,14 @@
                                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Stores</p>
                                 <p class="text-base font-black text-gray-700">{{ $plan->store_limit }}</p>
                             </div>
+                            <div class="bg-gray-50 rounded-lg p-2.5 border border-gray-100 text-center">
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Products</p>
+                                <p class="text-base font-black text-gray-700">{{ $plan->product_limit }}</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-2.5 border border-gray-100 text-center">
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Employees</p>
+                                <p class="text-base font-black text-gray-700">{{ $plan->employee_limit }}</p>
+                            </div>
                         </div>
 
                         <div class="mb-4 flex-1">
@@ -248,7 +256,7 @@
                         {{-- Section: Limits & Modules --}}
                         <div>
                             <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">3. Limits & Features</h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
                                 <div>
                                     <label class="form-label">User Limit <span class="text-red-500">*</span></label>
                                     <input type="number" name="user_limit" x-model="form.user_limit" required min="1" class="form-input">
@@ -256,6 +264,14 @@
                                 <div>
                                     <label class="form-label">Store Limit <span class="text-red-500">*</span></label>
                                     <input type="number" name="store_limit" x-model="form.store_limit" required min="1" class="form-input">
+                                </div>
+                                <div>
+                                    <label class="form-label">Product Limit <span class="text-red-500">*</span></label>
+                                    <input type="number" name="product_limit" x-model="form.product_limit" required min="1" class="form-input">
+                                </div>
+                                <div>
+                                    <label class="form-label">Employee Limit <span class="text-red-500">*</span></label>
+                                    <input type="number" name="employee_limit" x-model="form.employee_limit" required min="1" class="form-input">
                                 </div>
                             </div>
 
@@ -330,7 +346,7 @@
 
                 form: {
                     id: '', name: '', description: '', price: '', billing_cycle: 'monthly', trial_days: 0,
-                    user_limit: 1, store_limit: 1, is_recommended: false, is_active: true,
+                    user_limit: 1, store_limit: 1, product_limit: 50, employee_limit: 50, is_recommended: false, is_active: true,
                     button_text: 'Get Started', button_link: '', sort_order: 0, modules: []
                 },
 
@@ -341,7 +357,7 @@
                     this.isEditing = false;
                     this.form = {
                         id: '', name: '', description: '', price: '', billing_cycle: 'monthly', trial_days: 0,
-                        user_limit: 1, store_limit: 1, is_recommended: false, is_active: true,
+                        user_limit: 1, store_limit: 1, product_limit: 50, employee_limit: 50, is_recommended: false, is_active: true,
                         button_text: 'Get Started', button_link: '', sort_order: 0, modules: []
                     };
                     this.showFormModal = true;
@@ -363,6 +379,8 @@
                         trial_days: plan.trial_days || 0,
                         user_limit: plan.user_limit,
                         store_limit: plan.store_limit,
+                        product_limit: plan.product_limit,
+                        employee_limit: plan.employee_limit,
                         is_recommended: !!plan.is_recommended,
                         is_active: !!plan.is_active,
                         button_text: plan.button_text || 'Get Started',

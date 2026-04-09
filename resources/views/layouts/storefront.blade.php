@@ -365,7 +365,12 @@
                                     <div class="flex-1 min-w-0">
                                         <p class="text-[13px] font-semibold text-gray-800 truncate" x-text="product.name"></p>
                                         <p class="text-[12px] text-gray-400 font-medium">
-                                            ₹<span x-text="parseFloat(product.price).toFixed(2)"></span>
+                                            <template x-if="product.product_type !== 'catalog'">
+                                                <span>₹<span x-text="parseFloat(product.price).toFixed(2)"></span></span>
+                                            </template>
+                                            <template x-if="product.product_type === 'catalog'">
+                                                <span class="text-brand-600 font-semibold">View Details</span>
+                                            </template>
                                         </p>
                                     </div>
                                     <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-gray-300 flex-shrink-0"></i>
@@ -453,7 +458,12 @@
                                     onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-[13px] font-semibold text-gray-800 truncate" x-text="product.name"></p>
-                                    <p class="text-[12px] text-gray-400">₹<span x-text="parseFloat(product.price).toFixed(2)"></span></p>
+                                    <template x-if="product.product_type !== 'catalog'">
+                                        <p class="text-[12px] text-gray-400">₹<span x-text="parseFloat(product.price).toFixed(2)"></span></p>
+                                    </template>
+                                    <template x-if="product.product_type === 'catalog'">
+                                        <p class="text-[12px] text-brand-600 font-semibold">View Details</p>
+                                    </template>
                                 </div>
                             </a>
                         </template>

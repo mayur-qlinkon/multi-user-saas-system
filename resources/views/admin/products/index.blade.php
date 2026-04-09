@@ -7,10 +7,29 @@
 @section('content')
     <div class="space-y-6 pb-10" x-data="productTable()">
 
+        {{-- Alerts --}}
         @if (session('success'))
-            <script>
+            <div class="bg-green-50 text-green-700 px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-green-100 mb-6 flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> {{ session('success') }}
+            </div>
+              <script>
                 document.addEventListener('DOMContentLoaded', () => BizAlert.toast("{{ session('success') }}", 'success'));
             </script>
+        @endif
+        @if (session('error'))
+            <div class="bg-red-50 text-red-700 px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-red-100 mb-6 flex items-center gap-2">
+                <i data-lucide="alert-octagon" class="w-5 h-5"></i> {{ session('error') }}
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="bg-[#fee2e2] text-[#ef4444] px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-red-100 mb-6">
+                <div class="flex items-center gap-2 mb-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Please fix the following errors:</div>
+                <ul class="list-disc list-inside pl-7 text-xs font-medium space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
 
         <div class="flex flex-col md:flex-row justify-end items-center gap-3 mb-2">
@@ -59,10 +78,17 @@
                         <i data-lucide="trash-2" class="w-4 h-4"></i> Bulk Delete
                     </button>
 
-                    <a href="{{ route('admin.products.create') }}"
-                        class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Add Product
-                    </a>
+                    @if (check_plan_limit('products'))
+                        <a href="{{ route('admin.products.create') }}"
+                            class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Product
+                        </a>
+                    @else
+                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-bold border border-red-100">
+                            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                            Product Limit Reached
+                        </span>
+                    @endif
                 </div>
             </div>
 
@@ -108,10 +134,11 @@
 
                                 {{-- Math Setup --}}
                                 @php
-                                    $minPrice = $product->skus->min('price') ?? 0;
-                                    $maxPrice = $product->skus->max('price') ?? 0;
+                                    $hasSku = $product->skus->isNotEmpty();
+                                    $minPrice = $hasSku ? ($product->skus->min('price') ?? 0) : 0;
+                                    $maxPrice = $hasSku ? ($product->skus->max('price') ?? 0) : 0;
                                     $totalVariants = $product->skus->count();
-                                    $totalStock = $product->skus->sum('total_stock');
+                                    $totalStock = $hasSku ? $product->skus->sum('total_stock') : 0;
                                 @endphp
 
                                 {{-- Name --}}

@@ -62,6 +62,17 @@
                     </div>
 
                     <div>
+                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Show in Storefront</label>
+                        <select name="show_in_storefront"
+                            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all bg-white">
+                            <option value="1" {{ old('show_in_storefront', '1') == '1' ? 'selected' : '' }}>
+                                Yes (Listed publicly)</option>
+                            <option value="0" {{ old('show_in_storefront', '1') == '0' ? 'selected' : '' }}>
+                                No (Hidden from store)</option>
+                        </select>
+                    </div>
+
+                    <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Category <span
                                 class="text-red-500">*</span></label>
                         <select name="category_id" required
@@ -163,7 +174,34 @@
                 </div>
             </div>
 
+            @if(has_module('plant_education'))
+            {{-- ── Product Type Selector (module-gated) ── --}}
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Product Purpose</h2>
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
+                        :class="catalogMode === 'sellable' ? 'border-brand-500 bg-brand-50' : 'border-gray-200 bg-white hover:bg-gray-50'">
+                        <input type="radio" name="product_type" value="sellable" x-model="catalogMode" class="hidden">
+                        <i data-lucide="shopping-cart" class="w-5 h-5" :class="catalogMode === 'sellable' ? 'text-brand-600' : 'text-gray-400'"></i>
+                        <div>
+                            <p class="text-sm font-bold" :class="catalogMode === 'sellable' ? 'text-brand-700' : 'text-gray-700'">Sellable</p>
+                            <p class="text-[11px] text-gray-400">Normal product with pricing, stock & POS</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
+                        :class="catalogMode === 'catalog' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white hover:bg-gray-50'">
+                        <input type="radio" name="product_type" value="catalog" x-model="catalogMode" class="hidden">
+                        <i data-lucide="book-open" class="w-5 h-5" :class="catalogMode === 'catalog' ? 'text-teal-600' : 'text-gray-400'"></i>
+                        <div>
+                            <p class="text-sm font-bold" :class="catalogMode === 'catalog' ? 'text-teal-700' : 'text-gray-700'">Catalog</p>
+                            <p class="text-[11px] text-gray-400">Informational product — no pricing or stock</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            @endif
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100" x-show="catalogMode !== 'catalog'" x-cloak>
                 <div class="flex items-center justify-between mb-5 border-b border-gray-100 pb-2">
                     <h2 class="text-lg font-bold text-gray-800">3. Product Pricing & Stock</h2>
 
@@ -184,14 +222,14 @@
                     </div>
                 </div>
 
-                <div x-show="productType === 'single'" x-cloak>
+                <div x-show="productType === 'single' && catalogMode !== 'catalog'" x-cloak>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">SKU <span
                                     class="text-red-500">*</span></label>
                             <div class="flex gap-2">
                                 <input type="text" name="single_sku" x-model="singleSku"
-                                    :required="productType === 'single'"
+                                    :required="productType === 'single' && catalogMode !== 'catalog'"
                                     placeholder="Type or auto-generate"
                                     class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
 
@@ -229,20 +267,20 @@
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Selling Price (₹) <span
                                     class="text-red-500">*</span></label>
                             <input type="number" step="0.01" name="single_price" value="{{ old('single_price') }}"
-                                :required="productType === 'single'"
+                                :required="productType === 'single' && catalogMode !== 'catalog'"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
                         </div>
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Purchase Cost (₹) <span
                                     class="text-red-500">*</span></label>
                             <input type="number" step="0.01" name="single_cost" value="{{ old('single_cost') }}"
-                                :required="productType === 'single'"
+                                :required="productType === 'single' && catalogMode !== 'catalog'"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
                         </div>
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Tax Type <span
                                     class="text-red-500">*</span></label>
-                            <select name="single_tax_type" :required="productType === 'single'"
+                            <select name="single_tax_type" :required="productType === 'single' && catalogMode !== 'catalog'"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2 text-sm focus:border-[#108c2a] outline-none transition-all bg-white">
                                 <option value="exclusive" {{ old('single_tax_type') == 'exclusive' ? 'selected' : '' }}>
                                     Exclusive</option>
@@ -308,7 +346,7 @@
                     </div>
                 </div>
 
-                <div x-show="productType === 'variable'" x-cloak>
+                <div x-show="productType === 'variable' && catalogMode !== 'catalog'" x-cloak>
 
                     <div class="mb-6 bg-blue-50/50 border border-blue-100 p-4 rounded-lg flex items-start gap-3">
                         <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5"></i>
@@ -403,21 +441,21 @@
                                         <label class="block text-[12px] font-bold text-gray-600 mb-1">Selling Price (₹) <span
                                     class="text-red-500">*</span></label>
                                         <input type="number" step="0.01" :name="'variations[' + index + '][price]'"
-                                            x-model="variant.price" :required="productType === 'variable'"
+                                            x-model="variant.price" :required="productType === 'variable' && catalogMode !== 'catalog'"
                                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
                                     </div>
                                     <div>
                                         <label class="block text-[12px] font-bold text-gray-600 mb-1">Cost (₹) <span
                                     class="text-red-500">*</span></label>
                                         <input type="number" step="0.01" :name="'variations[' + index + '][cost]'"
-                                            x-model="variant.cost" :required="productType === 'variable'"
+                                            x-model="variant.cost" :required="productType === 'variable' && catalogMode !== 'catalog'"
                                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
                                     </div>
                                     <div>
                                         <label class="block text-[12px] font-bold text-gray-600 mb-1">Tax Type <span
                                     class="text-red-500">*</span></label>
                                         <select :name="'variations[' + index + '][tax_type]'" x-model="variant.tax_type"
-                                            :required="productType === 'variable'"
+                                            :required="productType === 'variable' && catalogMode !== 'catalog'"
                                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none bg-white">
                                             <option value="exclusive">Exclusive</option>
                                             <option value="inclusive">Inclusive</option>
@@ -676,6 +714,7 @@
     <script>
         function productForm() {
             return {
+                catalogMode: '{{ old('product_type', 'sellable') }}',
                 // Read old input if validation failed, default to 'single'
                 productType: '{{ old('type', 'single') }}',
                 singleMrp: '{{ old('single_mrp', '') }}',

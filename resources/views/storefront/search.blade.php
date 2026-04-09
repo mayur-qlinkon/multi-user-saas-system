@@ -118,10 +118,12 @@
                 @foreach($products as $product)
                     @php
                         $firstSku  = $product->skus->first();
+                        $isCatalog = $product->product_type === 'catalog';
+                        $showPrice = ! $isCatalog && get_setting('enable_product_pricing', 1);
                         $price     = $firstSku?->price ?? 0;
                         $cost      = $firstSku?->cost ?? 0;
                         $isNew     = $product->created_at->diffInDays(now()) <= 14;
-                        $discount  = $cost > 0 && $price < $cost ? round((($cost - $price) / $cost) * 100) : 0;
+                        $discount  = $showPrice && $cost > 0 && $price < $cost ? round((($cost - $price) / $cost) * 100) : 0;
                     @endphp
 
                     <a href="{{ route('storefront.product', ['slug' => $company->slug, 'productSlug' => $product->slug]) }}"
@@ -149,15 +151,19 @@
                             <h3 class="text-[13px] sm:text-[14px] font-semibold text-gray-800 leading-[1.3] line-clamp-2 mb-2 group-hover:text-brand-600 transition-colors">
                                 {{ $product->name }}
                             </h3>
-                            <div class="flex items-baseline gap-1.5 flex-wrap">
-                                <span class="font-bold text-[15px] text-gray-900">
-                                    ₹{{ number_format($price, 2) }}
-                                </span>
-                                @if($discount > 0)
-                                    <span class="text-[11px] text-gray-400 line-through">₹{{ number_format($cost, 2) }}</span>
-                                    <span class="text-[11px] font-bold text-green-600">{{ $discount }}% off</span>
-                                @endif
-                            </div>
+                            @if($showPrice)
+                                <div class="flex items-baseline gap-1.5 flex-wrap">
+                                    <span class="font-bold text-[15px] text-gray-900">
+                                        ₹{{ number_format($price, 2) }}
+                                    </span>
+                                    @if($discount > 0)
+                                        <span class="text-[11px] text-gray-400 line-through">₹{{ number_format($cost, 2) }}</span>
+                                        <span class="text-[11px] font-bold text-green-600">{{ $discount }}% off</span>
+                                    @endif
+                                </div>
+                            @elseif($isCatalog)
+                                <span class="text-[12px] font-semibold text-brand-600">View Details</span>
+                            @endif
                         </div>
                     </a>
                 @endforeach

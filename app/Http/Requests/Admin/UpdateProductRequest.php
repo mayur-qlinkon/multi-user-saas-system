@@ -7,127 +7,143 @@ use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     */
     public function authorize(): bool
     {
-        // The Tenantable trait handles cross-company protection, 
-        // but we double-check the product belongs to this company just to be ironclad.
-        return $this->product->company_id === auth()->user()->company_id;
+        // Ensure the product exists and belongs to the user's company
+        return $this->product && $this->product->company_id === auth()->user()->company_id;
     }
 
+    /**
+     * Get the validation rules that apply to the request.
+     */
     public function rules(): array
     {
         $companyId = auth()->user()->company_id;
+        $isCatalog = $this->input('product_type') === 'catalog';
+        $isVariable = $this->input('type') === 'variable';
 
-        return [
-            // Core Data
-            'name'                => ['required', 'string', 'max:255'],
-            'hsn_code'            => ['nullable', 'string', 'max:50'],
-            // Single category (legacy support)
-            'category_id'   => ['nullable', Rule::exists('categories', 'id')->where('company_id', $companyId)],
+        // ── 1. Common Rules ──
+        $rules = [
+            'name' => ['required', 'string', 'max:255'],
+            'product_type' => ['nullable', 'in:sellable,catalog'],
+            'hsn_code' => ['nullable', 'string', 'max:50'],
+            'category_id' => ['nullable', Rule::exists('categories', 'id')->where('company_id', $companyId)],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['integer', Rule::exists('categories', 'id')->where('company_id', $companyId)],
+            'supplier_id' => ['nullable', Rule::exists('suppliers', 'id')->where('company_id', $companyId)],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
+            'show_in_storefront' => ['boolean'],
 
-            // Multi-category array (new)
-            'categories'    => ['nullable', 'array'],
-            'categories.*'  => ['integer', Rule::exists('categories', 'id')->where('company_id', $companyId)],
-            'supplier_id'         => ['nullable', Rule::exists('suppliers', 'id')->where('company_id', $companyId)],
-            'product_unit_id'     => ['required', Rule::exists('units', 'id')->where('company_id', $companyId)],
-            'sale_unit_id'        => ['required', Rule::exists('units', 'id')->where('company_id', $companyId)],
-            'purchase_unit_id'    => ['required', Rule::exists('units', 'id')->where('company_id', $companyId)],
-            'quantity_limitation' => ['nullable', 'integer', 'min:1'], // 🌟 NEW
-            'type'                => ['required', 'in:single,variable'],
-            'barcode_symbology'   => ['required', 'string'],
-            'description'         => ['nullable', 'string'],
-            'is_active'           => ['boolean'],
-            'product_guide'       => ['nullable', 'array', 'max:15'],
-            'product_guide.*.title'       => ['required_with:product_guide', 'string'],
+            'product_guide' => ['nullable', 'array', 'max:15'],
+            'product_guide.*.title' => ['required_with:product_guide', 'string'],
             'product_guide.*.description' => ['required_with:product_guide', 'string'],
 
-            // Single Product Validation (Note the complex ignore rule)
-            'single_sku'          => [
-                'exclude_if:type,variable', 
-                'required', 
-                'string', 
-                // Ignore uniqueness if the SKU belongs to the current product being edited
-                Rule::unique('product_skus', 'sku')
-                    ->where('company_id', $companyId)
-                    ->whereNot('product_id', $this->product->id)
-            ],
-            // 🌟 ADD THIS: Optional, unique barcode for single products
-            'single_barcode'      => [
-                'exclude_if:type,variable', 
-                'nullable', 
-                'string', 
-                'max:255', 
-                // Note: In your update request, ensure you ignore the current SKU ID if needed!
-                Rule::unique('product_skus', 'barcode')->where('company_id', $companyId)->ignore($this->single_sku, 'sku') 
-            ],
-            
-
-            'single_price'        => ['exclude_if:type,variable', 'required', 'numeric', 'min:0'],
-            'single_cost'         => ['exclude_if:type,variable', 'required', 'numeric', 'min:0'],
-            'single_mrp'          => ['exclude_if:type,variable', 'nullable', 'numeric', 'min:0'], // 🌟 NEW
-            'single_order_tax'    => ['exclude_if:type,variable', 'nullable', 'numeric', 'min:0'], // 🌟 NEW
-            'single_tax_type'     => ['exclude_if:type,variable', 'required', 'in:inclusive,exclusive'], // 🌟 NEW
-            'single_stock_alert'  => ['nullable', 'integer', 'min:0'],
-            'single_stock'        => ['nullable', 'array'], 
-            'single_stock.*.warehouse_id'   => ['required_with:single_stock', 'exists:warehouses,id'],
-            'single_stock.*.qty'            => ['required_with:single_stock', 'integer', 'min:1'],
-            
-            // 2. 🌟 NEW: Media rules tailored for Updates
-            'media'               => ['nullable', 'array', 'max:10'],
-            'media.*.id'          => ['nullable', 'integer'], // Identifies existing media
-            'media.*.type'        => ['required_with:media', 'in:image,youtube'],
-            
-            // File is only required if it's an image AND it's a brand new upload (no ID)
-            // If there is NO ID (meaning it's a new upload) and the type is 'image', the file is REQUIRED.
+            'media' => ['nullable', 'array', 'max:10'],
+            'media.*.id' => ['nullable', 'integer'],
+            'media.*.type' => ['required_with:media', 'in:image,youtube'],
             'media.*.file' => [
                 'exclude_if:media.*.type,youtube',
                 function ($attribute, $value, $fail) {
                     $index = explode('.', $attribute)[1];
                     $id = $this->input("media.{$index}.id");
-                    
-                    if (empty($id) && empty($value)) {
+                    if (empty($id) && empty($value) && $this->hasFile($attribute)) {
                         $fail('An image file is required for new uploads.');
                     }
                 },
-                'image',
-                'mimes:jpeg,png,jpg,webp',
-                'max:5120' // Allow up to 5MB (let your ImageService compress it!)
+                'image', 'mimes:jpeg,png,jpg,webp', 'max:5120',
             ],
-            'media.*.url'         => ['nullable', 'url', 'max:255'],
-            'media.*.sku_index'   => ['nullable', 'integer', 'min:0'],
-            
+            'media.*.url' => ['nullable', 'url', 'max:255'],
+            'media.*.sku_index' => ['nullable', 'integer', 'min:0'],
             'primary_media_index' => ['nullable', 'integer'],
+        ];
 
-            // Variable Product Validation
-            'variations'          => ['exclude_if:type,single', 'required', 'array', 'min:1'],
-            'variations.*.id'     => ['nullable', 'exists:product_skus,id'], // Used to track existing variations
-            'variations.*.sku'    => [
-                'nullable', 
-                'string', 
+        // ── 2. Catalog Bypass ──
+        if ($isCatalog) {
+            $rules['product_unit_id'] = ['nullable'];
+            $rules['sale_unit_id'] = ['nullable'];
+            $rules['purchase_unit_id'] = ['nullable'];
+            $rules['type'] = ['nullable', 'in:single,variable'];
+            $rules['barcode_symbology'] = ['nullable', 'string'];
+
+            return $rules;
+        }
+
+        // ── 3. Sellable Requirements ──
+        $rules['product_unit_id'] = ['required', Rule::exists('units', 'id')->where('company_id', $companyId)];
+        $rules['sale_unit_id'] = ['required', Rule::exists('units', 'id')->where('company_id', $companyId)];
+        $rules['purchase_unit_id'] = ['required', Rule::exists('units', 'id')->where('company_id', $companyId)];
+        $rules['quantity_limitation'] = ['nullable', 'integer', 'min:1'];
+        $rules['type'] = ['required', 'in:single,variable'];
+        $rules['barcode_symbology'] = ['required', 'string'];
+
+        // ── 4. Single Product Uniqueness Logic ──
+        if (! $isVariable) {
+            // Get the ID of the existing SKU for the single product to ignore it
+            $existingSkuId = $this->product->skus()->first()?->id;
+
+            $rules['single_sku'] = [
+                'required', 'string',
                 Rule::unique('product_skus', 'sku')
                     ->where('company_id', $companyId)
-                    ->whereNot('product_id', $this->product->id)
-            ],
+                    ->ignore($existingSkuId),
+            ];
+            $rules['single_barcode'] = [
+                'nullable', 'string', 'max:255',
+                Rule::unique('product_skus', 'barcode')
+                    ->where('company_id', $companyId)
+                    ->ignore($existingSkuId),
+            ];
+            $rules['single_price'] = ['required', 'numeric', 'min:0'];
+            $rules['single_cost'] = ['required', 'numeric', 'min:0'];
+            $rules['single_mrp'] = ['nullable', 'numeric', 'min:0'];
+            $rules['single_order_tax'] = ['nullable', 'numeric', 'min:0'];
+            $rules['single_tax_type'] = ['required', 'in:inclusive,exclusive'];
+            $rules['single_stock_alert'] = ['nullable', 'integer', 'min:0'];
+            $rules['single_stock'] = ['nullable', 'array'];
+            $rules['single_stock.*.warehouse_id'] = ['required_with:single_stock', 'exists:warehouses,id'];
+            $rules['single_stock.*.qty'] = ['required_with:single_stock', 'integer', 'min:1'];
+        }
 
-            // 🌟 ADD THIS: Optional, unique barcode for variations
-            'variations.*.barcode' => [
-                'nullable', 
-                'string', 
-                'max:255',
-                // Keep uniqueness scoped to company
-                Rule::unique('product_skus', 'barcode')->where('company_id', $companyId)
-            ],
-            
-            'variations.*.price'  => ['required_with:variations', 'numeric', 'min:0'],
-            'variations.*.cost'   => ['required_with:variations', 'numeric', 'min:0'],
-            'variations.*.mrp'    => ['nullable', 'numeric', 'min:0'], // 🌟 NEW
-            'variations.*.attrs'  => ['nullable', 'array'],
-            'variations.*.order_tax' => ['nullable', 'numeric', 'min:0'], // 🌟 NEW
-            'variations.*.tax_type'  => ['required_with:variations', 'in:inclusive,exclusive'], // 🌟 NEW
-            'variations.*.stock_alert'          => ['nullable', 'integer', 'min:0'],
-            'variations.*.stock'                => ['nullable', 'array'],
-            'variations.*.stock.*.warehouse_id' => ['required_with:variations.*.stock', 'exists:warehouses,id'],
-            'variations.*.stock.*.qty'          => ['required_with:variations.*.stock', 'integer', 'min:1'],
-        ];
+        // ── 5. Variable Product Uniqueness Logic (The "Root" Fix) ──
+        if ($isVariable) {
+            $rules['variations'] = ['required', 'array', 'min:1'];
+
+            foreach ($this->input('variations', []) as $index => $variation) {
+                $variationId = $variation['id'] ?? null;
+
+                $rules["variations.{$index}.id"] = ['nullable', 'exists:product_skus,id'];
+
+                $rules["variations.{$index}.sku"] = [
+                    'required', 'string',
+                    Rule::unique('product_skus', 'sku')
+                        ->where('company_id', $companyId)
+                        ->ignore($variationId),
+                ];
+
+                $rules["variations.{$index}.barcode"] = [
+                    'nullable', 'string', 'max:255',
+                    Rule::unique('product_skus', 'barcode')
+                        ->where('company_id', $companyId)
+                        ->ignore($variationId),
+                ];
+
+                $rules["variations.{$index}.price"] = ['required', 'numeric', 'min:0'];
+                $rules["variations.{$index}.cost"] = ['required', 'numeric', 'min:0'];
+                $rules["variations.{$index}.mrp"] = ['nullable', 'numeric', 'min:0'];
+                $rules["variations.{$index}.attrs"] = ['nullable', 'array'];
+                $rules["variations.{$index}.order_tax"] = ['nullable', 'numeric', 'min:0'];
+                $rules["variations.{$index}.tax_type"] = ['required', 'in:inclusive,exclusive'];
+                $rules["variations.{$index}.stock_alert"] = ['nullable', 'integer', 'min:0'];
+                $rules["variations.{$index}.stock"] = ['nullable', 'array'];
+                $rules["variations.{$index}.stock.*.warehouse_id"] = ['required_with:variations.{$index}.stock', 'exists:warehouses,id'];
+                $rules["variations.{$index}.stock.*.qty"] = ['required_with:variations.{$index}.stock', 'integer', 'min:1'];
+            }
+        }
+
+        return $rules;
     }
 }

@@ -27,7 +27,12 @@
       "Bash(vendor/bin/pint database/migrations/2026_04_07_140853_create_email_templates_table.php app/Models/EmailTemplate.php app/Mail/TemplateMail.php app/Services/EmailService.php --format agent)",
       "Bash(del \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlinkonSoftware\\\\database\\\\migrations\\\\2026_04_07_143420_create_inquiries_table.php\")",
       "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/Platform/SystemSettingController.php app/Http/Controllers/Platform/ContactInquiryController.php app/Http/Controllers/LandingController.php app/Http/Middleware/MaintenanceMode.php app/Models/ContactInquiry.php)",
-      "Bash(vendor/bin/pint --dirty --format agent app/Mail/OtpMail.php app/Services/Auth/PasswordResetService.php app/Http/Controllers/Auth/ForgotPasswordController.php routes/web.php)"
+      "Bash(vendor/bin/pint --dirty --format agent app/Mail/OtpMail.php app/Services/Auth/PasswordResetService.php app/Http/Controllers/Auth/ForgotPasswordController.php routes/web.php)",
+      "Bash(grep -r \"Product::\" /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware/routes/*.php)",
+      "Bash(grep -E \"\\\\.blade\\\\.php$\")",
+      "Read(//tmp/**)",
+      "Bash(grep -n \"employee\\(\\)\" storage/framework/views/*.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Services/ProductService.php app/Http/Requests/Admin/StoreProductRequest.php app/Http/Requests/Admin/UpdateProductRequest.php)"
     ]
   }
 }

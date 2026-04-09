@@ -26,13 +26,15 @@
 @section('content')
     @php
         // ── Prepare data for Alpine ──
+        $isCatalog = $product->isCatalog();
         $images = $product->media->where('media_type', 'image')->values();
         $firstImg = $images->first()?->media_path;
         $youtubeVideos = $product->media->where('media_type', 'youtube')->values();
-        $firstSku = $product->skus->first();
-        $minPrice = $product->skus->min('price') ?? 0;
-        $maxPrice = $product->skus->max('price') ?? 0;
-        $inStock = $product->skus->sum(fn($s) => $s->stocks->sum('qty')) > 0;
+        $hasSku = $product->skus->isNotEmpty();
+        $firstSku = $hasSku ? $product->skus->first() : null;
+        $minPrice = $hasSku ? ($product->skus->min('price') ?? 0) : 0;
+        $maxPrice = $hasSku ? ($product->skus->max('price') ?? 0) : 0;
+        $inStock = $hasSku ? $product->skus->sum(fn($s) => $s->stocks->sum('qty')) > 0 : false;
 
         // Group SKU attributes for variant selector
         $attributes = collect();
@@ -177,13 +179,13 @@
                     {{ $product->name }}
                 </h1>
 
+                @if (! $isCatalog && get_setting('enable_product_pricing', 1))
                 <div class="mb-8">
                     <div class="flex items-end gap-3 mb-1.5 flex-wrap">
                         <span class="text-3xl sm:text-[40px] leading-none font-bold text-[#3ba2e3]"
                             x-text="'₹' + parseFloat(currentPrice).toLocaleString('en-IN', {minimumFractionDigits: 2})">
                             ₹{{ number_format($minPrice, 2) }}
                         </span>
-                        {{-- 🌟 CHANGED: Now using MRP for strikethrough and discount --}}
                         <template x-if="currentMrp > 0 && currentMrp > currentPrice">
                             <span class="text-lg sm:text-xl text-gray-400 font-medium line-through mb-1"
                                 x-text="'₹' + parseFloat(currentMrp).toLocaleString('en-IN', {minimumFractionDigits: 2})">
@@ -202,6 +204,7 @@
                         @endif
                     </p>
                 </div>
+                @endif
 
                 @if ($product->type === 'variable' && $attributes->isNotEmpty())
                     <div class="space-y-5 mb-8">
@@ -248,17 +251,50 @@
                     @endif
                 </div>              
 
-                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-auto">
-                    <button @click="addToCart()"
-                        class="flex-1 bg-white border-2 border-[#111827] text-[#111827] hover:bg-gray-50 py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-sm">
-                        <i data-lucide="shopping-cart" class="w-5 h-5"></i> Add to Cart
-                    </button>
-                    <button @click="buyNow()"
-                        class="flex-1 bg-[#111827] hover:bg-black text-white py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-gray-300">
-                        <i data-lucide="zap" class="w-5 h-5 fill-current"></i> Buy Now
-                    </button>
-                    
-                </div>
+                @if ($isCatalog)
+                    {{-- ── Catalog: Send Inquiry button ── --}}
+                    <div class="flex flex-col gap-3 mt-auto">
+                        <button @click="showInquiry = !showInquiry"
+                            class="w-full bg-teal-600 hover:bg-teal-700 text-white py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-sm">
+                            <i data-lucide="message-circle" class="w-5 h-5"></i> Send Inquiry
+                        </button>
+                    </div>
+
+                    {{-- ── Inquiry Form ── --}}
+                    <div x-show="showInquiry" x-cloak x-transition class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <form method="POST" action="{{ route('storefront.inquiry', ['slug' => $company->slug]) }}">
+                            @csrf
+                            <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            <input type="hidden" name="product_name" value="{{ $product->name }}">
+                            <div class="space-y-3">
+                                <input type="text" name="customer_name" placeholder="Your Name *" required
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
+                                <input type="email" name="customer_email" placeholder="Email Address *" required
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
+                                <input type="tel" name="customer_phone" placeholder="Phone Number"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
+                                <textarea name="customer_notes" rows="3" placeholder="Your message or inquiry..."
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none resize-none"></textarea>
+                                <button type="submit"
+                                    class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-lg text-sm font-bold transition-colors">
+                                    Submit Inquiry
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @else
+                    {{-- ── Sellable: Cart buttons ── --}}
+                    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-auto">
+                        <button @click="addToCart()"
+                            class="flex-1 bg-white border-2 border-[#111827] text-[#111827] hover:bg-gray-50 py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-sm">
+                            <i data-lucide="shopping-cart" class="w-5 h-5"></i> Add to Cart
+                        </button>
+                        <button @click="buyNow()"
+                            class="flex-1 bg-[#111827] hover:bg-black text-white py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-gray-300">
+                            <i data-lucide="zap" class="w-5 h-5 fill-current"></i> Buy Now
+                        </button>
+                    </div>
+                @endif
 
             </div>
         </div>
@@ -358,6 +394,8 @@
                             @foreach ($related as $rel)
                                 @php
                                     $relSku = $rel->skus->first();
+                                    $relIsCatalog = $rel->product_type === 'catalog';
+                                    $relShowPrice = ! $relIsCatalog && get_setting('enable_product_pricing', 1);
                                     $relPrice = $relSku?->price ?? 0;
                                 @endphp
                                 <a href="{{ route('storefront.product', ['slug' => $company->slug, 'productSlug' => $rel->slug]) }}"
@@ -373,8 +411,11 @@
                                             class="text-[13px] font-semibold text-gray-800 line-clamp-2 group-hover:text-brand-600 transition-colors mb-1">
                                             {{ $rel->name }}
                                         </p>
-                                        <p class="text-[14px] font-bold text-gray-900">₹{{ number_format($relPrice, 2) }}
-                                        </p>
+                                        @if ($relShowPrice)
+                                            <p class="text-[14px] font-bold text-gray-900">₹{{ number_format($relPrice, 2) }}</p>
+                                        @elseif ($relIsCatalog)
+                                            <p class="text-[12px] font-semibold text-brand-600">View Details</p>
+                                        @endif
                                     </div>
                                 </a>
                             @endforeach
@@ -500,6 +541,9 @@
                 youtubeActive: null,
                 // ── Speak state ──
                 speakingKey: null,
+
+                // ── Inquiry state ──
+                showInquiry: false,
 
                 // ── SKU state ──
                 selectedAttrs: {},

@@ -213,12 +213,27 @@
                 </button>
 
                 {{-- Add Employee ── --}}
-                <a href="{{ route('admin.hrm.employees.create') }}"
-                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
-                    style="background: var(--brand-600)">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Add Employee
-                </a>
+                @if($canAddMore)
+                    <a href="{{ route('admin.hrm.employees.create') }}"
+                        class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                        style="background: var(--brand-600)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Employee
+                    </a>
+                @else
+                    <div class="ml-auto flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-bold border border-red-100">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Employee Limit Reached
+                        </span>
+                        <button type="button" disabled
+                            class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+                            title="Upgrade your plan to add more employees.">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Employee
+                        </button>
+                    </div>
+                @endif
 
             </div>
         </form>

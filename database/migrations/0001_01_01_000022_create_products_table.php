@@ -8,38 +8,39 @@ return new class extends Migration
 {
     public function up(): void
     {
-            Schema::create('products', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('company_id')->constrained()->cascadeOnDelete(); // Iron Wall
-                
-                $table->foreignId('category_id')
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('company_id')->constrained()->cascadeOnDelete(); // Iron Wall
+
+            $table->foreignId('category_id')
                 ->nullable()
                 ->constrained('categories')
                 ->nullOnDelete();
-                $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
-                
-                $table->string('name');
-                $table->string('slug');
-                $table->enum('type', ['single', 'variable'])->default('single');
-                $table->string('barcode_symbology', 50)->default('CODE128');
-                $table->string('hsn_code', 20)->nullable()->index();
-                $table->foreignId('product_unit_id')->constrained('units')->restrictOnDelete();
-                $table->foreignId('sale_unit_id')->constrained('units')->restrictOnDelete();
-                $table->foreignId('purchase_unit_id')->constrained('units')->restrictOnDelete();
-                
-                $table->integer('quantity_limitation')->nullable();
-                $table->text('note')->nullable();
-                $table->text('description')->nullable();
-                $table->json('specifications')->nullable();
-                $table->json('product_guide')->nullable();
-                
-                $table->boolean('is_active')->default(true);
-                $table->boolean('show_in_storefront')->default(true);
-                $table->timestamps();
-                $table->softDeletes();
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
 
-                $table->unique(['company_id', 'slug']);
-            });
+            $table->string('name');
+            $table->string('slug');
+            $table->enum('type', ['single', 'variable'])->default('single');
+            $table->enum('product_type', ['sellable', 'catalog'])->default('sellable');
+            $table->string('barcode_symbology', 50)->default('CODE128');
+            $table->string('hsn_code', 20)->nullable()->index();
+            $table->foreignId('product_unit_id')->constrained('units')->restrictOnDelete();
+            $table->foreignId('sale_unit_id')->constrained('units')->restrictOnDelete();
+            $table->foreignId('purchase_unit_id')->constrained('units')->restrictOnDelete();
+
+            $table->integer('quantity_limitation')->nullable();
+            $table->text('note')->nullable();
+            $table->text('description')->nullable();
+            $table->json('specifications')->nullable();
+            $table->json('product_guide')->nullable();
+
+            $table->boolean('is_active')->default(true);
+            $table->boolean('show_in_storefront')->default(true);
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->unique(['company_id', 'slug']);
+        });
     }
 
     public function down(): void

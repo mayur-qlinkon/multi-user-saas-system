@@ -480,7 +480,7 @@
                     <div class="nav-section-label">Operations</div>
 
                     
-                    <?php if(auth()->user()->hasRole('employee')): ?>
+                    <?php if(has_module('hrm') && auth()->user()->employee): ?>
                         <a href="<?php echo e(route('admin.hrm.employee.dashboard')); ?>"
                             class="nav-item <?php echo e($navCls('admin.hrm.employee.dashboard')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="home"
@@ -789,7 +789,7 @@
                     
                     
                     <?php if(has_module('hrm')): ?>
-                    <?php if(!auth()->user()->hasRole('employee')): ?>
+                    <?php if(has_permission('hrm.view')): ?>
                     <div class="nav-section-label">Team</div>
                     
                          
@@ -890,7 +890,7 @@
                         </a>
                     <?php endif; ?>
                                      
-
+                    
                     <?php if(has_module('storefront') && has_permission('merchandising.view')): ?>
                         <a href="<?php echo e(route('admin.merchandising.index')); ?>"
                             class="nav-item <?php echo e($navCls('admin.merchandising.*')); ?>">
@@ -901,16 +901,7 @@
                         </a>
                     <?php endif; ?>
                    
-                    <?php if(has_module('storefront') && has_permission('storefront_sections.view')): ?>
-                        <a href="<?php echo e(route('admin.pages.index')); ?>"
-                            class="nav-item <?php echo e($navCls('admin.pages.*')); ?>">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="layout-grid" class="nav-icon w-[18px] h-[18px]"></i>
-                                Storefront Pages
-                            </span>
-                        </a>
-                    <?php endif; ?>
-
+                    
                     <?php if(has_module('storefront') && has_permission('storefront_sections.view')): ?>
                         <a href="<?php echo e(route('admin.storefront-sections.index')); ?>"
                             class="nav-item <?php echo e($navCls('admin.storefront-sections.*')); ?>">
@@ -920,7 +911,17 @@
                             </span>
                         </a>
                     <?php endif; ?>
-
+                        
+                    <?php if(has_module('storefront') && has_permission('storefront_sections.view')): ?>
+                        <a href="<?php echo e(route('admin.pages.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.pages.*')); ?>">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="layout-grid" class="nav-icon w-[18px] h-[18px]"></i>
+                                Storefront Pages
+                            </span>
+                        </a>
+                    <?php endif; ?>
+                    
                     <div class="nav-section-label">System</div>
 
 

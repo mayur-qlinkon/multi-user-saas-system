@@ -18,14 +18,15 @@ class LoginRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            'email' => strtolower($this->email),
+            'email' => strtolower(trim($this->email ?? '')),
         ]);
     }
 
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email'],
+            // Accept email address OR employee code (e.g. EMP001)
+            'email' => ['required', 'string', 'max:150'],
             'password' => ['required', 'string'],
             'remember' => ['nullable', 'sometimes'],
         ];

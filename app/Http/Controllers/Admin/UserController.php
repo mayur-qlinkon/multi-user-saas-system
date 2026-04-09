@@ -5,65 +5,171 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Models\Role;
+use App\Models\State;
+use App\Models\Store;
 use App\Models\User;
-use App\Services\UserService;
+use App\Services\Admin\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    protected UserService $userService;
+    public function __construct(
+        protected UserService $userService
+    ) {}
 
-    public function __construct(UserService $userService)
-    {
-        $this->userService = $userService;
-    }
-
+    /**
+     * Display a listing of the users.
+     */
     public function index(Request $request)
     {
-        // 1. Controller extracts the context
-        $isOwner = is_owner();
-        $requestedStoreId = $request->input('store_id');
-        $activeSessionStoreId = session('store_id');
+        $companyId = Auth::user()->company_id;
 
-        // 2. Controller asks the Service for exactly what it needs using raw data
-        $users  = $this->userService->getFilteredUsers($isOwner, $requestedStoreId, $activeSessionStoreId);
-        $stores = $this->userService->getTenantStores();
-        $roles  = $this->userService->getAvailableRoles();
+        // Added 'store_id' to pass both the search text and the store dropdown to your service
+        $filters = $request->only(['search', 'status', 'store_id']);
 
-        // 3. Controller passes the variables to the view
-        return view('admin.users', compact('users', 'stores', 'roles'));
+        $users = $this->userService->getPaginatedUsers($companyId, $filters);
+        $roles = Role::where('company_id', $companyId)->orWhereNull('company_id')->get();
+        $stores = Store::get();
+
+        return view('admin.users.index', compact('users', 'filters', 'roles', 'stores'));
     }
 
+    /**
+     * Show the form for creating a new user.
+     */
+    public function create()
+    {
+        if (! check_plan_limit('users')) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'You have reached your subscription limit for users. Please upgrade your plan to add more staff.');
+        }
+
+        $companyId = Auth::user()->company_id;
+
+        $roles = Role::where('company_id', $companyId)->orWhereNull('company_id')->get();
+        $stores = Store::where('company_id', $companyId)->get();
+        $states = State::orderBy('name')->get();
+
+        return view('admin.users.create', compact('roles', 'stores', 'states'));
+    }
+
+    /**
+     * Store a newly created user in storage.
+     */
     public function store(StoreUserRequest $request)
     {
-        // 🚨 Check the limit before proceeding!
-        if (!check_plan_limit('users')) {
-            return back()->with('error', 'You have reached your plan\'s User limit. Please upgrade your subscription to add more staff.');
+        if (! check_plan_limit('users')) {
+            return back()->withInput()
+                ->with('error', 'User limit reached for your current plan. Please upgrade.');
         }
-        $this->userService->storeUser($request->validated());
 
-        return redirect()->route('admin.users.index')
-                         ->with('success', 'Staff member added successfully.');
+        try {
+            $companyId = Auth::user()->company_id;
+
+            $this->userService->createUser($companyId, $request->validated());
+
+            return redirect()->route('admin.users.index')
+                ->with('success', 'User created successfully.');
+
+        } catch (\Exception $e) {
+            // Service already logged the detailed error, we just notify the user gracefully
+            return back()->withInput()->with('error', 'Failed to create user. Please try again.');
+        }
     }
 
+    /**
+     * Display the specified user.
+     */
+    public function show(User $user)
+    {
+        // Security check: Ensure the user belongs to the current tenant
+        if ($user->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $user->load(['roles', 'stores', 'employee']);
+
+        return view('admin.users.show', compact('user'));
+    }
+
+    /**
+     * Show the form for editing the specified user.
+     */
+    public function edit(User $user)
+    {
+        if ($user->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $companyId = Auth::user()->company_id;
+
+        // Load existing relationships so the form can auto-select them
+        $user->load(['roles', 'stores']);
+
+        $roles = Role::where('company_id', $companyId)->orWhereNull('company_id')->get();
+        $stores = Store::where('company_id', $companyId)->get();
+        $states = State::orderBy('name')->get();
+
+        return view('admin.users.edit', compact('user', 'roles', 'stores', 'states'));
+    }
+
+    /**
+     * Update the specified user in storage.
+     */
     public function update(UpdateUserRequest $request, User $user)
     {
-        $this->userService->updateUser($user, $request->validated());
-
-        return redirect()->route('admin.users.index')
-                         ->with('success', 'Staff member updated successfully.');
-    }
-
-    public function destroy(User $user)
-    {
-        // Optional: Prevent the owner from deleting themselves!
-        if (Auth::id() === $user->id) {
-            return back()->with('error', 'You cannot delete your own account.');
+        if ($user->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized access.');
         }
 
-        $this->userService->deleteUser($user);
+        try {
+            $data = $request->validated();
 
-        return back()->with('success', 'Staff member removed.');
+            // 🌟 THE FIX: If no boxes are checked, HTML sends nothing. We force an empty array so stores are cleared!
+            if (! $request->has('store_ids')) {
+                $data['store_ids'] = [];
+            }
+
+            $this->userService->updateUser($user, $data);
+
+            return redirect()->route('admin.users.index')
+                ->with('success', 'User updated successfully.');
+
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Failed to update user: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified user from storage.
+     * Responds with JSON because deletes are usually triggered via AJAX/SweetAlert.
+     */
+    public function destroy(User $user)
+    {
+        if ($user->company_id !== Auth::user()->company_id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        // Prevent users from deleting themselves
+        if ($user->id === Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'You cannot delete your own account.'], 400);
+        }
+
+        try {
+            $this->userService->deleteUser($user);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User deleted successfully.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete user.',
+            ], 500);
+        }
     }
 }

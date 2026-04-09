@@ -1,18 +1,19 @@
 <?php
-use Illuminate\Support\Facades\Auth; 
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 
-use App\Models\CompanySubscription;
-use App\Models\Setting;
-use App\Models\SystemSetting;
 use App\Models\Company;
-use App\Models\User;
+use App\Models\CompanySubscription;
+use App\Models\Hrm\Employee;
+use App\Models\Product;
+use App\Models\Setting;
 use App\Models\Store;
+use App\Models\SystemSetting;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
-
-if (!function_exists('get_setting')) {
-    function get_setting($key = null, $default = null, ?int $forCompanyId = null) {
+if (! function_exists('get_setting')) {
+    function get_setting($key = null, $default = null, ?int $forCompanyId = null)
+    {
         static $settings = [];
 
         // 1. Identify the Company ID (The "Tenant")
@@ -31,12 +32,12 @@ if (!function_exists('get_setting')) {
 
             // Fallback: resolve from slug directly if attribute not yet set
             // This handles view composers that fire before the controller sets it
-            if (!$companyId) {
-                $slug      = request()->route('slug');
+            if (! $companyId) {
+                $slug = request()->route('slug');
                 $companyId = Cache::remember(
                     "company_slug_to_id_{$slug}",
                     3600,
-                    fn() => Company::where('slug', $slug)->value('id')
+                    fn () => Company::where('slug', $slug)->value('id')
                 );
 
                 // Cache it on the request for subsequent calls this request
@@ -45,19 +46,19 @@ if (!function_exists('get_setting')) {
                 }
             }
         }
-        
+
         // Context B: Admin Panel (Identify by Auth)
-        if (!$companyId && Auth::check()) {
+        if (! $companyId && Auth::check()) {
             $companyId = Auth::user()->company_id;
         }
 
         // If no company context is found (e.g., standard login page), return default
-        if (!$companyId) {
+        if (! $companyId) {
             return is_null($key) ? (object) [] : $default;
         }
 
         // 2. Fetch and Cache (Memory + File Cache)
-        if (!isset($settings[$companyId])) {
+        if (! isset($settings[$companyId])) {
             $settings[$companyId] = Cache::remember("company_settings_{$companyId}", 86400, function () use ($companyId) {
                 return Setting::where('company_id', $companyId)
                     ->pluck('value', 'key')
@@ -73,24 +74,25 @@ if (!function_exists('get_setting')) {
         return $settings[$companyId][$key] ?? $default;
     }
 }
-if (!function_exists('batch_enabled')) {
+if (! function_exists('batch_enabled')) {
     function batch_enabled()
-    {    
+    {
         return (bool) Setting::get('enable_batch_tracking', 0);
     }
 }
 
-
-if (!function_exists('tenant_subscription')) {
+if (! function_exists('tenant_subscription')) {
     /**
      * Get the current active subscription for the logged-in user's company.
      */
     function tenant_subscription()
     {
-        if (!Auth::check() || !Auth::user()->company_id) return null;
+        if (! Auth::check() || ! Auth::user()->company_id) {
+            return null;
+        }
 
         // We cache this in the request so we don't hit the database 50 times per page load
-        return cache()->remember('tenant_sub_' . Auth::user()->company_id, 60, function () {
+        return cache()->remember('tenant_sub_'.Auth::user()->company_id, 60, function () {
             return CompanySubscription::with('plan.modules')
                 ->where('company_id', Auth::user()->company_id)
                 ->where('is_active', true)
@@ -101,7 +103,7 @@ if (!function_exists('tenant_subscription')) {
     }
 }
 
-if (!function_exists('has_module')) {
+if (! function_exists('has_module')) {
     /**
      * Check if the current company's plan includes a specific module.
      */
@@ -111,7 +113,9 @@ if (!function_exists('has_module')) {
             return true;
         }
         $subscription = tenant_subscription();
-        if (!$subscription || !$subscription->plan) return false;
+        if (! $subscription || ! $subscription->plan) {
+            return false;
+        }
 
         return $subscription->plan->modules->contains('slug', $moduleSlug);
     }
@@ -128,30 +132,39 @@ if (!function_exists('has_module')) {
     */
 }
 
-if (!function_exists('check_plan_limit')) {
+if (! function_exists('check_plan_limit')) {
     /**
-     * Check if the tenant has hit their resource limit ('users' or 'stores').
+     * Check if the tenant has hit their resource limit ('users', 'stores', 'products', or 'employees').
      */
     function check_plan_limit($resourceType)
     {
         $subscription = tenant_subscription();
-        if (!$subscription || !$subscription->plan) return false;
+        if (! $subscription || ! $subscription->plan) {
+            return false;
+        }
 
         if ($resourceType === 'users') {
-            // Because of the Tenantable trait, this ONLY counts their company's users!
-            return User::count() < $subscription->plan->user_limit;
+            // internal() excludes customer-role and client-linked users — staff only.
+            return User::internal()->count() < $subscription->plan->user_limit;
         }
 
         if ($resourceType === 'stores') {
             return Store::count() < $subscription->plan->store_limit;
         }
 
+        if ($resourceType === 'products') {
+            return Product::count() < $subscription->plan->product_limit;
+        }
+
+        if ($resourceType === 'employees') {
+            return Employee::count() < $subscription->plan->employee_limit;
+        }
+
         return false;
     }
 }
 
-
-if (!function_exists('has_permission')) {
+if (! function_exists('has_permission')) {
     /**
      * Check if the authenticated user has a specific permission slug.
      * Automatically grants true if the user is the 'owner'.
@@ -159,7 +172,9 @@ if (!function_exists('has_permission')) {
     function has_permission($permissionSlug)
     {
         $user = Auth::user();
-        if (!$user) return false;
+        if (! $user) {
+            return false;
+        }
 
         if (is_super_admin()) {
             return true;
@@ -170,7 +185,7 @@ if (!function_exists('has_permission')) {
             return true;
         }
 
-         // If array passed, loop through
+        // If array passed, loop through
         if (is_array($permissionSlug)) {
             foreach ($permissionSlug as $slug) {
                 foreach ($user->roles as $role) {
@@ -179,6 +194,7 @@ if (!function_exists('has_permission')) {
                     }
                 }
             }
+
             return false;
         }
 
@@ -192,7 +208,7 @@ if (!function_exists('has_permission')) {
         return false;
     }
 }
- 
+
 // ── Check if a platform feature is enabled ──
 // Reads from system_settings table — super admin controls this
 // NOT the same as plan modules (CheckModuleAccess handles that)
@@ -201,7 +217,7 @@ if (!function_exists('has_permission')) {
 //
 // In blade:   @if(feature_enabled('crm'))
 // In routes:  ->middleware('feature:crm')
-if (!function_exists('feature_enabled')) {
+if (! function_exists('feature_enabled')) {
     function feature_enabled(string $feature): bool
     {
         // Default to true (enabled) if key not set — safe fallback
@@ -209,27 +225,30 @@ if (!function_exists('feature_enabled')) {
         return SystemSetting::isEnabled("feature_{$feature}", true);
     }
 }
- 
+
 // ── Check if platform is in maintenance mode ──
 // Usage: is_maintenance_mode() → true/false
 // Used by: MaintenanceMiddleware (Phase 2)
-if (!function_exists('is_maintenance_mode')) {
+if (! function_exists('is_maintenance_mode')) {
     function is_maintenance_mode(): bool
     {
         return SystemSetting::isEnabled('maintenance_mode');
     }
 }
- 
+
 // ── Get active platform announcement (if any) ──
 // Returns null if no announcement or announcement is disabled
 // Usage: platform_announcement() → string or null
-if (!function_exists('platform_announcement')) {
+if (! function_exists('platform_announcement')) {
     function platform_announcement(): ?string
     {
         $isActive = SystemSetting::isEnabled('platform_announcement_active');
-        if (!$isActive) return null;
- 
+        if (! $isActive) {
+            return null;
+        }
+
         $text = SystemSetting::getSetting('platform_announcement_text');
+
         return $text ?: null;
     }
 }
@@ -238,17 +257,17 @@ if (!function_exists('platform_announcement')) {
 // Wrapper around SystemSetting::getSetting() for convenience
 // Usage: get_system_setting('maintenance_mode')
 //        get_system_setting('maintenance_message', 'We are back soon!')
-if (!function_exists('get_system_setting')) {
+if (! function_exists('get_system_setting')) {
     function get_system_setting(string $key, mixed $default = null): mixed
     {
         return SystemSetting::getSetting($key, $default);
     }
 }
- 
+
 // ── Check if current user is super admin ──
 // Single place — if you ever change detection logic, change here only
 // Usage: is_super_admin() → true/false
-if (!function_exists('is_super_admin')) {
+if (! function_exists('is_super_admin')) {
     /**
      * Check if the current authenticated user is a super admin.
      * Checks BOTH the is_super_admin flag (primary) and the super_admin role (fallback).
@@ -256,28 +275,29 @@ if (!function_exists('is_super_admin')) {
      */
     function is_super_admin(): bool
     {
-        if (! auth()->check()) {
+        if (! Auth::check()) {
             return false;
         }
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         return (bool) ($user->is_super_admin || $user->hasRole('super_admin'));
     }
 }
 
-if (!function_exists('is_owner')) {
+if (! function_exists('is_owner')) {
     /**
      * Check if the authenticated user is the owner.
      */
     function is_owner()
     {
         $user = Auth::user();
+
         return $user && $user->roles->contains('slug', 'owner');
     }
 }
 
-if (!function_exists('active_store')) {
+if (! function_exists('active_store')) {
     /**
      * Resolve the active store for a user with automatic session healing.
      *
@@ -285,14 +305,12 @@ if (!function_exists('active_store')) {
      * 1. Session store_id if it exists in user's assigned stores (store_user pivot)
      * 2. First assigned store from store_user pivot
      * 3. Employee's store (employees.store_id) as fallback
-     *
-     * @return \App\Models\Store|null
      */
     function active_store(?User $user = null): ?Store
     {
         $user = $user ?? Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 

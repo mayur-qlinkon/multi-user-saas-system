@@ -85,6 +85,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+
         // ════════════════════════════════════════════════
         // SETTINGS
         // ════════════════════════════════════════════════
@@ -96,6 +97,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::post('/reset', 'resetAll')->name('reset');
             Route::get('/audit', 'auditTrail')->name('audit');
         });
+
         // ── Storefront Pages (CMS) ──
         Route::prefix('pages')->name('pages.')->controller(PageController::class)->group(function () {
             Route::get('/', 'index')->name('index');
@@ -117,6 +119,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::post('/mark-all-read', 'markAllRead')->name('mark-all-read');
         });
 
+        // ── Banners ──
         Route::prefix('banners')->name('banners.')->controller(BannerController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
@@ -132,6 +135,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::post('/{banner}/click', 'trackClick')->name('track-click');
         });
 
+        // ── Merchandising ──
         Route::prefix('merchandising')
             ->name('merchandising.')
             ->controller(MerchandisingController::class)
@@ -163,6 +167,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
 
             });
 
+        // ── Storefront Sections ──
         Route::prefix('storefront-sections')
             ->name('storefront-sections.')
             ->controller(StorefrontSectionController::class)
@@ -181,6 +186,8 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::post('/{storefrontSection}/toggle', 'toggleActive')->name('toggle');
                 Route::post('/{storefrontSection}/duplicate', 'duplicate')->name('duplicate');
             });
+
+        // ── Storefront Sections Products ──
         Route::prefix('storefront-sections/{storefrontSection}/products')
             ->name('storefront-sections.products.')
             ->controller(StorefrontSectionProductController::class)
@@ -192,6 +199,8 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::delete('/{productId}', 'remove')->name('remove');
                 Route::post('/reorder', 'reorder')->name('reorder');
             });
+
+        // ── Orders ──
         Route::prefix('orders')
             ->name('orders.')
             ->controller(AdminOrderController::class)
@@ -210,17 +219,12 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::get('/{order}/receipt', 'downloadReceipt')->name('receipt');
             });
 
-        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-        Route::get('/inventory/reports', [InventoryReportController::class, 'index'])
-            ->name('inventory.reports.index');
-
         // Everything below here REQUIRES a store to exist!
         Route::middleware('store.exists')->group(function () {
-
             // --- ONBOARDING ROUTES ---
             Route::get('/welcome', [OnboardingController::class, 'index'])->name('onboarding.index');
             Route::post('/welcome', [OnboardingController::class, 'store'])->name('onboarding.store');
+            Route::post('/switch-store', [StoreController::class, 'switch'])->name('store.switch');
 
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
             Route::get('/', [DashboardController::class, 'index']);
@@ -233,15 +237,12 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::post('/{announcement}/dismiss', 'dismiss')->name('dismiss');
             });
 
-            Route::post('/switch-store', [StoreController::class, 'switch'])->name('store.switch');
-
             Route::resource('/users', UserController::class);
             Route::resource('/stores', StoreController::class);
             Route::resource('/clients', ClientController::class)->except(['create', 'edit', 'show']);
             Route::resource('/suppliers', SupplierController::class)->except(['create', 'show', 'edit']);
             Route::resource('/warehouses', WarehouseController::class);
             Route::resource('/purchases', PurchaseController::class);
-            // 1. Standard Resource
             Route::resource('purchase-returns', PurchaseReturnController::class);
             Route::resource('invoices', InvoiceController::class);
 
@@ -309,37 +310,41 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
 
         });
+
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/inventory/reports', [InventoryReportController::class, 'index'])
+            ->name('inventory.reports.index');
+        Route::get('/api/search-skus', [SearchController::class, 'searchSkus'])->name('api.search-skus');
+
+        Route::resource('/roles', RoleController::class);
+        Route::resource('/payment-methods', PaymentMethodController::class)->except(['create', 'edit', 'show']);
+        Route::post('/payment-methods/reorder', [PaymentMethodController::class, 'reorder'])->name('payment_methods.reorder');
+
         // Label Printing Module
         Route::get('/labels', [LabelController::class, 'index'])->name('labels.index');
         Route::get('/labels/render', [LabelController::class, 'renderImage'])->name('labels.render-image');
         Route::get('/api/labels/search', [LabelController::class, 'fetchProducts'])->name('labels.fetch-products');
         Route::post('/api/labels/selected', [LabelController::class, 'fetchSelectedSkus'])->name('api.labels.selected');
+
         // Core Product Resource
         Route::resource('/products', ProductController::class);
         Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
         Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])
             ->name('products.duplicate');
-
-        Route::resource('/roles', RoleController::class);
+        Route::resource('/categories', CategoryController::class)->except(['create', 'show', 'edit']);
+        Route::resource('/units', UnitController::class)->except(['create', 'show', 'edit']);
 
         Route::resource('/attributes', AttributeController::class)->except(['create', 'show', 'edit']);
         Route::post('/attributes/{attribute}/values', [AttributeValueController::class, 'store'])->name('attribute-values.store');
         Route::put('/attribute-values/{attributeValue}', [AttributeValueController::class, 'update'])->name('attribute-values.update');
         Route::delete('/attribute-values/{attributeValue}', [AttributeValueController::class, 'destroy'])->name('attribute-values.destroy');
 
-        Route::resource('/categories', CategoryController::class)->except(['create', 'show', 'edit']);
-        Route::resource('/units', UnitController::class)->except(['create', 'show', 'edit']);
-
-        Route::post('/payment-methods/reorder', [PaymentMethodController::class, 'reorder'])->name('payment_methods.reorder');
-        Route::resource('/payment-methods', PaymentMethodController::class)->except(['create', 'edit', 'show']);
-
-        // API LEVEL
-        Route::get('/api/search-skus', [SearchController::class, 'searchSkus'])->name('api.search-skus');
-
         Route::prefix('crm')->name('crm.')->group(function () {
 
             Route::get('/dashboard', [CrmDashboardController::class, 'index'])
                 ->name('dashboard');
+
             // ── Pipelines ──
             Route::prefix('pipelines')->name('pipelines.')->controller(CrmPipelineController::class)->group(function () {
                 Route::get('/', 'index')->name('index');

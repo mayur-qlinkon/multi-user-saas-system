@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use App\Models\Hrm\Employee;
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 /**
  * @method bool hasRole(string $role)
@@ -45,10 +46,10 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    /** * Company relationship */ 
-    public function company(): BelongsTo 
-    { 
-        return $this->belongsTo(Company::class); 
+    /** * Company relationship */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /**
@@ -66,6 +67,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'role_user');
     }
+
     public function crmLeads(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -81,7 +83,7 @@ class User extends Authenticatable
      */
     public function stores(): BelongsToMany
     {
-        return $this->belongsToMany(Store::class, 'store_user');
+        return $this->belongsToMany(Store::class, 'store_user')->withTimestamps();
     }
 
     /**
@@ -95,7 +97,7 @@ class User extends Authenticatable
             })
             ->whereDoesntHave('client');
     }
-   
+
     public function hasRole($role)
     {
         return $this->roles()->where('slug', $role)->exists();
@@ -105,8 +107,19 @@ class User extends Authenticatable
     {
         return $this->roles()->whereIn('slug', $roles)->exists();
     }
+
     public function hasPermission($permission)
     {
+
+        if (is_super_admin()) {
+            return true;
+        }
+
+        // 1. Check if they are the owner (owners can do everything)
+        if ($this->roles->contains('slug', 'owner')) {
+            return true;
+        }
+
         return $this->roles()
             ->with('permissions')
             ->get()
@@ -120,7 +133,7 @@ class User extends Authenticatable
      */
     public function employee(): HasOne
     {
-        return $this->hasOne(\App\Models\Hrm\Employee::class);
+        return $this->hasOne(Employee::class);
     }
 
     /**
@@ -128,10 +141,11 @@ class User extends Authenticatable
      */
     public function getAvatarUrlAttribute()
     {
-        return $this->image 
-            ? asset('storage/' . $this->image) 
-            : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+        return $this->image
+            ? asset('storage/'.$this->image)
+            : 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&color=7F9CF5&background=EBF4FF';
     }
+
     /**
      * Optimized for the Header Notification Dropdown
      */
@@ -139,5 +153,4 @@ class User extends Authenticatable
     {
         return $this->unreadNotifications()->latest()->limit(5);
     }
-
 }

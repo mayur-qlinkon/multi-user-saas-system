@@ -129,6 +129,8 @@
                     <ul class="custom-bullets space-y-3 text-[14px] text-gray-600 font-medium text-left pl-4">
                         <li>Up to {{ $plan->user_limit }} users</li>
                         <li>Up to {{ $plan->store_limit }} stores</li>
+                        <li>Up to {{ $plan->product_limit }} products</li>
+                        <li>Up to {{ $plan->employee_limit }} employees</li>
                         
                         @forelse($plan->modules ?? [] as $module)
                             <li>{{ $module->name }}</li>

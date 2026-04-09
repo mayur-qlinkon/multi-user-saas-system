@@ -484,8 +484,8 @@
 
                     <div class="nav-section-label">Operations</div>
 
-                    {{-- Dashboard: employee sees their own dashboard, others see admin dashboard --}}
-                    @if(auth()->user()->hasRole('employee'))
+                    {{-- Dashboard: employees with HRM module see their own dashboard, others see admin dashboard --}}
+                    @if(has_module('hrm') && auth()->user()->employee)
                         <a href="{{ route('admin.hrm.employee.dashboard') }}"
                             class="nav-item {{ $navCls('admin.hrm.employee.dashboard') }}">
                             <span class="flex items-center gap-3"><i data-lucide="home"
@@ -794,7 +794,7 @@
                     
                     {{-- HRM --}}
                     @if (has_module('hrm'))
-                    @if(!auth()->user()->hasRole('employee'))
+                    @if(has_permission('hrm.view'))
                     <div class="nav-section-label">Team</div>
                     
                          {{-- Announcements --}}
@@ -895,7 +895,7 @@
                         </a>
                     @endif
                                      
-
+                    
                     @if (has_module('storefront') && has_permission('merchandising.view'))
                         <a href="{{ route('admin.merchandising.index') }}"
                             class="nav-item {{ $navCls('admin.merchandising.*') }}">
@@ -906,16 +906,7 @@
                         </a>
                     @endif
                    
-                    @if (has_module('storefront') && has_permission('storefront_sections.view'))
-                        <a href="{{ route('admin.pages.index') }}"
-                            class="nav-item {{ $navCls('admin.pages.*') }}">
-                            <span class="flex items-center gap-3">
-                                <i data-lucide="layout-grid" class="nav-icon w-[18px] h-[18px]"></i>
-                                Storefront Pages
-                            </span>
-                        </a>
-                    @endif
-
+                    
                     @if (has_module('storefront') && has_permission('storefront_sections.view'))
                         <a href="{{ route('admin.storefront-sections.index') }}"
                             class="nav-item {{ $navCls('admin.storefront-sections.*') }}">
@@ -925,7 +916,17 @@
                             </span>
                         </a>
                     @endif
-
+                        
+                    @if (has_module('storefront') && has_permission('storefront_sections.view'))
+                        <a href="{{ route('admin.pages.index') }}"
+                            class="nav-item {{ $navCls('admin.pages.*') }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="layout-grid" class="nav-icon w-[18px] h-[18px]"></i>
+                                Storefront Pages
+                            </span>
+                        </a>
+                    @endif
+                    
                     <div class="nav-section-label">System</div>
 
 

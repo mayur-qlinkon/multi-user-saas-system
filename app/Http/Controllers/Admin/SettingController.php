@@ -49,6 +49,7 @@ class SettingController extends Controller
         'storefront_online',
         'round_off',
         'enable_batch_tracking',
+        'enable_product_pricing',
     ];
 
     // ── Fields to skip entirely (never save to DB) ──

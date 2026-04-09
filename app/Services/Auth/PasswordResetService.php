@@ -4,7 +4,6 @@ namespace App\Services\Auth;
 
 use App\Mail\OtpMail;
 use App\Models\User;
-use App\Repositories\UserRepository;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
@@ -18,8 +17,6 @@ class PasswordResetService
 {
     /** Max failed OTP attempts before the code is invalidated. */
     private const MAX_ATTEMPTS = 3;
-
-    public function __construct(private UserRepository $userRepo) {}
 
     // ════════════════════════════════════════════════════
     //  OTP-BASED FLOW (primary)
