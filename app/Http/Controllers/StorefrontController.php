@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\StorefrontSection;
 use App\Services\BannerService;
+use App\Services\EmailService;
 use App\Services\StorefrontSectionService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -416,7 +417,7 @@ class StorefrontController extends Controller
 
         $company = Company::where('slug', $slug)->firstOrFail();
 
-        Order::create([
+        $order = Order::create([
             'company_id' => $company->id,
             'order_type' => 'inquiry',
             'source' => 'storefront',
@@ -432,6 +433,8 @@ class StorefrontController extends Controller
             'items_count' => 0,
             'items_qty' => 0,
         ]);
+
+        app(EmailService::class)->sendOrderInquiryEmails($order, $company, $request->product_name);
 
         return redirect()->back()->with('success', 'Your inquiry has been submitted successfully! We will get back to you soon.');
     }

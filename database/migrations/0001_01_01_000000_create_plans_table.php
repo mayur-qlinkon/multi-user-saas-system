@@ -28,6 +28,7 @@ return new class extends Migration
             $table->integer('user_limit')->default(1);
             $table->integer('store_limit')->default(1);
             $table->unsignedInteger('product_limit')->default(50);
+            $table->unsignedInteger('employee_limit')->default(50);
 
             // ── 4. UI Customization (For the Frontend Design) ──
             $table->boolean('is_recommended')->default(false); // Triggers the Green Star Ribbon

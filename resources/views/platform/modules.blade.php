@@ -134,6 +134,13 @@
                                 placeholder="e.g. Advanced Analytics"
                                 class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all">
                         </div>
+                        
+                        <div>
+                            <label class="block text-[12px] font-bold text-gray-700 mb-1.5">Slug <span class="text-gray-400 font-normal text-[10px]">(Optional - Auto-generated if empty)</span></label>
+                            <input type="text" name="slug" x-model="form.slug"
+                                placeholder="e.g. advanced-analytics"
+                                class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-mono">
+                        </div>
 
                         <div>
                             <label class="flex items-center gap-3 cursor-pointer">
@@ -205,12 +212,13 @@
                 form: {
                     id: '',
                     name: '',
+                    slug: '',
                     is_active: true
                 },
 
                 deleteForm: {
                     id: '',
-                    name: ''
+                    name: ''    
                 },
 
                 openCreate() {
@@ -219,6 +227,7 @@
                     this.form = {
                         id: '',
                         name: '',
+                        slug: '',
                         is_active: true
                     };
                     this.showFormModal = true;
@@ -234,6 +243,7 @@
                     this.form = {
                         id: module.id,
                         name: module.name,
+                        slug: module.slug,
                         is_active: module.is_active == 1 || module.is_active == true
                     };
 

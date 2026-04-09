@@ -178,7 +178,7 @@ class ProductService
                 'product_unit_id' => $data['product_unit_id'] ?? $fallbackUnitId,
                 'sale_unit_id' => $data['sale_unit_id'] ?? null,
                 'purchase_unit_id' => $data['purchase_unit_id'] ?? null,
-                'quantity_limitation' => $data['quantity_limitation'] ?? null,
+                'quantity_limitation' => ! empty($data['quantity_limitation']) ? $data['quantity_limitation'] : null,
                 'name' => $data['name'],
                 'type' => $isCatalog ? 'single' : $data['type'],
                 'product_type' => $isCatalog ? 'catalog' : 'sellable',
@@ -382,9 +382,15 @@ class ProductService
                         : $this->generateVariableSku($data['name'], $selectedAttrValIds, $companyId);
 
                     // Update existing variation, or create a new one
+                    // Prevent Alpine's Date.now() from crashing the MySQL INT column
+                    $dbId = (isset($varData['id']) && is_numeric($varData['id']) && $varData['id'] < 2000000000)
+                        ? $varData['id']
+                        : null;
+
+                    // Update existing variation, or create a new one
                     $sku = $product->skus()->updateOrCreate(
                         [
-                            'id' => $varData['id'] ?? null, // If frontend sends ID, update it
+                            'id' => $dbId,
                             'product_id' => $product->id,
                         ],
                         [
@@ -398,7 +404,11 @@ class ProductService
                     );
 
                     $keptSkuIds[] = $sku->id;
-                    $skuMap[$varIndex] = $sku->id; // 🌟 MAP IT: Link frontend index to DB ID
+                    // Map BOTH the array index and the Alpine temp ID to the real database ID
+                    $skuMap[$varIndex] = $sku->id;
+                    if (isset($varData['id'])) {
+                        $skuMap[$varData['id']] = $sku->id;
+                    }
 
                     // ONLY add stock if this is a brand new variation being added during the edit
                     if ($sku->wasRecentlyCreated && ! empty($varData['stock'])) {

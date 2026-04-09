@@ -10,6 +10,7 @@ use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -40,18 +41,18 @@ class AttendanceService
         $attendance = null;
         $action = AttendanceLog::ACTION_CHECK_IN;
 
-        try {
-            $logBase = [
-                'company_id' => $companyId,
-                'method' => Attendance::METHOD_QR,
-                'punched_at' => $now,
-                'latitude' => (float) $data['latitude'],
-                'longitude' => (float) $data['longitude'],
-                'device_info' => $request->header('X-Device-Info'),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ];
+        $logBase = [
+            'company_id' => $companyId,
+            'method' => Attendance::METHOD_QR,
+            'punched_at' => $now,
+            'latitude' => (float) $data['latitude'],
+            'longitude' => (float) $data['longitude'],
+            'device_info' => $request->header('X-Device-Info'),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ];
 
+        try {
             $employee = $this->resolveEmployee($user->id);
             $logBase['employee_id'] = $employee->id;
 
@@ -215,7 +216,7 @@ class AttendanceService
 
             $updateData = [
                 'is_overridden' => true,
-                'overridden_by' => $data['overridden_by'] ?? auth()->id(),
+                'overridden_by' => $data['overridden_by'] ?? Auth::id(),
                 'override_reason' => $data['reason'] ?? null,
             ];
 
@@ -358,7 +359,7 @@ class AttendanceService
 
     protected function validateGps(Store $store, float $lat, float $lng): void
     {
-        if ($lat == 0.0 && $lng == 0.0) {
+        if (abs($lat) < 0.001 && abs($lng) < 0.001) {
             throw new InvalidArgumentException('Invalid GPS coordinates. Please enable location services.');
         }
 
@@ -368,7 +369,7 @@ class AttendanceService
 
         $distance = $this->haversineDistance($lat, $lng, (float) $store->office_lat, (float) $store->office_lng);
 
-        if ($distance > (int) $store->gps_radius_meters) {
+        if ($distance > (int) $store->gps_radius_meters + 20) {
             throw new InvalidArgumentException('You are outside the allowed attendance radius for this store.');
         }
     }

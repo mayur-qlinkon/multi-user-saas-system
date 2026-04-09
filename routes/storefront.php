@@ -56,7 +56,7 @@ Route::prefix('{slug}')
                 Route::get('/{number}', 'show')->name('show');
                 Route::get('/{orderNumber}/receipt', 'downloadReceipt')->name('receipt');
             });
-        Route::get('/page/{pageSlug}', [StorefrontPageController::class, 'show'])
+        Route::get('/{pageSlug}', [StorefrontPageController::class, 'show'])
             ->name('page.show');
 
     });

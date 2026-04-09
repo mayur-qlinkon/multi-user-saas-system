@@ -1136,7 +1136,7 @@
                                     </div>
                                 </div>
 
-                                <a href="{{ route('admin.notifications.index') }}"
+                                <a href="{{ route('admin.notifications.index') }}" @click="open = false"
                                     class="block px-4 py-2.5 border-t border-gray-100 text-center bg-gray-50/50 hover:bg-gray-100 transition-colors">
                                     <span class="text-[11px] font-bold text-gray-600">View All History</span>
                                 </a>

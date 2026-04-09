@@ -3,26 +3,20 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Platform\StoreModuleRequest;
-use App\Http\Requests\Platform\UpdateModuleRequest;
 use App\Models\Module;
-use App\Services\Platform\ModuleService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ModuleController extends Controller
 {
-    protected ModuleService $moduleService;
-
-    public function __construct(ModuleService $moduleService)
-    {
-        $this->moduleService = $moduleService;
-    }
-
     /**
      * Display the single-page CRUD view.
      */
     public function index()
     {
-        $modules = $this->moduleService->getAllModules();
+        // Fetch directly from the model
+        $modules = Module::latest()->get();
 
         return view('platform.modules', compact('modules'));
     }
@@ -30,23 +24,52 @@ class ModuleController extends Controller
     /**
      * Store a newly created module.
      */
-    public function store(StoreModuleRequest $request)
+    public function store(Request $request)
     {
-        $this->moduleService->storeModule($request->validated());
+        // Inline Validation
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:modules,slug'],
+        ]);
+
+        // Use provided slug, or fallback to auto-generating from the name
+        $data['slug'] = ! empty($data['slug']) ? Str::slug($data['slug']) : Str::slug($data['name']);
+
+        // Safely handle HTML checkbox boolean
+        $data['is_active'] = $request->has('is_active');
+
+        Module::create($data);
 
         return redirect()->route('platform.modules.index')
-                         ->with('success', 'Module created successfully.');
+            ->with('success', 'Module created successfully.');
     }
 
     /**
      * Update the specified module.
      */
-    public function update(UpdateModuleRequest $request, Module $module)
+    public function update(Request $request, Module $module)
     {
-        $this->moduleService->updateModule($module, $request->validated());
+        // Inline Validation (Ignoring current module's slug)
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'slug' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('modules', 'slug')->ignore($module->id),
+            ],
+        ]);
+
+        // Use provided slug, or fallback to auto-generating from the name
+        $data['slug'] = ! empty($data['slug']) ? Str::slug($data['slug']) : Str::slug($data['name']);
+
+        // Safely handle HTML checkbox boolean
+        $data['is_active'] = $request->has('is_active');
+
+        $module->update($data);
 
         return redirect()->route('platform.modules.index')
-                         ->with('success', 'Module updated successfully.');
+            ->with('success', 'Module updated successfully.');
     }
 
     /**
@@ -54,7 +77,7 @@ class ModuleController extends Controller
      */
     public function destroy(Module $module)
     {
-        $this->moduleService->deleteModule($module);
+        $module->delete();
 
         return back()->with('success', 'Module deleted successfully.');
     }

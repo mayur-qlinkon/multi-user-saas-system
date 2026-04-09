@@ -128,10 +128,11 @@
                         </button>
                     @endforeach
 
-                    {{-- YouTube videos ── --}}
+                    {{-- YouTube videos ── --}}                    
                     @foreach ($youtubeVideos as $video)
                         @php
-                            preg_match('/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $video->media_path, $m);
+                            // Updated regex catches standard links, youtu.be, shorts, and embeds
+                            preg_match('/(?:v=|youtu\.be\/|shorts\/|embed\/)([a-zA-Z0-9_-]{11})/', $video->media_path, $m);
                             $ytId = $m[1] ?? null;
                         @endphp
                         @if ($ytId)

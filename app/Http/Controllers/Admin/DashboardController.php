@@ -242,21 +242,25 @@ class DashboardController extends Controller
      */
     private function getRecentSales(?int $companyId)
     {
-        return Invoice::with('client')
+        // 🌟 FIX 1: Eager load 'payments' to prevent N+1 Database Timeouts
+        return Invoice::with(['client', 'payments'])
             ->where('company_id', $companyId)
             ->latest('created_at')
             ->take(5)
             ->get()
             ->map(function ($invoice) {
-                // Calculate paid via payments relation
-                $paidAmount = $invoice->payments()->where('status', 'completed')->sum('amount');
-                $dueAmount = $invoice->grand_total - $paidAmount;
+                // 🌟 FIX 2: Calculate from the pre-loaded collection (no extra DB queries!)
+                $paidAmount = $invoice->payments->where('status', 'completed')->sum('amount');
+
+                // 🌟 FIX 3: Cast to (float) to prevent PHP 8 crashes if grand_total is ever NULL
+                $grandTotal = (float) ($invoice->grand_total ?? 0);
+                $dueAmount = $grandTotal - $paidAmount;
 
                 return [
                     'reference' => $invoice->invoice_number,
                     'customer' => $invoice->customer_name ?: ($invoice->client->name ?? 'Walk-in Customer'),
                     'status' => $invoice->status,
-                    'grand_total' => $invoice->grand_total,
+                    'grand_total' => $grandTotal,
                     'paid' => $paidAmount,
                     'due' => $dueAmount > 0 ? $dueAmount : 0,
                     'payment_status' => $invoice->payment_status,

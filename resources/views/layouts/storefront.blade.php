@@ -687,6 +687,13 @@
                                             </div>
 
                                             <div>
+                                                <label class="co-label">Email Address <span class="text-gray-400 normal-case font-normal">(optional — for order confirmation)</span></label>
+                                                <input type="email" x-model="form.email"
+                                                    placeholder="your@email.com"
+                                                    class="co-input">
+                                            </div>
+
+                                            <div>
                                                 <label class="co-label">Delivery Address <span
                                                         class="text-red-500">*</span></label>
                                                 <textarea x-model="form.address" placeholder="House/flat no, street, area, landmark" rows="2"

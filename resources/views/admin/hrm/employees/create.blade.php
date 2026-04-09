@@ -250,7 +250,7 @@
 
                     {{-- Shift --}}
                     <div>
-                        <label class="field-label">Shift</label>
+                        <label class="field-label">Shift <span class="text-red-500">*</span></label>
                         <select name="shift_id" class="field-input {{ $errors->has('shift_id') ? 'has-error' : '' }}">
                             <option value="">Select shift</option>
                             @foreach($shifts as $shift)
@@ -363,7 +363,7 @@
 
                     {{-- Basic Salary --}}
                     <div>
-                        <label class="field-label">Basic Salary</label>
+                        <label class="field-label">Basic Salary <span class="text-red-500">*</span></label>
                         <input type="number" name="basic_salary" value="{{ old('basic_salary') }}"
                             placeholder="0.00" min="0" step="0.01"
                             class="field-input {{ $errors->has('basic_salary') ? 'has-error' : '' }}">
@@ -374,7 +374,7 @@
 
                     {{-- Salary Type --}}
                     <div>
-                        <label class="field-label">Salary Type</label>
+                        <label class="field-label">Salary Type <span class="text-red-500">*</span></label>
                         <select name="salary_type" class="field-input {{ $errors->has('salary_type') ? 'has-error' : '' }}">
                             <option value="">Select type</option>
                             @foreach(['monthly' => 'Monthly', 'daily' => 'Daily', 'hourly' => 'Hourly'] as $val => $label)

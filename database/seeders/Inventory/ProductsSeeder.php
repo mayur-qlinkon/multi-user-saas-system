@@ -4,7 +4,6 @@ namespace Database\Seeders\Inventory;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ProductsSeeder extends Seeder
 {
@@ -36,10 +35,10 @@ class ProductsSeeder extends Seeder
 
             $product1Id = DB::table('products')->insertGetId([
                 'company_id' => $companyId,
-                'category_id' => null,
+                'category_id' => 1 ?? null,
                 'supplier_id' => null,
                 'name' => 'Cotton T-Shirt',
-                'slug' => 'cotton-tshirt-' . $companyId,
+                'slug' => 'cotton-tshirt-'.$companyId,
                 'type' => 'variable',
                 'barcode_symbology' => 'CODE128',
                 'hsn_code' => '6109',
@@ -58,7 +57,7 @@ class ProductsSeeder extends Seeder
                 'company_id' => $companyId,
                 'product_id' => $product1Id,
                 'unit_id' => $unitId,
-                'sku' => 'TSHIRT-M-' . $companyId,
+                'sku' => 'TSHIRT-M-'.$companyId,
                 'barcode' => '1111111111',
                 'cost' => 300,
                 'price' => 500,
@@ -74,7 +73,7 @@ class ProductsSeeder extends Seeder
                 'company_id' => $companyId,
                 'product_id' => $product1Id,
                 'unit_id' => $unitId,
-                'sku' => 'TSHIRT-L-' . $companyId,
+                'sku' => 'TSHIRT-L-'.$companyId,
                 'barcode' => '2222222222',
                 'cost' => 320,
                 'price' => 550,
@@ -115,10 +114,10 @@ class ProductsSeeder extends Seeder
 
             $product2Id = DB::table('products')->insertGetId([
                 'company_id' => $companyId,
-                'category_id' => null,
+                'category_id' => 2 ?? null,
                 'supplier_id' => null,
                 'name' => 'Wireless Mouse',
-                'slug' => 'wireless-mouse-' . $companyId,
+                'slug' => 'wireless-mouse-'.$companyId,
                 'type' => 'single',
                 'barcode_symbology' => 'CODE128',
                 'hsn_code' => '8471',
@@ -136,7 +135,7 @@ class ProductsSeeder extends Seeder
                 'company_id' => $companyId,
                 'product_id' => $product2Id,
                 'unit_id' => $unitId,
-                'sku' => 'MOUSE-001-' . $companyId,
+                'sku' => 'MOUSE-001-'.$companyId,
                 'barcode' => '3333333333',
                 'cost' => 200,
                 'price' => 350,
@@ -157,7 +156,7 @@ class ProductsSeeder extends Seeder
             DB::rollBack();
 
             if (isset($this->command)) {
-                $this->command->error("❌ Failed to seed products: " . $e->getMessage());
+                $this->command->error('❌ Failed to seed products: '.$e->getMessage());
             }
         }
     }

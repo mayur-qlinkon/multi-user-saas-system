@@ -57,7 +57,7 @@ class UpdateProductRequest extends FormRequest
                 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120',
             ],
             'media.*.url' => ['nullable', 'url', 'max:255'],
-            'media.*.sku_index' => ['nullable', 'integer', 'min:0'],
+            'media.*.sku_index' => ['nullable'],
             'primary_media_index' => ['nullable', 'integer'],
         ];
 
@@ -86,7 +86,7 @@ class UpdateProductRequest extends FormRequest
             $existingSkuId = $this->product->skus()->first()?->id;
 
             $rules['single_sku'] = [
-                'required', 'string',
+                'nullable', 'string',
                 Rule::unique('product_skus', 'sku')
                     ->where('company_id', $companyId)
                     ->ignore($existingSkuId),
@@ -118,7 +118,7 @@ class UpdateProductRequest extends FormRequest
                 $rules["variations.{$index}.id"] = ['nullable', 'exists:product_skus,id'];
 
                 $rules["variations.{$index}.sku"] = [
-                    'required', 'string',
+                    'nullable', 'string',
                     Rule::unique('product_skus', 'sku')
                         ->where('company_id', $companyId)
                         ->ignore($variationId),

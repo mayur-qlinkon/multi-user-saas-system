@@ -9,6 +9,7 @@ Build a **production-grade, scalable SaaS ERP system** without breaking existing
 ## 🔐 MULTI-TENANT SAFETY (STRICT)
 
 * Every query MUST include `company_id`
+* We already have tenantable trait
 * NEVER mix data across companies
 * NEVER expose another company's data
 * Treat this as **highest priority rule**

@@ -3,7 +3,9 @@
 use App\Http\Controllers\Platform\CompanyController;
 use App\Http\Controllers\Platform\CompanySubscriptionController;
 use App\Http\Controllers\Platform\ContactInquiryController;
+use App\Http\Controllers\Platform\EmailTemplateController;
 use App\Http\Controllers\Platform\ModuleController;
+use App\Http\Controllers\Platform\PermissionController;
 use App\Http\Controllers\Platform\PlanController;
 use App\Http\Controllers\Platform\PlatformSeederController;
 use App\Http\Controllers\Platform\SystemSettingController;
@@ -49,6 +51,9 @@ Route::middleware(['auth', 'role:super_admin'])
                 Route::delete('/{contactInquiry}', 'destroy')->name('destroy');
             });
 
+        // ── Email Templates ──
+        Route::resource('email-templates', EmailTemplateController::class)->except(['create', 'show', 'edit']);
+
         // ── Visual Seeder Platform ──
         Route::controller(PlatformSeederController::class)
             ->prefix('seeders')
@@ -57,5 +62,16 @@ Route::middleware(['auth', 'role:super_admin'])
                 Route::get('/', 'index')->name('index');
                 Route::post('/execute', 'execute')->name('execute');
             });
+
+        // ── SYSTEM PERMISSIONS ──
+
+        // Sync Defaults (Must be defined before routes with {parameters})
+        Route::post('permissions/sync', [PermissionController::class, 'syncDefault'])->name('permissions.sync');
+
+        // Standard CRUD (Single-page modal setup)
+        Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
+        Route::post('permissions', [PermissionController::class, 'store'])->name('permissions.store');
+        Route::put('permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
+        Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
 
     });

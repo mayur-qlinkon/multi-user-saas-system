@@ -482,7 +482,7 @@
                 </div>
 
                 <input type="hidden" name="primary_media_index"
-                    :value="mediaList.findIndex(m => m.id === primaryMediaId)">
+                    :value="mediaList.findIndex(m => m.id == primaryMediaId)">
 
                 <div class="space-y-3">
                     <template x-for="(media, index) in mediaList" :key="media.id">
@@ -554,7 +554,7 @@
                                             <option value="">Product Default</option>
 
                                             <template x-for="(variant, vIndex) in variations" :key="variant.id">
-                                                <option :value="vIndex"
+                                                <option :value="variant.id"
                                                     x-text="'SKU: ' + (variant.sku || ('Variant ' + (vIndex + 1)))"></option>
                                             </template>
                                         </select>
@@ -683,7 +683,7 @@
                     );
                 @endphp
 
-                variations: @json($variations),
+                variations: @json($variations).map((v, i) => ({ ...v, id: v.id || 'var_' + Date.now() + i })),
 
                 // 🌟 Pre-load Media from Database
                 @php
@@ -712,7 +712,7 @@
                     );
                 @endphp
 
-                mediaList: @json($mediaList),
+                mediaList: @json($mediaList).map((m, i) => ({ ...m, id: m.id || 'media_' + Date.now() + i })),
 
                 primaryMediaId: @json(optional($product->media->where('is_primary', true)->first())->id),
 
@@ -735,7 +735,7 @@
                     );
                 @endphp
 
-                productGuides: @json($guides),
+                productGuides: @json($guides).map((g, i) => ({ ...g, id: g.id || 'guide_' + Date.now() + i })),
 
                 addGuide() {
                     if (this.productGuides.length >= 15) {
@@ -787,7 +787,8 @@
                     const removedId = this.mediaList[index].id;
                     this.mediaList.splice(index, 1);
 
-                    if (this.primaryMediaId === removedId) {
+                    // THE FIX: Use == so string "8" matches integer 8
+                    if (this.primaryMediaId == removedId) {
                         const nextImage = this.mediaList.find(m => m.type === 'image');
                         this.primaryMediaId = nextImage ? nextImage.id : null;
                     }

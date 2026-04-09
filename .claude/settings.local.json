@@ -32,7 +32,12 @@
       "Bash(grep -E \"\\\\.blade\\\\.php$\")",
       "Read(//tmp/**)",
       "Bash(grep -n \"employee\\(\\)\" storage/framework/views/*.php)",
-      "Bash(vendor/bin/pint --dirty --format agent app/Services/ProductService.php app/Http/Requests/Admin/StoreProductRequest.php app/Http/Requests/Admin/UpdateProductRequest.php)"
+      "Bash(vendor/bin/pint --dirty --format agent app/Services/ProductService.php app/Http/Requests/Admin/StoreProductRequest.php app/Http/Requests/Admin/UpdateProductRequest.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Services/Hrm/AttendanceService.php app/Http/Controllers/Admin/Hrm/AttendanceController.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/Platform/EmailTemplateController.php routes/platform.php)",
+      "Bash(php -l resources/views/platform/email-templates.blade.php)",
+      "Bash(vendor/bin/pint --dirty --format agent app/Services/EmailService.php app/Http/Controllers/StorefrontController.php app/Http/Controllers/OrderController.php)",
+      "Bash(vendor/bin/pint app/Mail/TemplateMail.php --format agent)"
     ]
   }
 }

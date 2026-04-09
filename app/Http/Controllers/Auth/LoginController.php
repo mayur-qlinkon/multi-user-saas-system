@@ -85,12 +85,8 @@ class LoginController extends Controller
             return route('admin.dashboard');
         }
 
-        if ($user->hasRole('employee')) {
+        if ($user->employee) {
             return route('admin.hrm.employee.dashboard');
-        }
-
-        if ($user->hasRole('hr-manager')) {
-            return route('admin.crm.dashboard');
         }
 
         return route('admin.dashboard');

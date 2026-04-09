@@ -28,8 +28,10 @@ class TemplateMail extends Mailable
 
     public function content(): Content
     {
-        // htmlString renders the HTML body directly — no Blade view file needed.
-        return new Content(htmlString: $this->mailBody);
+        return new Content(
+            view: 'emails.template',
+            with: ['mailBody' => html_entity_decode($this->mailBody)],
+        );
     }
 
     public function attachments(): array

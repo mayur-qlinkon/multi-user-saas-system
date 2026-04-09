@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Mail\TemplateMail;
+use App\Models\Company;
 use App\Models\EmailTemplate;
+use App\Models\Order;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -33,6 +35,35 @@ class EmailService
     // ════════════════════════════════════════════════════
     //  PUBLIC API
     // ════════════════════════════════════════════════════
+
+    /**
+     * Send order inquiry notification emails to both the customer and the store owner.
+     * Silently skips if the recipient has no email address or no template is configured.
+     * Never throws — email failure must never break the order flow.
+     */
+    public function sendOrderInquiryEmails(Order $order, Company $company, string $productName = ''): void
+    {
+        $variables = [
+            'customer_name' => $order->customer_name ?? '',
+            'customer_email' => $order->customer_email ?? '',
+            'customer_phone' => $order->customer_phone ?? '',
+            'product_name' => $productName,
+            'message' => $order->customer_notes ?? '',
+            'store_name' => $company->name,
+            'order_number' => $order->order_number,
+            'inquiry_date' => $order->created_at?->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A'),
+        ];
+
+        // Send confirmation to customer (only if they provided an email)
+        if (! empty($order->customer_email)) {
+            $this->send('order_inquiry_customer', $order->customer_email, $order->customer_name ?? 'Customer', $variables);
+        }
+
+        // Notify the store owner
+        if (! empty($company->email)) {
+            $this->send('order_inquiry_owner', $company->email, $company->name, $variables);
+        }
+    }
 
     /**
      * Send an email using a stored template.

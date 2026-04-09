@@ -5,9 +5,9 @@
 @section('subheading', "Enter your registered email and we'll send you a one-time OTP")
 
 @section('panel')
-    <div class="space-y-7">
-        <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center">
-            <svg class="w-7 h-7 text-brand-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+    <div class="flex flex-col gap-8 max-w-[380px]">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 border border-white/30 shadow-[0_0_25px_rgba(255,255,255,0.1)] backdrop-blur-md flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-white drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
             </svg>
@@ -22,17 +22,17 @@
             </p>
         </div>
 
-        <div class="space-y-3.5">
+        <div class="space-y-4">
             @foreach ([
                 ['n' => '1', 'text' => 'Enter your registered email address'],
                 ['n' => '2', 'text' => 'Check your inbox for the OTP code'],
                 ['n' => '3', 'text' => 'Enter the OTP and set a new password'],
             ] as $step)
-                <div class="flex items-center gap-3">
-                    <div class="w-6 h-6 rounded-full bg-brand-500/25 border border-brand-400/25 flex items-center justify-center shrink-0">
-                        <span class="text-xs font-700 text-brand-300">{{ $step['n'] }}</span>
+                <div class="flex items-center gap-3.5">
+                    <div class="w-6 h-6 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0 shadow-sm">
+                        <span class="text-[11px] font-bold text-white">{{ $step['n'] }}</span>
                     </div>
-                    <span class="text-sm text-brand-100/55 font-400">{{ $step['text'] }}</span>
+                    <span class="text-[13px] text-white/80 font-medium leading-tight">{{ $step['text'] }}</span>
                 </div>
             @endforeach
         </div>

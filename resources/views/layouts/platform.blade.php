@@ -129,6 +129,18 @@
                     <i data-lucide="message-square" class="w-4 h-4"></i>
                     Inquiries
                 </a>
+                <a href="{{ route('platform.email-templates.index') }}"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg
+                    {{ request()->routeIs('platform.email-templates.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
+                    <i data-lucide="mail" class="w-4 h-4"></i>
+                    Email Templates
+                </a>
+                <a href="{{ route('platform.permissions.index') }}"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg
+                    {{ request()->routeIs('platform.permissions.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    Permissions
+                </a>
                 <a href="{{ route('platform.system.index') }}"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg
                     {{ request()->routeIs('platform.system.*') ? 'bg-gray-100 text-brand-600' : 'hover:bg-gray-100' }}">

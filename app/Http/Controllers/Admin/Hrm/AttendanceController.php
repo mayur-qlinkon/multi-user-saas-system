@@ -43,7 +43,7 @@ class AttendanceController extends Controller
                 'data' => $result['attendance'] ?? null,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'type' => 'error'], 422);
         }
     }
 
