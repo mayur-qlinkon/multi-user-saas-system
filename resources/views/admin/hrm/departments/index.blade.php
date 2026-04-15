@@ -110,12 +110,14 @@
                     placeholder="Search departments..."
                     class="field-input pl-9 !py-2 !text-[13px]">
             </div>
-            <button @click="openCreate()"
-                class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
-                style="background: var(--brand-600)">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                Add Department
-            </button>
+            @if(has_permission('departments.create'))
+                <button @click="openCreate()"
+                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                    style="background: var(--brand-600)">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    Add Department
+                </button>
+            @endif
         </div>
     </div>
 
@@ -166,14 +168,18 @@
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    @if(has_permission('departments.update'))
                                     <button @click="openEdit({{ $dept->toJson() }})"
                                         class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors">
                                         <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                     </button>
+                                    @endif
+                                    @if(has_permission('departments.delete'))
                                     <button @click="confirmDelete({{ $dept->id }}, '{{ $dept->name }}')"
                                         class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

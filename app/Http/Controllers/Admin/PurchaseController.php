@@ -5,19 +5,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePurchaseRequest;
 use App\Http\Requests\Admin\UpdatePurchaseRequest;
-use App\Models\Purchase;
-use App\Models\Unit;
-use App\Models\Store;
 use App\Models\ProductSku;
-use App\Models\Supplier;
-use App\Models\Warehouse;
+use App\Models\Purchase;
 use App\Models\PurchaseReturnItem;
+use App\Models\Store;
+use App\Models\Supplier;
+use App\Models\Unit;
+use App\Models\Warehouse;
 use App\Services\PurchaseService;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 
 class PurchaseController extends Controller
 {
@@ -38,10 +40,10 @@ class PurchaseController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('purchase_number', 'like', "%{$search}%")
-                  ->orWhere('supplier_invoice_number', 'like', "%{$search}%")
-                  ->orWhereHas('supplier', function ($sq) use ($search) {
-                      $sq->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('supplier_invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -75,7 +77,7 @@ class PurchaseController extends Controller
         // 🌟 CATCH THE REORDER DATA
         $prefillSkuId = $request->query('sku_id');
         $prefillQty = $request->query('qty');
-        
+
         $selectedSku = null;
         if ($prefillSkuId) {
             // Eager load product to get the name and details for the frontend
@@ -83,6 +85,7 @@ class PurchaseController extends Controller
         }
 
         $units = Unit::where('is_active', true)->get();
+
         return view('admin.purchases.create', [
             'suppliers' => $suppliers,
             'stores' => $stores,
@@ -90,7 +93,7 @@ class PurchaseController extends Controller
             'units' => $units,
             'batchEnabled' => batch_enabled(),
             'selectedSku' => $selectedSku, // 👈 Pass to view
-            'prefillQty' => $prefillQty
+            'prefillQty' => $prefillQty,
         ]);
     }
 
@@ -108,15 +111,16 @@ class PurchaseController extends Controller
             }
 
             return redirect()->route('admin.purchases.show', $purchase->id)
-                             ->with('success', 'Purchase Order generated successfully.');
+                ->with('success', 'Purchase Order generated successfully.');
 
         } catch (\Exception $e) {
-            Log::error('Purchase Creation Failed: ' . $e->getMessage());
-            
+            Log::error('Purchase Creation Failed: '.$e->getMessage());
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
-            return back()->withInput()->with('error', 'Failed to create purchase: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to create purchase: '.$e->getMessage());
         }
     }
 
@@ -127,14 +131,14 @@ class PurchaseController extends Controller
     {
         // Eager load everything needed for the view/invoice template
         $purchase->load([
-            'supplier', 
-            'store', 
-            'warehouse', 
-            'creator', 
+            'supplier',
+            'store',
+            'warehouse',
+            'creator',
             'updater',
-            'items.product', 
-            'items.productSku', 
-            'items.unit'
+            'items.product',
+            'items.productSku',
+            'items.unit',
         ]);
 
         return view('admin.purchases.show', compact('purchase'));
@@ -148,32 +152,33 @@ class PurchaseController extends Controller
         // 🛡️ ERP GUARD: Do not allow editing financial data of received purchases
         if ($purchase->status === 'received') {
             return redirect()->route('admin.purchases.show', $purchase->id)
-                             ->with('error', 'Cannot edit a fully received purchase. Please process a Purchase Return to make adjustments.');
+                ->with('error', 'Cannot edit a fully received purchase. Please process a Purchase Return to make adjustments.');
         }
 
         $purchase->load(['items.product', 'items.productSku', 'items.unit']);
 
         $purchase->items->each(function ($item) {
             if ($item->manufacturing_date) {
-                $item->manufacturing_date = \Carbon\Carbon::parse($item->manufacturing_date)->format('d-m-Y');
+                $item->manufacturing_date = Carbon::parse($item->manufacturing_date)->format('d-m-Y');
             }
             if ($item->expiry_date) {
-                $item->expiry_date = \Carbon\Carbon::parse($item->expiry_date)->format('d-m-Y');
+                $item->expiry_date = Carbon::parse($item->expiry_date)->format('d-m-Y');
             }
         });
-        
+
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
         $stores = Store::where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
 
         $units = Unit::where('is_active', true)->get();
+
         return view('admin.purchases.edit', [
             'purchase' => $purchase,
             'suppliers' => $suppliers,
             'stores' => $stores,
             'warehouses' => $warehouses,
             'units' => $units,
-            'batchEnabled' => batch_enabled()
+            'batchEnabled' => batch_enabled(),
         ]);
     }
 
@@ -190,22 +195,24 @@ class PurchaseController extends Controller
             }
 
             return redirect()->route('admin.purchases.show', $purchase->id)
-                             ->with('success', 'Purchase Order updated successfully.');
+                ->with('success', 'Purchase Order updated successfully.');
 
         } catch (\Exception $e) {
-            Log::error('Purchase Update Failed: ' . $e->getMessage());
-            
+            Log::error('Purchase Update Failed: '.$e->getMessage());
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
-            return back()->withInput()->with('error', 'Failed to update purchase: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to update purchase: '.$e->getMessage());
         }
     }
 
     /**
      * API Endpoint: Fetch Purchase Order details for processing a return.
+     *
      * * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     /**
      * API Endpoint: Fetch Purchase Order details for processing a return.
@@ -220,7 +227,7 @@ class PurchaseController extends Controller
 
         // 1. Get all previously returned quantities for these PO items in one single query
         $purchaseItemIds = $purchase->items->pluck('id');
-        
+
         $returnedQuery = PurchaseReturnItem::whereIn('purchase_item_id', $purchaseItemIds)
             ->whereHas('purchaseReturn', function ($q) {
                 $q->where('status', '!=', 'cancelled'); // Count both Drafts and Returned
@@ -240,6 +247,7 @@ class PurchaseController extends Controller
         $filteredItems = $purchase->items->map(function ($item) use ($returnedQuantities) {
             $returned = (float) $returnedQuantities->get($item->id, 0);
             $item->available_qty = max(0, (float) $item->quantity - $returned);
+
             return $item;
         })->filter(function ($item) {
             return $item->available_qty > 0; // Hide rows that are already 100% returned!
@@ -258,7 +266,7 @@ class PurchaseController extends Controller
         try {
             $request->validate([
                 'payment_status' => ['required', 'string', 'in:unpaid,partial,paid'],
-                'amount_paid'    => ['nullable', 'numeric', 'min:0']
+                'amount_paid' => ['nullable', 'numeric', 'min:0'],
             ]);
 
             $status = $request->payment_status;
@@ -283,20 +291,20 @@ class PurchaseController extends Controller
             // Force update the database
             $purchase->update([
                 'payment_status' => $status,
-                'balance_amount' => $balance
+                'balance_amount' => $balance,
             ]);
 
             return response()->json([
-                'success' => true, 
-                'message' => 'Payment updated successfully!'
+                'success' => true,
+                'message' => 'Payment updated successfully!',
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Payment Update Error: ' . $e->getMessage());
-            
+            Log::error('Payment Update Error: '.$e->getMessage());
+
             return response()->json([
-                'success' => false, 
-                'message' => $e->getMessage()
+                'success' => false,
+                'message' => $e->getMessage(),
             ], 422);
         }
     }
@@ -311,6 +319,7 @@ class PurchaseController extends Controller
             if (request()->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Cannot delete a received purchase. Stock is already in the warehouse.'], 403);
             }
+
             return back()->with('error', 'Cannot delete a received purchase. Stock is already in the warehouse.');
         }
 
@@ -323,18 +332,18 @@ class PurchaseController extends Controller
         if (request()->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Purchase Order deleted successfully.']);
         }
-        
+
         return redirect()->route('admin.purchases.index')
-                         ->with('success', 'Purchase Order deleted successfully.');
-    }    
+            ->with('success', 'Purchase Order deleted successfully.');
+    }
 
     public function downloadPdf(Purchase $purchase)
     {
         $purchase->load(['supplier', 'store', 'warehouse', 'items.product', 'items.productSku', 'items.unit']);
-        
-        $pdf = Pdf::loadView('admin.purchases.pdf', compact('purchase'))
-                  ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Purchase_Order_' . $purchase->purchase_number . '.pdf');
+        $pdf = Pdf::loadView('admin.purchases.pdf', compact('purchase'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Purchase_Order_'.$purchase->purchase_number.'.pdf');
     }
 }

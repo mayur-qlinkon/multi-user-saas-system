@@ -39,8 +39,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained()
                 ->nullOnDelete();
-             $table->string('banner_position', 50)
-            ->nullable();        
+            $table->string('banner_position', 50)
+                ->nullable();
             // Only used when type = 'category'
 
             // ── Display Config ──

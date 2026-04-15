@@ -5,7 +5,6 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-
 class StoreClientRequest extends FormRequest
 {
     /**
@@ -24,11 +23,11 @@ class StoreClientRequest extends FormRequest
         $companyId = $this->user()->company_id;
 
         return [
-            'name'              => ['required', 'string', 'max:255'],
-            'client_code'       => ['nullable', 'string', 'max:255'],
-            'company_name'      => ['nullable', 'string', 'max:255'],
-            'email'             => ['nullable', 'email', 'max:255'],
-            
+            'name' => ['required', 'string', 'max:255'],
+            'client_code' => ['nullable', 'string', 'max:255'],
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+
             // 🌟 STRICT PHONE VALIDATION: Unique per company, ignoring deleted records
             'phone' => [
                 'nullable',
@@ -36,18 +35,18 @@ class StoreClientRequest extends FormRequest
                 'max:20',
                 Rule::unique('clients', 'phone')
                     ->where('company_id', $companyId)
-                    ->whereNull('deleted_at')
+                    ->whereNull('deleted_at'),
             ],
-            
-            'gst_number'        => ['nullable', 'string', 'max:30'],
+
+            'gst_number' => ['nullable', 'string', 'max:30'],
             'registration_type' => ['required', 'string', 'max:255'],
-            'address'           => ['nullable', 'string'],
-            'city'              => ['nullable', 'string', 'max:100'],
-            'state_id'          => ['nullable', 'exists:states,id'],
-            'zip_code'          => ['nullable', 'string', 'max:20'],
-            'country'           => ['nullable', 'string', 'max:100'],
-            'notes'             => ['nullable', 'string'],
-            'is_active'         => ['boolean'],
+            'address' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state_id' => ['nullable', 'exists:states,id'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
         ];
     }
 

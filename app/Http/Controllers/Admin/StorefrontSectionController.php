@@ -32,10 +32,10 @@ class StorefrontSectionController extends Controller
         $sections = $this->service->getAdminList($companyId);
 
         $stats = [
-            'total'     => $sections->count(),
-            'live'      => $sections->where('is_live_now', true)->count(),
-            'inactive'  => $sections->where('is_active', false)->count(),
-            'scheduled' => $sections->filter(fn($s) => $s->starts_at || $s->ends_at)->count(),
+            'total' => $sections->count(),
+            'live' => $sections->where('is_live_now', true)->count(),
+            'inactive' => $sections->where('is_active', false)->count(),
+            'scheduled' => $sections->filter(fn ($s) => $s->starts_at || $s->ends_at)->count(),
         ];
 
         return view('admin.storefront-sections.index', compact('sections', 'stats'));
@@ -48,7 +48,7 @@ class StorefrontSectionController extends Controller
     public function create(): View
     {
         $companyId = Auth::user()->company_id;
-        $formData  = $this->service->getFormData($companyId);
+        $formData = $this->service->getFormData($companyId);
 
         return view('admin.storefront-sections.create', compact('formData'));
     }
@@ -69,8 +69,8 @@ class StorefrontSectionController extends Controller
         } catch (Throwable $e) {
             Log::error('[StorefrontSectionController] Store failed', [
                 'user_id' => Auth::id(),
-                'data'    => $request->validated(),
-                'error'   => $e->getMessage(),
+                'data' => $request->validated(),
+                'error' => $e->getMessage(),
             ]);
 
             return back()
@@ -88,10 +88,10 @@ class StorefrontSectionController extends Controller
         $this->authorizeCompany($storefrontSection);
 
         $companyId = Auth::user()->company_id;
-        $formData  = $this->service->getFormData($companyId);
+        $formData = $this->service->getFormData($companyId);
 
         return view('admin.storefront-sections.edit', [
-            'section'  => $storefrontSection,
+            'section' => $storefrontSection,
             'formData' => $formData,
         ]);
     }
@@ -116,8 +116,8 @@ class StorefrontSectionController extends Controller
         } catch (Throwable $e) {
             Log::error('[StorefrontSectionController] Update failed', [
                 'section_id' => $storefrontSection->id,
-                'user_id'    => Auth::id(),
-                'error'      => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
             ]);
 
             return back()
@@ -145,7 +145,7 @@ class StorefrontSectionController extends Controller
         } catch (Throwable $e) {
             Log::error('[StorefrontSectionController] Destroy failed', [
                 'section_id' => $storefrontSection->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return back()->with('error', 'Failed to delete section.');
@@ -164,9 +164,9 @@ class StorefrontSectionController extends Controller
             $isActive = $this->service->toggleActive($storefrontSection);
 
             return response()->json([
-                'success'   => true,
+                'success' => true,
                 'is_active' => $isActive,
-                'message'   => $isActive
+                'message' => $isActive
                     ? "Section \"{$storefrontSection->title}\" is now live."
                     : "Section \"{$storefrontSection->title}\" deactivated.",
             ]);
@@ -174,7 +174,7 @@ class StorefrontSectionController extends Controller
         } catch (Throwable $e) {
             Log::error('[StorefrontSectionController] Toggle failed', [
                 'section_id' => $storefrontSection->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -191,13 +191,13 @@ class StorefrontSectionController extends Controller
     public function reorder(Request $request): JsonResponse
     {
         $request->validate([
-            'ids'   => 'required|array|min:1',
+            'ids' => 'required|array|min:1',
             'ids.*' => 'integer',
         ]);
 
         try {
             $this->service->reorder(
-                companyId:  Auth::user()->company_id,
+                companyId: Auth::user()->company_id,
                 sectionIds: $request->input('ids'),
             );
 
@@ -209,8 +209,8 @@ class StorefrontSectionController extends Controller
         } catch (Throwable $e) {
             Log::error('[StorefrontSectionController] Reorder failed', [
                 'user_id' => Auth::id(),
-                'ids'     => $request->input('ids'),
-                'error'   => $e->getMessage(),
+                'ids' => $request->input('ids'),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -232,15 +232,15 @@ class StorefrontSectionController extends Controller
             $newSection = $this->service->duplicate($storefrontSection);
 
             return response()->json([
-                'success'  => true,
-                'message'  => "Section duplicated as \"{$newSection->title}\".",
+                'success' => true,
+                'message' => "Section duplicated as \"{$newSection->title}\".",
                 'edit_url' => route('admin.storefront-sections.edit', $newSection->id),
             ]);
 
         } catch (Throwable $e) {
             Log::error('[StorefrontSectionController] Duplicate failed', [
                 'section_id' => $storefrontSection->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -249,7 +249,6 @@ class StorefrontSectionController extends Controller
             ], 500);
         }
     }
-    
 
     // ════════════════════════════════════════════════════
     //  PRIVATE — Tenant Guard
@@ -263,13 +262,12 @@ class StorefrontSectionController extends Controller
     {
         if ($section->company_id !== Auth::user()->company_id) {
             Log::warning('[StorefrontSectionController] Unauthorized access attempt', [
-                'section_id'         => $section->id,
+                'section_id' => $section->id,
                 'section_company_id' => $section->company_id,
-                'user_id'            => Auth::id(),
-                'user_company_id'    => Auth::user()->company_id,
+                'user_id' => Auth::id(),
+                'user_company_id' => Auth::user()->company_id,
             ]);
             abort(403, 'Access denied.');
         }
     }
-    
 }

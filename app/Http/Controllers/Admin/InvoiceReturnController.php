@@ -7,14 +7,14 @@ use App\Http\Requests\Admin\StoreInvoiceReturnRequest;
 use App\Http\Requests\Admin\UpdateInvoiceReturnRequest;
 use App\Models\Invoice;
 use App\Models\InvoiceReturn;
-use App\Models\Store;
 use App\Models\State;
+use App\Models\Store;
 use App\Models\Warehouse;
 use App\Services\InvoiceReturnService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class InvoiceReturnController extends Controller
 {
@@ -40,12 +40,12 @@ class InvoiceReturnController extends Controller
         // 2. Apply Search Logic (Safely Grouped!)
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            
+
             // The closure function($q) puts parentheses around the OR statements in SQL
             // e.g., WHERE company_id = 1 AND (credit_note_number LIKE %..% OR customer_name LIKE %..%)
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('credit_note_number', 'like', "%{$searchTerm}%")
-                  ->orWhere('customer_name', 'like', "%{$searchTerm}%");
+                    ->orWhere('customer_name', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -75,14 +75,14 @@ class InvoiceReturnController extends Controller
     public function create(Invoice $invoice)
     {
         abort_if($invoice->company_id !== Auth::user()->company_id, 403);
-        
+
         if ($invoice->status === 'draft' || $invoice->status === 'cancelled') {
             return back()->with('error', 'You can only create a return for a confirmed invoice.');
         }
 
         // Load the original invoice items with their SKUs
         $invoice->load(['items.sku', 'client']);
-        
+
         $companyId = Auth::user()->company_id;
         $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
         $warehouses = Warehouse::where('company_id', $companyId)->get();
@@ -107,7 +107,7 @@ class InvoiceReturnController extends Controller
                 ->with('success', 'Draft Credit Note created successfully. Please review and confirm.');
 
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Failed to create return: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to create return: '.$e->getMessage());
         }
     }
 
@@ -119,7 +119,7 @@ class InvoiceReturnController extends Controller
         abort_if($invoiceReturn->company_id !== Auth::user()->company_id, 403);
 
         $invoiceReturn->load(['items.product', 'items.sku', 'customer', 'store', 'warehouse', 'invoice']);
-        
+
         return view('admin.invoice-returns.show', compact('invoiceReturn'));
     }
 
@@ -129,7 +129,7 @@ class InvoiceReturnController extends Controller
     public function edit(InvoiceReturn $invoiceReturn)
     {
         abort_if($invoiceReturn->company_id !== Auth::user()->company_id, 403);
-        
+
         if ($invoiceReturn->status === 'confirmed') {
             return redirect()->route('admin.invoice-returns.show', $invoiceReturn->id)
                 ->with('error', 'Confirmed Credit Notes cannot be edited. They are locked for accounting.');
@@ -137,7 +137,7 @@ class InvoiceReturnController extends Controller
 
         $invoiceReturn->load(['items', 'invoice.items']);
         $invoice = $invoiceReturn->invoice; // Need original invoice context for the UI
-        
+
         $companyId = Auth::user()->company_id;
         $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
         $warehouses = Warehouse::where('company_id', $companyId)->get();
@@ -161,7 +161,7 @@ class InvoiceReturnController extends Controller
                 ->with('success', 'Credit Note updated successfully.');
 
         } catch (Exception $e) {
-            return back()->withInput()->with('error', 'Failed to update return: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to update return: '.$e->getMessage());
         }
     }
 
@@ -179,8 +179,9 @@ class InvoiceReturnController extends Controller
             return back()->with('success', 'Credit Note confirmed! Stock has been securely returned to the warehouse.');
 
         } catch (Exception $e) {
-            Log::error("Update Failed: " . $e->getMessage());
-            return back()->with('error', 'Confirmation failed: ' . $e->getMessage());
+            Log::error('Update Failed: '.$e->getMessage());
+
+            return back()->with('error', 'Confirmation failed: '.$e->getMessage());
         }
     }
 
@@ -190,7 +191,7 @@ class InvoiceReturnController extends Controller
     public function destroy(InvoiceReturn $invoiceReturn)
     {
         abort_if($invoiceReturn->company_id !== Auth::user()->company_id, 403);
-        
+
         if ($invoiceReturn->status === 'confirmed') {
             return back()->with('error', 'Cannot delete a confirmed Credit Note.');
         }

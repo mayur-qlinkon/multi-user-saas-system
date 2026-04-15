@@ -2,9 +2,9 @@
 
 namespace App\Models\Hrm;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 
 class HrmTaskAttachment extends Model
 {
@@ -37,11 +37,12 @@ class HrmTaskAttachment extends Model
     {
         $bytes = $this->file_size;
         if ($bytes >= 1048576) {
-            return round($bytes / 1048576, 2) . ' MB';
+            return round($bytes / 1048576, 2).' MB';
         }
         if ($bytes >= 1024) {
-            return round($bytes / 1024, 2) . ' KB';
+            return round($bytes / 1024, 2).' KB';
         }
-        return $bytes . ' B';
+
+        return $bytes.' B';
     }
 }

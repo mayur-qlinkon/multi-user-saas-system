@@ -92,7 +92,7 @@
                     Back
                 </a>
 
-                @if ($purchaseReturn->status !== 'returned' && $purchaseReturn->status !== 'cancelled')
+                @if ($purchaseReturn->status !== 'returned' && $purchaseReturn->status !== 'cancelled' && has_permission('purchase_returns.update'))
                     <a href="{{ route('admin.purchase-returns.edit', $purchaseReturn->id) }}"
                         class="bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center shadow-sm">
                         Edit
@@ -104,11 +104,13 @@
                     <i data-lucide="printer" class="w-4 h-4"></i> Print
                 </button>
 
-                <a href="{{ route('admin.purchase-returns.pdf', $purchaseReturn->id) }}"
-                    class="bg-white border border-gray-200 hover:bg-red-50 hover:text-red-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm"
-                    title="Download PDF">
-                    <i data-lucide="file-text" class="w-4 h-4"></i> PDF
-                </a>
+                @if(has_permission('purchase_returns.download_pdf'))
+                    <a href="{{ route('admin.purchase-returns.pdf', $purchaseReturn->id) }}"
+                        class="bg-white border border-gray-200 hover:bg-red-50 hover:text-red-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm"
+                        title="Download PDF">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+                    </a>
+                @endif
 
                 @php
                     $waText = urlencode(

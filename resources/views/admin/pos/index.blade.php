@@ -100,10 +100,12 @@
                             x-ref="searchInput" placeholder="Search your plants or scan barcode..."
                             class="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-gray-400">
                     </div>
+                    @if(has_permission('pos.create_quick_product'))
                     <button @click="isProductModalOpen = true" title="Quick Add Product" style="margin-right: 10px;"
                         class="p-2 bg-brand-500 hover:bg-brand-600 text-white rounded flex items-center justify-center transition-colors shadow-sm">
                         <i data-lucide="plus" class="w-5 h-5"></i>
                     </button>
+                    @endif
                 </div>
 
                 <div class="flex items-center gap-2 lg:gap-4 shrink-0">
@@ -281,10 +283,12 @@
                     </div>
 
                     {{-- Quick Add Button --}}
+                    @if(has_permission('pos.create_quick_client'))
                     <button type="button" @click="isClientModalOpen = true"
                         class="w-[36px] h-[36px] bg-brand-500 hover:bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-md transition-all focus:ring-2 focus:ring-brand-500 focus:outline-none shrink-0">
                         <i data-lucide="plus" class="w-4 h-4"></i>
                     </button>
+                    @endif
                 </div>
                 <div class="flex items-center gap-2 text-xs text-gray-500">
                     <i data-lucide="user" class="w-3.5 h-3.5"></i>
@@ -377,6 +381,7 @@
                             <span class="font-bold text-gray-800" x-text="formatCurrency(totals.subtotal)"></span>
                         </div>
 
+                        @if(has_permission('pos.apply_discount'))
                         <div class="flex items-center justify-between">
                             <span class="px-1">Discount</span>
                             <div class="flex overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
@@ -387,6 +392,7 @@
                                 <input type="number" step="0.01" placeholder="0.00" x-model.number="totals.discount_value" @input="calculateCart()" class="w-16 px-2 py-1.5 text-right text-xs font-bold text-red-500 placeholder-gray-300 focus:outline-none">
                             </div>
                         </div>
+                        @endif
 
                         <div class="flex items-center justify-between px-1">
                             <span>Tax Amount</span>
@@ -406,6 +412,7 @@
                     <span class="text-2xl font-black text-brand-600" x-text="formatCurrency(totals.payable)"></span>
                 </div>
 
+                @if(has_permission('pos.create_sale'))
                 <button @click="placeOrder()" :disabled="cart.length === 0 || isProcessing"
                     :class="(cart.length === 0) ? 'bg-[#cbd5e1] cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-lg hover:shadow-brand-500/30 active:scale-95'"
                     class="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold tracking-wide text-white transition-all">
@@ -415,6 +422,7 @@
                         <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...
                     </span>
                 </button>
+                @endif
             </div>
         </div>
 

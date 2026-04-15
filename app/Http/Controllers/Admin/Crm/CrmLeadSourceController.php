@@ -25,9 +25,9 @@ class CrmLeadSourceController extends Controller
             ->ordered()
             ->get();
         $tags = CrmTag::where('company_id', Auth::user()->company_id)
-        ->withCount('leads')->ordered()->get();
+            ->withCount('leads')->ordered()->get();
 
-        return view('admin.crm.settings', compact('sources','tags'));
+        return view('admin.crm.settings', compact('sources', 'tags'));
     }
 
     // ── STORE ──
@@ -41,8 +41,8 @@ class CrmLeadSourceController extends Controller
             $source = CrmLeadSource::create(array_merge(
                 $request->validated(),
                 [
-                    'company_id'  => $companyId,
-                    'sort_order'  => $request->input('sort_order', $maxOrder + 1),
+                    'company_id' => $companyId,
+                    'sort_order' => $request->input('sort_order', $maxOrder + 1),
                 ]
             ));
 
@@ -51,11 +51,12 @@ class CrmLeadSourceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Source \"{$source->name}\" added.",
-                'source'  => $source,
+                'source' => $source,
             ]);
 
         } catch (Throwable $e) {
             Log::error('[CrmLeadSource] Store failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to create source.'], 500);
         }
     }
@@ -73,7 +74,7 @@ class CrmLeadSourceController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Source \"{$source->name}\" updated.",
-                'source'  => $source->fresh(),
+                'source' => $source->fresh(),
             ]);
 
         } catch (Throwable $e) {
@@ -108,6 +109,8 @@ class CrmLeadSourceController extends Controller
 
     private function authorizeSource(CrmLeadSource $source): void
     {
-        if ($source->company_id !== Auth::user()->company_id) abort(403);
+        if ($source->company_id !== Auth::user()->company_id) {
+            abort(403);
+        }
     }
 }

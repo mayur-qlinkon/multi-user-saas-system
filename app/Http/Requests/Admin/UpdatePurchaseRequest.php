@@ -17,7 +17,7 @@ class UpdatePurchaseRequest extends FormRequest
     {
         if (empty($this->store_id)) {
             $this->merge([
-                'store_id' => session('store_id')
+                'store_id' => session('store_id'),
             ]);
         }
 
@@ -43,45 +43,45 @@ class UpdatePurchaseRequest extends FormRequest
         // 🌟 FIX: Assign to the $rules variable first, do not return immediately!
         $rules = [
             // --- Header Info ---
-            'supplier_id'             => ['required', Rule::exists('suppliers', 'id')->where('company_id', $companyId)],
-            'store_id'                => ['required', Rule::exists('stores', 'id')->where('company_id', $companyId)],
-            'warehouse_id'            => ['required', Rule::exists('warehouses', 'id')->where('company_id', $companyId)],
-            'purchase_date'           => ['required', 'date'],
-            'due_date'                => ['nullable', 'date', 'after_or_equal:purchase_date'],
+            'supplier_id' => ['required', Rule::exists('suppliers', 'id')->where('company_id', $companyId)],
+            'store_id' => ['required', Rule::exists('stores', 'id')->where('company_id', $companyId)],
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('company_id', $companyId)],
+            'purchase_date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:purchase_date'],
             'supplier_invoice_number' => ['nullable', 'string', 'max:100'],
-            'supplier_invoice_date'   => ['nullable', 'date'],
-            
-            // Note: If purchase is already 'received', you usually shouldn't be able to revert it to 'draft' 
+            'supplier_invoice_date' => ['nullable', 'date'],
+
+            // Note: If purchase is already 'received', you usually shouldn't be able to revert it to 'draft'
             // easily without reversing stock. This is handled in the controller/service layer.
-            'status'                  => ['required', 'string', 'in:draft,ordered,partially_received,received,cancelled'],
-            
+            'status' => ['required', 'string', 'in:draft,ordered,partially_received,received,cancelled'],
+
             // --- Global Amounts ---
-            'discount_amount'         => ['nullable', 'numeric', 'min:0'],
-            'shipping_cost'           => ['nullable', 'numeric', 'min:0'],
-            'other_charges'           => ['nullable', 'numeric', 'min:0'],
-            'round_off'               => ['nullable', 'numeric'],
-            
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'min:0'],
+            'other_charges' => ['nullable', 'numeric', 'min:0'],
+            'round_off' => ['nullable', 'numeric'],
+
             // --- Extras ---
-            'notes'                   => ['nullable', 'string'],
-            'terms_and_conditions'    => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+            'terms_and_conditions' => ['nullable', 'string'],
 
             // --- Line Items Array ---
-            'items'                   => ['required', 'array', 'min:1'],
-            
-            // 🌟 NEW: The item ID is required ONLY if updating an existing line item. 
+            'items' => ['required', 'array', 'min:1'],
+
+            // 🌟 NEW: The item ID is required ONLY if updating an existing line item.
             // If missing, the backend will treat it as a newly added item.
-            'items.*.id'              => ['nullable', Rule::exists('purchase_items', 'id')->where('purchase_id', $this->route('purchase')->id)],
-            
-            'items.*.product_id'      => ['required', Rule::exists('products', 'id')->where('company_id', $companyId)],
-            'items.*.product_sku_id'  => ['required', Rule::exists('product_skus', 'id')],
-            'items.*.unit_id'         => ['required', Rule::exists('units', 'id')],
-            
+            'items.*.id' => ['nullable', Rule::exists('purchase_items', 'id')->where('purchase_id', $this->route('purchase')->id)],
+
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('company_id', $companyId)],
+            'items.*.product_sku_id' => ['required', Rule::exists('product_skus', 'id')],
+            'items.*.unit_id' => ['required', Rule::exists('units', 'id')],
+
             // --- Item Values ---
-            'items.*.quantity'        => ['required', 'numeric', 'min:0.0001'],
-            'items.*.unit_cost'       => ['required', 'numeric', 'min:0'],
-            'items.*.discount_percent'=> ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.tax_percent'     => ['nullable', 'numeric', 'min:0'],
-            'items.*.tax_type'        => ['required', 'string', 'in:inclusive,exclusive'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
+            'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
+            'items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.tax_percent' => ['nullable', 'numeric', 'min:0'],
+            'items.*.tax_type' => ['required', 'string', 'in:inclusive,exclusive'],
         ];
 
         // ✅ BATCH RULES (ONLY IF ENABLED)
@@ -98,8 +98,8 @@ class UpdatePurchaseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'items.required'         => 'You must have at least one product on the purchase order.',
-            'items.*.quantity.min'   => 'Quantity must be greater than zero.',
+            'items.required' => 'You must have at least one product on the purchase order.',
+            'items.*.quantity.min' => 'Quantity must be greater than zero.',
             'items.*.expiry_date.after_or_equal' => 'Expiry date must be after manufacturing date.',
         ];
     }

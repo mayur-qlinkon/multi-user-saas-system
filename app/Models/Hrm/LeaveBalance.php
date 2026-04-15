@@ -2,9 +2,9 @@
 
 namespace App\Models\Hrm;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Traits\Tenantable;
 
 class LeaveBalance extends Model
 {

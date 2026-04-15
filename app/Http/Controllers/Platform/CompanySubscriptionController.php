@@ -33,6 +33,6 @@ class CompanySubscriptionController extends Controller
         $this->subscriptionService->assignSubscription($request->validated());
 
         return redirect()->route('platform.subscriptions.index')
-                         ->with('success', 'Subscription assigned successfully.');
+            ->with('success', 'Subscription assigned successfully.');
     }
 }

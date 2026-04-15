@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Http\Controllers\Controller;
 
 class CategoryController extends Controller
 {
     public function index()
     {
         $categories = Category::orderBy('created_at', 'desc')->get();
+
         // dd($categories);
-        return view('admin.categories', compact('categories'));
+        return view('admin.products.categories', compact('categories'));
     }
 
     public function store(Request $request)
@@ -22,7 +23,7 @@ class CategoryController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:categories,name',
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
         ]);
 
         $data = $request->only(['name', 'is_active']);
@@ -41,9 +42,9 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'name' => 'required|string|max:255|unique:categories,name,'.$category->id,
             'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
         ]);
 
         $data = $request->only(['name', 'is_active']);
@@ -65,7 +66,7 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
-        // We keep the image for SoftDeletes purposes, 
+        // We keep the image for SoftDeletes purposes,
         // or you can delete it here if you use Force Delete.
         $category->delete();
 

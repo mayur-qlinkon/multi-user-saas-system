@@ -3,30 +3,24 @@
 namespace App\Exports;
 
 use App\Models\CrmLead;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Database\Eloquent\Builder;
 
-class LeadsExport implements
-    FromQuery,
-    WithHeadings,
-    WithMapping,
-    WithStyles,
-    ShouldAutoSize
+class LeadsExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     private array $filters;
-    private int   $companyId;
+
+    private int $companyId;
 
     public function __construct(int $companyId, array $filters = [])
     {
         $this->companyId = $companyId;
-        $this->filters   = $filters;
+        $this->filters = $filters;
     }
 
     // ════════════════════════════════════════════════════
@@ -47,20 +41,31 @@ class LeadsExport implements
 
         $f = $this->filters;
 
-        if (!empty($f['q'])) {
-            $query->where(fn($q) =>
-                $q->where('name',  'like', "%{$f['q']}%")
-                  ->orWhere('phone', 'like', "%{$f['q']}%")
-                  ->orWhere('email', 'like', "%{$f['q']}%")
+        if (! empty($f['q'])) {
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$f['q']}%")
+                ->orWhere('phone', 'like', "%{$f['q']}%")
+                ->orWhere('email', 'like', "%{$f['q']}%")
             );
         }
 
-        if (!empty($f['pipeline_id'])) $query->where('crm_pipeline_id',     $f['pipeline_id']);
-        if (!empty($f['stage_id']))    $query->where('crm_stage_id',          $f['stage_id']);
-        if (!empty($f['priority']))    $query->where('priority',              $f['priority']);
-        if (!empty($f['source_id']))   $query->where('crm_lead_source_id',   $f['source_id']);
-        if (!empty($f['from']))        $query->whereDate('created_at', '>=', $f['from']);
-        if (!empty($f['to']))          $query->whereDate('created_at', '<=', $f['to']);
+        if (! empty($f['pipeline_id'])) {
+            $query->where('crm_pipeline_id', $f['pipeline_id']);
+        }
+        if (! empty($f['stage_id'])) {
+            $query->where('crm_stage_id', $f['stage_id']);
+        }
+        if (! empty($f['priority'])) {
+            $query->where('priority', $f['priority']);
+        }
+        if (! empty($f['source_id'])) {
+            $query->where('crm_lead_source_id', $f['source_id']);
+        }
+        if (! empty($f['from'])) {
+            $query->whereDate('created_at', '>=', $f['from']);
+        }
+        if (! empty($f['to'])) {
+            $query->whereDate('created_at', '<=', $f['to']);
+        }
 
         if (isset($f['converted'])) {
             $f['converted']
@@ -68,9 +73,8 @@ class LeadsExport implements
                 : $query->where('is_converted', false);
         }
 
-        if (!empty($f['tag_id'])) {
-            $query->whereHas('tags', fn($q) =>
-                $q->where('crm_tags.id', $f['tag_id'])
+        if (! empty($f['tag_id'])) {
+            $query->whereHas('tags', fn ($q) => $q->where('crm_tags.id', $f['tag_id'])
             );
         }
 
@@ -153,8 +157,8 @@ class LeadsExport implements
     {
         return [
             1 => [
-                'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill'      => ['fillType' => 'solid', 'startColor' => ['rgb' => '1e293b']],
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '1e293b']],
                 'alignment' => ['horizontal' => 'center'],
             ],
         ];

@@ -121,6 +121,12 @@
                     <span class="text-gray-400 font-medium">&mdash; filtered</span>
                 @endif
             </p>
+            <button @click="exportModal = true; $nextTick(() => { if(window.lucide) lucide.createIcons(); })"
+                class="flex items-center gap-2 px-4 py-2 text-[12px] font-bold text-white rounded-lg transition-opacity hover:opacity-90 active:scale-95"
+                style="background: var(--brand-600)">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                Export Report
+            </button>
         </div>
 
         @if($report->isEmpty())
@@ -310,6 +316,118 @@
         @endif
     </div>
 
+    {{-- ════════ EXPORT MODAL ════════ --}}
+    <div x-show="exportModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden" @click.away="exportModal = false"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+
+            {{-- Modal Header ── --}}
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h3 class="font-black text-gray-800 uppercase tracking-widest text-sm">Export Attendance</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5">Choose period and download as PDF or Excel</p>
+                </div>
+                <button @click="exportModal = false" class="text-gray-400 hover:text-red-500 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+
+                {{-- Period Selector ── --}}
+                <div>
+                    <p class="text-[11px] font-black text-gray-500 uppercase tracking-wider mb-3">Select Period</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach(['today' => 'Today', 'week' => 'This Week', 'month' => 'This Month', 'year' => 'This Year'] as $val => $lbl)
+                            <button type="button" @click="exportPeriod = '{{ $val }}'"
+                                :class="exportPeriod === '{{ $val }}'
+                                    ? 'border-2 font-black text-white'
+                                    : 'border border-gray-200 font-bold text-gray-600 hover:border-gray-300 bg-white'"
+                                :style="exportPeriod === '{{ $val }}' ? 'border-color: var(--brand-600); background: var(--brand-600)' : ''"
+                                class="py-2.5 px-3 rounded-lg text-[12px] transition-all text-center">
+                                {{ $lbl }}
+                            </button>
+                        @endforeach
+                        {{-- Custom Range — full width --}}
+                        <button type="button" @click="exportPeriod = 'custom'"
+                            :class="exportPeriod === 'custom'
+                                ? 'border-2 font-black text-white'
+                                : 'border border-gray-200 font-bold text-gray-600 hover:border-gray-300 bg-white'"
+                            :style="exportPeriod === 'custom' ? 'border-color: var(--brand-600); background: var(--brand-600)' : ''"
+                            class="col-span-2 py-2.5 px-3 rounded-lg text-[12px] transition-all text-center flex items-center justify-center gap-1.5">
+                            <i data-lucide="calendar-range" class="w-3.5 h-3.5"></i>
+                            Custom Date Range
+                        </button>
+                    </div>
+
+                    {{-- Custom date inputs (shown only when custom is selected) ── --}}
+                    <div x-show="exportPeriod === 'custom'" x-transition class="mt-3 grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Start Date</label>
+                            <input type="date" x-model="exportDateFrom"
+                                class="filter-input w-full text-sm"
+                                :max="exportDateTo || ''">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">End Date</label>
+                            <input type="date" x-model="exportDateTo"
+                                class="filter-input w-full text-sm"
+                                :min="exportDateFrom || ''">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Optional Filters ── --}}
+                <div>
+                    <p class="text-[11px] font-black text-gray-500 uppercase tracking-wider mb-3">Optional Filters</p>
+                    <div class="space-y-2.5">
+
+                        <select x-model="exportDeptId" class="filter-input w-full">
+                            <option value="">All Departments</option>
+                            @foreach($departments ?? [] as $dept)
+                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+
+                        <select x-model="exportStoreId" class="filter-input w-full">
+                            <option value="">All Stores</option>
+                            @foreach($stores ?? [] as $store)
+                                <option value="{{ $store->id }}">{{ $store->name }}</option>
+                            @endforeach
+                        </select>
+
+                        <select x-model="exportStatus" class="filter-input w-full">
+                            <option value="">All Statuses</option>
+                            @foreach($statusLabels as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+
+                    </div>
+                </div>
+
+            </div>
+
+            {{-- Modal Footer — Download Buttons ── --}}
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex gap-3">
+                <button type="button" @click="triggerExport('excel')"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors">
+                    <i data-lucide="table-2" class="w-4 h-4"></i>
+                    Download Excel
+                </button>
+                <button type="button" @click="triggerExport('pdf')"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    Download PDF
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     {{-- ════════ OVERRIDE MODAL ════════ --}}
     <div x-show="overrideModal" x-cloak
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -395,6 +513,41 @@
 <script>
 window.attendanceReport = function() {
     return {
+        // ── Export ──
+        exportModal:    false,
+        exportPeriod:   'today',
+        exportDateFrom: '',
+        exportDateTo:   '',
+        exportDeptId:   '',
+        exportStoreId:  '',
+        exportStatus:   '',
+
+        triggerExport(type) {
+            if (this.exportPeriod === 'custom' && (!this.exportDateFrom || !this.exportDateTo)) {
+                BizAlert.toast('Please select both start and end dates.', 'error');
+                return;
+            }
+
+            const base = type === 'pdf'
+                ? '{{ route('admin.hrm.attendance.export.pdf') }}'
+                : '{{ route('admin.hrm.attendance.export.excel') }}';
+
+            const params = new URLSearchParams({ period: this.exportPeriod });
+
+            if (this.exportPeriod === 'custom') {
+                params.set('date_from', this.exportDateFrom);
+                params.set('date_to',   this.exportDateTo);
+            }
+
+            if (this.exportDeptId)  params.set('department_id', this.exportDeptId);
+            if (this.exportStoreId) params.set('store_id',      this.exportStoreId);
+            if (this.exportStatus)  params.set('status',        this.exportStatus);
+
+            window.location.href = base + '?' + params.toString();
+            this.exportModal = false;
+        },
+
+        // ── Override ──
         overrideModal: false,
         overrideSaving: false,
         overrideId: null,

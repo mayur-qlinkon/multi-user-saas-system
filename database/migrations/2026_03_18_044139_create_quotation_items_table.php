@@ -13,7 +13,7 @@ return new class extends Migration
 
             $table->foreignId('quotation_id')->constrained()->cascadeOnDelete();
 
-            // 🛡️ Fallback Safe Relations: Set to nullOnDelete so if a product is deleted 
+            // 🛡️ Fallback Safe Relations: Set to nullOnDelete so if a product is deleted
             // 2 years from now, the old quotation item text and prices remain intact.
             $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('product_sku_id')->nullable()->constrained()->nullOnDelete();
@@ -41,7 +41,7 @@ return new class extends Migration
             $table->decimal('tax_amount', 15, 4)->default(0);
 
             $table->decimal('total_amount', 15, 4)->default(0);
-        
+
             $table->timestamps();
         });
     }

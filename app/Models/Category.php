@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use App\Traits\Tenantable;
 
 class Category extends Model
 {
@@ -44,9 +44,10 @@ class Category extends Model
      */
     public function getImageUrlAttribute()
     {
-        return $this->image ? asset('storage/' . $this->image) : asset('assets/images/default-category.png');
+        return $this->image ? asset('storage/'.$this->image) : asset('assets/images/default-category.png');
     }
-      /**
+
+    /**
      * Products in this category via pivot.
      * Ordered by featured first, then sort_order.
      */
@@ -56,12 +57,12 @@ class Category extends Model
             Product::class,
             'category_products'
         )
-        ->withPivot(['is_active', 'is_featured', 'sort_order', 'added_by'])
-        ->withTimestamps()
-        ->orderByPivot('is_featured', 'desc')
-        ->orderByPivot('sort_order', 'asc');
+            ->withPivot(['is_active', 'is_featured', 'sort_order', 'added_by'])
+            ->withTimestamps()
+            ->orderByPivot('is_featured', 'desc')
+            ->orderByPivot('sort_order', 'asc');
     }
- 
+
     /**
      * Only active products in this category (storefront use).
      */
@@ -72,13 +73,12 @@ class Category extends Model
             ->where('show_in_storefront', true)
             ->where('is_active', true);
     }
- 
+
     /**
      * Storefront sections that reference this category.
      */
     public function storefrontSections(): HasMany
     {
-        return $this->hasMany(\App\Models\StorefrontSection::class);
+        return $this->hasMany(StorefrontSection::class);
     }
- 
 }

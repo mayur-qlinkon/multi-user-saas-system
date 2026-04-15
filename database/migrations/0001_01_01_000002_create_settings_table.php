@@ -22,15 +22,15 @@ return new class extends Migration
             $table->string('key');
             $table->text('value')->nullable();
 
-            $table->string('group')->nullable(); 
+            $table->string('group')->nullable();
             // general, branding, billing, seo, social, pages
 
-            $table->string('type')->nullable();  
+            $table->string('type')->nullable();
             // text, image, json, number, boolean
 
             $table->timestamps();
 
-            $table->unique(['company_id','key']);
+            $table->unique(['company_id', 'key']);
         });
     }
 

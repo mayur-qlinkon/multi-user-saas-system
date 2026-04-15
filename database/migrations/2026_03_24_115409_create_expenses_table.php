@@ -16,15 +16,15 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users'); // Who incurred the expense
             $table->foreignId('store_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('expense_category_id')->constrained()->restrictOnDelete();            
-            
+            $table->foreignId('expense_category_id')->constrained()->restrictOnDelete();
+
             $table->string('expense_number')->unique();
             // ── Merchant & Tax Details (Crucial for Indian ITC) ──
             $table->string('currency_code', 3)->default('INR');
             $table->decimal('exchange_rate', 10, 4)->default(1);
             $table->enum('tax_type', ['cgst_sgst', 'igst', 'none'])->default('cgst_sgst');
             $table->decimal('tax_percent', 5, 2)->default(0);
-            $table->string('merchant_name'); 
+            $table->string('merchant_name');
             $table->string('merchant_gstin', 15)->nullable(); // To claim GST credit
             $table->string('reference_number')->nullable(); // Invoice or Bill number
             $table->date('expense_date');
@@ -41,13 +41,13 @@ return new class extends Migration
             // ── Workflow & Attributes ──
             $table->boolean('is_reimbursable')->default(false); // Did the employee pay out of pocket?
             $table->boolean('is_billable')->default(false); // Can we bill this to a client later?
-            
+
             // Status: draft, pending_approval, approved, rejected, reimbursed
             $table->string('status', 30)->default('pending_approval');
             $table->string('attachment')->nullable(); // bill image/pdf
             $table->enum('source', ['manual', 'pos', 'api', 'import'])->default('manual');
             $table->text('notes')->nullable();
-            
+
             $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamp('approved_at')->nullable();
 

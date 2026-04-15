@@ -148,12 +148,14 @@
                 Clear
             </a>
 
-            <button type="button" @click="generateModalOpen = true"
-                class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
-                style="background: #10b981">
-                <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
-                Generate Slips
-            </button>
+            @if(has_permission('salary_slips.generate'))
+                <button type="button" @click="generateModalOpen = true"
+                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                    style="background: #10b981">
+                    <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+                    Generate Slips
+                </button>
+            @endif
         </div>
     </form>
 
@@ -213,14 +215,16 @@
                         <td class="px-4 py-3 text-right">
                             <div class="flex items-center justify-end gap-1.5">
                                 {{-- View --}}
+                                @if(has_permission('salary_slips.view'))
                                 <a href="{{ route('admin.hrm.salary-slips.show', $slip) }}"
                                     class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors"
                                     title="View">
                                     <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                                 </a>
+                                @endif
 
                                 {{-- Approve (only for generated) --}}
-                                @if($slip->status === 'generated')
+                                @if($slip->status === 'generated' && has_permission('salary_slips.approve'))
                                 <button @click="approveSlip({{ $slip->id }})"
                                     class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-800 transition-colors"
                                     title="Approve">
@@ -229,7 +233,7 @@
                                 @endif
 
                                 {{-- Mark Paid (only for approved) --}}
-                                @if($slip->status === 'approved')
+                                @if($slip->status === 'approved'&& has_permission('salary_slips.mark_paid'))
                                 <button @click="openPayModal({{ $slip->id }})"
                                     class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-800 transition-colors"
                                     title="Mark Paid">
@@ -238,14 +242,16 @@
                                 @endif
 
                                 {{-- Download PDF --}}
+                                @if(has_permission('salary_slips.download_pdf'))
                                 <a href="{{ route('admin.hrm.salary-slips.pdf', $slip) }}" target="_blank"
                                     class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
                                     title="Download PDF">
                                     <i data-lucide="download" class="w-3.5 h-3.5"></i>
                                 </a>
+                                @endif
 
                                 {{-- Delete (not allowed for paid slips) --}}
-                                @if($slip->status !== 'paid')
+                                @if($slip->status !== 'paid'&& has_permission('salary_slips.delete'))
                                 <button @click="deleteSlip({{ $slip->id }}, $el.closest('tr'))"
                                     class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
                                     title="Delete">

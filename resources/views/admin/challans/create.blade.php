@@ -35,12 +35,13 @@
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Challan</h1>
             </div>
-            <div class="flex items-center gap-3">
+            {{-- UI Fix: Make buttons full width on mobile, auto width on screens sm+ --}}
+            <div class="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 justify-end">
                 <a href="{{ route('admin.challans.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2">Cancel</a>
                 <button type="submit" form="mainChallanForm"
                     :class="formData.status === 'dispatched' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#108c2a] hover:bg-[#0c6b1f]'"
-                    class="text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center gap-2">
+                    class="w-full sm:w-auto text-white px-8 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2">
                     <i :data-lucide="formData.status === 'dispatched' ? 'send' : 'save'" class="w-4 h-4"></i> 
                     <span x-text="formData.status === 'dispatched' ? 'Dispatch Now' : 'Save as Draft'"></span>
                 </button>
@@ -216,7 +217,7 @@
 
                         {{-- Floating Dropdown List --}}
                         <ul x-show="isPartyDropdownOpen" x-cloak x-transition
-                            class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto top-full left-0 custom-scrollbar">
+                            class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto overscroll-contain top-full left-0 custom-scrollbar">
                             
                             <li x-show="filteredPartyList.length === 0" class="px-4 py-4 text-sm text-gray-500 text-center font-medium">
                                 No matching parties found.
@@ -317,7 +318,7 @@
                             class="w-full border border-gray-300 rounded shadow-sm pl-9 pr-4 py-2.5 text-sm focus:border-brand-500 outline-none bg-white">
 
                         <ul x-show="showResults && globalSearch.length > 1" x-cloak
-                            class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto top-full left-0">
+                            class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto overscroll-contain top-full left-0 custom-scrollbar">
 
                             <li x-show="isSearching"
                                 class="px-4 py-3 text-xs text-gray-500 text-center font-medium flex items-center justify-center gap-2">
@@ -356,15 +357,15 @@
                         <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-5 py-4 min-w-[250px]">PRODUCT DETAILS</th>
-                                <th class="px-4 py-4 w-[120px] text-center">HSN/SAC</th>
+                                <th class="px-4 py-4 min-w-[100px] text-center">HSN/SAC</th>
                                 @if(batch_enabled())
-                                    <th class="px-4 py-4 w-[130px] text-center">BATCH #</th>
-                                    <th class="px-4 py-4 w-[130px] text-center">EXPIRY DATE</th>
+                                    <th class="px-4 py-4 min-w-[130px] text-center">BATCH #</th>
+                                    <th class="px-4 py-4 min-w-[130px] text-center">EXPIRY DATE</th>
                                 @endif
-                                <th class="px-4 py-4 w-[140px] text-right">UNIT PRICE</th>
-                                <th class="px-4 py-4 w-[140px] text-center">QTY</th>
-                                <th class="px-4 py-4 w-[120px] text-right">TAX %</th>
-                                <th class="px-5 py-4 w-[160px] text-right">VALUE</th>
+                                <th class="px-4 py-4 min-w-[140px] text-right">UNIT PRICE</th>
+                                <th class="px-4 py-4 min-w-[140px] text-center">QTY</th>
+                                <th class="px-4 py-4 min-w-[110px] text-right">TAX %</th>
+                                <th class="px-5 py-4 min-w-[140px] text-right">VALUE</th>
                                 <th class="px-4 py-4 w-[60px] text-center"></th>
                             </tr>
                         </thead>
@@ -372,7 +373,7 @@
                             <template x-for="(item, index) in items" :key="item.key">
                                 <tr class="hover:bg-gray-50/50 transition-colors">
                                     {{-- 1. Product Details --}}
-                                    <td class="px-5 py-3">
+                                    <td class="px-5 py-3 align-middle">
                                         <div class="text-[13px] font-bold text-gray-800 flex items-center gap-2">
                                             <span x-text="item.product_name"></span>
                                         </div>
@@ -390,62 +391,62 @@
                                     </td>
 
                                     {{-- 2. HSN/SAC Code --}}
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="px-4 py-3 text-center align-middle">
                                         <span class="text-[12px] font-mono text-gray-600" x-text="item.hsn_code || '-'"></span>
                                     </td>
 
                                     @if(batch_enabled())
-                                    {{-- 2b. Batch Number --}}
-                                    <td class="px-4 py-3">
-                                        <input type="text" :name="'items[' + index + '][batch_number]'" x-model="item.batch_number"
-                                            placeholder="e.g. BT-001"
-                                            class="w-full border border-gray-300 rounded px-2 py-2 text-[12px] font-mono focus:border-brand-500 outline-none text-gray-700">
-                                    </td>
+                                        {{-- 2b. Batch Number --}}
+                                        <td class="px-4 py-3 align-middle">
+                                            <input type="text" :name="'items[' + index + '][batch_number]'" x-model="item.batch_number"
+                                                placeholder="e.g. BT-001"
+                                                class="w-full min-w-[100px] h-10 md:h-9 border border-gray-300 rounded px-2 text-[12px] font-mono focus:border-brand-500 outline-none text-gray-700 shadow-sm transition-all bg-white">
+                                        </td>
 
-                                    {{-- 2c. Expiry Date --}}
-                                    <td class="px-4 py-3">
-                                        <input type="date" :name="'items[' + index + '][expiry_date]'" x-model="item.expiry_date"
-                                            class="w-full border border-gray-300 rounded px-2 py-2 text-[12px] focus:border-brand-500 outline-none text-gray-700">
-                                    </td>
+                                        {{-- 2c. Expiry Date --}}
+                                        <td class="px-4 py-3 align-middle">
+                                            <input type="date" :name="'items[' + index + '][expiry_date]'" x-model="item.expiry_date"
+                                                class="w-full min-w-[120px] h-10 md:h-9 border border-gray-300 rounded px-2 text-[12px] focus:border-brand-500 outline-none text-gray-700 shadow-sm transition-all bg-white">
+                                        </td>
                                     @endif
 
-                                    {{-- 3. Base Unit Price Input (Indicative for Challans) --}}
-                                    <td class="px-4 py-3">
-                                        <div class="relative">
+                                    {{-- 3. Base Unit Price Input --}}
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="relative w-full min-w-[100px]">
                                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
                                             <input type="number" step="0.01" :name="'items[' + index + '][unit_price]'" x-model="item.unit_price" @input="calculate()"
-                                                class="w-full border border-gray-300 rounded px-2 pl-7 py-2 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right">
+                                                class="w-full h-10 md:h-9 border border-gray-300 rounded px-2 pl-7 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all bg-white">
                                         </div>
                                     </td>
 
                                     {{-- 4. Quantity Input --}}
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center justify-center">
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="flex items-center justify-center min-w-[120px]">
                                             <button type="button" @click="item.qty_sent = Math.max(1, parseFloat(item.qty_sent || 0) - 1); calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">-</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">-</button>
                                             <input type="number" step="0.0001" :name="'items[' + index + '][qty_sent]'" x-model="item.qty_sent" @input="calculate()"
-                                                class="w-16 h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700">
+                                                class="w-16 h-10 md:h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700 shadow-inner">
                                             <button type="button" @click="item.qty_sent = parseFloat(item.qty_sent || 0) + 1; calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">+</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">+</button>
                                         </div>
                                     </td>
 
                                     {{-- 5. Tax Rate Input --}}
-                                    <td class="px-4 py-3">
-                                        <div class="relative">
+                                    <td class="px-4 py-3 align-middle text-right">
+                                        <div class="relative inline-block w-full min-w-[80px]">
                                             <input type="number" step="0.01" :name="'items[' + index + '][tax_rate]'" x-model="item.tax_rate" @input="calculate()"
-                                                class="w-full border border-gray-300 rounded px-2 pr-6 py-2 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right">
+                                                class="w-full h-10 md:h-9 border border-gray-300 rounded px-2 pr-6 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all bg-white">
                                             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">%</span>
                                         </div>
                                     </td>
 
                                     {{-- 6. Line Total --}}
-                                    <td class="px-5 py-3 text-right">
+                                    <td class="px-5 py-3 text-right align-middle">
                                         <span class="font-black text-gray-800 text-[14px]" x-text="formatCurrency(item.line_value)"></span>
                                     </td>
 
                                     {{-- 7. Remove Action --}}
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="px-4 py-3 text-center align-middle">
                                         <button type="button" @click="removeItem(index)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors" title="Remove Item">
                                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                                         </button>
@@ -466,7 +467,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
                 <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
                     <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-3">Notes & Reference</h3>
-                    <div class="grid grid-cols-2 gap-4">
+                    {{-- UI Fix: Stack on mobile, side-by-side on sm+ --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Purpose of Challan</label>
                             <textarea name="purpose_note" rows="2" placeholder="e.g. Sent for quality testing..."

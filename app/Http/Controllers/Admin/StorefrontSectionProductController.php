@@ -43,25 +43,25 @@ class StorefrontSectionProductController extends Controller
 
         $products = StorefrontSectionProduct::forSection($storefrontSection->id)
             ->ordered()
-            ->with(['product' => fn($q) => $q->with([
-                'media' => fn($m) => $m->where('is_primary', true)->limit(1),
-                'skus'  => fn($s) => $s->limit(1),
+            ->with(['product' => fn ($q) => $q->with([
+                'media' => fn ($m) => $m->where('is_primary', true)->limit(1),
+                'skus' => fn ($s) => $s->limit(1),
             ])])
             ->get()
-            ->map(fn($pivot) => [
-                'pivot_id'   => $pivot->id,
+            ->map(fn ($pivot) => [
+                'pivot_id' => $pivot->id,
                 'product_id' => $pivot->product_id,
                 'sort_order' => $pivot->sort_order,
-                'name'       => $pivot->product->name,
-                'image'      => $pivot->product->primary_image_url,
-                'price'      => $pivot->product->skus->first()?->price ?? 0,
-                'sku'        => $pivot->product->skus->first()?->sku ?? null,
+                'name' => $pivot->product->name,
+                'image' => $pivot->product->primary_image_url,
+                'price' => $pivot->product->skus->first()?->price ?? 0,
+                'sku' => $pivot->product->skus->first()?->sku ?? null,
             ]);
 
         return response()->json([
-            'success'  => true,
+            'success' => true,
             'products' => $products,
-            'count'    => $products->count(),
+            'count' => $products->count(),
         ]);
     }
 
@@ -73,7 +73,7 @@ class StorefrontSectionProductController extends Controller
     {
         $this->authorizeSection($storefrontSection);
 
-        $query    = trim($request->get('q', ''));        
+        $query = trim($request->get('q', ''));
 
         // Get already-assigned product IDs to exclude
         $assignedIds = StorefrontSectionProduct::forSection($storefrontSection->id)
@@ -82,30 +82,27 @@ class StorefrontSectionProductController extends Controller
 
         $products = Product::where('is_active', true)
             ->whereNotIn('id', $assignedIds)
-            ->when(strlen($query) >= 1, fn($q) =>
-                $q->where(fn($inner) =>
-                    $inner->where('name', 'like', "%{$query}%")
-                          ->orWhereHas('skus', fn($s) =>
-                              $s->where('sku', 'like', "%{$query}%")
-                          )
+            ->when(strlen($query) >= 1, fn ($q) => $q->where(fn ($inner) => $inner->where('name', 'like', "%{$query}%")
+                ->orWhereHas('skus', fn ($s) => $s->where('sku', 'like', "%{$query}%")
                 )
             )
+            )
             ->with([
-                'media' => fn($q) => $q->where('is_primary', true)->limit(1),
-                'skus'  => fn($q) => $q->limit(1),
+                'media' => fn ($q) => $q->where('is_primary', true)->limit(1),
+                'skus' => fn ($q) => $q->limit(1),
             ])
             ->limit(20)
             ->get()
-            ->map(fn($product) => [
+            ->map(fn ($product) => [
                 'product_id' => $product->id,
-                'name'       => $product->name,
-                'image'      => $product->primary_image_url,
-                'price'      => $product->skus->first()?->price ?? 0,
-                'sku'        => $product->skus->first()?->sku ?? null,
+                'name' => $product->name,
+                'image' => $product->primary_image_url,
+                'price' => $product->skus->first()?->price ?? 0,
+                'sku' => $product->skus->first()?->sku ?? null,
             ]);
 
         return response()->json([
-            'success'  => true,
+            'success' => true,
             'products' => $products,
         ]);
     }
@@ -125,7 +122,7 @@ class StorefrontSectionProductController extends Controller
         $productId = (int) $request->product_id;
 
         // Verify product belongs to same company
-        $product = Product::where('id', $productId)            
+        $product = Product::where('id', $productId)
             ->firstOrFail();
 
         $pivot = StorefrontSectionProduct::addProduct($storefrontSection->id, $productId);
@@ -133,17 +130,17 @@ class StorefrontSectionProductController extends Controller
         Log::info('[SectionProduct] Added', [
             'section_id' => $storefrontSection->id,
             'product_id' => $productId,
-            'by'         => Auth::id(),
+            'by' => Auth::id(),
         ]);
 
         return response()->json([
-            'success'    => true,
-            'message'    => "'{$product->name}' added to section.",
-            'pivot_id'   => $pivot->id,
+            'success' => true,
+            'message' => "'{$product->name}' added to section.",
+            'pivot_id' => $pivot->id,
             'product_id' => $productId,
-            'name'       => $product->name,
-            'image'      => $product->primary_image_url,
-            'price'      => $product->skus()->first()?->price ?? 0,
+            'name' => $product->name,
+            'image' => $product->primary_image_url,
+            'price' => $product->skus()->first()?->price ?? 0,
         ]);
     }
 
@@ -162,7 +159,7 @@ class StorefrontSectionProductController extends Controller
         Log::info('[SectionProduct] Removed', [
             'section_id' => $storefrontSection->id,
             'product_id' => $productId,
-            'by'         => Auth::id(),
+            'by' => Auth::id(),
         ]);
 
         return response()->json([
@@ -180,7 +177,7 @@ class StorefrontSectionProductController extends Controller
         $this->authorizeSection($storefrontSection);
 
         $request->validate([
-            'product_ids'   => 'required|array|min:1',
+            'product_ids' => 'required|array|min:1',
             'product_ids.*' => 'integer|exists:products,id',
         ]);
 
@@ -191,8 +188,8 @@ class StorefrontSectionProductController extends Controller
 
         Log::info('[SectionProduct] Reordered', [
             'section_id' => $storefrontSection->id,
-            'order'      => $request->product_ids,
-            'by'         => Auth::id(),
+            'order' => $request->product_ids,
+            'by' => Auth::id(),
         ]);
 
         return response()->json([

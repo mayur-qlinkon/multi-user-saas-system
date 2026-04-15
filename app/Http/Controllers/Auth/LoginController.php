@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Auth\AuthService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class LoginController extends Controller
 {
@@ -23,7 +24,7 @@ class LoginController extends Controller
 
     // -------------------------------------------------------
     // POST /login — Handle login form submission
-    // -------------------------------------------------------    
+    // -------------------------------------------------------
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->ensureIsNotRateLimited();
@@ -31,7 +32,7 @@ class LoginController extends Controller
         try {
 
             $user = $this->authService->login(
-                credentials: $request->only('email','password'),
+                credentials: $request->only('email', 'password'),
                 remember: $request->boolean('remember')
             );
 
@@ -47,7 +48,7 @@ class LoginController extends Controller
             | Heals the session automatically if stale.
             */
             active_store($user);
-            
+
             return redirect()->intended(
                 $this->redirectByRole($user)
             );
@@ -55,24 +56,24 @@ class LoginController extends Controller
             //     ->intended(route('dashboard'))
             //     ->with('success','Welcome back!');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
 
             $request->incrementAttempts();
 
             throw $e;
-
         }
     }
+
     private function redirectByRole($user)
     {
-        // 🌟 THE GUARDRAIL: Kick out storefront customers who found the backend door
-        if ($user->hasRole('customer')) {
+        // Block storefront customers who found the backend login door.
+        // Detection is via the client relationship — no role dependency.
+        if ($user->client) {
             Auth::logout();
             request()->session()->invalidate();
             request()->session()->regenerateToken();
-            
-            // Redirect them back to the login page with an error
-            throw \Illuminate\Validation\ValidationException::withMessages([
+
+            throw ValidationException::withMessages([
                 'email' => 'Customers must log in through their specific store URL.',
             ]);
         }
@@ -91,5 +92,4 @@ class LoginController extends Controller
 
         return route('admin.dashboard');
     }
-
 }

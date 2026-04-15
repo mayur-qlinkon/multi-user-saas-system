@@ -22,7 +22,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['company_id','slug']);
+            $table->unique(['company_id', 'slug']);
         });
 
         // 2. Permissions Table
@@ -42,7 +42,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
             $table->foreignId('permission_id')->constrained('permissions')->cascadeOnDelete();
-             $table->unique(['role_id','permission_id']);
+            $table->unique(['role_id', 'permission_id']);
         });
     }
 

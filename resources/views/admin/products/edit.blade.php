@@ -579,48 +579,140 @@
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-2">
-                    <div>
-                        <h2 class="text-lg font-bold text-gray-800">5. Product Guidance <span
-                                class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
-                        <p class="text-xs text-gray-500 mt-1">Add care instructions, setup guides, or educational info for
-                            your customers.</p>
+
+                @if(has_module('plant_education'))
+
+                    {{-- ── Plant Education: 2 fixed care fields ── --}}
+                    <div class="flex items-center gap-2.5 mb-5 border-b border-gray-100 pb-3">
+                        <i data-lucide="leaf" class="w-5 h-5 text-green-600 shrink-0"></i>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800">5. Plant Education <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
+                            <p class="text-xs text-gray-500 mt-0.5">Provide sunlight and watering care info for this plant.</p>
+                        </div>
                     </div>
-                    <button type="button" @click="addGuide()"
-                        class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
-                        <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
-                    </button>
-                </div>
 
-                <div class="space-y-4">
-                    <template x-for="(guide, index) in productGuides" :key="guide.id">
-                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
+                    @php
+                        $guideMap = collect($product->product_guide ?? [])->keyBy('title');
+                        $sunlightDesc = $guideMap->get('Sunlight')['description'] ?? '';
+                        $wateringDesc = $guideMap->get('Watering')['description'] ?? '';
+                    @endphp
 
-                            <button type="button" @click="removeGuide(index)"
-                                class="absolute top-3 right-3 text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors"
-                                title="Remove Guide">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                        {{-- Sunlight --}}
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xl">☀️</span>
+                                <label class="text-[13px] font-bold text-amber-800">Sunlight</label>
+                            </div>
+                            <input type="hidden" name="product_guide[0][title]" value="Sunlight">
+                            <input type="text" name="product_guide[0][description]"
+                                value="{{ old('product_guide.0.description', $sunlightDesc) }}"
+                                placeholder="e.g., 4–6 hours of indirect sunlight"
+                                class="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white transition-all">
+                        </div>
+
+                        {{-- Watering --}}
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xl">💧</span>
+                                <label class="text-[13px] font-bold text-blue-800">Watering</label>
+                            </div>
+                            <input type="hidden" name="product_guide[1][title]" value="Watering">
+                            <input type="text" name="product_guide[1][description]"
+                                value="{{ old('product_guide.1.description', $wateringDesc) }}"
+                                placeholder="e.g., 1–2 times a week"
+                                class="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:border-blue-400 outline-none bg-white transition-all">
+                        </div>
+
+                    </div>
+
+                    {{-- Additional Info sections (optional) — indices start at 2 after Sunlight+Watering --}}
+                    <div class="mt-5 pt-4 border-t border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <p class="text-sm font-bold text-gray-700">Additional Info <span class="text-gray-400 text-xs font-normal">(Optional)</span></p>
+                                <p class="text-xs text-gray-500 mt-0.5">Add extra care tips, fertilizing notes, repotting info, etc.</p>
+                            </div>
+                            <button type="button" @click="addGuide()"
+                                class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+                                <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
                             </button>
-
-                            <div class="grid grid-cols-1 gap-4 pr-10">
-                                <div>
-                                    <label class="block text-[12px] font-bold text-gray-700 mb-1">Section Title <span
-                                            class="text-red-500">*</span></label>
-                                    <input type="text" :name="'product_guide[' + index + '][title]'"
-                                        x-model="guide.title" required placeholder="e.g., Washing Instructions"
-                                        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-[#108c2a] outline-none transition-all bg-white">
+                        </div>
+                        <div class="space-y-3">
+                            <template x-for="(guide, index) in productGuides" :key="guide.id">
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
+                                    <button type="button" @click="removeGuide(index)"
+                                        class="absolute top-3 right-3 text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors"
+                                        title="Remove">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                    <div class="grid grid-cols-1 gap-3 pr-10">
+                                        <div>
+                                            <label class="block text-[12px] font-bold text-gray-700 mb-1">Section Title <span class="text-red-500">*</span></label>
+                                            <input type="text" :name="'product_guide[' + (index + 2) + '][title]'"
+                                                x-model="guide.title" required placeholder="e.g., Fertilizing Tips"
+                                                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-[#108c2a] outline-none transition-all bg-white">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[12px] font-bold text-gray-700 mb-1">Details <span class="text-red-500">*</span></label>
+                                            <textarea :name="'product_guide[' + (index + 2) + '][description]'" x-model="guide.description" required rows="2"
+                                                placeholder="e.g., Feed monthly during the growing season."
+                                                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-[#108c2a] outline-none transition-all resize-y bg-white"></textarea>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[12px] font-bold text-gray-700 mb-1">Details <span
-                                            class="text-red-500">*</span></label>
-                                    <textarea :name="'product_guide[' + index + '][description]'" x-model="guide.description" required rows="2"
-                                        placeholder="e.g., Machine wash cold."
-                                        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-[#108c2a] outline-none transition-all resize-y bg-white"></textarea>
+                            </template>
+                        </div>
+                    </div>
+
+                @else
+
+                    <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-2">
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800">5. Product Guidance <span
+                                    class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
+                            <p class="text-xs text-gray-500 mt-1">Add care instructions, setup guides, or educational info for
+                                your customers.</p>
+                        </div>
+                        <button type="button" @click="addGuide()"
+                            class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+                            <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <template x-for="(guide, index) in productGuides" :key="guide.id">
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
+
+                                <button type="button" @click="removeGuide(index)"
+                                    class="absolute top-3 right-3 text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors"
+                                    title="Remove Guide">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+
+                                <div class="grid grid-cols-1 gap-4 pr-10">
+                                    <div>
+                                        <label class="block text-[12px] font-bold text-gray-700 mb-1">Section Title <span
+                                                class="text-red-500">*</span></label>
+                                        <input type="text" :name="'product_guide[' + index + '][title]'"
+                                            x-model="guide.title" required placeholder="e.g., Washing Instructions"
+                                            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-[#108c2a] outline-none transition-all bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[12px] font-bold text-gray-700 mb-1">Details <span
+                                                class="text-red-500">*</span></label>
+                                        <textarea :name="'product_guide[' + index + '][description]'" x-model="guide.description" required rows="2"
+                                            placeholder="e.g., Machine wash cold."
+                                            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-[#108c2a] outline-none transition-all resize-y bg-white"></textarea>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </template>
-                </div>
+                        </template>
+                    </div>
+
+                @endif
+
             </div>
 
             <div class="flex justify-end pt-4 border-t border-gray-200">
@@ -720,9 +812,15 @@
 
                 // 🌟 Pre-load Product Guides
                 @php
+                    // When plant_education is active, Sunlight & Watering are fixed inputs (index 0 & 1).
+                    // Only load remaining additional guides into the dynamic Alpine array.
+                    $isPlantModule = has_module('plant_education');
                     $guides = old(
                         'product_guide',
                         collect($product->product_guide ?? [])
+                            ->when($isPlantModule, fn ($c) => $c->filter(
+                                fn ($g) => ! in_array($g['title'] ?? '', ['Sunlight', 'Watering'])
+                            ))
                             ->map(function ($g) {
                                 return [
                                     'id' => 'guide_' . uniqid(),

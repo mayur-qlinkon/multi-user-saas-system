@@ -24,28 +24,28 @@ class StoreChallanReturnRequest extends FormRequest
 
         return [
             // Parent: Challan Return Details
-            'challan_id'     => [
-                'required', 
-                'integer', 
-                Rule::exists('challans', 'id')->where('company_id', $companyId)
+            'challan_id' => [
+                'required',
+                'integer',
+                Rule::exists('challans', 'id')->where('company_id', $companyId),
             ],
-            'return_date'    => ['required', 'date'],
-            'received_by'    => ['nullable', 'string', 'max:255'],
+            'return_date' => ['required', 'date'],
+            'received_by' => ['nullable', 'string', 'max:255'],
             'vehicle_number' => ['nullable', 'string', 'max:20'],
-            'notes'          => ['nullable', 'string'],
-            'condition'      => ['required', 'string', Rule::in(['good', 'damaged', 'partial'])],
+            'notes' => ['nullable', 'string'],
+            'condition' => ['required', 'string', Rule::in(['good', 'damaged', 'partial'])],
 
             // Children: Return Items
-            'items'                   => ['required', 'array', 'min:1'],
+            'items' => ['required', 'array', 'min:1'],
             'items.*.challan_item_id' => ['required', 'integer', Rule::exists('challan_items', 'id')],
-            
+
             // Qty Rules
-            'items.*.qty_returned'    => ['required', 'numeric', 'min:0.01'],
-            
+            'items.*.qty_returned' => ['required', 'numeric', 'min:0.01'],
+
             // Damaged qty cannot exceed the returned qty for that specific line item
-            'items.*.qty_damaged'     => ['nullable', 'numeric', 'min:0', 'lte:items.*.qty_returned'],
-            
-            'items.*.damage_note'     => ['nullable', 'string'],
+            'items.*.qty_damaged' => ['nullable', 'numeric', 'min:0', 'lte:items.*.qty_returned'],
+
+            'items.*.damage_note' => ['nullable', 'string'],
         ];
     }
 
@@ -55,9 +55,9 @@ class StoreChallanReturnRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'items.required'             => 'You must return at least one item.',
-            'items.*.qty_returned.min'   => 'Return quantity must be greater than zero.',
-            'items.*.qty_damaged.lte'    => 'Damaged quantity cannot exceed the returned quantity.',
+            'items.required' => 'You must return at least one item.',
+            'items.*.qty_returned.min' => 'Return quantity must be greater than zero.',
+            'items.*.qty_damaged.lte' => 'Damaged quantity cannot exceed the returned quantity.',
         ];
     }
 }

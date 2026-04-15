@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Company;
 use App\Models\Page;
 use App\Services\PageService;
 use Illuminate\Http\JsonResponse;
@@ -29,9 +28,9 @@ class PageController extends Controller
     {
         $user = Auth::user();
         $companyId = $user->company_id;
-        $filters   = $request->only(['search', 'type', 'is_published', 'per_page']);
-        
-        $pages = $this->pageService->getList($companyId, $filters);                
+        $filters = $request->only(['search', 'type', 'is_published', 'per_page']);
+
+        $pages = $this->pageService->getList($companyId, $filters);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'data' => $pages]);
@@ -39,9 +38,9 @@ class PageController extends Controller
 
         return view('admin.storefront-sections.pages.index', [
             'companySlug' => $user->company->slug ?? 'default',
-            'pages'   => $pages,
+            'pages' => $pages,
             'filters' => $filters,
-            'types'   => Page::TYPES,
+            'types' => Page::TYPES,
         ]);
     }
 
@@ -66,8 +65,8 @@ class PageController extends Controller
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success'  => true,
-                    'message'  => 'Page created successfully.',
+                    'success' => true,
+                    'message' => 'Page created successfully.',
                     'redirect' => route('admin.pages.edit', $page->id),
                 ]);
             }
@@ -89,7 +88,7 @@ class PageController extends Controller
         $this->authorizePage($page);
 
         return view('admin.storefront-sections.pages.edit', [
-            'page'  => $page,
+            'page' => $page,
             'types' => Page::TYPES,
         ]);
     }
@@ -106,7 +105,7 @@ class PageController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Page updated successfully.',
-                    'data'    => $updatedPage,
+                    'data' => $updatedPage,
                 ]);
             }
 
@@ -130,9 +129,9 @@ class PageController extends Controller
             $isPublished = $this->pageService->togglePublish($page);
 
             return response()->json([
-                'success'      => true,
+                'success' => true,
                 'is_published' => $isPublished,
-                'message'      => $isPublished ? 'Page is now live.' : 'Page moved to drafts.',
+                'message' => $isPublished ? 'Page is now live.' : 'Page moved to drafts.',
             ]);
 
         } catch (Throwable $e) {
@@ -177,13 +176,13 @@ class PageController extends Controller
     private function rules(?Page $page = null): array
     {
         return [
-            'title'           => ['required', 'string', 'max:255'],
-            'slug'            => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
-            'type'            => ['required', Rule::in(array_keys(Page::TYPES))],
-            'content'         => ['nullable', 'string'],
-            'seo_title'       => ['nullable', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
+            'type' => ['required', Rule::in(array_keys(Page::TYPES))],
+            'content' => ['nullable', 'string'],
+            'seo_title' => ['nullable', 'string', 'max:255'],
             'seo_description' => ['nullable', 'string', 'max:1000'],
-            'is_published'    => ['boolean'],
+            'is_published' => ['boolean'],
         ];
     }
 
@@ -196,6 +195,7 @@ class PageController extends Controller
         if ($request->wantsJson()) {
             return response()->json(['success' => false, 'message' => $message], 500);
         }
+
         return back()->withInput()->with('error', $message);
     }
 }

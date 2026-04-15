@@ -328,11 +328,13 @@
                 <p class="text-sm text-gray-400 font-medium mt-0.5">Manage legal details, branding, billing and integrations
                 </p>
             </div>
+            @if(has_permission('settings.update'))
             <button type="button" @click="submitForm()" :disabled="isSaving" class="save-btn">
                 <i data-lucide="loader-2" x-show="isSaving" x-cloak class="w-4 h-4 animate-spin"></i>
                 <i data-lucide="save" x-show="!isSaving" class="w-4 h-4"></i>
                 <span x-text="isSaving ? 'Saving...' : 'Save Changes'"></span>
             </button>
+            @endif
         </div>
 
         {{-- ── Main Card ── --}}
@@ -982,6 +984,7 @@
                         </div>
                         @endif
 
+                        @if(has_permission('settings.clear_cache'))
                         <p class="section-title"><i data-lucide="zap" class="w-4 h-4"></i> Performance & Cache</p>
 
                         <div class="warning-zone mb-6 flex items-start gap-4">
@@ -1004,8 +1007,12 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
+                        
+                        @if(has_permission('settings.audit'))
+                        
                         <p class="section-title"><i data-lucide="history" class="w-4 h-4"></i> Audit Trail</p>
-
+                        
                         <a href="{{ route('admin.settings.audit') }}" class="banner-link-card group mb-8 block">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
@@ -1023,6 +1030,8 @@
                                     class="w-4 h-4 text-gray-300 group-hover:text-brand-600 transition-colors"></i>
                             </div>
                         </a>
+                        @endif
+
                         <p class="section-title"><i data-lucide="info" class="w-4 h-4"></i> System Information</p>
 
                         <div class="bg-gray-50 rounded-xl border border-gray-100 px-5 py-2 mb-6">
@@ -1052,6 +1061,7 @@
                             </div>
                         </div>
 
+                        @if(has_permission('settings.reset'))
                         <p class="section-title"><i data-lucide="shield-alert" class="w-4 h-4"></i> Danger Zone</p>
 
                         <div class="danger-zone">
@@ -1070,6 +1080,8 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
+
                     </div>
 
                 </div>
@@ -1108,21 +1120,21 @@
                         {{-- ── Roles Multi-Select ── --}}
                         <div>
                             <label class="field-label">Notify by Role</label>
-                            <div class="relative" @click.outside="msConfig.roles.open = false; msConfig.roles.search = ''">
+                            <div class="relative" @click.outside="msConfig.notify_new_order.roles.open = false; msConfig.notify_new_order.roles.search = ''">
 
                                 {{-- Chip container + search input --}}
                                 <div
-                                    @click="msConfig.roles.open = true; $nextTick(() => $refs.rolesSearch.focus())"
+                                    @click="msConfig.notify_new_order.roles.open = true; $nextTick(() => $refs.rolesSearch.focus())"
                                     class="field-input flex flex-wrap gap-1.5 items-center cursor-text transition-all"
                                     style="min-height:44px; padding:6px 10px;"
-                                    :class="msConfig.roles.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''"
+                                    :class="msConfig.notify_new_order.roles.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''"
                                 >
                                     {{-- Selected chips --}}
                                     <template x-for="val in notifConfig.notify_new_order.roles" :key="val">
                                         <span class="inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-1 rounded-lg leading-none flex-shrink-0"
                                             style="background:color-mix(in srgb,var(--brand-600) 12%,transparent); color:var(--brand-600);">
                                             <span x-text="msLabel('roles', val)" class="capitalize"></span>
-                                            <button type="button" @click.stop="msRemove('roles', val)"
+                                            <button type="button" @click.stop="msRemove('notify_new_order', 'roles', val)"
                                                 class="ml-0.5 opacity-60 hover:opacity-100 hover:text-red-500 transition-all leading-none">
                                                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                             </button>
@@ -1130,32 +1142,32 @@
                                     </template>
 
                                     {{-- Search input --}}
-                                    <input x-ref="rolesSearch" type="text" x-model="msConfig.roles.search"
-                                        @focus="msConfig.roles.open = true"
-                                        @keydown.escape="msConfig.roles.open = false; msConfig.roles.search = ''"
+                                    <input x-ref="rolesSearch" type="text" x-model="msConfig.notify_new_order.roles.search"
+                                        @focus="msConfig.notify_new_order.roles.open = true"
+                                        @keydown.escape="msConfig.notify_new_order.roles.open = false; msConfig.notify_new_order.roles.search = ''"
                                         class="flex-1 min-w-[80px] bg-transparent outline-none text-[13.5px] text-gray-700 placeholder-gray-400 py-0.5 px-1"
                                         :placeholder="notifConfig.notify_new_order.roles.length === 0 ? 'Search roles...' : 'Add more...'">
 
                                     <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-150"
-                                        :class="msConfig.roles.open ? 'rotate-180' : ''"></i>
+                                        :class="msConfig.notify_new_order.roles.open ? 'rotate-180' : ''"></i>
                                 </div>
 
                                 {{-- Dropdown --}}
-                                <div x-show="msConfig.roles.open" x-cloak
+                                <div x-show="msConfig.notify_new_order.roles.open" x-cloak
                                     x-transition:enter="transition ease-out duration-100"
                                     x-transition:enter-start="opacity-0 -translate-y-1 scale-y-95"
                                     x-transition:enter-end="opacity-100 translate-y-0 scale-y-100"
                                     class="absolute z-30 left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl overflow-y-auto"
                                     style="max-height:200px;">
-                                    <template x-for="opt in msFiltered('roles')" :key="opt.value">
-                                        <div @mousedown.prevent="msSelect('roles', opt.value)"
+                                    <template x-for="opt in msFiltered('notify_new_order', 'roles')" :key="opt.value">
+                                        <div @mousedown.prevent="msSelect('notify_new_order', 'roles', opt.value)"
                                             class="flex items-center gap-2 px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
                                             <span class="text-[13.5px] text-gray-700 font-medium capitalize" x-text="opt.label"></span>
                                         </div>
                                     </template>
-                                    <div x-show="msFiltered('roles').length === 0" class="px-4 py-3 text-center">
+                                    <div x-show="msFiltered('notify_new_order', 'roles').length === 0" class="px-4 py-3 text-center">
                                         <span class="text-[12px] text-gray-400 italic"
-                                            x-text="msConfig.roles.search ? 'No matching roles.' : 'All roles selected.'"></span>
+                                            x-text="msConfig.notify_new_order.roles.search ? 'No matching roles.' : 'All roles selected.'"></span>
                                     </div>
                                 </div>
                             </div>
@@ -1165,20 +1177,20 @@
                         {{-- ── Users Multi-Select ── --}}
                         <div>
                             <label class="field-label">Notify Specific Users</label>
-                            <div class="relative" @click.outside="msConfig.users.open = false; msConfig.users.search = ''">
+                            <div class="relative" @click.outside="msConfig.notify_new_order.users.open = false; msConfig.notify_new_order.users.search = ''">
 
                                 {{-- Chip container + search input --}}
                                 <div
-                                    @click="msConfig.users.open = true; $nextTick(() => $refs.usersSearch.focus())"
+                                    @click="msConfig.notify_new_order.users.open = true; $nextTick(() => $refs.usersSearch.focus())"
                                     class="field-input flex flex-wrap gap-1.5 items-center cursor-text transition-all"
                                     style="min-height:44px; padding:6px 10px;"
-                                    :class="msConfig.users.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''"
+                                    :class="msConfig.notify_new_order.users.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''"
                                 >
                                     {{-- Selected chips --}}
                                     <template x-for="val in notifConfig.notify_new_order.users" :key="val">
                                         <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-[12px] font-semibold px-2.5 py-1 rounded-lg leading-none flex-shrink-0">
                                             <span x-text="msLabel('users', val)"></span>
-                                            <button type="button" @click.stop="msRemove('users', val)"
+                                            <button type="button" @click.stop="msRemove('notify_new_order', 'users', val)"
                                                 class="ml-0.5 opacity-60 hover:opacity-100 hover:text-red-500 transition-all leading-none">
                                                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                             </button>
@@ -1186,34 +1198,34 @@
                                     </template>
 
                                     {{-- Search input --}}
-                                    <input x-ref="usersSearch" type="text" x-model="msConfig.users.search"
-                                        @focus="msConfig.users.open = true"
-                                        @keydown.escape="msConfig.users.open = false; msConfig.users.search = ''"
+                                    <input x-ref="usersSearch" type="text" x-model="msConfig.notify_new_order.users.search"
+                                        @focus="msConfig.notify_new_order.users.open = true"
+                                        @keydown.escape="msConfig.notify_new_order.users.open = false; msConfig.notify_new_order.users.search = ''"
                                         class="flex-1 min-w-[80px] bg-transparent outline-none text-[13.5px] text-gray-700 placeholder-gray-400 py-0.5 px-1"
                                         :placeholder="notifConfig.notify_new_order.users.length === 0 ? 'Search users...' : 'Add more...'">
 
                                     <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-150"
-                                        :class="msConfig.users.open ? 'rotate-180' : ''"></i>
+                                        :class="msConfig.notify_new_order.users.open ? 'rotate-180' : ''"></i>
                                 </div>
 
                                 {{-- Dropdown --}}
-                                <div x-show="msConfig.users.open" x-cloak
+                                <div x-show="msConfig.notify_new_order.users.open" x-cloak
                                     x-transition:enter="transition ease-out duration-100"
                                     x-transition:enter-start="opacity-0 -translate-y-1 scale-y-95"
                                     x-transition:enter-end="opacity-100 translate-y-0 scale-y-100"
                                     class="absolute z-30 left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl overflow-y-auto"
                                     style="max-height:200px;">
-                                    <template x-for="opt in msFiltered('users')" :key="opt.value">
-                                        <div @mousedown.prevent="msSelect('users', opt.value)"
+                                    <template x-for="opt in msFiltered('notify_new_order', 'users')" :key="opt.value">
+                                        <div @mousedown.prevent="msSelect('notify_new_order', 'users', opt.value)"
                                             class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
                                             <span class="text-[13.5px] text-gray-700 font-medium" x-text="opt.label"></span>
                                             <span x-show="opt.sub" x-text="opt.sub"
                                                 class="text-[11px] text-gray-400 capitalize ml-3 flex-shrink-0"></span>
                                         </div>
                                     </template>
-                                    <div x-show="msFiltered('users').length === 0" class="px-4 py-3 text-center">
+                                    <div x-show="msFiltered('notify_new_order', 'users').length === 0" class="px-4 py-3 text-center">
                                         <span class="text-[12px] text-gray-400 italic"
-                                            x-text="msConfig.users.search ? 'No matching users.' : 'All users selected.'"></span>
+                                            x-text="msConfig.notify_new_order.users.search ? 'No matching users.' : 'All users selected.'"></span>
                                     </div>
                                 </div>
                             </div>
@@ -1223,12 +1235,133 @@
                     </div>
                 </div>
 
+                    {{-- Event Card: Leave Requests --}}
+                    <div class="border border-gray-200 rounded-2xl mb-6">
+                        <div class="bg-gray-50/80 rounded-t-2xl px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                            <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="calendar-clock" class="w-4 h-4 text-amber-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-800">Leave Requests</h4>
+                                <p class="text-[12px] text-gray-500 mt-0.5">Triggered when an employee submits a new leave/time-off request</p>
+                            </div>
+                        </div>
+
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            {{-- ── Roles Multi-Select ── --}}
+                            <div>
+                                <label class="field-label">Notify by Role</label>
+                                <div class="relative" @click.outside="msConfig.notify_leave_request.roles.open = false; msConfig.notify_leave_request.roles.search = ''">
+
+                                    <div @click="msConfig.notify_leave_request.roles.open = true; $nextTick(() => $refs.leaveRolesSearch.focus())"
+                                        class="field-input flex flex-wrap gap-1.5 items-center cursor-text transition-all"
+                                        style="min-height:44px; padding:6px 10px;"
+                                        :class="msConfig.notify_leave_request.roles.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''">
+                                        
+                                        <template x-for="val in notifConfig.notify_leave_request.roles" :key="val">
+                                            <span class="inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-1 rounded-lg leading-none flex-shrink-0"
+                                                style="background:color-mix(in srgb,var(--brand-600) 12%,transparent); color:var(--brand-600);">
+                                                <span x-text="msLabel('roles', val)" class="capitalize"></span>
+                                                <button type="button" @click.stop="msRemove('notify_leave_request', 'roles', val)"
+                                                    class="ml-0.5 opacity-60 hover:opacity-100 hover:text-red-500 transition-all leading-none">
+                                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                </button>
+                                            </span>
+                                        </template>
+
+                                        <input x-ref="leaveRolesSearch" type="text" x-model="msConfig.notify_leave_request.roles.search"
+                                            @focus="msConfig.notify_leave_request.roles.open = true"
+                                            @keydown.escape="msConfig.notify_leave_request.roles.open = false; msConfig.notify_leave_request.roles.search = ''"
+                                            class="flex-1 min-w-[80px] bg-transparent outline-none text-[13.5px] text-gray-700 placeholder-gray-400 py-0.5 px-1"
+                                            :placeholder="notifConfig.notify_leave_request.roles.length === 0 ? 'Search roles...' : 'Add more...'">
+
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-150"
+                                            :class="msConfig.notify_leave_request.roles.open ? 'rotate-180' : ''"></i>
+                                    </div>
+
+                                    <div x-show="msConfig.notify_leave_request.roles.open" x-cloak
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 -translate-y-1 scale-y-95"
+                                        x-transition:enter-end="opacity-100 translate-y-0 scale-y-100"
+                                        class="absolute z-30 left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl overflow-y-auto"
+                                        style="max-height:200px;">
+                                        <template x-for="opt in msFiltered('notify_leave_request', 'roles')" :key="opt.value">
+                                            <div @mousedown.prevent="msSelect('notify_leave_request', 'roles', opt.value)"
+                                                class="flex items-center gap-2 px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
+                                                <span class="text-[13.5px] text-gray-700 font-medium capitalize" x-text="opt.label"></span>
+                                            </div>
+                                        </template>
+                                        <div x-show="msFiltered('notify_leave_request', 'roles').length === 0" class="px-4 py-3 text-center">
+                                            <span class="text-[12px] text-gray-400 italic" x-text="msConfig.notify_leave_request.roles.search ? 'No matching roles.' : 'All roles selected.'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-gray-400 mt-1.5">Selects all users who currently hold this role</p>
+                            </div>
+
+                            {{-- ── Users Multi-Select ── --}}
+                            <div>
+                                <label class="field-label">Notify Specific Users</label>
+                                <div class="relative" @click.outside="msConfig.notify_leave_request.users.open = false; msConfig.notify_leave_request.users.search = ''">
+
+                                    <div @click="msConfig.notify_leave_request.users.open = true; $nextTick(() => $refs.leaveUsersSearch.focus())"
+                                        class="field-input flex flex-wrap gap-1.5 items-center cursor-text transition-all"
+                                        style="min-height:44px; padding:6px 10px;"
+                                        :class="msConfig.notify_leave_request.users.open ? 'border-[var(--brand-600)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-600)_12%,transparent)]' : ''">
+                                        
+                                        <template x-for="val in notifConfig.notify_leave_request.users" :key="val">
+                                            <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-[12px] font-semibold px-2.5 py-1 rounded-lg leading-none flex-shrink-0">
+                                                <span x-text="msLabel('users', val)"></span>
+                                                <button type="button" @click.stop="msRemove('notify_leave_request', 'users', val)"
+                                                    class="ml-0.5 opacity-60 hover:opacity-100 hover:text-red-500 transition-all leading-none">
+                                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                </button>
+                                            </span>
+                                        </template>
+
+                                        <input x-ref="leaveUsersSearch" type="text" x-model="msConfig.notify_leave_request.users.search"
+                                            @focus="msConfig.notify_leave_request.users.open = true"
+                                            @keydown.escape="msConfig.notify_leave_request.users.open = false; msConfig.notify_leave_request.users.search = ''"
+                                            class="flex-1 min-w-[80px] bg-transparent outline-none text-[13.5px] text-gray-700 placeholder-gray-400 py-0.5 px-1"
+                                            :placeholder="notifConfig.notify_leave_request.users.length === 0 ? 'Search users...' : 'Add more...'">
+
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-150"
+                                            :class="msConfig.notify_leave_request.users.open ? 'rotate-180' : ''"></i>
+                                    </div>
+
+                                    <div x-show="msConfig.notify_leave_request.users.open" x-cloak
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 -translate-y-1 scale-y-95"
+                                        x-transition:enter-end="opacity-100 translate-y-0 scale-y-100"
+                                        class="absolute z-30 left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl overflow-y-auto"
+                                        style="max-height:200px;">
+                                        <template x-for="opt in msFiltered('notify_leave_request', 'users')" :key="opt.value">
+                                            <div @mousedown.prevent="msSelect('notify_leave_request', 'users', opt.value)"
+                                                class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
+                                                <span class="text-[13.5px] text-gray-700 font-medium" x-text="opt.label"></span>
+                                                <span x-show="opt.sub" x-text="opt.sub" class="text-[11px] text-gray-400 capitalize ml-3 flex-shrink-0"></span>
+                                            </div>
+                                        </template>
+                                        <div x-show="msFiltered('notify_leave_request', 'users').length === 0" class="px-4 py-3 text-center">
+                                            <span class="text-[12px] text-gray-400 italic" x-text="msConfig.notify_leave_request.users.search ? 'No matching users.' : 'All users selected.'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-gray-400 mt-1.5">Notified regardless of their role</p>
+                            </div>
+
+                        </div>
+                    </div>
+
                 <div class="flex justify-end">
+                    @if(has_permission('settings.update_notifications'))
                     <button type="button" @click="saveNotifications()" :disabled="isSavingNotif" class="save-btn">
                         <i data-lucide="loader-2" x-show="isSavingNotif" x-cloak class="w-4 h-4 animate-spin"></i>
                         <i data-lucide="bell" x-show="!isSavingNotif" class="w-4 h-4"></i>
                         <span x-text="isSavingNotif ? 'Saving...' : 'Save Notification Settings'"></span>
                     </button>
+                    @endif
                 </div>
             </div>
 
@@ -1240,11 +1373,13 @@
                     Last saved: <span
                         class="font-semibold text-gray-600">{{ get_setting('_last_saved') ?? 'Never' }}</span>
                 </p>
+                @if(has_permission('settings.update'))
                 <button type="button" @click="submitForm()" :disabled="isSaving" class="save-btn">
                     <i data-lucide="loader-2" x-show="isSaving" x-cloak class="w-4 h-4 animate-spin"></i>
                     <i data-lucide="save" x-show="!isSaving" class="w-4 h-4"></i>
                     <span x-text="isSaving ? 'Saving...' : 'Save Changes'"></span>
                 </button>
+                @endif
             </div>
 
         </div>
@@ -1265,20 +1400,28 @@
                         roles: @json(array_values($notificationConfig['notify_new_order']['roles'] ?? ['owner'])),
                         users: @json(array_map('strval', $notificationConfig['notify_new_order']['users'] ?? [])),
                     },
+                    notify_leave_request: {
+                        roles: @json(array_values($notificationConfig['notify_leave_request']['roles'] ?? ['owner'])),
+                        users: @json(array_map('strval', $notificationConfig['notify_leave_request']['users'] ?? [])),
+                    },
                 },
 
-                // Multi-select state: options are server-rendered once, search/open are runtime state.
+                // 1. The shared options (Server Data)
+                msOptions: {
+                    roles: @json($roles->map(fn ($r) => ['value' => $r->slug, 'label' => $r->name])),
+                    users: @json($users->map(fn ($u) => ['value' => (string) $u->id, 'label' => $u->name, 'sub' => $u->roles->first()?->name ?? ''])),
+                },
+
+                // 2. The UI state, separated per event
                 msConfig: {
-                    roles: {
-                        options: @json($roles->map(fn ($r) => ['value' => $r->slug, 'label' => $r->name])),
-                        search: '',
-                        open: false,
+                    notify_new_order: {
+                        roles: { search: '', open: false },
+                        users: { search: '', open: false },
                     },
-                    users: {
-                        options: @json($users->map(fn ($u) => ['value' => (string) $u->id, 'label' => $u->name, 'sub' => $u->roles->first()?->name ?? ''])),
-                        search: '',
-                        open: false,
-                    },
+                    notify_leave_request: {
+                        roles: { search: '', open: false },
+                        users: { search: '', open: false },
+                    }
                 },
 
                 tabs: [{
@@ -1375,9 +1518,10 @@
                 // All operate on notifConfig.notify_new_order[key] directly,
                 // so saveNotifications() needs zero changes.
 
-                msFiltered(key) {
-                    const { options, search } = this.msConfig[key];
-                    const selected = this.notifConfig.notify_new_order[key];
+                msFiltered(eventKey, field) {
+                    const options = this.msOptions[field];
+                    const search = this.msConfig[eventKey][field].search;
+                    const selected = this.notifConfig[eventKey][field];
                     const q = search.toLowerCase();
                     return options.filter(o =>
                         ! selected.includes(o.value) &&
@@ -1385,23 +1529,20 @@
                     );
                 },
 
-                msSelect(key, value) {
-                    if (! this.notifConfig.notify_new_order[key].includes(value)) {
-                        this.notifConfig.notify_new_order[key].push(value);
+                msSelect(eventKey, field, value) {
+                    if (! this.notifConfig[eventKey][field].includes(value)) {
+                        this.notifConfig[eventKey][field].push(value);
                     }
-                    this.msConfig[key].search = '';
-                    // Keep dropdown open — lets users pick multiple items in one flow.
+                    this.msConfig[eventKey][field].search = ''; // Clear search on select
                 },
 
-                msRemove(key, value) {
-                    this.notifConfig.notify_new_order[key] =
-                        this.notifConfig.notify_new_order[key].filter(v => v !== value);
+                msRemove(eventKey, field, value) {
+                    this.notifConfig[eventKey][field] = this.notifConfig[eventKey][field].filter(v => v !== value);
                 },
 
-                msLabel(key, value) {
-                    return this.msConfig[key].options.find(o => o.value === value)?.label ?? value;
+                msLabel(field, value) {
+                    return this.msOptions[field].find(o => o.value === value)?.label ?? value;
                 },
-
                 async saveNotifications() {
                     this.isSavingNotif = true;
                     const formData = new FormData();
@@ -1409,6 +1550,8 @@
 
                     this.notifConfig.notify_new_order.roles.forEach(r => formData.append('notify_new_order_roles[]', r));
                     this.notifConfig.notify_new_order.users.forEach(u => formData.append('notify_new_order_users[]', u));
+                    this.notifConfig.notify_leave_request.roles.forEach(r => formData.append('notify_leave_request_roles[]', r));
+                    this.notifConfig.notify_leave_request.users.forEach(u => formData.append('notify_leave_request_users[]', u));
 
                     try {
                         const res = await fetch("{{ route('admin.settings.notifications.update') }}", {

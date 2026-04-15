@@ -5,7 +5,6 @@ namespace App\Notifications\Hrm;
 use App\Models\Hrm\Announcement;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Str;
 
 class AnnouncementNotification extends Notification
 {
@@ -21,12 +20,12 @@ class AnnouncementNotification extends Notification
     public function toArray($notifiable): array
     {
         return [
-            'title'    => 'New Announcement',
-            'message'  => $this->announcement->title,
-            'link'     => route('admin.hrm.employee.dashboard'), // Redirect to their feed
-            'icon'     => 'megaphone',
-            'color'    => 'purple',
-            'type'     => 'announcement',
+            'title' => 'New Announcement',
+            'message' => $this->announcement->title,
+            'link' => route('admin.hrm.employee.dashboard'), // Redirect to their feed
+            'icon' => 'megaphone',
+            'color' => 'purple',
+            'type' => 'announcement',
             'announcement_id' => $this->announcement->id,
             'priority' => $this->announcement->priority,
         ];

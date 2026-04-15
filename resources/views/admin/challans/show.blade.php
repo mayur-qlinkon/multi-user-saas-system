@@ -49,6 +49,10 @@
     </style>
 @endpush
 
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Challan Details</h1>    
+@endsection
+
 @section('content')
     @php
         // Resolve Company and Store
@@ -86,16 +90,17 @@
                 <a href="{{ route('admin.challans.index') }}"
                     class="text-gray-500 hover:text-gray-800 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </a>
-                <h1 class="text-2xl font-bold text-[#212538] tracking-tight">Challan Details</h1>
+                </a>                
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                @if ($challan->status !== 'cancelled')
-                    <a href="{{ route('admin.challans.edit', $challan->id) }}"
-                        class="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm">
-                        <i data-lucide="pencil" class="w-4 h-4"></i> Edit
-                    </a>
+                @if(has_permission('challans.update'))
+                    @if ($challan->status !== 'cancelled')
+                        <a href="{{ route('admin.challans.edit', $challan->id) }}"
+                            class="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm">
+                            <i data-lucide="pencil" class="w-4 h-4"></i> Edit
+                        </a>
+                    @endif
                 @endif
 
                 <button onclick="window.print()"
@@ -103,10 +108,12 @@
                     <i data-lucide="printer" class="w-4 h-4"></i> Print
                 </button>
 
-                <a href="{{ route('admin.challans.pdf', $challan->id) }}" target="_blank"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm">
-                    <i data-lucide="download" class="w-4 h-4"></i> PDF
-                </a>
+                @if(has_permission('challans.download_pdf'))
+                    <a href="{{ route('admin.challans.pdf', $challan->id) }}" target="_blank"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow-sm">
+                        <i data-lucide="download" class="w-4 h-4"></i> PDF
+                    </a>
+                @endif
 
                 @php
                     $canConvert = $challan->direction === 'outward'
@@ -161,7 +168,7 @@
             <div class="p-8 md:p-12">
 
                 {{-- 🌟 HEADER: Title on Left, Company on Right --}}
-                <div class="p-8 pb-4 flex justify-between items-start">
+                <div class="p-4 md:p-8 pb-4 flex flex-col md:flex-row justify-between items-start gap-6 md:gap-0">
                     <div>
                         <div class="inline-block bg-gray-800 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest mb-3">
                             {{ $challan->type_label }}
@@ -174,7 +181,7 @@
                         </div>
                     </div>
 
-                    <div class="text-right flex flex-col items-end">
+                    <div class="text-left md:text-right flex flex-col items-start md:items-end">
                         <h2 class="text-xl font-black text-gray-900 uppercase leading-none">{{ $company->name }}</h2>
                         <div class="text-gray-600 text-[12px] mt-1 font-medium">
                             @if ($company->gst_number)
@@ -202,7 +209,8 @@
                 <div class="mx-8 border-t-2 border-gray-900"></div>
 
                 {{-- 🌟 INFO BLOCK: Billed To on Left, Metadata on Right --}}
-                <div class="p-8 grid grid-cols-2 gap-12">
+                {{-- UI Fix: 1 column on mobile, 2 columns on md+, responsive padding/gaps --}}
+                <div class="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
                     {{-- Customer Details --}}
                     <div>
                         <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">
@@ -271,7 +279,8 @@
                 </div>
 
                 {{-- 🌟 ITEMS TABLE --}}
-                <div class="overflow-x-auto mb-10 px-8">
+                {{-- UI Fix: Less padding on mobile to maximize table width --}}
+                <div class="overflow-x-auto mb-10 px-4 md:px-8">
                     <table class="w-full text-sm border-collapse">
                         <thead class="bg-gray-100 text-gray-700">
                             <tr>
@@ -326,10 +335,10 @@
                 </div>
 
                 {{-- 🌟 FINAL FIXED SUMMARY --}}
-                <div class="px-8 pb-12 flex justify-between items-start gap-10 page-break-avoid border-t border-gray-200 pt-6">
+                <div class="px-4 md:px-8 pb-12 flex flex-col md:flex-row justify-between items-start gap-8 md:gap-10 page-break-avoid border-t border-gray-200 pt-6">
 
                     {{-- Left side: Notes --}}
-                    <div class="flex-1 space-y-4">
+                    <div class="w-full md:flex-1 space-y-4">
                         @if ($challan->purpose_note)
                             <div class="text-[12px] text-gray-600">
                                 <strong class="text-gray-800 uppercase tracking-widest text-[10px]">Purpose of Challan:</strong>
@@ -346,7 +355,7 @@
                     </div>
 
                     {{-- Right side: Narrow Totals Block (Forced 300px width) --}}
-                    <div style="width: 300px;" class="flex flex-col items-end">
+                    <div class="w-full md:w-[300px] flex flex-col items-end">
                         <table class="w-full text-[13px] border-collapse">
                             {{-- Thick line for the total --}}
                             <tr class="border-t-2 border-gray-900">

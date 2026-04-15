@@ -8,6 +8,7 @@ use App\Models\CategoryProduct;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -20,7 +21,7 @@ class MerchandisingController extends Controller
     // ════════════════════════════════════════════════════
 
     public function index(Request $request): View
-    {        
+    {
 
         // All categories for the left panel — flat list with product count
         // ── Step 1: Get categories ──
@@ -35,23 +36,23 @@ class MerchandisingController extends Controller
             SUM(is_active = 1) as active_products,
             SUM(is_featured = 1) as featured_products
         ')
-        ->whereIn('category_id', $categories->pluck('id'))
-        ->groupBy('category_id')
-        ->get()
-        ->keyBy('category_id');
+            ->whereIn('category_id', $categories->pluck('id'))
+            ->groupBy('category_id')
+            ->get()
+            ->keyBy('category_id');
 
         // ── Step 3: Attach counts to each category ──
         $categories->each(function ($cat) use ($pivotCounts) {
             $counts = $pivotCounts->get($cat->id);
-            $cat->total_products    = $counts?->total_products    ?? 0;
-            $cat->active_products   = $counts?->active_products   ?? 0;
+            $cat->total_products = $counts?->total_products ?? 0;
+            $cat->active_products = $counts?->active_products ?? 0;
             $cat->featured_products = $counts?->featured_products ?? 0;
         });
 
         // If a category is pre-selected via query param
         $selectedCategory = null;
-        $assignedProducts  = collect();
-        $categoryId        = $request->integer('category');
+        $assignedProducts = collect();
+        $categoryId = $request->integer('category');
 
         if ($categoryId) {
             $selectedCategory = Category::findOrFail($categoryId);
@@ -59,7 +60,7 @@ class MerchandisingController extends Controller
             $assignedProducts = $this->getAssignedProducts($categoryId);
         }
 
-        return view('admin.merchandising.index', compact(
+        return view('admin.storefront-sections.merchandising', compact(
             'categories',
             'selectedCategory',
             'assignedProducts'
@@ -74,56 +75,56 @@ class MerchandisingController extends Controller
     public function loadCategory(Request $request, int $categoryId): JsonResponse
     {
         $companyId = Auth::user()->company_id;
-    
+
         try {
             $category = Category::where('company_id', $companyId)->findOrFail($categoryId);
-    
+
             $pivots = CategoryProduct::where('category_id', $categoryId)
                 ->with([
-                    'product' => fn($q) => $q->with([
-                        'media' => fn($q) => $q->where('is_primary', true)->limit(1),
+                    'product' => fn ($q) => $q->with([
+                        'media' => fn ($q) => $q->where('is_primary', true)->limit(1),
                     ]),
                 ])
                 ->ordered() // featured desc, sort_order asc
                 ->get();
-    
+
             // Map to a clean JSON structure Alpine can consume directly
-            $products = $pivots->map(fn($pivot) => [
-                'product_id'  => $pivot->product_id,
-                'is_active'   => $pivot->is_active,
+            $products = $pivots->map(fn ($pivot) => [
+                'product_id' => $pivot->product_id,
+                'is_active' => $pivot->is_active,
                 'is_featured' => $pivot->is_featured,
-                'sort_order'  => $pivot->sort_order,
-                'product'     => $pivot->product ? [
-                    'id'                  => $pivot->product->id,
-                    'name'                => $pivot->product->name,
-                    'hsn_code'            => $pivot->product->hsn_code,
-                    'show_in_storefront'  => $pivot->product->show_in_storefront,
-                    'primary_image_url'   => $pivot->product->primary_image_url,
+                'sort_order' => $pivot->sort_order,
+                'product' => $pivot->product ? [
+                    'id' => $pivot->product->id,
+                    'name' => $pivot->product->name,
+                    'hsn_code' => $pivot->product->hsn_code,
+                    'show_in_storefront' => $pivot->product->show_in_storefront,
+                    'primary_image_url' => $pivot->product->primary_image_url,
                 ] : null,
             ]);
-    
+
             Log::info('[Merchandising] Category loaded', [
                 'category_id' => $categoryId,
-                'count'       => $products->count(),
+                'count' => $products->count(),
             ]);
-    
+
             return response()->json([
-                'success'  => true,
+                'success' => true,
                 'products' => $products,
-                'count'    => $products->count(),
+                'count' => $products->count(),
                 'category' => [
-                    'id'   => $category->id,
+                    'id' => $category->id,
                     'name' => $category->name,
                 ],
             ]);
-    
+
         } catch (Throwable $e) {
             Log::error('[Merchandising] Load category failed', [
                 'category_id' => $categoryId,
-                'error'       => $e->getMessage(),
-                'trace'       => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
-    
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load category products.',
@@ -139,17 +140,17 @@ class MerchandisingController extends Controller
     public function searchProducts(Request $request, int $categoryId): JsonResponse
     {
         $companyId = Auth::user()->company_id;
-        $query     = trim($request->get('q', ''));
-      // ── TEMP DEBUG ──
-    $total = Product::where('company_id', $companyId)->count();
-    $active = Product::where('company_id', $companyId)->where('is_active', true)->count();
-    Log::info('[Debug] Products visible', [
-        'company_id'  => $companyId,
-        'total'       => $total,
-        'active'      => $active,
-        'search_q'    => $query,
-    ]);
-    // ── END DEBUG ──
+        $query = trim($request->get('q', ''));
+        // ── TEMP DEBUG ──
+        $total = Product::where('company_id', $companyId)->count();
+        $active = Product::where('company_id', $companyId)->where('is_active', true)->count();
+        Log::info('[Debug] Products visible', [
+            'company_id' => $companyId,
+            'total' => $total,
+            'active' => $active,
+            'search_q' => $query,
+        ]);
+        // ── END DEBUG ──
         try {
             // Get IDs already assigned to this category
             $assignedIds = CategoryProduct::where('category_id', $categoryId)
@@ -159,35 +160,34 @@ class MerchandisingController extends Controller
             $products = Product::where('company_id', $companyId)
                 ->where('is_active', true)
                 ->whereNotIn('id', $assignedIds) // exclude already assigned
-                ->when($query, fn($q) => $q->where(function ($q) use ($query) {
+                ->when($query, fn ($q) => $q->where(function ($q) use ($query) {
                     $q->where('name', 'like', "%{$query}%")
-                      ->orWhere('hsn_code', 'like', "%{$query}%");
+                        ->orWhere('hsn_code', 'like', "%{$query}%");
                 }))
-                ->with(['media' => fn($q) => $q->where('is_primary', true)->limit(1)])
+                ->with(['media' => fn ($q) => $q->where('is_primary', true)->limit(1)])
                 ->select(['id', 'name', 'hsn_code', 'is_active', 'show_in_storefront'])
                 ->limit(20)
                 ->get()
-                ->map(fn($p) => [
-                    'id'            => $p->id,
-                    'name'          => $p->name,
-                    'hsn_code'      => $p->hsn_code,
-                    'image_url'     => $p->primary_image_url,
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'hsn_code' => $p->hsn_code,
+                    'image_url' => $p->primary_image_url,
                     'in_storefront' => $p->show_in_storefront,
                 ]);
 
-
             return response()->json([
-                'success'  => true,
+                'success' => true,
                 'products' => $products,
-                'count'    => $products->count(),
-                'query'    => $query,
+                'count' => $products->count(),
+                'query' => $query,
             ]);
 
         } catch (Throwable $e) {
             Log::error('[Merchandising] Product search failed', [
                 'category_id' => $categoryId,
-                'query'       => $query,
-                'error'       => $e->getMessage(),
+                'query' => $query,
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -220,36 +220,36 @@ class MerchandisingController extends Controller
             // Attach — safe, won't duplicate
             $pivot = CategoryProduct::attachProduct(
                 categoryId: $categoryId,
-                productId:  $product->id,
+                productId: $product->id,
             );
 
             Log::info('[Merchandising] Product added to category', [
                 'category_id' => $categoryId,
-                'product_id'  => $product->id,
-                'added_by'    => Auth::id(),
+                'product_id' => $product->id,
+                'added_by' => Auth::id(),
             ]);
 
             return response()->json([
-                'success'    => true,
-                'message'    => "\"{$product->name}\" added to {$category->name}.",
-                'pivot_id'   => $pivot->id,
+                'success' => true,
+                'message' => "\"{$product->name}\" added to {$category->name}.",
+                'pivot_id' => $pivot->id,
                 'sort_order' => $pivot->sort_order,
-                'product'    => [
-                    'id'            => $product->id,
-                    'name'          => $product->name,
-                    'image_url'     => $product->primary_image_url,
+                'product' => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'image_url' => $product->primary_image_url,
                     'in_storefront' => $product->show_in_storefront,
-                    'is_active'     => $pivot->is_active,
-                    'is_featured'   => $pivot->is_featured,
-                    'sort_order'    => $pivot->sort_order,
+                    'is_active' => $pivot->is_active,
+                    'is_featured' => $pivot->is_featured,
+                    'sort_order' => $pivot->sort_order,
                 ],
             ]);
 
         } catch (Throwable $e) {
             Log::error('[Merchandising] Add product failed', [
                 'category_id' => $categoryId,
-                'product_id'  => $request->input('product_id'),
-                'error'       => $e->getMessage(),
+                'product_id' => $request->input('product_id'),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -274,7 +274,7 @@ class MerchandisingController extends Controller
 
             $removed = CategoryProduct::detachProduct($categoryId, $productId);
 
-            if (!$removed) {
+            if (! $removed) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Product was not in this category.',
@@ -283,8 +283,8 @@ class MerchandisingController extends Controller
 
             Log::info('[Merchandising] Product removed from category', [
                 'category_id' => $categoryId,
-                'product_id'  => $productId,
-                'removed_by'  => Auth::id(),
+                'product_id' => $productId,
+                'removed_by' => Auth::id(),
             ]);
 
             return response()->json([
@@ -295,8 +295,8 @@ class MerchandisingController extends Controller
         } catch (Throwable $e) {
             Log::error('[Merchandising] Remove product failed', [
                 'category_id' => $categoryId,
-                'product_id'  => $productId,
-                'error'       => $e->getMessage(),
+                'product_id' => $productId,
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -313,7 +313,7 @@ class MerchandisingController extends Controller
     public function reorder(Request $request, int $categoryId): JsonResponse
     {
         $request->validate([
-            'product_ids'   => 'required|array|min:1',
+            'product_ids' => 'required|array|min:1',
             'product_ids.*' => 'integer|exists:products,id',
         ]);
 
@@ -326,8 +326,8 @@ class MerchandisingController extends Controller
 
             Log::info('[Merchandising] Products reordered', [
                 'category_id' => $categoryId,
-                'count'       => count($request->input('product_ids')),
-                'by'          => Auth::id(),
+                'count' => count($request->input('product_ids')),
+                'by' => Auth::id(),
             ]);
 
             return response()->json([
@@ -338,7 +338,7 @@ class MerchandisingController extends Controller
         } catch (Throwable $e) {
             Log::error('[Merchandising] Reorder failed', [
                 'category_id' => $categoryId,
-                'error'       => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -363,19 +363,19 @@ class MerchandisingController extends Controller
                 ->where('product_id', $productId)
                 ->firstOrFail();
 
-            $pivot->update(['is_featured' => !$pivot->is_featured]);
+            $pivot->update(['is_featured' => ! $pivot->is_featured]);
 
             Log::info('[Merchandising] Featured toggled', [
                 'category_id' => $categoryId,
-                'product_id'  => $productId,
+                'product_id' => $productId,
                 'is_featured' => $pivot->is_featured,
-                'by'          => Auth::id(),
+                'by' => Auth::id(),
             ]);
 
             return response()->json([
-                'success'     => true,
+                'success' => true,
                 'is_featured' => $pivot->is_featured,
-                'message'     => $pivot->is_featured
+                'message' => $pivot->is_featured
                     ? 'Product marked as featured.'
                     : 'Product unfeatured.',
             ]);
@@ -383,8 +383,8 @@ class MerchandisingController extends Controller
         } catch (Throwable $e) {
             Log::error('[Merchandising] Toggle featured failed', [
                 'category_id' => $categoryId,
-                'product_id'  => $productId,
-                'error'       => $e->getMessage(),
+                'product_id' => $productId,
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -409,19 +409,19 @@ class MerchandisingController extends Controller
                 ->where('product_id', $productId)
                 ->firstOrFail();
 
-            $pivot->update(['is_active' => !$pivot->is_active]);
+            $pivot->update(['is_active' => ! $pivot->is_active]);
 
             Log::info('[Merchandising] Visibility toggled', [
                 'category_id' => $categoryId,
-                'product_id'  => $productId,
-                'is_active'   => $pivot->is_active,
-                'by'          => Auth::id(),
+                'product_id' => $productId,
+                'is_active' => $pivot->is_active,
+                'by' => Auth::id(),
             ]);
 
             return response()->json([
-                'success'   => true,
+                'success' => true,
                 'is_active' => $pivot->is_active,
-                'message'   => $pivot->is_active
+                'message' => $pivot->is_active
                     ? 'Product visible in this category.'
                     : 'Product hidden from this category.',
             ]);
@@ -429,8 +429,8 @@ class MerchandisingController extends Controller
         } catch (Throwable $e) {
             Log::error('[Merchandising] Toggle active failed', [
                 'category_id' => $categoryId,
-                'product_id'  => $productId,
-                'error'       => $e->getMessage(),
+                'product_id' => $productId,
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -448,27 +448,27 @@ class MerchandisingController extends Controller
      * Get all products assigned to a category, ordered correctly.
      * Featured first, then by sort_order.
      */
-    private function getAssignedProducts(int $categoryId): \Illuminate\Support\Collection
+    private function getAssignedProducts(int $categoryId): Collection
     {
         return CategoryProduct::where('category_id', $categoryId)
             ->with([
-                'product' => fn($q) => $q->with([
-                    'media' => fn($q) => $q->where('is_primary', true)->limit(1),
+                'product' => fn ($q) => $q->with([
+                    'media' => fn ($q) => $q->where('is_primary', true)->limit(1),
                 ]),
             ])
             ->ordered()
             ->get()
-            ->map(fn($pivot) => [
-                'product_id'  => $pivot->product_id,
-                'is_active'   => $pivot->is_active,
+            ->map(fn ($pivot) => [
+                'product_id' => $pivot->product_id,
+                'is_active' => $pivot->is_active,
                 'is_featured' => $pivot->is_featured,
-                'sort_order'  => $pivot->sort_order,
-                'product'     => $pivot->product ? [
-                    'id'                 => $pivot->product->id,
-                    'name'               => $pivot->product->name,
-                    'hsn_code'           => $pivot->product->hsn_code,
+                'sort_order' => $pivot->sort_order,
+                'product' => $pivot->product ? [
+                    'id' => $pivot->product->id,
+                    'name' => $pivot->product->name,
+                    'hsn_code' => $pivot->product->hsn_code,
                     'show_in_storefront' => $pivot->product->show_in_storefront,
-                    'primary_image_url'  => $pivot->product->primary_image_url,
+                    'primary_image_url' => $pivot->product->primary_image_url,
                 ] : null,
             ]);
     }

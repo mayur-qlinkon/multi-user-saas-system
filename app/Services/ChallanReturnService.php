@@ -3,11 +3,10 @@
 namespace App\Services;
 
 use App\Models\Challan;
-use App\Models\ChallanReturn;
 use App\Models\ChallanItem;
-use Illuminate\Support\Facades\DB;
+use App\Models\ChallanReturn;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use LogicException;
 
@@ -23,15 +22,15 @@ class ChallanReturnService
      * Safely creates a new Challan Return, updates parent challan item quantities,
      * recalculates the main challan status, and processes inventory movements.
      *
-     * @param array $data Validated data from StoreChallanReturnRequest
-     * @return ChallanReturn
+     * @param  array  $data  Validated data from StoreChallanReturnRequest
+     *
      * @throws \Exception
      */
     public function processReturn(array $data): ChallanReturn
     {
         return DB::transaction(function () use ($data) {
             $companyId = Auth::user()->company_id;
-            $userId    = Auth::id();
+            $userId = Auth::id();
 
             // 1. Isolate Items Data
             $itemsData = $data['items'] ?? [];
@@ -43,21 +42,21 @@ class ChallanReturnService
                 ->firstOrFail();
 
             // 🛡️ Pre-flight Check: Cannot return against an invalid challan type
-            if (!$challan->is_returnable) {
+            if (! $challan->is_returnable) {
                 throw new LogicException("Challan #{$challan->challan_number} is not marked as returnable.");
             }
 
             // 3. Create Return Header
             $data['return_number'] = ChallanReturn::generateNumber($companyId);
-            $data['company_id']    = $companyId;
-            $data['created_by']    = $userId;
+            $data['company_id'] = $companyId;
+            $data['created_by'] = $userId;
 
             $challanReturn = ChallanReturn::create($data);
 
             // 4. Process Line Items
             foreach ($itemsData as $itemData) {
                 $qtyReturned = (float) $itemData['qty_returned'];
-                $qtyDamaged  = (float) ($itemData['qty_damaged'] ?? 0);
+                $qtyDamaged = (float) ($itemData['qty_damaged'] ?? 0);
 
                 if ($qtyReturned <= 0) {
                     continue; // Skip empty rows
@@ -78,15 +77,15 @@ class ChallanReturnService
                 // Create the Return Line Item
                 $challanReturn->items()->create([
                     'challan_item_id' => $challanItem->id,
-                    'qty_returned'    => $qtyReturned,
-                    'qty_damaged'     => $qtyDamaged,
-                    'damage_note'     => $itemData['damage_note'] ?? null,
+                    'qty_returned' => $qtyReturned,
+                    'qty_damaged' => $qtyDamaged,
+                    'damage_note' => $itemData['damage_note'] ?? null,
                 ]);
             }
 
             // 5. Trigger the Model's Business Logic (Updates parent items and recalculates status)
             $challanReturn->refresh();
-            $challanReturn->process();            
+            $challanReturn->process();
 
             return $challanReturn->load('items.challanItem');
         });
@@ -96,22 +95,20 @@ class ChallanReturnService
      * Updates editable fields on a Challan Return.
      * Note: Quantities and structural relationships are strictly locked.
      *
-     * @param ChallanReturn $return
-     * @param array $data Validated data from UpdateChallanReturnRequest
-     * @return ChallanReturn
+     * @param  array  $data  Validated data from UpdateChallanReturnRequest
      */
     public function updateReturn(ChallanReturn $return, array $data): ChallanReturn
     {
         return DB::transaction(function () use ($return, $data) {
-            
+
             // 1. Update Header (Only allowed fields)
             $headerUpdates = array_intersect_key($data, array_flip(['received_by', 'notes', 'condition']));
-            if (!empty($headerUpdates)) {
+            if (! empty($headerUpdates)) {
                 $return->update($headerUpdates);
             }
 
             // 2. Update Item Notes (If provided)
-            if (!empty($data['items'])) {
+            if (! empty($data['items'])) {
                 foreach ($data['items'] as $itemData) {
                     if (isset($itemData['id']) && isset($itemData['damage_note'])) {
                         $return->items()
@@ -124,5 +121,4 @@ class ChallanReturnService
             return $return->fresh(['items.challanItem']);
         });
     }
-  
 }

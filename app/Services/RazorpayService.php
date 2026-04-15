@@ -10,11 +10,12 @@ use Razorpay\Api\Errors\SignatureVerificationError;
 class RazorpayService
 {
     protected Api $api;
+
     protected string $keyId;
 
     /**
      * Dynamically initialize the Razorpay API.
-     * By passing keys through the constructor, this service can process payments 
+     * By passing keys through the constructor, this service can process payments
      * for the Super Admin OR for a specific Tenant, depending on which keys you feed it!
      */
     public function __construct(string $keyId, string $keySecret)
@@ -48,19 +49,19 @@ class RazorpayService
             $amountInPaise = (int) round($amount * 100);
 
             $orderData = [
-                'receipt'         => $receiptId,
-                'amount'          => $amountInPaise,
-                'currency'        => $currency,
+                'receipt' => $receiptId,
+                'amount' => $amountInPaise,
+                'currency' => $currency,
                 'payment_capture' => 1, // 1 = Auto-capture payment immediately
-                'notes'           => $notes
+                'notes' => $notes,
             ];
 
             $razorpayOrder = $this->api->order->create($orderData);
 
             Log::info('[RazorpayService] Order Created Successfully', [
                 'receipt_id' => $receiptId,
-                'order_id'   => $razorpayOrder['id'],
-                'amount'     => $amount
+                'order_id' => $razorpayOrder['id'],
+                'amount' => $amount,
             ]);
 
             return $razorpayOrder;
@@ -68,11 +69,11 @@ class RazorpayService
         } catch (Exception $e) {
             Log::error('[RazorpayService] Order Creation Failed', [
                 'receipt_id' => $receiptId,
-                'amount'     => $amount,
-                'error'      => $e->getMessage()
+                'amount' => $amount,
+                'error' => $e->getMessage(),
             ]);
-            
-            throw new Exception('Failed to initialize payment gateway. ' . $e->getMessage());
+
+            throw new Exception('Failed to initialize payment gateway. '.$e->getMessage());
         }
     }
 
@@ -84,22 +85,22 @@ class RazorpayService
     {
         try {
             $attributes = [
-                'razorpay_order_id'   => $orderId,
+                'razorpay_order_id' => $orderId,
                 'razorpay_payment_id' => $paymentId,
-                'razorpay_signature'  => $signature
+                'razorpay_signature' => $signature,
             ];
 
             $this->api->utility->verifyPaymentSignature($attributes);
-            
+
             return true;
 
         } catch (SignatureVerificationError $e) {
             Log::warning('[RazorpayService] Signature Verification Failed! Potential spoofing attempt.', [
-                'order_id'   => $orderId,
+                'order_id' => $orderId,
                 'payment_id' => $paymentId,
-                'error'      => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
-            
+
             return false;
         }
     }
@@ -114,8 +115,9 @@ class RazorpayService
         } catch (Exception $e) {
             Log::error('[RazorpayService] Failed to fetch payment details', [
                 'payment_id' => $paymentId,
-                'error'      => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }

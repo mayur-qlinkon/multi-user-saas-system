@@ -2,22 +2,25 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Traits\Tenantable;
 use App\Models\User;
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkLog extends Model
 {
-    use Tenantable, SoftDeletes;
+    use SoftDeletes, Tenantable;
 
     // ── Constants ──
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_SUBMITTED = 'submitted';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_REJECTED = 'rejected';
 
     const STATUS_LABELS = [

@@ -207,20 +207,26 @@
                                 {{-- Actions --}}
                                 <td class="px-6 py-4 text-right">
                                     <div
-                                        class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        class="flex items-center justify-end gap-2 transition-opacity">
+
+                                        @if(has_permission('invoice_returns.view'))
                                         <a href="{{ route('admin.invoice-returns.show', $return->id) }}"
                                             class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                             title="View Credit Note">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
+                                        @endif
 
                                         @if ($return->status === 'draft')
+                                            @if(has_permission('invoice_returns.update'))
                                             <a href="{{ route('admin.invoice-returns.edit', $return->id) }}"
                                                 class="w-8 h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
                                                 title="Edit Draft">
                                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                                             </a>
+                                            @endif
 
+                                            @if(has_permission('invoice_returns.delete'))
                                             <form action="{{ route('admin.invoice-returns.destroy', $return->id) }}"
                                                 method="POST" class="inline-block"
                                                 onsubmit="event.preventDefault(); BizAlert.confirm('Delete Draft?', 'Are you sure you want to delete this draft credit note?').then((result) => { if(result.isConfirmed) this.submit(); });">
@@ -232,6 +238,7 @@
                                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                 </button>
                                             </form>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>

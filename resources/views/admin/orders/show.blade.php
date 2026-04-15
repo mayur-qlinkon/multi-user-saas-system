@@ -220,7 +220,7 @@
                 <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
 
                     {{-- Confirm ── --}}
-                    @if(in_array($order->status, ['inquiry']))
+                    @if(in_array($order->status, ['inquiry']) && has_permission('orders.change_status'))
                         <button @click="updateStatus('confirmed')"
                             :disabled="loading"
                             class="action-btn action-btn-primary">
@@ -230,7 +230,7 @@
                     @endif
 
                     {{-- Mark Processing ── --}}
-                    @if(in_array($order->status, ['confirmed']))
+                    @if(in_array($order->status, ['confirmed']) && has_permission('orders.change_status'))
                         <button @click="updateStatus('processing')"
                             :disabled="loading"
                             class="action-btn action-btn-outline">
@@ -240,7 +240,7 @@
                     @endif
 
                     {{-- Mark Shipped ── --}}
-                    @if(in_array($order->status, ['confirmed', 'processing']))
+                    @if(in_array($order->status, ['confirmed', 'processing']) && has_permission('orders.change_status'))
                         <button @click="updateStatus('shipped')"
                             :disabled="loading"
                             class="action-btn action-btn-outline">
@@ -250,7 +250,7 @@
                     @endif
 
                     {{-- Mark Delivered ── --}}
-                    @if(in_array($order->status, ['shipped', 'out_for_delivery']))
+                    @if(in_array($order->status, ['shipped', 'out_for_delivery']) && has_permission('orders.change_status'))
                         <button @click="updateStatus('delivered')"
                             :disabled="loading"
                             class="action-btn action-btn-outline">
@@ -259,28 +259,34 @@
                         </button>
                     @endif
 
+                    @if(has_permission('orders.download_receipt'))
                    <a href="{{ route('admin.orders.receipt', $order->id) }}"
                         target="_blank"
                         class="action-btn action-btn-outline">
                         <i data-lucide="file-down" class="w-4 h-4 text-gray-500"></i>
                         Download Receipt
                     </a>
-                    {{-- Mark as Paid ── --}}
-                    @if($order->payment_status !== 'paid')
-                        <button @click="paymentModal = true"
-                            class="action-btn action-btn-outline"
-                            style="color: #15803d; border-color: #86efac;">
-                            <i data-lucide="indian-rupee" class="w-4 h-4"></i>
-                            Record Payment
-                        </button>
-                    @else
-                        <span class="action-btn text-green-700 bg-green-50 border border-green-200 cursor-default">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i>
-                            Paid
-                        </span>
                     @endif
+
+                    {{-- Mark as Paid ── --}}
+                    @if(has_permission('orders.record_payment'))
+                        @if($order->payment_status !== 'paid')
+                            <button @click="paymentModal = true"
+                                class="action-btn action-btn-outline"
+                                style="color: #15803d; border-color: #86efac;">
+                                <i data-lucide="indian-rupee" class="w-4 h-4"></i>
+                                Record Payment
+                            </button>
+                        @else
+                            <span class="action-btn text-green-700 bg-green-50 border border-green-200 cursor-default">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                Paid
+                            </span>
+                        @endif
+                    @endif
+
                     {{-- Cancel ── --}}
-                    @if($order->is_cancellable)
+                    @if($order->is_cancellable && has_permission('orders.cancel'))                        
                         <button @click="cancelModal = true"
                             class="action-btn action-btn-danger ml-auto">
                             <i data-lucide="x-circle" class="w-4 h-4"></i>
@@ -390,6 +396,7 @@
             @endif
 
             {{-- ── Admin Notes ── --}}
+            @if(has_permission('orders.add_note'))
             <div class="detail-card" x-data="{ editing: false, note: '{{ addslashes($order->admin_notes ?? '') }}', saving: false }">
                 <p class="card-title">
                     <i data-lucide="file-text" class="w-4 h-4"></i>
@@ -423,6 +430,7 @@
                     </div>
                 </template>
             </div>
+            @endif
 
             {{-- ── Status History Timeline ── --}}
             @if($order->statusHistory->isNotEmpty())
@@ -486,6 +494,7 @@
         <div class="space-y-4">
 
             {{-- ── Update Status ── --}}
+            @if(has_permission('orders.change_status'))
             <div class="detail-card">
                 <p class="card-title">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
@@ -519,6 +528,7 @@
                     </button>
                 </div>
             </div>
+            @endif
 
             {{-- ── Customer Info ── --}}
             <div class="detail-card">

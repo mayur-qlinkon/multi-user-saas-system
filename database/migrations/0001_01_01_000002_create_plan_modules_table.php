@@ -22,7 +22,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->unique(['plan_id','module_id']);
+            $table->unique(['plan_id', 'module_id']);
         });
     }
 

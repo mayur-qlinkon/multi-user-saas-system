@@ -483,13 +483,19 @@
                 <nav id="sidebar-nav" class="flex-1 overflow-y-auto nav-scroll py-3 px-2.5 space-y-0.5">
 
                     <div class="nav-section-label">Operations</div>
+                    
+                    @if(has_permission('dashboard.view'))
+                        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ $navCls('admin.dashboard') }}">
+                            <span class="flex items-center gap-3"><i data-lucide="home"
+                                    class="nav-icon w-[18px] h-[18px]"></i> Dashboard</span>
+                        </a>
+                    @endif
 
-                    {{-- Dashboard: employees with HRM module see their own dashboard, others see admin dashboard --}}
+                    
                     @if(has_module('hrm') && auth()->user()->employee)
                         <a href="{{ route('admin.hrm.employee.dashboard') }}"
                             class="nav-item {{ $navCls('admin.hrm.employee.dashboard') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="home"
-                                    class="nav-icon w-[18px] h-[18px]"></i> Dashboard</span>
+                            <span class="flex items-center gap-3"><i data-lucide="user-circle" class="nav-icon w-[18px] h-[18px]"></i></i> My Dashboard</span>
                         </a>
 
                         {{-- Employee self-service links --}}
@@ -521,12 +527,7 @@
                             class="nav-item {{ $navCls('admin.hrm.my-salary-slips.*') }}">
                             <span class="flex items-center gap-3"><i data-lucide="banknote"
                                     class="nav-icon w-[18px] h-[18px]"></i> My Salary Slips</span>
-                        </a>
-                    @else
-                        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ $navCls('admin.dashboard') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="home"
-                                    class="nav-icon w-[18px] h-[18px]"></i> Dashboard</span>
-                        </a>
+                        </a>                                           
                     @endif
 
                     @if (has_module('inquiry') && has_permission('inquiries.view'))
@@ -540,8 +541,8 @@
 
                     {{-- Challans --}}
                     @if (has_module('challan') && has_permission('challans.view'))
-                        <div class="acc-group" data-open="{{ $accOpen('admin.challans.*') }}">
-                            <button class="nav-item acc-trigger {{ $navCls('admin.challans.*') }}">
+                        <div class="acc-group" data-open="{{ $accOpen(['admin.challans.*','admin.challan-returns.*']) }}">
+                            <button class="nav-item acc-trigger {{ $navCls(['admin.challans.*','admin.challan-returns.*']) }}">
                                 <span class="flex items-center gap-3">
                                     <i data-lucide="file-text" class="nav-icon w-[18px] h-[18px]"></i> Challans
                                 </span>
@@ -558,12 +559,12 @@
                                     </a>
 
                                     {{-- Returns --}}
-                                    @if (has_permission('challans.returns'))
+                                    
                                         <a href="{{ route('admin.challan-returns.index') }}" class="sub-item {{ $subCls('admin.challan-returns.*') }} flex items-center gap-2">
                                             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                                             Returns
                                         </a>
-                                    @endif
+                                    
 
                                 </div>
                             </div>
@@ -712,9 +713,8 @@
                             </div>
                         </div>
                     @endif
-
-                    {{-- 🌟 NEW: Inventory Report Link --}}
-                    @if (has_module('inventory'))
+                    {{-- 🌟 NEW: Inventory Report Link --}}                    
+                    @if (has_module('inventory') && has_permission('reports.view'))
                         <a href="{{ route('admin.inventory.reports.index') }}"
                             class="nav-item {{ $navCls('admin.inventory.reports.*') }}">
                             <span class="flex items-center gap-3">
@@ -737,7 +737,7 @@
 
                     
                     {{-- CRM --}}
-                    @if (has_module('crm') && has_permission(['crm_leads.view', 'crm_pipelines.view', 'crm_sources.view', 'crm_tags.view']))
+                    @if (has_module('crm') && has_permission(['crm_leads.view', 'crm_sources.view', 'crm_tags.view']))
                         <div class="nav-section-label">Relationships</div>                        
                         
                         <div class="acc-group" data-open="{{ $accOpen(['admin.crm.*']) }}">
@@ -750,12 +750,16 @@
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
+                                    @if(has_permission('crm_dashboard.view'))
                                      <a href="{{ route('admin.crm.dashboard') }}"
                                         class="sub-item {{ $subCls('admin.crm.dashboard') }}">Dashboard</a>
+                                    @endif
                                     <a href="{{ route('admin.crm.leads.index') }}"
                                         class="sub-item {{ $subCls('admin.crm.leads.*') }}">All Leads</a>
+                                    @if(has_permission('crm_pipelines.view'))
                                     <a href="{{ route('admin.crm.pipelines.index') }}"
                                         class="sub-item {{ $subCls('admin.crm.pipelines.*') }}">Pipelines</a>
+                                    @endif
                                     <a href="{{ route('admin.crm.sources.index') }}"
                                         class="sub-item {{ $subCls('admin.crm.sources.*') }}">Lead Sources</a>
                                     <a href="{{ route('admin.crm.tags.index') }}?tab=tags"
@@ -765,44 +769,46 @@
                         </div>
                     @endif
 
-                    {{-- Peoples --}}
-                    @if (has_permission(['clients.view', 'suppliers.view']))
-                        <div class="acc-group"
-                            data-open="{{ $accOpen(['admin.clients.*', 'admin.suppliers.*']) }}">
-                            <button
-                                class="nav-item acc-trigger {{ $navCls(['admin.clients.*', 'admin.suppliers.*']) }}">
-                                <span class="flex items-center gap-3">
-                                    <i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Contacts
-                                </span>
-                                <i data-lucide="chevron-right" class="nav-chevron"></i>
-                            </button>
-                            <div class="acc-wrap">
-                                <div class="sub-menu">
-                                    @if (has_permission('clients.view'))
-                                        <a href="{{ route('admin.clients.index') }}"
-                                            class="sub-item {{ $subCls('admin.clients.*') }}">Clients</a>
-                                    @endif
-                                    @if (has_permission('suppliers.view'))
-                                        <a href="{{ route('admin.suppliers.index') }}"
-                                            class="sub-item {{ $subCls('admin.suppliers.*') }}">Suppliers</a>
-                                    @endif                                    
-                                </div>
+                    {{-- Peoples --}}                    
+                    <div class="acc-group"
+                        data-open="{{ $accOpen(['admin.clients.*', 'admin.suppliers.*']) }}">
+                        @if(has_permission('clients.view')||has_permission('suppliers.view'))
+                        <button
+                            class="nav-item acc-trigger {{ $navCls(['admin.clients.*', 'admin.suppliers.*']) }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Contacts
+                            </span>
+                            <i data-lucide="chevron-right" class="nav-chevron"></i>
+                        </button>
+                        @endif
+                        <div class="acc-wrap">
+                            <div class="sub-menu">
+                                @if (has_permission('clients.view'))
+                                    <a href="{{ route('admin.clients.index') }}"
+                                        class="sub-item {{ $subCls('admin.clients.*') }}">Clients</a>
+                                @endif
+                                @if (has_permission('suppliers.view'))
+                                    <a href="{{ route('admin.suppliers.index') }}"
+                                        class="sub-item {{ $subCls('admin.suppliers.*') }}">Suppliers</a>
+                                @endif                                    
                             </div>
                         </div>
-                    @endif
+                    </div>                    
                     
                     
                     {{-- HRM --}}
-                    @if (has_module('hrm'))
-                    @if(has_permission('hrm.view'))
+                    @if (has_module('hrm') && has_permission('hrm.view'))                    
                     <div class="nav-section-label">Team</div>
                     
                          {{-- Announcements --}}
-                        <a href="{{ route('admin.hrm.announcements.index') }}" class="nav-item {{ $navCls('admin.hrm.announcements.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="megaphone" class="nav-icon w-[18px] h-[18px]"></i> Announcements</span>
-                        </a> 
+                         @if(has_permission('announcements.view'))
+                            <a href="{{ route('admin.hrm.announcements.index') }}" class="nav-item {{ $navCls('admin.hrm.announcements.*') }}">
+                                <span class="flex items-center gap-3"><i data-lucide="megaphone" class="nav-icon w-[18px] h-[18px]"></i> Announcements</span>
+                            </a> 
+                        @endif
                         
                         {{-- Attendance --}}
+                        @if(has_permission('attendance.view'))
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*']) }}">
                             <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*']) }}">
                                 <span class="flex items-center gap-3"><i data-lucide="clock" class="nav-icon w-[18px] h-[18px]"></i> Attendance</span>
@@ -811,23 +817,33 @@
                             <div class="acc-wrap">
                                 <div class="sub-menu">
                                     <a href="{{ route('admin.hrm.attendance.today') }}" class="sub-item {{ $subCls('admin.hrm.attendance.today') }}">Today</a>
-                                    <a href="{{ route('admin.hrm.attendance.report') }}" class="sub-item {{ $subCls('admin.hrm.attendance.report') }}">Report</a>
-                                    <a href="{{ route('admin.hrm.office-locations.index') }}" class="sub-item {{ $subCls('admin.hrm.office-locations.*') }}">Office Locations</a>                                    
+                                    @if(has_permission('attendance.report'))
+                                        <a href="{{ route('admin.hrm.attendance.report') }}" class="sub-item {{ $subCls('admin.hrm.attendance.report') }}">Report</a>
+                                    @endif
+                                    @if(has_permission('office_locations.view'))
+                                        <a href="{{ route('admin.hrm.office-locations.index') }}" class="sub-item {{ $subCls('admin.hrm.office-locations.*') }}">Office Locations</a>                                    
+                                    @endif
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         
                         {{-- Tasks --}}
-                        <a href="{{ route('admin.hrm.tasks.index') }}" class="nav-item {{ $navCls('admin.hrm.tasks.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="check-square" class="nav-icon w-[18px] h-[18px]"></i> Tasks</span>
-                        </a>
+                        @if(has_permission('hrm_tasks.view'))
+                            <a href="{{ route('admin.hrm.tasks.index') }}" class="nav-item {{ $navCls('admin.hrm.tasks.*') }}">
+                                <span class="flex items-center gap-3"><i data-lucide="check-square" class="nav-icon w-[18px] h-[18px]"></i> Tasks</span>
+                            </a>
+                        @endif
                          {{-- Work Logs --}}
-                        <a href="{{ route('admin.hrm.work-logs.index') }}" class="nav-item {{ $navCls('admin.hrm.work-logs.*') }}">
-                            <span class="flex items-center gap-3"><i data-lucide="timer" class="nav-icon w-[18px] h-[18px]"></i> Work Logs</span>
-                        </a>  
+                        @if(has_permission('work_logs.view'))
+                            <a href="{{ route('admin.hrm.work-logs.index') }}" class="nav-item {{ $navCls('admin.hrm.work-logs.*') }}">
+                                <span class="flex items-center gap-3"><i data-lucide="timer" class="nav-icon w-[18px] h-[18px]"></i> Work Logs</span>
+                            </a>  
+                        @endif
 
                         {{-- Leaves --}}
+                        @if(has_permission('leaves.view'))
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*']) }}">
                             <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*']) }}">
                                 <span class="flex items-center gap-3"><i data-lucide="calendar-off" class="nav-icon w-[18px] h-[18px]"></i> Leaves</span>
@@ -841,25 +857,32 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
-                         {{-- Payroll --}}
+                        {{-- Payroll --}}
+                        @if(has_permission('salary_slips.view'))
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*']) }}">
-                                <span class="flex items-center gap-3"><i data-lucide="banknote" class="nav-icon w-[18px] h-[18px]"></i> Payroll</span>
-                                <i data-lucide="chevron-right" class="nav-chevron"></i>
-                            </button>
-                            <div class="acc-wrap">
-                                <div class="sub-menu">
-                                    <a href="{{ route('admin.hrm.salary-slips.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-slips.*') }}">Salary Slips</a>
-                                    <a href="{{ route('admin.hrm.salary-components.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-components.*') }}">Components</a>
+                             <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*']) }}">
+                                 <span class="flex items-center gap-3"><i data-lucide="banknote" class="nav-icon w-[18px] h-[18px]"></i> Payroll</span>
+                                 <i data-lucide="chevron-right" class="nav-chevron"></i>
+                                </button>
+                                <div class="acc-wrap">
+                                    <div class="sub-menu">                                        
+                                            <a href="{{ route('admin.hrm.salary-slips.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-slips.*') }}">Salary Slips</a>                                        
+                                        @if(has_permission('salary_components.view'))
+                                            <a href="{{ route('admin.hrm.salary-components.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-components.*') }}">Components</a>
+                                        @endif
+                                    </div>
                                 </div>
-                            </div>
                         </div>
+                        @endif
 
                         {{-- Employees --}}
+                        @if(has_permission('employees.view'))
                         <a href="{{ route('admin.hrm.employees.index') }}" class="nav-item {{ $navCls('admin.hrm.employees.*') }}">
                             <span class="flex items-center gap-3"><i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Employees</span>
                         </a>
+                        @endif
                                                                  
                         {{-- Setup --}}
                         <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*']) }}">
@@ -869,17 +892,25 @@
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.hrm.departments.index') }}" class="sub-item {{ $subCls('admin.hrm.departments.*') }}">Departments</a>
-                                    <a href="{{ route('admin.hrm.designations.index') }}" class="sub-item {{ $subCls('admin.hrm.designations.*') }}">Designations</a>
-                                    <a href="{{ route('admin.hrm.shifts.index') }}" class="sub-item {{ $subCls('admin.hrm.shifts.*') }}">Shifts</a>
-                                    <a href="{{ route('admin.hrm.holidays.index') }}" class="sub-item {{ $subCls('admin.hrm.holidays.*') }}">Holidays</a>
-                                    <a href="{{ route('admin.hrm.attendance-rules.index') }}" class="sub-item {{ $subCls('admin.hrm.attendance-rules.*') }}">Attendance Rules</a>
+                                    @if(has_permission('departments.view'))
+                                        <a href="{{ route('admin.hrm.departments.index') }}" class="sub-item {{ $subCls('admin.hrm.departments.*') }}">Departments</a>
+                                    @endif
+                                    @if(has_permission('designations.view'))
+                                        <a href="{{ route('admin.hrm.designations.index') }}" class="sub-item {{ $subCls('admin.hrm.designations.*') }}">Designations</a>
+                                    @endif
+                                    @if(has_permission('shifts.view'))
+                                        <a href="{{ route('admin.hrm.shifts.index') }}" class="sub-item {{ $subCls('admin.hrm.shifts.*') }}">Shifts</a>
+                                    @endif
+                                    @if(has_permission('holidays.view'))
+                                        <a href="{{ route('admin.hrm.holidays.index') }}" class="sub-item {{ $subCls('admin.hrm.holidays.*') }}">Holidays</a>
+                                    @endif
+                                    @if(has_permission('attendance_rules.view'))
+                                        <a href="{{ route('admin.hrm.attendance-rules.index') }}" class="sub-item {{ $subCls('admin.hrm.attendance-rules.*') }}">Attendance Rules</a>
+                                    @endif
                                 </div>
                             </div>
                         </div>                                               
-
-                    @endif
-                    @endif
+                    @endif                    
 
 
                     
@@ -896,7 +927,7 @@
                     @endif
                                      
                     
-                    @if (has_module('storefront') && has_permission('merchandising.view'))
+                    @if (has_module('storefront') && has_permission('storefront_sections.view'))
                         <a href="{{ route('admin.merchandising.index') }}"
                             class="nav-item {{ $navCls('admin.merchandising.*') }}">
                             <span class="flex items-center gap-3">
@@ -917,7 +948,7 @@
                         </a>
                     @endif
                         
-                    @if (has_module('storefront') && has_permission('storefront_sections.view'))
+                    @if (has_module('storefront') && has_permission('pages.view'))
                         <a href="{{ route('admin.pages.index') }}"
                             class="nav-item {{ $navCls('admin.pages.*') }}">
                             <span class="flex items-center gap-3">
@@ -926,11 +957,21 @@
                             </span>
                         </a>
                     @endif
+
+                    @if (has_module('storefront') && has_permission('banners.view'))
+                        <a href="{{ route('admin.banners.index') }}"
+                            class="nav-item {{ $navCls('admin.banners.*') }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="paint-roller" class="nav-icon w-[18px] h-[18px]"></i>
+                                Storefront Banners
+                            </span>
+                        </a>
+                    @endif
                     
                     <div class="nav-section-label">System</div>
 
 
-                    @if (has_permission('payment-methods.view'))
+                    @if (has_permission('payment_methods.view'))
                         <a href="{{ route('admin.payment-methods.index') }}"
                             class="nav-item {{ $navCls('admin.payment-methods.*') }}">
                             <span class="flex items-center gap-3">
@@ -939,6 +980,7 @@
                             </span>
                         </a>
                     @endif
+
                     @if (has_permission('roles.view'))
                         <a href="{{ route('admin.roles.index') }}" class="nav-item {{ $navCls('admin.roles.*') }}">
                             <span class="flex items-center gap-3">
@@ -957,10 +999,19 @@
                         </a>                                        
                     @endif
 
+                    @if (has_module('bulk_import') && has_permission('bulk_import.view'))
+                        <a href="{{ route('admin.bulk-import.index') }}"
+                            class="nav-item {{ $navCls(['admin.bulk-import.*']) }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="pickaxe" class="nav-icon w-[18px] h-[18px]"></i>
+                                Bulk Import
+                            </span>
+                        </a>
+                    @endif
 
                     @if (has_permission('settings.view'))
                         <a href="{{ route('admin.settings.index') }}"
-                            class="nav-item {{ $navCls(['admin.settings.*', 'admin.banners.*']) }}">
+                            class="nav-item {{ $navCls(['admin.settings.*']) }}">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="settings" class="nav-icon w-[18px] h-[18px]"></i>
                                 Settings
@@ -1698,7 +1749,7 @@
                 </div>
             </template>
         </div>
-
+        <audio id="qlinkon-notif-audio" src="{{ asset('assets/audio/notification.mp3') }}" preload="auto" style="display:none;"></audio>
         <script>
         window.announcementPopup = function() {
             return {
@@ -1855,19 +1906,51 @@
             }
         </style>
 
-        <script>
+        <script>            
             window.notificationBell = function () {
                 return {
                     open:          false,
+                    _timer:        null,
+                    audioPlayer:   null,
                     unreadCount:   @json($unreadCount),
                     notifications: @json($notifItems),
                     latestId:      @json($notifLatestId),
-                    _timer:        null,
+                    allowedNotify: @json(get_setting('notify_new_order')),
+                    userRole: @json(auth()->user()->roles->pluck('name')),
+                    userId: @json(auth()->id()),                    
 
                     init() {
-                        this._renderIcons();
-                        this._timer = setInterval(() => this._poll(), 30_000);
-                    },
+                            this._renderIcons();
+                            this.audioPlayer = new Audio('{{ asset('assets/audio/notification.mp3') }}');
+                            this.audioPlayer.preload = 'auto';
+
+                            // 🌟 ROOT FIX: Browser Autoplay Policy Audio Unlocker
+                            // This silently plays/pauses the audio on the user's first click, 
+                            // permanently unlocking the audio object for your background interval.
+                            const unlockAudio = () => {
+                                this.audioPlayer.volume = 0; // Mute it so they don't hear a blip
+                                let playPromise = this.audioPlayer.play();
+                                
+                                if (playPromise !== undefined) {
+                                    playPromise.then(() => {
+                                        this.audioPlayer.pause();
+                                        this.audioPlayer.currentTime = 0;
+                                        this.audioPlayer.volume = 1; // Unmute for the real notifications
+                                    }).catch(() => {
+                                        // Silently handle exceptions if the browser is being overly strict
+                                    });
+                                }
+                            };
+
+                            // Attach to the first time the user touches the page anywhere
+                            document.addEventListener('click', unlockAudio, { once: true });
+                            document.addEventListener('keydown', unlockAudio, { once: true });
+                            document.addEventListener('touchstart', unlockAudio, { once: true });
+
+                            this._timer = setInterval(() => this._poll(), 30_000);
+                        },
+
+
 
                     // ── Polling ──────────────────────────────────────────────
                     async _poll() {
@@ -1900,6 +1983,45 @@
                         } catch (_) { /* network blip — silently ignore */ }
                     },
 
+                   // ── Check Permissions (With Diagnostics) ─────────────────
+                    _canPlaySound() {
+                        let settings = this.allowedNotify;
+                        if (typeof settings === 'string') {
+                            try { settings = JSON.parse(settings); } catch (e) { return false; }
+                        }
+                        
+                        if (!settings) {
+                            console.log('🔇 AUDIO BLOCKED: No settings found in allowedNotify.');
+                            return false;
+                        }
+
+                        // 1. Check User ID
+                        let allowedUsers = settings.users || [];
+                        if (typeof allowedUsers === 'object' && !Array.isArray(allowedUsers) && allowedUsers !== null) allowedUsers = Object.values(allowedUsers);
+                        else if (!Array.isArray(allowedUsers)) allowedUsers = [allowedUsers];
+                        
+                        allowedUsers = allowedUsers.map(id => parseInt(id, 10));
+                        const currentUserId = parseInt(this.userId, 10);
+
+                        console.log('🔍 Checking User ID -> Current:', currentUserId, 'Allowed:', allowedUsers);
+                        if (allowedUsers.includes(currentUserId)) return true;
+
+                        // 2. Check Roles
+                        let allowedRoles = settings.roles || [];
+                        if (typeof allowedRoles === 'object' && !Array.isArray(allowedRoles) && allowedRoles !== null) allowedRoles = Object.values(allowedRoles);
+                        else if (!Array.isArray(allowedRoles)) allowedRoles = [allowedRoles];
+
+                        let currentRoles = this.userRole || [];
+                        if (!Array.isArray(currentRoles)) currentRoles = [currentRoles];
+
+                        console.log('🔍 Checking Roles -> Current:', currentRoles, 'Allowed:', allowedRoles);
+                        
+                        return currentRoles.some(role => {
+                            let roleName = (typeof role === 'object' && role !== null) ? role.name : role;
+                            return allowedRoles.includes(roleName);
+                        });
+                    },
+
                     // ── New-notification alert ───────────────────────────────
                     _notify(item) {
                         const title = item?.title ?? 'New Notification';
@@ -1908,13 +2030,36 @@
                         if (typeof BizAlert !== 'undefined' && BizAlert.toast) {
                             BizAlert.toast(title + (msg ? ': ' + msg : ''), 'info');
                         }
-                        
-                        // Play sound from assets if the browser allows it.
-                        try {
-                            // Make sure the path matches your actual file name and location
-                            const audio = new Audio('{{ asset('assets/audio/notification.wav') }}');
-                            audio.play().catch(e => console.warn('Audio auto-play blocked by browser', e));
-                        } catch (_) { /* audio not available */ }
+
+                        console.log('🔔 Toast triggered. Attempting to play sound...');
+
+                        if (this._canPlaySound()) {
+                            const audioEl = document.getElementById('qlinkon-notif-audio');
+                            
+                            if (!audioEl) {
+                                console.error('❌ AUDIO ERROR: <audio id="qlinkon-notif-audio"> element not found in the HTML!');
+                                return;
+                            }
+
+                            try {
+                                audioEl.currentTime = 0;
+                                audioEl.volume = 1;
+                                let playPromise = audioEl.play();
+                                
+                                if (playPromise !== undefined) {
+                                    playPromise.then(() => {
+                                        console.log('✅ 🎵 SOUND PLAYED SUCCESSFULLY!');
+                                    }).catch(error => {
+                                        console.error('🚫 BROWSER BLOCKED AUDIO:', error.message);
+                                        console.warn('👉 Fix: You must click somewhere on the page before the 30s timer fires.');
+                                    });
+                                }
+                            } catch (err) {
+                                console.error('❌ AUDIO EXECUTION ERROR:', err);
+                            }
+                        } else {
+                            console.log('🔇 SOUND DENIED: User does not have permission based on settings.');
+                        }
                     },
 
                     // ── Lucide icon renderer ─────────────────────────────────

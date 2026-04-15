@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Hrm;
 
+use App\Exports\AttendanceCalendarExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Hrm\ScanAttendanceRequest;
 use App\Models\Hrm\Attendance;
@@ -9,17 +10,23 @@ use App\Models\Hrm\Department;
 use App\Models\Hrm\Employee;
 use App\Models\Store;
 use App\Services\Hrm\AnnouncementService;
+use App\Services\Hrm\AttendanceExportService;
 use App\Services\Hrm\AttendanceService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AttendanceController extends Controller
 {
     public function __construct(
         protected AttendanceService $attendanceService,
-        protected AnnouncementService $announcementService
+        protected AnnouncementService $announcementService,
+        protected AttendanceExportService $exportService,
     ) {}
 
     public function scan(ScanAttendanceRequest $request): JsonResponse
@@ -94,6 +101,73 @@ class AttendanceController extends Controller
 
         return view('admin.hrm.attendance.report', compact('report', 'employees', 'departments', 'stores', 'filters'));
     }
+
+    // ── Export Excel ──
+
+    public function exportExcel(Request $request): BinaryFileResponse
+    {
+        $period = $request->input('period', 'today');
+        $filters = $request->only(['department_id', 'store_id', 'status', 'employee_id']);
+        $resolved = $this->exportService->resolvePeriod($period, $request->input('date_from'), $request->input('date_to'));
+        $filters = array_merge($filters, [
+            'date_from' => $resolved['date_from'],
+            'date_to' => $resolved['date_to'],
+        ]);
+
+        $companyId = $request->user()->company_id;
+        $company = $request->user()->company;
+        $dates = $this->exportService->buildDateRange($resolved['date_from'], $resolved['date_to']);
+        $data = $this->exportService->buildCalendarData($companyId, $filters);
+        $filename = 'attendance-'.$period.'-'.now()->format('Y-m-d').'.xlsx';
+
+        return Excel::download(
+            new AttendanceCalendarExport(
+                company: $company,
+                employees: $data['employees'],
+                attendanceLookup: $data['lookup'],
+                dates: $dates,
+                periodLabel: $resolved['label'],
+                periodType: $period,
+            ),
+            $filename
+        );
+    }
+
+    // ── Export PDF ──
+
+    public function exportPdf(Request $request): Response
+    {
+        $period = $request->input('period', 'today');
+        $filters = $request->only(['department_id', 'store_id', 'status', 'employee_id']);
+        $resolved = $this->exportService->resolvePeriod($period, $request->input('date_from'), $request->input('date_to'));
+        $filters = array_merge($filters, [
+            'date_from' => $resolved['date_from'],
+            'date_to' => $resolved['date_to'],
+        ]);
+
+        $records = $this->exportService->buildQuery($request->user()->company_id, $filters)->get();
+
+        $summary = [
+            'total' => $records->count(),
+            'present' => $records->where('status', 'present')->count(),
+            'late' => $records->where('status', 'late')->count(),
+            'absent' => $records->where('status', 'absent')->count(),
+            'half_day' => $records->where('status', 'half_day')->count(),
+            'on_leave' => $records->where('status', 'on_leave')->count(),
+        ];
+
+        $pdf = Pdf::loadView('admin.hrm.attendance.pdf-export', [
+            'records' => $records,
+            'summary' => $summary,
+            'periodLabel' => $resolved['label'],
+            'company' => $request->user()->company,
+            'generatedAt' => now()->format('d M Y, h:i A'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('attendance-'.$period.'-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    // ── Override ──
 
     public function override(Request $request, Attendance $attendance): JsonResponse
     {

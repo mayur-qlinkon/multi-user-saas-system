@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Services\RazorpayService;
+use Illuminate\Http\Request;
 
 class RazorpayTestController extends Controller
 {
     // ── Replace these with your Razorpay TEST mode keys ──
     private $testKeyId = 'rzp_test_RiIVAOjtlNfEVU';
+
     private $testSecret = 'Ba66D20j6P6bduAs6wPAh16d';
 
     public function index()
@@ -17,13 +18,13 @@ class RazorpayTestController extends Controller
         $rzp = new RazorpayService($this->testKeyId, $this->testSecret);
 
         // 2. Create a dummy order for ₹1.00 (1 rupee)
-        $order = $rzp->createOrder(1.00, 'TEST_RECEIPT_' . rand(1000, 9999));
+        $order = $rzp->createOrder(1.00, 'TEST_RECEIPT_'.rand(1000, 9999));
 
         // 3. Pass the data to our dummy blade
         return view('tools.razorpay-test', [
-            'keyId'         => $this->testKeyId,
-            'orderId'       => $order['id'],
-            'internalOrder' => 'DUMMY-' . rand(100, 999)
+            'keyId' => $this->testKeyId,
+            'orderId' => $order['id'],
+            'internalOrder' => 'DUMMY-'.rand(100, 999),
         ]);
     }
 
@@ -42,6 +43,6 @@ class RazorpayTestController extends Controller
             return response("<h1>🎉 SUCCESS!</h1> <p>Payment Verified. Order: {$request->order_number}</p> <p>Payment ID: {$request->razorpay_payment_id}</p>");
         }
 
-        return response("<h1>❌ FAILED!</h1> <p>Invalid signature. Spoofing attempt detected.</p>", 400);
+        return response('<h1>❌ FAILED!</h1> <p>Invalid signature. Spoofing attempt detected.</p>', 400);
     }
 }

@@ -119,6 +119,7 @@
 
                     {{-- Actions --}}
                     <div class="flex items-center gap-2">
+                        @if(has_permission('office_locations.update'))
                         <button @click="saveLocation({{ $store->id }})" :disabled="saving"
                             class="flex-1 inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg text-white hover:opacity-90 transition-opacity disabled:opacity-50"
                             style="background: var(--brand-600)">
@@ -135,7 +136,9 @@
                                 </span>
                             </template>
                         </button>
+                        @endif
 
+                        @if(has_permission('office_locations.generate_qr'))
                         <button @click="generateQr({{ $store->id }}, '{{ $store->name }}')"
                             :disabled="qrLoading"
                             class="inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg border-2 border-green-500 text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"
@@ -150,6 +153,7 @@
                                 <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                             </template>
                         </button>
+                        @endif
 
                         {{-- Open in Maps --}}
                         <a :href="form.office_lat && form.office_lng ? `https://maps.google.com/?q=${form.office_lat},${form.office_lng}` : '#'"

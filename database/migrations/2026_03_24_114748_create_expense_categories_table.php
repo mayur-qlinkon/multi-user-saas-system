@@ -30,8 +30,8 @@ return new class extends Migration
             $table->enum('gst_type', [
                 'taxable',
                 'non_taxable',
-                'exempt'
-                ])->default('taxable');
+                'exempt',
+            ])->default('taxable');
             // 🌟 Indian Market Specific: SAC/HSN Code for accounting
             $table->string('account_code')->nullable(); // e.g., EXP-001
             $table->string('hsn_sac_code', 20)->nullable();

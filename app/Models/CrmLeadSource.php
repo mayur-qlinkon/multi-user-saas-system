@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class CrmLeadSource extends Model
 {
@@ -20,7 +20,7 @@ class CrmLeadSource extends Model
     ];
 
     protected $casts = [
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
 

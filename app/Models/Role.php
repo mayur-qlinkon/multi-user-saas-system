@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
-use App\Traits\Tenantable;
 
 class Role extends Model
 {
     use Tenantable;
-    protected $fillable = ['company_id','name', 'slug'];
+
+    protected $fillable = ['company_id', 'name', 'slug'];
 
     protected static function boot()
     {

@@ -14,6 +14,7 @@ class UpdateClientRequest extends FormRequest
     {
         // Optional: Ensure the client belongs to the user's company before allowing update
         $client = $this->route('client'); // Assumes your route parameter is {client}
+
         return $client && $client->company_id === $this->user()->company_id;
     }
 
@@ -26,11 +27,11 @@ class UpdateClientRequest extends FormRequest
         $clientId = $this->route('client')->id ?? null; // Get the ID from the route
 
         return [
-            'name'              => ['required', 'string', 'max:255'],
-            'client_code'       => ['nullable', 'string', 'max:255'],
-            'company_name'      => ['nullable', 'string', 'max:255'],
-            'email'             => ['nullable', 'email', 'max:255'],
-            
+            'name' => ['required', 'string', 'max:255'],
+            'client_code' => ['nullable', 'string', 'max:255'],
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+
             // 🌟 STRICT PHONE VALIDATION: Ignore THIS specific client's ID
             'phone' => [
                 'nullable',
@@ -39,18 +40,18 @@ class UpdateClientRequest extends FormRequest
                 Rule::unique('clients', 'phone')
                     ->where('company_id', $companyId)
                     ->whereNull('deleted_at')
-                    ->ignore($clientId)
+                    ->ignore($clientId),
             ],
-            
-            'gst_number'        => ['nullable', 'string', 'max:30'],
+
+            'gst_number' => ['nullable', 'string', 'max:30'],
             'registration_type' => ['required', 'string', 'max:255'],
-            'address'           => ['nullable', 'string'],
-            'city'              => ['nullable', 'string', 'max:100'],
-            'state_id'          => ['nullable', 'exists:states,id'],
-            'zip_code'          => ['nullable', 'string', 'max:20'],
-            'country'           => ['nullable', 'string', 'max:100'],
-            'notes'             => ['nullable', 'string'],
-            'is_active'         => ['boolean'],
+            'address' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state_id' => ['nullable', 'exists:states,id'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
         ];
     }
 

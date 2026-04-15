@@ -2,102 +2,118 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
-use App\Models\User;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Announcement extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     // ── Status ──
-    const STATUS_DRAFT     = 'draft';
+    const STATUS_DRAFT = 'draft';
+
     const STATUS_SCHEDULED = 'scheduled';
+
     const STATUS_PUBLISHED = 'published';
-    const STATUS_EXPIRED   = 'expired';
+
+    const STATUS_EXPIRED = 'expired';
 
     // ── Type ──
-    const TYPE_GENERAL     = 'general';
-    const TYPE_POLICY      = 'policy';
-    const TYPE_EVENT       = 'event';
-    const TYPE_HOLIDAY     = 'holiday';
-    const TYPE_URGENT      = 'urgent';
+    const TYPE_GENERAL = 'general';
+
+    const TYPE_POLICY = 'policy';
+
+    const TYPE_EVENT = 'event';
+
+    const TYPE_HOLIDAY = 'holiday';
+
+    const TYPE_URGENT = 'urgent';
+
     const TYPE_CELEBRATION = 'celebration';
 
     // ── Priority ──
-    const PRIORITY_LOW      = 'low';
-    const PRIORITY_NORMAL   = 'normal';
-    const PRIORITY_HIGH     = 'high';
+    const PRIORITY_LOW = 'low';
+
+    const PRIORITY_NORMAL = 'normal';
+
+    const PRIORITY_HIGH = 'high';
+
     const PRIORITY_CRITICAL = 'critical';
 
     // ── Target ──
-    const TARGET_ALL         = 'all';
-    const TARGET_DEPARTMENT  = 'department';
-    const TARGET_STORE       = 'store';
+    const TARGET_ALL = 'all';
+
+    const TARGET_DEPARTMENT = 'department';
+
+    const TARGET_STORE = 'store';
+
     const TARGET_DESIGNATION = 'designation';
-    const TARGET_ROLE        = 'role';
-    const TARGET_USERS       = 'users';
+
+    const TARGET_ROLE = 'role';
+
+    const TARGET_USERS = 'users';
 
     const TARGET_LABELS = [
-        self::TARGET_ALL         => 'All Members',
-        self::TARGET_DEPARTMENT  => 'Specific Departments',
-        self::TARGET_STORE       => 'Specific Stores',
+        self::TARGET_ALL => 'All Members',
+        self::TARGET_DEPARTMENT => 'Specific Departments',
+        self::TARGET_STORE => 'Specific Stores',
         self::TARGET_DESIGNATION => 'Specific Designations',
-        self::TARGET_ROLE        => 'Specific Roles',
-        self::TARGET_USERS       => 'Specific Users',
+        self::TARGET_ROLE => 'Specific Roles',
+        self::TARGET_USERS => 'Specific Users',
     ];
 
     // ── Labels ──
     const STATUS_LABELS = [
-        self::STATUS_DRAFT     => 'Draft',
+        self::STATUS_DRAFT => 'Draft',
         self::STATUS_SCHEDULED => 'Scheduled',
         self::STATUS_PUBLISHED => 'Published',
-        self::STATUS_EXPIRED   => 'Expired',
+        self::STATUS_EXPIRED => 'Expired',
     ];
 
     const TYPE_LABELS = [
-        self::TYPE_GENERAL     => 'General',
-        self::TYPE_POLICY      => 'Policy',
-        self::TYPE_EVENT       => 'Event',
-        self::TYPE_HOLIDAY     => 'Holiday',
-        self::TYPE_URGENT      => 'Urgent',
+        self::TYPE_GENERAL => 'General',
+        self::TYPE_POLICY => 'Policy',
+        self::TYPE_EVENT => 'Event',
+        self::TYPE_HOLIDAY => 'Holiday',
+        self::TYPE_URGENT => 'Urgent',
         self::TYPE_CELEBRATION => 'Celebration',
     ];
 
     const PRIORITY_LABELS = [
-        self::PRIORITY_LOW      => 'Low',
-        self::PRIORITY_NORMAL   => 'Normal',
-        self::PRIORITY_HIGH     => 'High',
+        self::PRIORITY_LOW => 'Low',
+        self::PRIORITY_NORMAL => 'Normal',
+        self::PRIORITY_HIGH => 'High',
         self::PRIORITY_CRITICAL => 'Critical',
     ];
 
     // ── Colors ──
     const STATUS_BADGE = [
-        self::STATUS_DRAFT     => 'secondary',
+        self::STATUS_DRAFT => 'secondary',
         self::STATUS_SCHEDULED => 'info',
         self::STATUS_PUBLISHED => 'success',
-        self::STATUS_EXPIRED   => 'danger',
+        self::STATUS_EXPIRED => 'danger',
     ];
 
     const TYPE_COLORS = [
-        self::TYPE_GENERAL     => ['bg' => '#f3f4f6', 'text' => '#374151'],
-        self::TYPE_POLICY      => ['bg' => '#eff6ff', 'text' => '#1e40af'],
-        self::TYPE_EVENT       => ['bg' => '#f0fdf4', 'text' => '#166534'],
-        self::TYPE_HOLIDAY     => ['bg' => '#fdf4ff', 'text' => '#86198f'],
-        self::TYPE_URGENT      => ['bg' => '#fef2f2', 'text' => '#991b1b'],
+        self::TYPE_GENERAL => ['bg' => '#f3f4f6', 'text' => '#374151'],
+        self::TYPE_POLICY => ['bg' => '#eff6ff', 'text' => '#1e40af'],
+        self::TYPE_EVENT => ['bg' => '#f0fdf4', 'text' => '#166534'],
+        self::TYPE_HOLIDAY => ['bg' => '#fdf4ff', 'text' => '#86198f'],
+        self::TYPE_URGENT => ['bg' => '#fef2f2', 'text' => '#991b1b'],
         self::TYPE_CELEBRATION => ['bg' => '#fffbeb', 'text' => '#92400e'],
     ];
 
     const PRIORITY_BADGE = [
-        self::PRIORITY_LOW      => 'secondary',
-        self::PRIORITY_NORMAL   => 'primary',
-        self::PRIORITY_HIGH     => 'warning',
+        self::PRIORITY_LOW => 'secondary',
+        self::PRIORITY_NORMAL => 'primary',
+        self::PRIORITY_HIGH => 'warning',
         self::PRIORITY_CRITICAL => 'danger',
     ];
 
@@ -113,12 +129,12 @@ class Announcement extends Model
     ];
 
     protected $casts = [
-        'target_ids'               => 'array',
-        'publish_at'               => 'datetime',
-        'expire_at'                => 'datetime',
-        'published_at'             => 'datetime',
+        'target_ids' => 'array',
+        'publish_at' => 'datetime',
+        'expire_at' => 'datetime',
+        'published_at' => 'datetime',
         'requires_acknowledgement' => 'boolean',
-        'is_pinned'                => 'boolean',
+        'is_pinned' => 'boolean',
     ];
 
     // ── Activity Log ──
@@ -129,7 +145,7 @@ class Announcement extends Model
             ->logOnly(['title', 'type', 'priority', 'status', 'target_audience', 'is_pinned'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Announcement '{$this->title}' was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Announcement '{$this->title}' was {$event}");
     }
 
     // ── Relationships ──
@@ -184,8 +200,8 @@ class Announcement extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_PUBLISHED)
-            ->where(fn($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
-            ->where(fn($q) => $q->whereNull('expire_at')->orWhere('expire_at', '>', now()));
+            ->where(fn ($q) => $q->whereNull('publish_at')->orWhere('publish_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('expire_at')->orWhere('expire_at', '>', now()));
     }
 
     public function scopeExpired(Builder $query): Builder
@@ -338,6 +354,6 @@ class Announcement extends Model
 
     public function getAttachmentUrlAttribute(): ?string
     {
-        return $this->attachment ? asset('storage/' . $this->attachment) : null;
+        return $this->attachment ? asset('storage/'.$this->attachment) : null;
     }
 }

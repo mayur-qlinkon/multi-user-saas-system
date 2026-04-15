@@ -15,12 +15,12 @@ trait Tenantable
     {
         // 1. Only apply this if a user is logged in AND they belong to a company
         if (Auth::check() && Auth::user()->company_id) {
-            
+
             // 2. THE IRON WALL (Read Protection)
             // Automatically append "where company_id = X" to EVERY select/update/delete query
             static::addGlobalScope('tenant', function (Builder $builder) {
                 // We use getTable() to prevent ambiguous column errors in JOINs
-                $builder->where($builder->getModel()->getTable() . '.company_id', Auth::user()->company_id);
+                $builder->where($builder->getModel()->getTable().'.company_id', Auth::user()->company_id);
             });
 
             // 3. AUTO-ASSIGN (Write Convenience)

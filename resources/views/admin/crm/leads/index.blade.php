@@ -238,24 +238,30 @@
                 </button>
 
                 {{-- Add lead ── --}}
+                @if(has_permission('crm_leads.create'))
                 <a href="{{ route('admin.crm.leads.create') }}"
                     class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
                     style="background: var(--brand-600)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Add Lead
                 </a>
+                @endif
 
+                @if(has_permission('crm_leads.import'))
                 <a href="{{ route('admin.crm.leads.import') }}"
                     class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     Import
                 </a>
+                @endif
 
+                @if(has_permission('crm_leads.export'))
                 <a href="{{ route('admin.crm.leads.export', request()->query()) }}" target="_blank"
                     class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Export
                 </a>
+                @endif
 
             </div>
         </form>
@@ -372,8 +378,9 @@
                                         class="relative inline-block group max-w-[130px]" 
                                         title="{{ $lead->stage->name ?? '' }}">
                                         
-                                        <select 
+                                        <select @if(has_permission('crm_leads.change_stage'))
                                             @change="updateLeadStage($event, {{ $lead->id }}, '{{ $lead->crm_stage_id }}')"
+                                            @endif
                                             {{-- 2. Added 'truncate' and 'pr-6' to handle long text properly --}}
                                             class="appearance-none pl-3 pr-6 py-1 rounded-full text-[11px] font-bold border-none cursor-pointer transition-all focus:ring-0 w-full truncate"
                                             :style="`background: ${currentStageColor}18; color: ${currentStageColor}`"
@@ -490,26 +497,32 @@
                                         @endif
 
                                         {{-- View ── --}}
+                                        @if(has_permission('crm_leads.view'))
                                         <a href="{{ route('admin.crm.leads.show', $lead->id) }}"
                                             class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                                             title="View">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                         </a>
+                                        @endif
 
                                         {{-- Edit ── --}}
+                                        @if(has_permission('crm_leads.update'))
                                         <a href="{{ route('admin.crm.leads.edit', $lead->id) }}"
                                             class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                                             title="Edit">
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                         </a>
+                                        @endif
 
                                         {{-- Delete ── --}}
+                                        @if(has_permission('crm_leads.delete'))
                                         <button
                                             @click="deleteLead({{ $lead->id }}, '{{ addslashes($lead->name) }}')"
                                             class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                                             title="Delete">
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                                         </button>
+                                        @endif
 
                                     </div>
                                 </td>

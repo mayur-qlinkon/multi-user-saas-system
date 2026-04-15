@@ -44,9 +44,11 @@
                 Search
             </button>
 
+            @if(has_permission('pages.create'))
             <a href="{{ route('admin.pages.create') }}" class="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:opacity-95" style="background: var(--brand-600);">
                 <i data-lucide="plus" class="w-4 h-4"></i> Create Page
             </a>
+            @endif
         </form>
     </div>
 
@@ -91,12 +93,14 @@
                             {{-- Status Toggle --}}
                             <td class="px-0 md:px-6 py-2 md:py-4 flex md:table-cell items-center justify-between md:justify-start">
                                 <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
+                                @if(has_permission('pages.toggle_publish'))
                                 <button @click="toggleStatus({{ $page->id }}, '{{ addslashes($page->title) }}')"
                                         class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
                                         :class="pageStatuses[{{ $page->id }}] ? 'bg-green-500' : 'bg-gray-200'">
                                     <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform"
                                           :class="pageStatuses[{{ $page->id }}] ? 'translate-x-4' : 'translate-x-1'"></span>
                                 </button>
+                                @endif
                                 <span class="ml-2 text-[11px] font-bold uppercase tracking-wider" 
                                       :class="pageStatuses[{{ $page->id }}] ? 'text-green-600' : 'text-gray-400'"
                                       x-text="pageStatuses[{{ $page->id }}] ? 'Published' : 'Draft'">
@@ -115,12 +119,16 @@
                             {{-- Actions --}}
                             <td class="px-0 md:px-6 py-3 md:py-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    @if(has_permission('pages.update'))
                                     <a href="{{ route('admin.pages.edit', $page->id) }}" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" title="Edit">
                                         <i data-lucide="edit-3" class="w-4 h-4"></i>
                                     </a>
+                                    @endif
+                                    @if(has_permission('pages.delete'))
                                     <button @click="deletePage({{ $page->id }}, '{{ addslashes($page->title) }}')" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Delete">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

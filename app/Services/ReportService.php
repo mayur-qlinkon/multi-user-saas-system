@@ -1,11 +1,11 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\Invoice;
-use App\Models\Purchase;
 use App\Models\InvoiceItem;
+use App\Models\Purchase;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ReportService
 {
@@ -29,8 +29,8 @@ class ReportService
 
         return [
             'gross_sales' => $grossSales,
-            'returns'     => $totalReturns,
-            'net_sales'   => $grossSales - $totalReturns,
+            'returns' => $totalReturns,
+            'net_sales' => $grossSales - $totalReturns,
         ];
     }
 
@@ -52,8 +52,8 @@ class ReportService
 
         return [
             'total_purchases' => $purchases,
-            'purchase_returns'=> $returns,
-            'net_purchases'   => $purchases - $returns,
+            'purchase_returns' => $returns,
+            'net_purchases' => $purchases - $returns,
         ];
     }
 

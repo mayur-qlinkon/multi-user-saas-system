@@ -2,27 +2,37 @@
 
 namespace App\Models\Hrm;
 
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use App\Traits\Tenantable;
 
 class AttendanceRule extends Model
 {
-    use Tenantable, SoftDeletes;
+    use SoftDeletes, Tenantable;
 
     const TYPE_LATE_TO_HALF_DAY = 'late_to_half_day';
+
     const TYPE_LATE_TO_ABSENT = 'late_to_absent';
+
     const TYPE_ABSENT_TO_LEAVE = 'absent_to_leave';
+
     const TYPE_EARLY_LEAVE_PENALTY = 'early_leave_penalty';
+
     const TYPE_CONTINUOUS_ABSENT = 'continuous_absent_action';
+
     const TYPE_OVERTIME_RULE = 'overtime_rule';
+
     const TYPE_CUSTOM = 'custom';
 
     const ACTION_MARK_HALF_DAY = 'mark_half_day';
+
     const ACTION_MARK_ABSENT = 'mark_absent';
+
     const ACTION_DEDUCT_LEAVE = 'deduct_leave';
+
     const ACTION_SEND_WARNING = 'send_warning';
+
     const ACTION_NOTIFY_MANAGER = 'notify_manager';
 
     const TYPE_LABELS = [

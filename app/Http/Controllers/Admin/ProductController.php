@@ -66,6 +66,40 @@ class ProductController extends Controller
             ->with('success', 'Product deleted successfully.');
     }
 
+    /**
+     * Remove multiple products from storage.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:products,id',
+        ]);
+
+        try {
+            $products = Product::whereIn('id', $request->ids)->get();
+
+            foreach ($products as $product) {
+                // Utilizing your existing service logic
+                $this->productService->deleteProduct($product);
+            }
+
+            // Flash success message for when the page reloads
+            session()->flash('success', count($request->ids).' products deleted successfully.');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Products deleted successfully.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while deleting products.',
+            ], 500);
+        }
+    }
+
     public function create()
     {
         if (! check_plan_limit('products')) {

@@ -16,7 +16,8 @@ class MyTaskController extends Controller
     protected function myEmployee()
     {
         $emp = Auth::user()->employee;
-        abort_if(!$emp, 403, 'No employee record linked to your account.');
+        abort_if(! $emp, 403, 'No employee record linked to your account.');
+
         return $emp;
     }
 
@@ -24,23 +25,28 @@ class MyTaskController extends Controller
     protected function myTaskQuery()
     {
         $employee = $this->myEmployee();
-        return HrmTask::whereHas('assignments', fn($q) => $q->where('employee_id', $employee->id));
+
+        return HrmTask::whereHas('assignments', fn ($q) => $q->where('employee_id', $employee->id));
     }
 
     public function index(Request $request)
     {
-        if (!Auth::user()->employee) {
+        if (! Auth::user()->employee) {
             return view('admin.hrm.employee.no-profile');
         }
         $employee = $this->myEmployee();
-        $query    = $this->myTaskQuery()->with(['assignments.employee.user', 'attachments', 'allComments']);
+        $query = $this->myTaskQuery()->with(['assignments.employee.user', 'attachments', 'allComments']);
 
-        if ($request->filled('status'))   $query->where('status', $request->status);
-        if ($request->filled('priority')) $query->where('priority', $request->priority);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
 
         $tasks = $query->orderByRaw("FIELD(priority,'urgent','high','medium','low')")
-                       ->orderBy('due_date')
-                       ->get();
+            ->orderBy('due_date')
+            ->get();
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'data' => $tasks]);
@@ -71,7 +77,7 @@ class MyTaskController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => $task,
+            'data' => $task,
             'allowed_transitions' => $allowedTransitions,
         ]);
     }
@@ -83,11 +89,11 @@ class MyTaskController extends Controller
 
         $validated = $request->validate([
             'progress_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'status'           => ['nullable', Rule::in(array_keys(HrmTask::STATUS_LABELS))],
+            'status' => ['nullable', Rule::in(array_keys(HrmTask::STATUS_LABELS))],
         ]);
 
         if (isset($validated['status']) && $validated['status'] !== $task->status) {
-            if (!$task->canTransitionTo($validated['status'])) {
+            if (! $task->canTransitionTo($validated['status'])) {
                 return response()->json([
                     'success' => false,
                     'message' => "Cannot move task from '{$task->status_label}' to '{$validated['status']}'.",
@@ -99,12 +105,12 @@ class MyTaskController extends Controller
             }
         }
 
-        $task->update(array_filter($validated, fn($v) => !is_null($v)));
+        $task->update(array_filter($validated, fn ($v) => ! is_null($v)));
 
         return response()->json([
             'success' => true,
             'message' => 'Progress updated.',
-            'data'    => $task->fresh(),
+            'data' => $task->fresh(),
         ]);
     }
 
@@ -114,16 +120,16 @@ class MyTaskController extends Controller
         $this->authorizeTask($task);
 
         $validated = $request->validate([
-            'body'      => ['required', 'string', 'max:2000'],
+            'body' => ['required', 'string', 'max:2000'],
             'parent_id' => ['nullable', 'exists:hrm_task_comments,id'],
         ]);
 
         $comment = HrmTaskComment::create([
             'hrm_task_id' => $task->id,
-            'user_id'     => Auth::id(),
-            'body'        => $validated['body'],
-            'parent_id'   => $validated['parent_id'] ?? null,
-            'is_system'   => false,
+            'user_id' => Auth::id(),
+            'body' => $validated['body'],
+            'parent_id' => $validated['parent_id'] ?? null,
+            'is_system' => false,
         ]);
 
         $comment->load('user');
@@ -146,10 +152,10 @@ class MyTaskController extends Controller
         $attachment = HrmTaskAttachment::create([
             'hrm_task_id' => $task->id,
             'uploaded_by' => Auth::id(),
-            'file_name'   => $file->getClientOriginalName(),
-            'file_path'   => $path,
-            'mime_type'   => $file->getMimeType(),
-            'file_size'   => $file->getSize(),
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $path,
+            'mime_type' => $file->getMimeType(),
+            'file_size' => $file->getSize(),
         ]);
 
         $attachment->load('uploadedByUser');
@@ -163,12 +169,12 @@ class MyTaskController extends Controller
         // Must be assigned to the task OR be the uploader
         $employee = $this->myEmployee();
         $isAssigned = HrmTask::where('id', $attachment->hrm_task_id)
-            ->whereHas('assignments', fn($q) => $q->where('employee_id', $employee->id))
+            ->whereHas('assignments', fn ($q) => $q->where('employee_id', $employee->id))
             ->exists();
 
-        abort_if(!$isAssigned && $attachment->uploaded_by !== Auth::id(), 403);
+        abort_if(! $isAssigned && $attachment->uploaded_by !== Auth::id(), 403);
 
-        if (!Storage::disk('public')->exists($attachment->file_path)) {
+        if (! Storage::disk('public')->exists($attachment->file_path)) {
             abort(404, 'File not found.');
         }
 
@@ -179,6 +185,6 @@ class MyTaskController extends Controller
     {
         $employee = $this->myEmployee();
         $assigned = $task->assignments()->where('employee_id', $employee->id)->exists();
-        abort_if(!$assigned, 403, 'You are not assigned to this task.');
+        abort_if(! $assigned, 403, 'You are not assigned to this task.');
     }
 }

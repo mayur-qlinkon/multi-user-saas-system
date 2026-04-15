@@ -324,13 +324,15 @@
                                     <div class="flex items-center gap-1 justify-end">
 
                                         {{-- View ── --}}
-                                        <a href="{{ route('admin.hrm.leaves.show', $leave->id) }}"
-                                            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                            title="View">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                        </a>
+                                        @if(has_permission('leaves.view'))
+                                            <a href="{{ route('admin.hrm.leaves.show', $leave->id) }}"
+                                                class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                                title="View">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            </a>
+                                        @endif
 
-                                        @if($leave->status === 'pending')
+                                        @if($leave->status === 'pending' && has_permission('leaves.approve'))
                                             {{-- Approve ── --}}
                                             <button @click="handleAction({{ $leave->id }}, 'approve')"
                                                 class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"

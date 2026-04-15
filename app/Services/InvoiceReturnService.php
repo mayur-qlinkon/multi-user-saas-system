@@ -6,9 +6,9 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceReturn;
 use App\Models\InvoiceReturnItem;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Exception;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceReturnService
 {
@@ -36,35 +36,35 @@ class InvoiceReturnService
 
             // 3. Create the Header
             $invoiceReturn = InvoiceReturn::create(array_merge([
-                'company_id'         => $companyId,
-                'store_id'           => $data['store_id'],
-                'warehouse_id'       => $data['warehouse_id'],
-                'invoice_id'         => $invoice->id,
-                
-                'customer_id'        => $invoice->customer_id,
-                'customer_name'      => $invoice->customer_name,
-                'created_by'         => Auth::id(),
-                'salesperson_id'     => $invoice->salesperson_id,
-                'pos_terminal_id'    => $invoice->pos_terminal_id,
-                
+                'company_id' => $companyId,
+                'store_id' => $data['store_id'],
+                'warehouse_id' => $data['warehouse_id'],
+                'invoice_id' => $invoice->id,
+
+                'customer_id' => $invoice->customer_id,
+                'customer_name' => $invoice->customer_name,
+                'created_by' => Auth::id(),
+                'salesperson_id' => $invoice->salesperson_id,
+                'pos_terminal_id' => $invoice->pos_terminal_id,
+
                 'credit_note_number' => $returnNumber,
-                'source'             => $invoice->source,
-                'return_date'        => $data['return_date'],
-                
-                'return_type'        => $data['return_type'],
-                'return_reason'      => $data['return_reason'] ?? 'other',
-                'restock'            => $data['restock'] ?? true, // Will we put it back on the shelf?
-                'stock_updated'      => false, // Stock only updates upon Confirmation
-                
-                'supply_state'       => $data['supply_state'],
-                'gst_treatment'      => $data['gst_treatment'],
-                'currency_code'      => $data['currency_code'] ?? 'INR',
-                'exchange_rate'      => $data['exchange_rate'] ?? 1.0000,
-                
-                'notes'              => $data['notes'] ?? null,
-                'terms_conditions'   => $data['terms_conditions'] ?? null,
-                'status'             => 'draft',
-                'refund_status'      => 'unrefunded',
+                'source' => $invoice->source,
+                'return_date' => $data['return_date'],
+
+                'return_type' => $data['return_type'],
+                'return_reason' => $data['return_reason'] ?? 'other',
+                'restock' => $data['restock'] ?? true, // Will we put it back on the shelf?
+                'stock_updated' => false, // Stock only updates upon Confirmation
+
+                'supply_state' => $data['supply_state'],
+                'gst_treatment' => $data['gst_treatment'],
+                'currency_code' => $data['currency_code'] ?? 'INR',
+                'exchange_rate' => $data['exchange_rate'] ?? 1.0000,
+
+                'notes' => $data['notes'] ?? null,
+                'terms_conditions' => $data['terms_conditions'] ?? null,
+                'status' => 'draft',
+                'refund_status' => 'unrefunded',
             ], $mathEngine['header_totals']));
 
             // 4. Insert the Line Items
@@ -84,23 +84,23 @@ class InvoiceReturnService
     public function updateReturn(InvoiceReturn $return, array $data): InvoiceReturn
     {
         if ($return->status === 'confirmed') {
-            throw new Exception("Cannot update a confirmed Credit Note. It is locked.");
+            throw new Exception('Cannot update a confirmed Credit Note. It is locked.');
         }
 
         return DB::transaction(function () use ($return, $data) {
-            
+
             $mathEngine = $this->calculateReturnMath($data, $return->invoice);
 
             $return->update(array_merge([
-                'store_id'         => $data['store_id'],
-                'warehouse_id'     => $data['warehouse_id'],
-                'return_date'      => $data['return_date'],
-                'return_type'      => $data['return_type'],
-                'return_reason'    => $data['return_reason'] ?? 'other',
-                'restock'          => $data['restock'] ?? true,
-                'supply_state'     => $data['supply_state'],
-                'gst_treatment'    => $data['gst_treatment'],
-                'notes'            => $data['notes'] ?? null,
+                'store_id' => $data['store_id'],
+                'warehouse_id' => $data['warehouse_id'],
+                'return_date' => $data['return_date'],
+                'return_type' => $data['return_type'],
+                'return_reason' => $data['return_reason'] ?? 'other',
+                'restock' => $data['restock'] ?? true,
+                'supply_state' => $data['supply_state'],
+                'gst_treatment' => $data['gst_treatment'],
+                'notes' => $data['notes'] ?? null,
                 'terms_conditions' => $data['terms_conditions'] ?? null,
             ], $mathEngine['header_totals']));
 
@@ -122,27 +122,29 @@ class InvoiceReturnService
     public function confirmReturn(InvoiceReturn $return): InvoiceReturn
     {
         if ($return->status === 'confirmed') {
-            throw new Exception("This return has already been confirmed.");
+            throw new Exception('This return has already been confirmed.');
         }
 
         return DB::transaction(function () use ($return) {
-            
+
             // 1. Should we put the stock back on the shelf?
-            if ($return->restock && !$return->stock_updated) {
-                
+            if ($return->restock && ! $return->stock_updated) {
+
                 // Fetch items with their SKUs
                 $items = $return->items()->with('sku')->get();
 
                 foreach ($items as $item) {
-                    if (!$item->sku) continue; // Skip non-inventory items
+                    if (! $item->sku) {
+                        continue;
+                    } // Skip non-inventory items
 
                     // 🌟 Call your robust InventoryService!
                     $this->inventoryService->addStock(
-                        sku:          $item->sku,
-                        warehouseId:  $return->warehouse_id,
-                        qty:          $item->quantity,
+                        sku: $item->sku,
+                        warehouseId: $return->warehouse_id,
+                        qty: $item->quantity,
                         movementType: 'sale_return',
-                        reference:    $return
+                        reference: $return
                     );
 
                     $item->update(['is_restocked' => true]);
@@ -153,9 +155,9 @@ class InvoiceReturnService
 
             // 2. Lock the document
             $return->update([
-                'status'      => 'confirmed',
+                'status' => 'confirmed',
                 'approved_by' => Auth::id(),
-                'approved_at' => now()
+                'approved_at' => now(),
             ]);
 
             return $return;
@@ -174,26 +176,26 @@ class InvoiceReturnService
     {
         $totalSubtotal = 0;
         $totalTax = 0;
-        
+
         $companyState = Auth::user()->company->state->name ?? '';
         $isInterState = strtolower(trim($data['supply_state'])) !== strtolower(trim($companyState));
-        
+
         $processedItems = [];
 
         foreach ($data['items'] as $itemData) {
             // Retrieve original invoice item for reference (prevents tampering)
             $originalLine = InvoiceItem::find($itemData['invoice_item_id']);
-            if (!$originalLine || $originalLine->invoice_id !== $originalInvoice->id) {
-                throw new Exception("Invalid Invoice Item referenced.");
+            if (! $originalLine || $originalLine->invoice_id !== $originalInvoice->id) {
+                throw new Exception('Invalid Invoice Item referenced.');
             }
 
             $qty = (float) $itemData['quantity'];
             $price = (float) $itemData['unit_price'];
             $taxPct = (float) $itemData['tax_percent'];
-            
+
             // Base Value
             $baseAmount = $qty * $price;
-            
+
             // Line Discount
             $lineDiscountAmt = 0;
             if (in_array($itemData['discount_type'], ['percentage', 'percent'])) {
@@ -222,29 +224,29 @@ class InvoiceReturnService
 
             $processedItems[] = [
                 'invoice_item_id' => $originalLine->id,
-                'product_id'      => $itemData['product_id'] ?? $originalLine->product_id,
-                'product_sku_id'  => $itemData['product_sku_id'] ?? $originalLine->product_sku_id,
-                'unit_id'         => $itemData['unit_id'] ?? $originalLine->unit_id,
-                'product_name'    => $itemData['product_name'],
-                'hsn_code'        => $itemData['hsn_code'] ?? $originalLine->hsn_code,
-                
-                'quantity'        => $qty,
-                'unit_price'      => $price,
-                'is_restocked'    => false, // Updated later during confirmation
-                
-                'tax_type'        => $itemData['tax_type'],
-                'discount_type'   => $itemData['discount_type'],
+                'product_id' => $itemData['product_id'] ?? $originalLine->product_id,
+                'product_sku_id' => $itemData['product_sku_id'] ?? $originalLine->product_sku_id,
+                'unit_id' => $itemData['unit_id'] ?? $originalLine->unit_id,
+                'product_name' => $itemData['product_name'],
+                'hsn_code' => $itemData['hsn_code'] ?? $originalLine->hsn_code,
+
+                'quantity' => $qty,
+                'unit_price' => $price,
+                'is_restocked' => false, // Updated later during confirmation
+
+                'tax_type' => $itemData['tax_type'],
+                'discount_type' => $itemData['discount_type'],
                 'discount_amount' => $lineDiscountAmt,
-                
-                'taxable_value'   => $taxableValue,
-                'tax_percent'     => $taxPct,
-                
-                'igst_amount'     => $isInterState ? $taxAmount : 0,
-                'cgst_amount'     => !$isInterState ? ($taxAmount / 2) : 0,
-                'sgst_amount'     => !$isInterState ? ($taxAmount / 2) : 0,
-                'tax_amount'      => $taxAmount,
-                
-                'total_amount'    => $lineTotal,
+
+                'taxable_value' => $taxableValue,
+                'tax_percent' => $taxPct,
+
+                'igst_amount' => $isInterState ? $taxAmount : 0,
+                'cgst_amount' => ! $isInterState ? ($taxAmount / 2) : 0,
+                'sgst_amount' => ! $isInterState ? ($taxAmount / 2) : 0,
+                'tax_amount' => $taxAmount,
+
+                'total_amount' => $lineTotal,
             ];
         }
 
@@ -265,22 +267,22 @@ class InvoiceReturnService
 
         return [
             'header_totals' => [
-                'subtotal'        => $totalSubtotal,
-                'discount_type'   => $data['discount_type'] === 'percent' ? 'percentage' : $data['discount_type'],
+                'subtotal' => $totalSubtotal,
+                'discount_type' => $data['discount_type'] === 'percent' ? 'percentage' : $data['discount_type'],
                 'discount_amount' => $globalDiscountAmt,
-                'taxable_amount'  => max(0, $totalSubtotal - $globalDiscountAmt),
-                
-                'tax_amount'      => $totalTax,
-                'igst_amount'     => $isInterState ? $totalTax : 0,
-                'cgst_amount'     => !$isInterState ? ($totalTax / 2) : 0,
-                'sgst_amount'     => !$isInterState ? ($totalTax / 2) : 0,
-                
+                'taxable_amount' => max(0, $totalSubtotal - $globalDiscountAmt),
+
+                'tax_amount' => $totalTax,
+                'igst_amount' => $isInterState ? $totalTax : 0,
+                'cgst_amount' => ! $isInterState ? ($totalTax / 2) : 0,
+                'sgst_amount' => ! $isInterState ? ($totalTax / 2) : 0,
+
                 'shipping_charge' => $shipping,
-                'other_charges'   => $other,
-                'round_off'       => $roundOff,
-                'grand_total'     => $grandTotal,
+                'other_charges' => $other,
+                'round_off' => $roundOff,
+                'grand_total' => $grandTotal,
             ],
-            'line_items' => $processedItems
+            'line_items' => $processedItems,
         ];
     }
 
@@ -289,8 +291,8 @@ class InvoiceReturnService
      */
     protected function generateReturnNumber(int $companyId): string
     {
-        $prefix = 'CN-' . date('ym');
-        
+        $prefix = 'CN-'.date('ym');
+
         $latest = InvoiceReturn::withTrashed()
             ->where('company_id', $companyId)
             ->where('credit_note_number', 'like', "{$prefix}-%")
@@ -298,7 +300,7 @@ class InvoiceReturnService
             ->first();
 
         $nextSequence = $latest ? ((int) substr($latest->credit_note_number, -4)) + 1 : 1;
-        
-        return $prefix . '-' . str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.'-'.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
     }
 }

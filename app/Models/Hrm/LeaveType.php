@@ -2,15 +2,15 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LeaveType extends Model
 {
-    use Tenantable, SoftDeletes;
+    use SoftDeletes, Tenantable;
 
     protected $fillable = [
         'company_id', 'name', 'code', 'description',

@@ -23,7 +23,7 @@ class AttributesSeeder extends Seeder
                     ['value' => 'Black', 'color_code' => '#000000'],
                     ['value' => 'White', 'color_code' => '#FFFFFF'],
                     ['value' => 'Yellow', 'color_code' => '#FFFF00'],
-                ]
+                ],
             ],
 
             [
@@ -35,7 +35,7 @@ class AttributesSeeder extends Seeder
                     ['value' => 'M'],
                     ['value' => 'L'],
                     ['value' => 'XL'],
-                ]
+                ],
             ],
 
             [
@@ -46,7 +46,7 @@ class AttributesSeeder extends Seeder
                     ['value' => 'Ceramic'],
                     ['value' => 'Steel'],
                     ['value' => 'Wood'],
-                ]
+                ],
             ],
 
             [
@@ -58,7 +58,7 @@ class AttributesSeeder extends Seeder
                     ['value' => '8 inch'],
                     ['value' => '10 inch'],
                     ['value' => '12 inch'],
-                ]
+                ],
             ],
 
         ];
@@ -71,7 +71,7 @@ class AttributesSeeder extends Seeder
                 ->where('name', $attr['name'])
                 ->first();
 
-            if (!$attribute) {
+            if (! $attribute) {
 
                 $attributeId = DB::table('attributes')->insertGetId([
                     'company_id' => $companyId,
@@ -79,7 +79,7 @@ class AttributesSeeder extends Seeder
                     'type' => $attr['type'],
                     'is_active' => true,
                     'created_at' => now(),
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
             } else {
@@ -96,7 +96,7 @@ class AttributesSeeder extends Seeder
                     ->where('value', $value['value'])
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
 
                     DB::table('attribute_values')->insert([
                         'company_id' => $companyId,
@@ -106,7 +106,7 @@ class AttributesSeeder extends Seeder
                         'position' => $position,
                         'is_active' => true,
                         'created_at' => now(),
-                        'updated_at' => now()
+                        'updated_at' => now(),
                     ]);
 
                 }

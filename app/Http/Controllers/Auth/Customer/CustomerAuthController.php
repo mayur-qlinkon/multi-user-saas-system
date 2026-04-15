@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Company;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,12 +23,14 @@ class CustomerAuthController extends Controller
     public function showLoginForm(string $slug)
     {
         $company = Company::where('slug', $slug)->firstOrFail();
+
         return view('storefront.auth.login', compact('company'));
     }
 
     public function showRegisterForm(string $slug)
     {
         $company = Company::where('slug', $slug)->firstOrFail();
+
         return view('storefront.auth.register', compact('company'));
     }
 
@@ -42,30 +43,30 @@ class CustomerAuthController extends Controller
         $company = Company::where('slug', $slug)->firstOrFail();
 
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         // 🌟 THE ISOLATION LOCK 🌟
-        // By injecting company_id and status here, Auth::attempt will ONLY 
+        // By injecting company_id and status here, Auth::attempt will ONLY
         // match users who belong to this specific storefront and are active.
         $credentials['company_id'] = $company->id;
-        $credentials['status']     = 'active';
+        $credentials['status'] = 'active';
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            
+
             Log::info('[Storefront] Customer Logged In', [
                 'user_id' => Auth::id(),
-                'company' => $slug
+                'company' => $slug,
             ]);
 
             return redirect()->intended(route('storefront.portal.dashboard', ['slug' => $slug]));
         }
 
         Log::warning('[Storefront] Failed Login Attempt', [
-            'email'   => $request->email,
-            'company' => $slug
+            'email' => $request->email,
+            'company' => $slug,
         ]);
 
         return back()->withErrors([
@@ -82,11 +83,11 @@ class CustomerAuthController extends Controller
         $company = Company::where('slug', $slug)->firstOrFail();
 
         $request->validate([
-            'name'     => ['required', 'string', 'max:100'],
-            'phone'    => ['nullable', 'string', 'max:20'],
+            'name' => ['required', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             // Validate email uniqueness strictly within THIS company
-            'email'    => [
+            'email' => [
                 'required', 'string', 'email', 'max:150',
                 Rule::unique('users')->where(function ($query) use ($company) {
                     return $query->where('company_id', $company->id);
@@ -100,27 +101,14 @@ class CustomerAuthController extends Controller
             // 1. Create the Auth User
             $user = clone User::create([
                 'company_id' => $company->id,
-                'name'       => $request->name,
-                'email'      => $request->email,
-                'phone'      => $request->phone,
-                'password'   => Hash::make($request->password),
-                'status'     => 'active',
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+                'status' => 'active',
             ]);
 
-            // 2. Assign the Customer Role (Create it dynamically if it doesn't exist!)
-            $customerRole = Role::firstOrCreate(
-                    [
-                        'company_id' => $company->id,
-                        'slug'       => 'customer',
-                    ],
-                    [
-                        'name' => 'Customer',
-                    ]
-                );
-            
-            $user->roles()->attach($customerRole->id);
-
-            // 3. THE CRM BRIDGE
+            // 2. THE CRM BRIDGE
             // We pass the data to our DRY helper method to keep this controller clean
             $this->linkOrCreateClientProfile($company->id, $user);
 
@@ -131,17 +119,17 @@ class CustomerAuthController extends Controller
 
             Log::info('[Storefront] New Customer Registered', [
                 'user_id' => $user->id,
-                'company' => $slug
+                'company' => $slug,
             ]);
 
             return redirect()->route('storefront.portal.dashboard', ['slug' => $slug]);
 
         } catch (Throwable $e) {
             DB::rollBack();
-            
+
             Log::error('[Storefront] Customer Registration Failed', [
                 'company' => $slug,
-                'error'   => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return back()->with('error', 'Something went wrong during registration. Please try again.')->withInput();
@@ -184,21 +172,21 @@ class CustomerAuthController extends Controller
         if ($client) {
             // CRM profile exists! Link the Auth account to it.
             $client->update(['user_id' => $user->id]);
-            
+
             Log::info('[Storefront] Auth Account linked to existing Client', [
-                'user_id'   => $user->id,
-                'client_id' => $client->id
+                'user_id' => $user->id,
+                'client_id' => $client->id,
             ]);
         } else {
             // Brand new customer. Build their CRM profile.
             Client::create([
-                'company_id'        => $companyId,
-                'user_id'           => $user->id,
-                'name'              => $user->name,
-                'email'             => $user->email,
-                'phone'             => $user->phone,
+                'company_id' => $companyId,
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
                 'registration_type' => 'unregistered',
-                'is_active'         => true,
+                'is_active' => true,
             ]);
         }
     }

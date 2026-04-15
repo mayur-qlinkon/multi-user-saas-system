@@ -88,10 +88,12 @@
 
                {{-- 3. Initiate Return Button (Redirects to Challans index) --}}
                 <div class="ml-auto flex shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-                    <a href="{{ route('admin.challans.index') }}"
-                        class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap">
-                        <i data-lucide="undo-2" class="w-4 h-4"></i> Initiate Return
-                    </a>
+                    @if(has_permission('challan_returns.create'))
+                        <a href="{{ route('admin.challans.index') }}"
+                            class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap">
+                            <i data-lucide="undo-2" class="w-4 h-4"></i> Initiate Return
+                        </a>
+                    @endif
                 </div>
             </form>
         </div>
@@ -105,8 +107,8 @@
                             <th class="px-6 py-4">RETURN DETAILS</th>
                             <th class="px-6 py-4">ORIGINAL CHALLAN</th>
                             <th class="px-6 py-4">PARTY</th>
-                            <th class="px-6 py-4 text-center">CONDITION</th>
-                            <th class="px-6 py-4 text-center">QTY RETURNED</th>
+                            <th class="px-6 py-4 text-center hidden md:table-cell">CONDITION</th>
+                            <th class="px-6 py-4 text-center hidden md:table-cell">QTY RETURNED</th>
                             <th class="px-6 py-4 text-right">ACTIONS</th>
                         </tr>
                     </thead>
@@ -159,7 +161,7 @@
                                 </td>
 
                                 {{-- Condition Badge --}}
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center hidden md:table-cell">
                                     @php
                                         $colorMap = [
                                             'green' => 'bg-green-50 text-green-700 border-green-200',
@@ -175,7 +177,7 @@
                                 </td>
 
                                 {{-- Qty Returned / Damaged --}}
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center hidden md:table-cell">
                                     <div class="flex flex-col items-center">
                                         <span class="font-black text-gray-800 text-[14px]">
                                             {{ (float) $return->total_qty_returned }}
@@ -190,28 +192,34 @@
 
                                 {{-- Actions --}}
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="flex items-center justify-end gap-2 transition-opacity">
 
                                         {{-- View Button --}}
-                                        <a href="{{ route('admin.challan-returns.show', $return->id) }}"
-                                            class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
-                                            title="View Return">
-                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </a>
+                                        @if(has_permission('challan_returns.view'))
+                                            <a href="{{ route('admin.challan-returns.show', $return->id) }}"
+                                                class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
+                                                title="View Return">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </a>
+                                        @endif
 
                                         {{-- Download PDF Button --}}
-                                        <a href="{{ route('admin.challan-returns.pdf', $return->id) }}" target="_blank"
-                                            class="w-8 h-8 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition-colors"
-                                            title="Download PDF">
-                                            <i data-lucide="download" class="w-4 h-4"></i>
-                                        </a>
+                                        @if(has_permission('challan_returns.download_pdf'))
+                                            <a href="{{ route('admin.challan-returns.pdf', $return->id) }}" target="_blank"
+                                                class="w-8 h-8 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition-colors"
+                                                title="Download PDF">
+                                                <i data-lucide="download" class="w-4 h-4"></i>
+                                            </a>
+                                        @endif
 
                                         {{-- Edit Button (Restricted attributes only based on Model rules) --}}
-                                        <a href="{{ route('admin.challan-returns.edit', $return->id) }}"
-                                            class="w-8 h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
-                                            title="Edit Return Notes">
-                                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                                        </a>
+                                        @if(has_permission('challan_returns.update'))
+                                            <a href="{{ route('admin.challan-returns.edit', $return->id) }}"
+                                                class="w-8 h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
+                                                title="Edit Return Notes">
+                                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                                            </a>
+                                        @endif
                                         
                                     </div>
                                 </td>

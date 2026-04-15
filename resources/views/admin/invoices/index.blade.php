@@ -119,12 +119,15 @@
                 </div>
 
                {{-- 3. Create Invoice Button (Pushed to the right) --}}
+               @if(has_permission('invoices.create'))
                 <div class="ml-auto flex shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
                     <a href="{{ route('admin.invoices.create') }}"
                         class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap">
                         <i data-lucide="plus" class="w-4 h-4"></i> Create Invoice
                     </a>
                 </div>
+                @endif
+
             </form>
         </div>
 
@@ -137,7 +140,8 @@
                         <tr>
                             <th class="px-6 py-4">INV DETAILS</th>
                             <th class="px-6 py-4">CUSTOMER</th>
-                            <th class="px-6 py-4">SOURCE</th>
+                            {{-- UI Fix: Hide on mobile, show on iPad+ --}}
+                            <th class="px-6 py-4 hidden md:table-cell">SOURCE</th>
                             <th class="px-6 py-4 text-center">STATUS</th>
                             <th class="px-6 py-4 text-center">PAYMENT</th>
                             <th class="px-6 py-4 text-right">TOTAL AMOUNT</th>
@@ -176,7 +180,7 @@
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 hidden md:table-cell">
                                     <span
                                         class="text-[10px] font-black uppercase tracking-widest {{ $invoice->source === 'pos' ? 'text-orange-500' : 'text-blue-500' }}">
                                         {{ $invoice->source }}
@@ -220,15 +224,19 @@
 
                                 <td class="px-6 py-4 text-right">
                                     <div
-                                        class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        class="flex items-center justify-end gap-2 transition-opacity">
 
                                         {{-- 1. View Button --}}
+                                        @if(has_permission('invoices.view'))
                                         <a href="{{ route('admin.invoices.show', $invoice->id) }}"
                                             class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                             title="View Invoice">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
-                                        @if ($invoice->status === 'confirmed')
+                                        @endif
+
+                                        
+                                        @if ($invoice->status === 'confirmed' && has_permission('invoice_returns.create'))
                                             <a href="{{ route('admin.invoice-returns.create', $invoice->id) }}"
                                                 class="w-8 h-8 rounded border border-gray-200 text-gray-600 text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors"
                                                 title="Create Return">
@@ -237,7 +245,7 @@
                                         @endif
 
                                         {{-- 🌟 NEW: Quick Pay Button (Only show if there is a balance and not cancelled) --}}
-                                        @if ($invoice->status !== 'cancelled' && $balanceDue > 0)
+                                        @if ($invoice->status !== 'cancelled' && $balanceDue > 0 && has_permission('invoices.add_payment'))
                                             <button type="button"
                                                 @click="openPaymentModal({{ $invoice->id }}, '{{ $invoice->invoice_number }}', {{ $balanceDue }})"
                                                 class="w-8 h-8 rounded border border-green-200 text-green-600 hover:bg-green-50 flex items-center justify-center transition-colors"
@@ -246,7 +254,7 @@
                                             </button>
                                         @endif
 
-                                        @if ($invoice->status !== 'cancelled')
+                                        @if ($invoice->status !== 'cancelled' && has_permission('invoices.update'))
                                             {{-- 🌟 2. NEW: Edit Button --}}
                                             <a href="{{ route('admin.invoices.edit', $invoice->id) }}"
                                                 class="w-8 h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
@@ -293,7 +301,8 @@
         {{-- 🌟 PAYMENT MODAL --}}
         <div x-show="isPaymentModalOpen" x-cloak
             class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-            <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            {{-- UI Fix: Added mx-4 so it floats nicely on mobile --}}
+            <div class="bg-white w-full max-w-md mx-4 sm:mx-0 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
                 x-show="isPaymentModalOpen" x-transition @click.away="closePaymentModal()">
 
                 <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">

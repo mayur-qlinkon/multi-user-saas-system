@@ -16,8 +16,9 @@ class StorefrontPageController extends Controller
 
     /**
      * Display a public CMS page.
+     *
      * * @param string $slug The company slug from the URL (e.g., /my-store/...)
-     * @param string $pageSlug The page slug (e.g., /page/privacy-policy)
+     * @param  string  $pageSlug  The page slug (e.g., /page/privacy-policy)
      */
     public function show(Request $request, string $slug, string $pageSlug): View
     {
@@ -27,7 +28,7 @@ class StorefrontPageController extends Controller
         // 2. Fetch the Page via Service (Ensures it is published)
         $page = $this->pageService->getPublicPage($pageSlug, $company->id);
 
-        if (!$page) {
+        if (! $page) {
             abort(404, 'This page could not be found or is no longer available.');
         }
 

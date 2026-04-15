@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin\Crm;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Crm\StorePipelineRequest;
 use App\Models\CrmPipeline;
-use App\Models\CrmStage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +23,7 @@ class CrmPipelineController extends Controller
 
         $pipelines = CrmPipeline::where('company_id', $companyId)
             ->withCount('leads')
-            ->with(['stages' => fn($q) => $q->ordered()])
+            ->with(['stages' => fn ($q) => $q->ordered()])
             ->ordered()
             ->get();
 
@@ -48,23 +47,24 @@ class CrmPipelineController extends Controller
 
             Log::info('[CrmPipeline] Created', [
                 'pipeline_id' => $pipeline->id,
-                'name'        => $pipeline->name,
-                'by'          => Auth::id(),
+                'name' => $pipeline->name,
+                'by' => Auth::id(),
             ]);
 
             return response()->json([
-                'success'  => true,
-                'message'  => "Pipeline \"{$pipeline->name}\" created.",
+                'success' => true,
+                'message' => "Pipeline \"{$pipeline->name}\" created.",
                 'pipeline' => $pipeline->loadCount('leads'),
                 'redirect_stages' => route('admin.crm.stages.index', $pipeline->id),
             ]);
 
         } catch (Throwable $e) {
             Log::error('[CrmPipeline] Store failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to create pipeline.'], 500);
         }
     }
- 
+
     // ════════════════════════════════════════════════════
     //  UPDATE
     //  PUT /admin/crm/pipelines/{pipeline}
@@ -79,17 +79,18 @@ class CrmPipelineController extends Controller
 
             Log::info('[CrmPipeline] Updated', [
                 'pipeline_id' => $pipeline->id,
-                'by'          => Auth::id(),
+                'by' => Auth::id(),
             ]);
 
             return response()->json([
-                'success'  => true,
-                'message'  => "Pipeline \"{$pipeline->name}\" updated.",
+                'success' => true,
+                'message' => "Pipeline \"{$pipeline->name}\" updated.",
                 'pipeline' => $pipeline->fresh()->loadCount('leads'),
             ]);
 
         } catch (Throwable $e) {
             Log::error('[CrmPipeline] Update failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to update pipeline.'], 500);
         }
     }
@@ -133,6 +134,7 @@ class CrmPipelineController extends Controller
 
         } catch (Throwable $e) {
             Log::error('[CrmPipeline] Delete failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to delete.'], 500);
         }
     }

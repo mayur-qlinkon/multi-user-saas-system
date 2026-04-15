@@ -9,13 +9,14 @@ class DepartmentService
 {
     public function create(array $data): Department
     {
-        return DB::transaction(fn() => Department::create($data));
+        return DB::transaction(fn () => Department::create($data));
     }
 
     public function update(Department $department, array $data): Department
     {
         return DB::transaction(function () use ($department, $data) {
             $department->update($data);
+
             return $department->fresh();
         });
     }
@@ -25,6 +26,6 @@ class DepartmentService
         if ($department->employees()->exists()) {
             throw new \RuntimeException('Cannot delete department with assigned employees.');
         }
-        DB::transaction(fn() => $department->delete());
+        DB::transaction(fn () => $department->delete());
     }
 }

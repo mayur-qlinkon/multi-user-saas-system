@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Hrm\Announcement;
 use App\Services\Hrm\AnnouncementService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AnnouncementPopupController extends Controller
@@ -26,19 +25,19 @@ class AnnouncementPopupController extends Controller
         return response()->json([
             'success' => true,
             'data' => $announcements->map(fn (Announcement $a) => [
-                'id'                       => $a->id,
-                'title'                    => $a->title,
-                'content'                  => $a->content,
-                'type'                     => $a->type,
-                'type_label'               => $a->type_label,
-                'type_color'               => $a->type_color,
-                'priority'                 => $a->priority,
-                'priority_label'           => $a->priority_label,
+                'id' => $a->id,
+                'title' => $a->title,
+                'content' => $a->content,
+                'type' => $a->type,
+                'type_label' => $a->type_label,
+                'type_color' => $a->type_color,
+                'priority' => $a->priority,
+                'priority_label' => $a->priority_label,
                 'requires_acknowledgement' => $a->requires_acknowledgement,
-                'is_pinned'                => $a->is_pinned,
-                'published_at'             => $a->published_at?->diffForHumans(),
-                'attachment_url'           => $a->attachment_url,
-                'attachment_name'          => $a->attachment_name,
+                'is_pinned' => $a->is_pinned,
+                'published_at' => $a->published_at?->diffForHumans(),
+                'attachment_url' => $a->attachment_url,
+                'attachment_name' => $a->attachment_name,
             ]),
             'mandatory_count' => $announcements->where('requires_acknowledgement', true)->count(),
         ]);

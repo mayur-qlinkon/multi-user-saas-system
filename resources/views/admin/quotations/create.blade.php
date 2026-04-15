@@ -30,15 +30,18 @@
 @section('content')
     <div class="pb-20" x-data="quotationForm(@js($units ?? []), @js($companyState ?? ''), @js($clients ?? []))">
 
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Quotation / Estimate</h1>
             </div>
-            <div class="flex items-center gap-3">
+            {{-- UI Fix: Stack on mobile, side-by-side on md+ --}}
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
                 <a href="{{ route('admin.quotations.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-2 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
+                    Cancel
+                </a>
                 <button type="submit" form="mainQuotationForm"
-                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center gap-2">
+                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-2">
                     <i data-lucide="file-signature" class="w-4 h-4"></i> Generate Proposal
                 </button>
             </div>
@@ -256,15 +259,14 @@
 
                 <div class="overflow-x-auto min-h-[200px]">
                     <table class="w-full text-left border-collapse">
-                        <thead
-                            class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-5 py-4 min-w-[250px]">PRODUCT DETAILS</th>
-                                <th class="px-4 py-4 w-[120px] text-center">HSN/SAC</th>
-                                <th class="px-4 py-4 w-[140px] text-right">UNIT PRICE</th>
-                                <th class="px-4 py-4 w-[140px] text-center">QTY</th>
-                                <th class="px-4 py-4 w-[120px] text-right">TAX %</th>
-                                <th class="px-5 py-4 w-[160px] text-right">LINE TOTAL</th>
+                                <th class="px-4 py-4 min-w-[100px] text-center">HSN/SAC</th>
+                                <th class="px-4 py-4 min-w-[140px] text-right">UNIT PRICE</th>
+                                <th class="px-4 py-4 min-w-[140px] text-center">QTY</th>
+                                <th class="px-4 py-4 min-w-[100px] text-right">TAX %</th>
+                                <th class="px-5 py-4 min-w-[140px] text-right">LINE TOTAL</th>
                                 <th class="px-4 py-4 w-[60px] text-center"></th>
                             </tr>
                         </thead>
@@ -273,7 +275,7 @@
                                 <tr class="hover:bg-gray-50/50 transition-colors">
 
                                     {{-- Product Name & Editing --}}
-                                    <td class="px-5 py-3">
+                                    <td class="px-5 py-3 align-middle">
                                         <div class="text-[13px] font-bold text-gray-800 flex items-center gap-2">
                                             <span x-text="item.product_name"></span>
                                             <button type="button" @click="openItemModal(index)"
@@ -323,42 +325,41 @@
                                             :value="item.hsn_code">
                                     </td>
 
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="px-4 py-3 text-center align-middle">
                                         <span class="text-[12px] font-mono text-gray-600"
                                             x-text="item.hsn_code || '-'"></span>
                                     </td>
 
-                                    <td class="px-4 py-3">
-                                        <div class="relative">
-                                            <span
-                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="relative w-full min-w-[100px]">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
                                             <input type="number" step="0.01" x-model="item.unit_price"
                                                 @input="calculate()"
-                                                class="w-full border border-gray-300 rounded px-2 pl-7 py-2 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right">
+                                                class="w-full h-10 md:h-9 border border-gray-300 rounded px-2 pl-7 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all bg-white">
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center justify-center">
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="flex items-center justify-center min-w-[120px]">
                                             <button type="button"
                                                 @click="item.quantity = Math.max(1, parseFloat(item.quantity || 0) - 1); calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">-</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">-</button>
                                             <input type="number" step="0.0001" x-model="item.quantity"
                                                 @input="calculate()"
-                                                class="w-16 h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700">
+                                                class="w-16 h-10 md:h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700 shadow-inner">
                                             <button type="button"
                                                 @click="item.quantity = parseFloat(item.quantity || 0) + 1; calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">+</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">+</button>
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3 text-right">
+                                    <td class="px-4 py-3 text-right align-middle">
                                         <div class="text-[12px] font-bold text-gray-700" x-text="item.tax_percent + '%'">
                                         </div>
                                         <div class="text-[9px] text-gray-400 uppercase" x-text="item.tax_type"></div>
                                     </td>
 
-                                    <td class="px-5 py-3 text-right">
+                                    <td class="px-5 py-3 text-right align-middle">
                                         <span class="font-black text-gray-800 text-[14px]"
                                             x-text="formatCurrency(item.line_total)"></span>
                                     </td>
@@ -435,27 +436,27 @@
                         </template>
 
                         {{-- Global Discount --}}
-                        <div class="flex justify-between items-center pt-2">
+                        <div class="flex flex-wrap sm:flex-nowrap justify-between items-center pt-2 gap-2">
                             <div class="flex items-center gap-2">
                                 <span class="font-semibold text-gray-600">Discount:</span>
                                 <select name="discount_type" x-model="global.discount_type" @change="calculate()"
-                                    class="border border-gray-300 rounded px-2 py-0.5 text-[11px] font-bold text-gray-600 focus:border-[#108c2a] outline-none bg-gray-50 cursor-pointer">
+                                    class="border border-gray-300 rounded px-2 py-0.5 text-[11px] font-bold text-gray-600 focus:border-[#108c2a] outline-none bg-gray-50 cursor-pointer shrink-0">
                                     <option value="fixed">Flat (₹)</option>
                                     <option value="percentage">Percent (%)</option>
                                 </select>
                             </div>
                             <input type="number" step="0.01" name="discount_amount" x-model="global.discount_value"
                                 @input="calculate()"
-                                class="w-32 border border-gray-300 rounded px-3 py-1 text-right font-bold text-red-500 focus:border-[#108c2a] outline-none"
+                                class="w-24 sm:w-32 border border-gray-300 rounded px-3 py-1.5 text-right font-bold text-red-500 focus:border-[#108c2a] outline-none ml-auto shadow-sm"
                                 placeholder="0.00">
                         </div>
 
                         {{-- Shipping --}}
-                        <div class="flex justify-between items-center pt-2 border-b border-gray-100 pb-4">
-                            <span class="font-semibold">Shipping / Other (₹):</span>
+                        <div class="flex flex-wrap sm:flex-nowrap justify-between items-center pt-2 border-b border-gray-100 pb-4 gap-2">
+                            <span class="font-semibold whitespace-nowrap">Shipping / Other (₹):</span>
                             <input type="number" step="0.01" name="shipping_charge" x-model="global.shipping"
                                 @input="calculate()"
-                                class="w-32 border border-gray-300 rounded px-3 py-1 text-right font-bold text-gray-800 focus:border-[#108c2a] outline-none">
+                                class="w-24 sm:w-32 border border-gray-300 rounded px-3 py-1.5 text-right font-bold text-gray-800 focus:border-[#108c2a] outline-none ml-auto shadow-sm">
                         </div>
 
                         {{-- Final Totals --}}

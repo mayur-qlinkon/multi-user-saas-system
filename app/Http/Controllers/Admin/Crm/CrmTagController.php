@@ -1,6 +1,5 @@
 <?php
 
-
 // ════════════════════════════════════════════════════
 //  FILE: app/Http/Controllers/Admin/Crm/CrmTagController.php
 // ════════════════════════════════════════════════════
@@ -9,8 +8,8 @@ namespace App\Http\Controllers\Admin\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Crm\StoreTagRequest;
-use App\Models\CrmTag;
 use App\Models\CrmLeadSource;
+use App\Models\CrmTag;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -24,14 +23,14 @@ class CrmTagController extends Controller
         $tags = CrmTag::query()
             ->withCount('leads')
             ->ordered()
-            ->get();        
+            ->get();
 
         $sources = CrmLeadSource::query()
             ->withCount('leads')
             ->ordered()
             ->get();
 
-        return view('admin.crm.settings', compact('tags','sources'));
+        return view('admin.crm.settings', compact('tags', 'sources'));
     }
 
     // ── STORE ──
@@ -48,11 +47,12 @@ class CrmTagController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Tag \"{$tag->name}\" added.",
-                'tag'     => $tag,
+                'tag' => $tag,
             ]);
 
         } catch (Throwable $e) {
             Log::error('[CrmTag] Store failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to create tag.'], 500);
         }
     }
@@ -68,7 +68,7 @@ class CrmTagController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Tag \"{$tag->name}\" updated.",
-                'tag'     => $tag->fresh(),
+                'tag' => $tag->fresh(),
             ]);
 
         } catch (Throwable $e) {
@@ -99,6 +99,8 @@ class CrmTagController extends Controller
 
     private function authorizeTag(CrmTag $tag): void
     {
-        if ($tag->company_id !== Auth::user()->company_id) abort(403);
+        if ($tag->company_id !== Auth::user()->company_id) {
+            abort(403);
+        }
     }
 }

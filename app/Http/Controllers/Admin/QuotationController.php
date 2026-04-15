@@ -5,20 +5,20 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreQuotationRequest;
 use App\Http\Requests\Admin\UpdateQuotationRequest;
-use App\Models\Quotation;
-use App\Models\QuotationItem;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Quotation;
+use App\Models\QuotationItem;
+use App\Models\State;
 use App\Models\Store;
 use App\Models\Unit;
-use App\Models\State;
-use App\Models\Warehouse; 
-use Illuminate\Http\Request;
+use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class QuotationController extends Controller
 {
@@ -44,13 +44,14 @@ class QuotationController extends Controller
     public function create()
     {
         $companyId = Auth::user()->company_id;
-        
+
         $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
         $clients = Client::with('state')->where('company_id', $companyId)->where('is_active', true)->get();
         $warehouses = Warehouse::where('company_id', $companyId)->get();
-        $states     = State::where('is_active', true)->orderBy('name')->get();
+        $states = State::where('is_active', true)->orderBy('name')->get();
         $units = Unit::where('is_active', true)->get();
-        $companyState = Auth::user()->company->state->name ?? 'Unknown';        
+        $companyState = Auth::user()->company->state->name ?? 'Unknown';
+
         return view('admin.quotations.create', compact('stores', 'clients', 'warehouses', 'units', 'companyState', 'states'));
     }
 
@@ -60,14 +61,14 @@ class QuotationController extends Controller
     public function edit(Quotation $quotation)
     {
         abort_if($quotation->company_id !== Auth::user()->company_id, 403);
-        
+
         if ($quotation->status === 'converted') {
             return redirect()->route('admin.quotations.show', $quotation->id)
                 ->with('error', 'Converted quotations cannot be edited.');
         }
 
         $quotation->load('items');
-        
+
         $stores = Store::where('company_id', $quotation->company_id)->where('is_active', true)->get();
         $clients = Client::with('state')->where('company_id', $quotation->company_id)->where('is_active', true)->get();
         $warehouses = Warehouse::where('company_id', $quotation->company_id)->get();
@@ -89,7 +90,7 @@ class QuotationController extends Controller
             $company = Auth::user()->company;
 
             // 1. Generate Quotation Number (Bulletproof Logic preventing Duplicate Entry errors)
-            $prefix = 'QT-' . date('ym');
+            $prefix = 'QT-'.date('ym');
             $latestQuotation = Quotation::withTrashed()
                 ->where('company_id', $companyId)
                 ->where('quotation_number', 'like', "{$prefix}-%")
@@ -102,7 +103,7 @@ class QuotationController extends Controller
             } else {
                 $nextSequence = 1;
             }
-            $quotationNumber = $prefix . '-' . str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
+            $quotationNumber = $prefix.'-'.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
 
             // 2. Resolve Customer Snapshot Data
             $client = $request->customer_id ? Client::find($request->customer_id) : null;
@@ -114,27 +115,27 @@ class QuotationController extends Controller
 
             // 🌟 4. CREATE QUOTATION ONCE (Combines form data + calculated totals)
             $quotation = Quotation::create(array_merge([
-                'company_id'       => $companyId,
-                'store_id'         => $request->store_id,
-                'customer_id'      => $client->id ?? null,
-                'customer_name'    => $customerName,
-                'customer_phone'   => $request->customer_phone ?? ($client->phone ?? null),
-                'customer_email'   => $request->customer_email ?? ($client->email ?? null),
-                'customer_gstin'   => $request->customer_gstin ?? ($client->gst_number ?? null),
-                'billing_address'  => $request->billing_address ?? null,
+                'company_id' => $companyId,
+                'store_id' => $request->store_id,
+                'customer_id' => $client->id ?? null,
+                'customer_name' => $customerName,
+                'customer_phone' => $request->customer_phone ?? ($client->phone ?? null),
+                'customer_email' => $request->customer_email ?? ($client->email ?? null),
+                'customer_gstin' => $request->customer_gstin ?? ($client->gst_number ?? null),
+                'billing_address' => $request->billing_address ?? null,
                 'shipping_address' => $request->shipping_address ?? null,
-                'created_by'       => Auth::id(),
+                'created_by' => Auth::id(),
                 'quotation_number' => $quotationNumber,
                 'reference_number' => $request->reference_number,
-                'quotation_date'   => $request->quotation_date,
-                'valid_until'      => $request->valid_until,
-                'supply_state'     => $supplyState,
-                'gst_treatment'    => $request->gst_treatment,
-                'currency_code'    => $request->currency_code ?? 'INR',
-                'exchange_rate'    => $request->exchange_rate ?? 1.0000,
-                'notes'            => $request->notes,
+                'quotation_date' => $request->quotation_date,
+                'valid_until' => $request->valid_until,
+                'supply_state' => $supplyState,
+                'gst_treatment' => $request->gst_treatment,
+                'currency_code' => $request->currency_code ?? 'INR',
+                'exchange_rate' => $request->exchange_rate ?? 1.0000,
+                'notes' => $request->notes,
                 'terms_conditions' => $request->terms_conditions,
-                'status'           => 'draft',
+                'status' => 'draft',
             ], $mathEngine['header_totals']));
 
             // 5. INSERT LINE ITEMS
@@ -146,11 +147,12 @@ class QuotationController extends Controller
             DB::commit();
 
             return redirect()->route('admin.quotations.show', $quotation->id)
-                             ->with('success', 'Quotation created successfully!');
+                ->with('success', 'Quotation created successfully!');
 
         } catch (Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Failed to create quotation. ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to create quotation. '.$e->getMessage());
         }
     }
 
@@ -161,6 +163,7 @@ class QuotationController extends Controller
     {
         abort_if($quotation->company_id !== Auth::user()->company_id, 403);
         $quotation->load(['items', 'customer', 'store', 'creator']);
+
         return view('admin.quotations.show', compact('quotation'));
     }
 
@@ -184,22 +187,22 @@ class QuotationController extends Controller
 
             // 🌟 2. UPDATE QUOTATION ONCE (Fixes double-logging on updates)
             $quotation->update(array_merge([
-                'store_id'         => $request->store_id,
-                'customer_id'      => $client->id ?? null,
-                'customer_name'    => $customerName,
-                'customer_phone'   => $request->customer_phone ?? ($client->phone ?? null),
-                'customer_email'   => $request->customer_email ?? ($client->email ?? null),
-                'customer_gstin'   => $request->customer_gstin ?? ($client->gst_number ?? null),
-                'billing_address'  => $request->billing_address ?? null,
+                'store_id' => $request->store_id,
+                'customer_id' => $client->id ?? null,
+                'customer_name' => $customerName,
+                'customer_phone' => $request->customer_phone ?? ($client->phone ?? null),
+                'customer_email' => $request->customer_email ?? ($client->email ?? null),
+                'customer_gstin' => $request->customer_gstin ?? ($client->gst_number ?? null),
+                'billing_address' => $request->billing_address ?? null,
                 'shipping_address' => $request->shipping_address ?? null,
                 'reference_number' => $request->reference_number,
-                'quotation_date'   => $request->quotation_date,
-                'valid_until'      => $request->valid_until,
-                'supply_state'     => $supplyState,
-                'gst_treatment'    => $request->gst_treatment,
-                'currency_code'    => $request->currency_code ?? 'INR',
-                'exchange_rate'    => $request->exchange_rate ?? 1.0000,
-                'notes'            => $request->notes,
+                'quotation_date' => $request->quotation_date,
+                'valid_until' => $request->valid_until,
+                'supply_state' => $supplyState,
+                'gst_treatment' => $request->gst_treatment,
+                'currency_code' => $request->currency_code ?? 'INR',
+                'exchange_rate' => $request->exchange_rate ?? 1.0000,
+                'notes' => $request->notes,
                 'terms_conditions' => $request->terms_conditions,
             ], $mathEngine['header_totals']));
 
@@ -216,7 +219,8 @@ class QuotationController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Failed to update quotation. ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to update quotation. '.$e->getMessage());
         }
     }
 
@@ -226,7 +230,7 @@ class QuotationController extends Controller
     public function destroy(Quotation $quotation)
     {
         abort_if($quotation->company_id !== Auth::user()->company_id, 403);
-        
+
         if ($quotation->status === 'converted') {
             return back()->with('error', 'Cannot delete a quotation that has already been converted to an invoice.');
         }
@@ -263,10 +267,10 @@ class QuotationController extends Controller
         $quotation->load(['items', 'customer', 'store', 'creator']);
         $company = $quotation->company ?? Auth::user()->company;
 
-        $pdf = PDF::loadView('admin.quotations.pdf', compact('quotation', 'company'));
+        $pdf = Pdf::loadView('admin.quotations.pdf', compact('quotation', 'company'));
         $pdf->setPaper('A4', 'portrait');
 
-        return $pdf->download('Quotation_' . $quotation->quotation_number . '.pdf');
+        return $pdf->download('Quotation_'.$quotation->quotation_number.'.pdf');
     }
 
     /**
@@ -286,80 +290,80 @@ class QuotationController extends Controller
             $companyId = $quotation->company_id;
 
             // Generate New Invoice Number safely
-            $prefix = 'INV-' . date('ym');
+            $prefix = 'INV-'.date('ym');
             $latestInvoice = Invoice::withTrashed()
                 ->where('company_id', $companyId)
                 ->where('invoice_number', 'like', "{$prefix}-%")
                 ->orderBy('invoice_number', 'desc')
                 ->first();
             $nextSequence = $latestInvoice ? ((int) substr($latestInvoice->invoice_number, -4)) + 1 : 1;
-            $invoiceNumber = $prefix . '-' . str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
+            $invoiceNumber = $prefix.'-'.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
 
             // Create the Invoice Header
             $invoice = Invoice::create([
-                'company_id'       => $companyId,
-                'store_id'         => $quotation->store_id,
-                'warehouse_id'     => Warehouse::where('company_id', $companyId)->first()->id, 
-                'customer_id'      => $quotation->customer_id,
-                'customer_name'    => $quotation->customer_name,
-                'billing_address'  => $quotation->billing_address,
+                'company_id' => $companyId,
+                'store_id' => $quotation->store_id,
+                'warehouse_id' => Warehouse::where('company_id', $companyId)->first()->id,
+                'customer_id' => $quotation->customer_id,
+                'customer_name' => $quotation->customer_name,
+                'billing_address' => $quotation->billing_address,
                 'shipping_address' => $quotation->shipping_address,
-                'created_by'       => Auth::id(),
-                'invoice_number'   => $invoiceNumber,
-                'source'           => 'direct', 
-                'invoice_date'     => now()->toDateString(),
-                'due_date'         => now()->addDays(7)->toDateString(),
-                'supply_state'     => $quotation->supply_state,
-                'gst_treatment'    => $quotation->gst_treatment,
-                'currency_code'    => $quotation->currency_code,
-                'exchange_rate'    => $quotation->exchange_rate,
-                'subtotal'         => $quotation->subtotal,
-                'discount_type'    => $quotation->discount_type,
-                'discount_amount'  => $quotation->discount_amount,
-                'taxable_amount'   => $quotation->taxable_amount,
-                'cgst_amount'      => $quotation->cgst_amount,
-                'sgst_amount'      => $quotation->sgst_amount,
-                'igst_amount'      => $quotation->igst_amount,
-                'tax_amount'       => $quotation->tax_amount,
-                'shipping_charge'  => $quotation->shipping_charge,
-                'other_charges'    => $quotation->other_charges,
-                'round_off'        => $quotation->round_off,
-                'grand_total'      => $quotation->grand_total,
-                'notes'            => $quotation->notes,
+                'created_by' => Auth::id(),
+                'invoice_number' => $invoiceNumber,
+                'source' => 'direct',
+                'invoice_date' => now()->toDateString(),
+                'due_date' => now()->addDays(7)->toDateString(),
+                'supply_state' => $quotation->supply_state,
+                'gst_treatment' => $quotation->gst_treatment,
+                'currency_code' => $quotation->currency_code,
+                'exchange_rate' => $quotation->exchange_rate,
+                'subtotal' => $quotation->subtotal,
+                'discount_type' => $quotation->discount_type,
+                'discount_amount' => $quotation->discount_amount,
+                'taxable_amount' => $quotation->taxable_amount,
+                'cgst_amount' => $quotation->cgst_amount,
+                'sgst_amount' => $quotation->sgst_amount,
+                'igst_amount' => $quotation->igst_amount,
+                'tax_amount' => $quotation->tax_amount,
+                'shipping_charge' => $quotation->shipping_charge,
+                'other_charges' => $quotation->other_charges,
+                'round_off' => $quotation->round_off,
+                'grand_total' => $quotation->grand_total,
+                'notes' => $quotation->notes,
                 'terms_conditions' => $quotation->terms_conditions,
-                'status'           => 'draft', 
-                'payment_status'   => 'unpaid',
+                'status' => 'draft',
+                'payment_status' => 'unpaid',
             ]);
 
             // Deep Copy Line Items
             foreach ($quotation->items as $qItem) {
                 InvoiceItem::create([
-                    'invoice_id'      => $invoice->id,
-                    'product_id'      => $qItem->product_id,
-                    'product_sku_id'  => $qItem->product_sku_id,
-                    'unit_id'         => $qItem->unit_id,
-                    'product_name'    => $qItem->product_name,
-                    'hsn_code'        => $qItem->hsn_code,
-                    'quantity'        => $qItem->quantity,
-                    'unit_price'      => $qItem->unit_price,
-                    'tax_type'        => $qItem->tax_type,
-                    'discount_type'   => $qItem->discount_type,
+                    'invoice_id' => $invoice->id,
+                    'product_id' => $qItem->product_id,
+                    'product_sku_id' => $qItem->product_sku_id,
+                    'unit_id' => $qItem->unit_id,
+                    'product_name' => $qItem->product_name,
+                    'hsn_code' => $qItem->hsn_code,
+                    'quantity' => $qItem->quantity,
+                    'unit_price' => $qItem->unit_price,
+                    'tax_type' => $qItem->tax_type,
+                    'discount_type' => $qItem->discount_type,
                     'discount_amount' => $qItem->discount_amount,
-                    'taxable_value'   => $qItem->taxable_value,
-                    'tax_percent'     => $qItem->tax_percent,
-                    'cgst_amount'     => $qItem->cgst_amount,
-                    'sgst_amount'     => $qItem->sgst_amount,
-                    'igst_amount'     => $qItem->igst_amount,
-                    'tax_amount'      => $qItem->tax_amount,
-                    'total_amount'    => $qItem->total_amount,
+                    'taxable_value' => $qItem->taxable_value,
+                    'tax_percent' => $qItem->tax_percent,
+                    'cgst_amount' => $qItem->cgst_amount,
+                    'sgst_amount' => $qItem->sgst_amount,
+                    'igst_amount' => $qItem->igst_amount,
+                    'tax_amount' => $qItem->tax_amount,
+                    'total_amount' => $qItem->total_amount,
                 ]);
             }
 
             // Lock the Quotation & Trace it
             $quotation->update([
-                'status'                  => 'converted',
+                'status' => 'converted',
                 'converted_to_invoice_id' => $invoice->id,
-                'converted_at'            => now(),
+                'converted_at' => now(),
             ]);
 
             DB::commit();
@@ -367,9 +371,10 @@ class QuotationController extends Controller
             return redirect()->route('admin.invoices.edit', $invoice->id)
                 ->with('success', 'Quotation successfully converted to a Draft Invoice! Please confirm to deduct stock.');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Failed to convert quotation. ' . $e->getMessage());
+
+            return back()->with('error', 'Failed to convert quotation. '.$e->getMessage());
         }
     }
 
@@ -388,10 +393,10 @@ class QuotationController extends Controller
             $qty = (float) $item['quantity'];
             $price = (float) $item['unit_price'];
             $taxPct = (float) $item['tax_percent'];
-            
+
             // Base
             $baseAmount = $qty * $price;
-            
+
             // Discount
             $lineDiscountAmt = 0;
             if ($item['discount_type'] === 'percentage' || $item['discount_type'] === 'percent') {
@@ -419,24 +424,24 @@ class QuotationController extends Controller
 
             // Push processed item back to array
             $processedItems[] = [
-                'product_id'      => $item['product_id'] ?? null,
-                'product_sku_id'  => $item['product_sku_id'] ?? null,
-                'unit_id'         => $item['unit_id'] ?? null,
-                'product_name'    => $item['product_name'],
-                'sku_code'        => $item['sku_code'] ?? null,
-                'hsn_code'        => $item['hsn_code'] ?? null,
-                'quantity'        => $qty,
-                'unit_price'      => $price,
-                'tax_type'        => $item['tax_type'],
-                'discount_type'   => $item['discount_type'],
+                'product_id' => $item['product_id'] ?? null,
+                'product_sku_id' => $item['product_sku_id'] ?? null,
+                'unit_id' => $item['unit_id'] ?? null,
+                'product_name' => $item['product_name'],
+                'sku_code' => $item['sku_code'] ?? null,
+                'hsn_code' => $item['hsn_code'] ?? null,
+                'quantity' => $qty,
+                'unit_price' => $price,
+                'tax_type' => $item['tax_type'],
+                'discount_type' => $item['discount_type'],
                 'discount_amount' => $lineDiscountAmt,
-                'taxable_value'   => $taxableValue,
-                'tax_percent'     => $taxPct,
-                'igst_amount'     => $isInterState ? $taxAmount : 0,
-                'cgst_amount'     => !$isInterState ? ($taxAmount / 2) : 0,
-                'sgst_amount'     => !$isInterState ? ($taxAmount / 2) : 0,
-                'tax_amount'      => $taxAmount,
-                'total_amount'    => $lineTotal,
+                'taxable_value' => $taxableValue,
+                'tax_percent' => $taxPct,
+                'igst_amount' => $isInterState ? $taxAmount : 0,
+                'cgst_amount' => ! $isInterState ? ($taxAmount / 2) : 0,
+                'sgst_amount' => ! $isInterState ? ($taxAmount / 2) : 0,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $lineTotal,
             ];
         }
 
@@ -457,20 +462,20 @@ class QuotationController extends Controller
 
         return [
             'header_totals' => [
-                'subtotal'        => $totalSubtotal,
-                'discount_type'   => $data['discount_type'],
+                'subtotal' => $totalSubtotal,
+                'discount_type' => $data['discount_type'],
                 'discount_amount' => $globalDiscountAmt,
-                'taxable_amount'  => $totalSubtotal - $globalDiscountAmt,
-                'tax_amount'      => $totalTax,
-                'igst_amount'     => $isInterState ? $totalTax : 0,
-                'cgst_amount'     => !$isInterState ? ($totalTax / 2) : 0,
-                'sgst_amount'     => !$isInterState ? ($totalTax / 2) : 0,
+                'taxable_amount' => $totalSubtotal - $globalDiscountAmt,
+                'tax_amount' => $totalTax,
+                'igst_amount' => $isInterState ? $totalTax : 0,
+                'cgst_amount' => ! $isInterState ? ($totalTax / 2) : 0,
+                'sgst_amount' => ! $isInterState ? ($totalTax / 2) : 0,
                 'shipping_charge' => $shipping,
-                'other_charges'   => $other,
-                'round_off'       => $roundOff,
-                'grand_total'     => $grandTotal,
+                'other_charges' => $other,
+                'round_off' => $roundOff,
+                'grand_total' => $grandTotal,
             ],
-            'line_items' => $processedItems
+            'line_items' => $processedItems,
         ];
     }
 }

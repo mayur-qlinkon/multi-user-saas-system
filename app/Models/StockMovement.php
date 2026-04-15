@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use App\Traits\Tenantable;
 
 class StockMovement extends Model
 {
@@ -24,15 +24,15 @@ class StockMovement extends Model
         'user_id',
         'quantity',
         'balance_after',
-        'movement_type',  // 'purchase', 'sale', 'purchase_return', 'sale_return',  'adjustment', 'transfer_in', 'transfer_out', 'opening_stock'                
+        'movement_type',  // 'purchase', 'sale', 'purchase_return', 'sale_return',  'adjustment', 'transfer_in', 'transfer_out', 'opening_stock'
         'reference_type',
         'reference_id',
-        'note'
+        'note',
     ];
 
     protected $casts = [
-        'unit_cost'     => 'decimal:4',
-        'quantity'      => 'decimal:4',
+        'unit_cost' => 'decimal:4',
+        'quantity' => 'decimal:4',
         'balance_after' => 'decimal:2',
     ];
 

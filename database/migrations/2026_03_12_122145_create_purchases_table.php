@@ -45,7 +45,7 @@ return new class extends Migration
             $table->enum('status', [
                 'draft',             // saved, not confirmed
                 'ordered',           // confirmed PO sent to supplier
-                'partially_received',// some items arrived
+                'partially_received', // some items arrived
                 'received',          // all items received → triggers stock
                 'cancelled',
             ])->default('draft');

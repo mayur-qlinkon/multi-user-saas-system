@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeValueController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\BulkImportController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChallanController;
 use App\Http\Controllers\Admin\ChallanReturnController;
@@ -89,26 +90,30 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
         // ════════════════════════════════════════════════
         // SETTINGS
         // ════════════════════════════════════════════════
-        Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::post('/', 'update')->name('update');
-            Route::post('/notifications', 'updateNotifications')->name('notifications.update');
-            Route::post('/clear-cache', 'clearCache')->name('clear-cache');
-            Route::post('/reset', 'resetAll')->name('reset');
-            Route::get('/audit', 'auditTrail')->name('audit');
+        Route::middleware('permission:settings.view')->group(function () {
+            Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'update')->name('update');
+                Route::post('/notifications', 'updateNotifications')->name('notifications.update');
+                Route::post('/clear-cache', 'clearCache')->name('clear-cache');
+                Route::post('/reset', 'resetAll')->name('reset');
+                Route::get('/audit', 'auditTrail')->name('audit');
+            });
         });
 
         // ── Storefront Pages (CMS) ──
-        Route::prefix('pages')->name('pages.')->controller(PageController::class)->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('/create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::get('/{page}/edit', 'edit')->name('edit');
-            Route::put('/{page}', 'update')->name('update');
-            Route::delete('/{page}', 'destroy')->name('destroy');
+        Route::middleware('permission:pages.view')->group(function () {
+            Route::prefix('pages')->name('pages.')->controller(PageController::class)->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/create', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{page}/edit', 'edit')->name('edit');
+                Route::put('/{page}', 'update')->name('update');
+                Route::delete('/{page}', 'destroy')->name('destroy');
 
-            // AJAX Quick Toggles
-            Route::post('/{page}/toggle', 'togglePublish')->name('toggle');
+                // AJAX Quick Toggles
+                Route::post('/{page}/toggle', 'togglePublish')->name('toggle');
+            });
         });
 
         // ── Notifications ──
@@ -120,7 +125,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
         });
 
         // ── Banners ──
-        Route::prefix('banners')->name('banners.')->controller(BannerController::class)->group(function () {
+        Route::prefix('banners')->middleware('permission:banners.view')->name('banners.')->controller(BannerController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
@@ -168,24 +173,26 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             });
 
         // ── Storefront Sections ──
-        Route::prefix('storefront-sections')
-            ->name('storefront-sections.')
-            ->controller(StorefrontSectionController::class)
-            ->group(function () {
+        Route::middleware('permission:storefront_sections.view')->group(function () {
+            Route::prefix('storefront-sections')
+                ->name('storefront-sections.')
+                ->controller(StorefrontSectionController::class)
+                ->group(function () {
 
-                // ── Standard CRUD ──
-                Route::get('/', 'index')->name('index');
-                Route::get('/create', 'create')->name('create');
-                Route::post('/', 'store')->name('store');
-                Route::get('/{storefrontSection}/edit', 'edit')->name('edit');
-                Route::put('/{storefrontSection}', 'update')->name('update');
-                Route::delete('/{storefrontSection}', 'destroy')->name('destroy');
+                    // ── Standard CRUD ──
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/create', 'create')->name('create');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/{storefrontSection}/edit', 'edit')->name('edit');
+                    Route::put('/{storefrontSection}', 'update')->name('update');
+                    Route::delete('/{storefrontSection}', 'destroy')->name('destroy');
 
-                // ── AJAX ──
-                Route::post('/reorder', 'reorder')->name('reorder');
-                Route::post('/{storefrontSection}/toggle', 'toggleActive')->name('toggle');
-                Route::post('/{storefrontSection}/duplicate', 'duplicate')->name('duplicate');
-            });
+                    // ── AJAX ──
+                    Route::post('/reorder', 'reorder')->name('reorder');
+                    Route::post('/{storefrontSection}/toggle', 'toggleActive')->name('toggle');
+                    Route::post('/{storefrontSection}/duplicate', 'duplicate')->name('duplicate');
+                });
+        });
 
         // ── Storefront Sections Products ──
         Route::prefix('storefront-sections/{storefrontSection}/products')
@@ -201,23 +208,25 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             });
 
         // ── Orders ──
-        Route::prefix('orders')
-            ->name('orders.')
-            ->controller(AdminOrderController::class)
-            ->group(function () {
-                Route::get('/', 'index')->name('index');
-                Route::get('/create', 'create')->name('create');
-                Route::get('/{order}/edit', 'edit')->name('edit');
-                Route::post('/', 'store')->name('store');
-                Route::get('/{order}', 'show')->name('show');
-                Route::put('/{order}', 'update')->name('update');
-                Route::patch('/{order}/logistics', 'updateLogistics')->name('logistics'); // 🌟 NEW: Quick Tracking Update
-                Route::post('/{order}/status', 'updateStatus')->name('status');
-                Route::post('/{order}/cancel', 'cancel')->name('cancel');
-                Route::post('/{order}/note', 'addNote')->name('note');
-                Route::post('/{order}/mark-paid', 'markPaid')->name('mark-paid');
-                Route::get('/{order}/receipt', 'downloadReceipt')->name('receipt');
-            });
+        Route::middleware('permission:orders.view')->group(function () {
+            Route::prefix('orders')
+                ->name('orders.')
+                ->controller(AdminOrderController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/create', 'create')->name('create');
+                    Route::get('/{order}/edit', 'edit')->name('edit');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/{order}', 'show')->name('show');
+                    Route::put('/{order}', 'update')->name('update');
+                    Route::patch('/{order}/logistics', 'updateLogistics')->name('logistics'); // 🌟 NEW: Quick Tracking Update
+                    Route::post('/{order}/status', 'updateStatus')->name('status');
+                    Route::post('/{order}/cancel', 'cancel')->name('cancel');
+                    Route::post('/{order}/note', 'addNote')->name('note');
+                    Route::post('/{order}/mark-paid', 'markPaid')->name('mark-paid');
+                    Route::get('/{order}/receipt', 'downloadReceipt')->name('receipt');
+                });
+        });
 
         // Everything below here REQUIRES a store to exist!
         Route::middleware('store.exists')->group(function () {
@@ -237,14 +246,14 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::post('/{announcement}/dismiss', 'dismiss')->name('dismiss');
             });
 
-            Route::resource('/users', UserController::class);
-            Route::resource('/stores', StoreController::class);
-            Route::resource('/clients', ClientController::class)->except(['create', 'edit', 'show']);
-            Route::resource('/suppliers', SupplierController::class)->except(['create', 'show', 'edit']);
-            Route::resource('/warehouses', WarehouseController::class);
-            Route::resource('/purchases', PurchaseController::class);
-            Route::resource('purchase-returns', PurchaseReturnController::class);
-            Route::resource('invoices', InvoiceController::class);
+            Route::resource('/users', UserController::class)->middleware('permission:users.view');
+            Route::resource('/stores', StoreController::class)->middleware('permission:stores.view');
+            Route::resource('/clients', ClientController::class)->except(['create', 'edit', 'show'])->middleware('permission:clients.view');
+            Route::resource('/suppliers', SupplierController::class)->except(['create', 'show', 'edit'])->middleware('permission:suppliers.view');
+            Route::resource('/warehouses', WarehouseController::class)->middleware('permission:warehouses.view');
+            Route::resource('/purchases', PurchaseController::class)->middleware('permission:purchases.view');
+            Route::resource('purchase-returns', PurchaseReturnController::class)->middleware('permission:purchase-returns.view');
+            Route::resource('invoices', InvoiceController::class)->middleware('permission:invoices.view');
 
             // ==========================================
             // INVOICE RETURNS (CREDIT NOTES)
@@ -264,9 +273,10 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             // 3. Standard Resource (Handles index, show, edit, update, destroy)
             Route::resource('invoice-returns', InvoiceReturnController::class)
                 ->except(['create', 'store'])
-                ->names('invoice-returns'); // 🌟 CRITICAL FIX: Forces the 'admin.' prefix!
+                ->middleware('permission:invoice-returns.view')
+                ->names('invoice-returns');
 
-            Route::resource('quotations', QuotationController::class);
+            Route::resource('quotations', QuotationController::class)->middleware('permission:quotations.view');
             Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convertToInvoice'])->name('quotations.convert');
             Route::post('quotations/{quotation}/mark-sent', [QuotationController::class, 'markAsSent'])->name('quotations.mark_sent');
             Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'downloadPdf'])
@@ -275,12 +285,14 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             // ==========================================
             // POS MODULE ROUTING
             // ==========================================
-            Route::prefix('pos')->name('pos.')->group(function () {
-                Route::get('/', [PosController::class, 'index'])->name('index');
-                Route::post('/store', [PosController::class, 'store'])->name('store');
-                Route::get('/scan', [PosController::class, 'scanItem'])->name('scan');
-                Route::post('/quick-product', [PosController::class, 'storeQuickProduct'])->name('quick-product');
-                Route::get('/receipt/{id}', [PosController::class, 'receipt'])->name('receipt');
+            Route::middleware('permission:pos.access')->group(function () {
+                Route::prefix('pos')->name('pos.')->group(function () {
+                    Route::get('/', [PosController::class, 'index'])->name('index');
+                    Route::post('/store', [PosController::class, 'store'])->name('store');
+                    Route::get('/scan', [PosController::class, 'scanItem'])->name('scan');
+                    Route::post('/quick-product', [PosController::class, 'storeQuickProduct'])->name('quick-product');
+                    Route::get('/receipt/{id}', [PosController::class, 'receipt'])->name('receipt');
+                });
             });
 
             // Endpoint for the POS Product Grid (Infinite Scroll & Search)
@@ -317,8 +329,8 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             ->name('inventory.reports.index');
         Route::get('/api/search-skus', [SearchController::class, 'searchSkus'])->name('api.search-skus');
 
-        Route::resource('/roles', RoleController::class);
-        Route::resource('/payment-methods', PaymentMethodController::class)->except(['create', 'edit', 'show']);
+        Route::resource('/roles', RoleController::class)->middleware('permission:roles.view');
+        Route::resource('/payment-methods', PaymentMethodController::class)->except(['create', 'edit', 'show'])->middleware('permission:payment_methods.view');
         Route::post('/payment-methods/reorder', [PaymentMethodController::class, 'reorder'])->name('payment_methods.reorder');
 
         // Label Printing Module
@@ -327,26 +339,45 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
         Route::get('/api/labels/search', [LabelController::class, 'fetchProducts'])->name('labels.fetch-products');
         Route::post('/api/labels/selected', [LabelController::class, 'fetchSelectedSkus'])->name('api.labels.selected');
 
+        // ── Bulk Import ──
+        Route::prefix('bulk-import')->name('bulk-import.')->middleware('module:bulk_import')->controller(BulkImportController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/sample/{type}', 'downloadSample')->name('sample');
+            Route::get('/errors/{import}', 'downloadErrors')->name('errors');
+            // Categories
+            Route::post('/categories/upload', 'uploadCategories')->name('categories.upload');
+            Route::post('/categories/process', 'processCategories')->name('categories.process');
+            // Units
+            Route::post('/units/upload', 'uploadUnits')->name('units.upload');
+            Route::post('/units/process', 'processUnits')->name('units.process');
+            // Products
+            Route::post('/products/upload', 'uploadProducts')->name('products.upload');
+            Route::post('/products/process', 'processProducts')->name('products.process');
+            // Product SKUs
+            Route::post('/skus/upload', 'uploadSkus')->name('skus.upload');
+            Route::post('/skus/process', 'processSkus')->name('skus.process');
+        });
+
         // Core Product Resource
-        Route::resource('/products', ProductController::class);
+        Route::resource('/products', ProductController::class)->middleware('permission:products.view');
+        Route::post('products/bulk-delete', [ProductController::class, 'bulkDestroy'])->name('products.bulk-delete');
         Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
         Route::post('/products/{product}/duplicate', [ProductController::class, 'duplicate'])
             ->name('products.duplicate');
-        Route::resource('/categories', CategoryController::class)->except(['create', 'show', 'edit']);
-        Route::resource('/units', UnitController::class)->except(['create', 'show', 'edit']);
+        Route::resource('/categories', CategoryController::class)->except(['create', 'show', 'edit'])->middleware('permission:categories.view');
+        Route::resource('/units', UnitController::class)->except(['create', 'show', 'edit'])->middleware('permission:units.view');
 
-        Route::resource('/attributes', AttributeController::class)->except(['create', 'show', 'edit']);
+        Route::resource('/attributes', AttributeController::class)->except(['create', 'show', 'edit'])->middleware('permission:attributes.view');
         Route::post('/attributes/{attribute}/values', [AttributeValueController::class, 'store'])->name('attribute-values.store');
         Route::put('/attribute-values/{attributeValue}', [AttributeValueController::class, 'update'])->name('attribute-values.update');
         Route::delete('/attribute-values/{attributeValue}', [AttributeValueController::class, 'destroy'])->name('attribute-values.destroy');
 
         Route::prefix('crm')->name('crm.')->group(function () {
-
             Route::get('/dashboard', [CrmDashboardController::class, 'index'])
+                ->middleware('permission:crm_dashboard.view')
                 ->name('dashboard');
-
             // ── Pipelines ──
-            Route::prefix('pipelines')->name('pipelines.')->controller(CrmPipelineController::class)->group(function () {
+            Route::prefix('pipelines')->middleware('permission:crm_pipelines.view')->name('pipelines.')->controller(CrmPipelineController::class)->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/', 'store')->name('store');
                 // Route::get('/create',               'create')      ->name('create');
@@ -355,9 +386,8 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::delete('/{pipeline}', 'destroy')->name('destroy');
                 Route::post('/{pipeline}/default', 'setDefault')->name('default');
             });
-
             // ── Stages (nested under pipeline) ──
-            Route::prefix('pipelines/{pipeline}/stages')->name('stages.')->controller(CrmStageController::class)->group(function () {
+            Route::prefix('pipelines/{pipeline}/stages')->middleware('permission:crm_stages.view')->name('stages.')->controller(CrmStageController::class)->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/', 'store')->name('store');
                 Route::put('/{stage}', 'update')->name('update');
@@ -366,7 +396,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             });
 
             // ── Lead Sources ──
-            Route::prefix('sources')->name('sources.')->controller(CrmLeadSourceController::class)->group(function () {
+            Route::prefix('sources')->middleware('permission:crm_sources.view')->name('sources.')->controller(CrmLeadSourceController::class)->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/', 'store')->name('store');
                 Route::put('/{source}', 'update')->name('update');
@@ -374,7 +404,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             });
 
             // ── Tags ──
-            Route::prefix('tags')->name('tags.')->controller(CrmTagController::class)->group(function () {
+            Route::prefix('tags')->middleware('permission:crm_tags.view')->name('tags.')->controller(CrmTagController::class)->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/', 'store')->name('store');
                 Route::put('/{tag}', 'update')->name('update');
@@ -386,10 +416,8 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::post('/leads/import', [CrmImportExportController::class, 'import'])->name('leads.import.store');
             Route::get('/leads/import/template', [CrmImportExportController::class, 'template'])->name('leads.import.template');
             Route::get('/leads/export', [CrmImportExportController::class, 'export'])->name('leads.export');
-
             // ── Leads ──
-            Route::prefix('leads')->name('leads.')->controller(CrmLeadController::class)->group(function () {
-
+            Route::prefix('leads')->middleware('permission:crm_leads.view')->name('leads.')->controller(CrmLeadController::class)->group(function () {
                 // ── Core CRUD ──
                 Route::get('/', 'index')->name('index');
                 Route::get('/create', 'create')->name('create');
@@ -398,32 +426,25 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::get('/{lead}/edit', 'edit')->name('edit');
                 Route::put('/{lead}', 'update')->name('update');
                 Route::delete('/{lead}', 'destroy')->name('destroy');
-
                 // ── Stage move — AJAX ──
                 Route::post('/{lead}/stage', 'moveStage')->name('stage');
-
                 // ── Activity log — AJAX ──
                 Route::post('/{lead}/activity', 'logActivity')->name('activity');
-
                 // ── Tasks — AJAX ──
                 Route::post('/{lead}/tasks', 'storeTask')->name('tasks.store');
                 Route::put('/{lead}/tasks/{task}', 'updateTask')->name('tasks.update');
                 Route::post('/{lead}/tasks/{task}/complete', 'completeTask')->name('tasks.complete');
                 Route::delete('/{lead}/tasks/{task}', 'destroyTask')->name('tasks.destroy');
-
                 // ── Convert lead → client ──
                 Route::post('/{lead}/convert', 'convert')->name('convert');
-
                 // ── Score update ──
                 Route::post('/{lead}/score', 'updateScore')->name('score');
-
             });
 
         });
 
         // ── EXPENSE MODULE ──
-        Route::prefix('expenses')->name('expenses.')->group(function () {
-
+        Route::prefix('expenses')->middleware('permission:expenses.view')->name('expenses.')->group(function () {
             // Core CRUD
             Route::get('/', [ExpenseController::class, 'index'])->name('index');
             Route::get('/create', [ExpenseController::class, 'create'])->name('create');
@@ -443,6 +464,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
 
         Route::resource('expense-categories', ExpenseCategoryController::class)
             ->except(['create', 'show', 'edit'])
+            ->middleware('permission:expense_categories.view')
             ->parameters([
                 'expense-categories' => 'expense_category', // Ensures the route model binding matches our controller variable
             ]);
@@ -452,23 +474,18 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
         Route::patch('challans/{challan}/status', [ChallanController::class, 'updateStatus'])->name('challans.status.update');
 
         // ── Standard Resource Routes ──
-        Route::resource('challans', ChallanController::class);
+        Route::resource('challans', ChallanController::class)->middleware('permission:challans.view');
 
         // ──────────────────────────────────────────────────────────────
         // CHALLAN RETURNS
         // ──────────────────────────────────────────────────────────────
-        Route::get('challan-returns', [ChallanReturnController::class, 'index'])->name('challan-returns.index');
-        Route::get('challan-returns/create/{challan}', [ChallanReturnController::class, 'create'])->name('challan-returns.create');
-        Route::post('challan-returns', [ChallanReturnController::class, 'store'])->name('challan-returns.store');
-        Route::get('challan-returns/{challanReturn}', [ChallanReturnController::class, 'show'])->name('challan-returns.show');
-        Route::get('challan-returns/{challanReturn}/edit', [ChallanReturnController::class, 'edit'])->name('challan-returns.edit');
-        Route::put('challan-returns/{challanReturn}', [ChallanReturnController::class, 'update'])->name('challan-returns.update');
+        Route::resource('challan-returns', ChallanReturnController::class)->middleware('permission:challan_returns.view');
         Route::get('challan-returns/{challanReturn}/pdf', [ChallanReturnController::class, 'downloadPdf'])->name('challan-returns.pdf');
 
         // ════════════════════════════════════════════════
         // HRM MODULE
         // ════════════════════════════════════════════════
-        Route::prefix('hrm')->name('hrm.')->group(function () {
+        Route::prefix('hrm')->middleware(['module:hrm'])->name('hrm.')->group(function () {
 
             // ── Employee Self-Service Dashboard ──
             Route::get('employee/dashboard', [HrmEmployeeDashboardController::class, 'index'])->name('employee.dashboard');
@@ -504,19 +521,19 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::get('my-salary-slips/{salarySlip}/pdf', [HrmMySalarySlipController::class, 'downloadPdf'])->name('my-salary-slips.pdf');
 
             // ── Departments (Single Page CRUD) ──
-            Route::resource('departments', HrmDepartmentController::class)->except(['create', 'show', 'edit']);
+            Route::resource('departments', HrmDepartmentController::class)->except(['create', 'show', 'edit'])->middleware('permission:departments.view');
 
             // ── Designations (Single Page CRUD) ──
-            Route::resource('designations', HrmDesignationController::class)->except(['create', 'show', 'edit']);
+            Route::resource('designations', HrmDesignationController::class)->except(['create', 'show', 'edit'])->middleware('permission:designations.view');
 
             // ── Shifts (Single Page CRUD) ──
-            Route::resource('shifts', HrmShiftController::class)->except(['create', 'show', 'edit']);
+            Route::resource('shifts', HrmShiftController::class)->except(['create', 'show', 'edit'])->middleware('permission:shifts.view');
 
             // ── Holidays (Single Page CRUD) ──
-            Route::resource('holidays', HrmHolidayController::class)->except(['create', 'show', 'edit']);
+            Route::resource('holidays', HrmHolidayController::class)->except(['create', 'show', 'edit'])->middleware('permission:holidays.view');
 
             // ── Employees ──
-            Route::resource('employees', HrmEmployeeController::class);
+            Route::resource('employees', HrmEmployeeController::class)->middleware(['permission:employees.view', 'permission:employees.create', 'permission:employees.update', 'permission:employees.delete']);
             // Salary Structure management per employee
             Route::get('employees/{employee}/salary-structures', [HrmEmployeeController::class, 'salaryStructures'])->name('employees.salary-structures.index');
             Route::post('employees/{employee}/salary-structures', [HrmEmployeeController::class, 'storeSalaryStructure'])->name('employees.salary-structures.store');
@@ -527,6 +544,8 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::post('/scan', 'scan')->name('scan')->middleware('throttle:10,1');
                 Route::get('/today', 'today')->name('today');
                 Route::get('/report', 'report')->name('report');
+                Route::get('/export/excel', 'exportExcel')->name('export.excel');
+                Route::get('/export/pdf', 'exportPdf')->name('export.pdf');
                 Route::post('/{attendance}/override', [HrmAttendanceController::class, 'override'])->name('override');
             });
 

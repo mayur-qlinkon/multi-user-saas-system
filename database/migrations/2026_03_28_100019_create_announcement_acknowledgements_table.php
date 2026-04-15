@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['announcement_id', 'user_id']);
-            $table->index(['user_id', 'acknowledged_at'],      'ack_user_acked');
+            $table->index(['user_id', 'acknowledged_at'], 'ack_user_acked');
             $table->index(['announcement_id', 'acknowledged_at'], 'ack_ann_acked');
         });
     }

@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class CrmStage extends Model
 {
@@ -24,10 +24,10 @@ class CrmStage extends Model
     ];
 
     protected $casts = [
-        'is_won'      => 'boolean',
-        'is_lost'     => 'boolean',
-        'is_active'   => 'boolean',
-        'sort_order'  => 'integer',
+        'is_won' => 'boolean',
+        'is_lost' => 'boolean',
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     // ════════════════════════════════════════════════════
@@ -69,8 +69,13 @@ class CrmStage extends Model
 
     public function getTypeAttribute(): string
     {
-        if ($this->is_won)  return 'won';
-        if ($this->is_lost) return 'lost';
+        if ($this->is_won) {
+            return 'won';
+        }
+        if ($this->is_lost) {
+            return 'lost';
+        }
+
         return 'active';
     }
 

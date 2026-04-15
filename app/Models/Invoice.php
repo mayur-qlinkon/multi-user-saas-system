@@ -2,21 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use App\Traits\Tenantable;
-
-
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Invoice extends Model
 {
-    use HasFactory, SoftDeletes, Tenantable,LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes,Tenantable;
 
     protected $fillable = [
         'store_id', 'warehouse_id', 'customer_id', 'customer_name', 'created_by',
@@ -27,35 +25,36 @@ class Invoice extends Model
         'cgst_amount', 'sgst_amount', 'igst_amount', 'tax_amount',
         'shipping_charge', 'other_charges', 'round_off', 'grand_total',
         'status', 'payment_status', 'irn', 'ack_no', 'ack_date',
-        'eway_bill_number', 'notes', 'terms_conditions'
+        'eway_bill_number', 'notes', 'terms_conditions',
     ];
 
     protected $casts = [
-        'invoice_date'     => 'date',
-        'due_date'         => 'date',
-        'billing_address'  => 'json',
+        'invoice_date' => 'date',
+        'due_date' => 'date',
+        'billing_address' => 'json',
         'shipping_address' => 'json',
-        'subtotal'         => 'decimal:2',
-        'grand_total'      => 'decimal:2',
-        'exchange_rate'    => 'decimal:4',
+        'subtotal' => 'decimal:2',
+        'grand_total' => 'decimal:2',
+        'exchange_rate' => 'decimal:4',
     ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logAll() // Logs every fillable attribute
             ->logOnlyDirty() // ONLY logs attributes that actually changed
             ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn(string $eventName) => "Invoice has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Invoice has been {$eventName}");
     }
 
     /**
      * Relationships
-     */   
+     */
     public function company()
     {
         return $this->belongsTo(Company::class);
     }
-    
+
     /**
      * Get all returns (Credit Notes) linked to this invoice.
      */
@@ -63,6 +62,7 @@ class Invoice extends Model
     {
         return $this->hasMany(InvoiceReturn::class, 'invoice_id');
     }
+
     /**
      * Get the store/branch where the invoice was generated.
      */
@@ -104,11 +104,12 @@ class Invoice extends Model
     /**
      * Unified Payments Relationship
      * This links to your single polymorphic payments table
-     */  
+     */
     public function payments()
     {
         return $this->morphMany(Payment::class, 'paymentable');
     }
+
     /**
      * Stock Movements Relationship
      */

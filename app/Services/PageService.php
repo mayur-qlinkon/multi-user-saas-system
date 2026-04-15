@@ -29,8 +29,9 @@ class PageService
         } catch (Throwable $e) {
             Log::warning('[PageService] Public page not found or unpublished', [
                 'company_id' => $companyId,
-                'slug'       => $slug,
+                'slug' => $slug,
             ]);
+
             return null; // Graceful fallback instead of crashing
         }
     }
@@ -45,9 +46,9 @@ class PageService
             ->get(['title', 'slug', 'type']);
 
         return [
-            'service'     => $pages->where('type', Page::TYPE_LEGAL),
+            'service' => $pages->where('type', Page::TYPE_LEGAL),
             'information' => $pages->where('type', Page::TYPE_ABOUT),
-            'custom'      => $pages->where('type', Page::TYPE_CUSTOM),
+            'custom' => $pages->where('type', Page::TYPE_CUSTOM),
         ];
     }
 
@@ -63,15 +64,15 @@ class PageService
         $query = Page::where('company_id', $companyId)->with(['creator', 'updater']);
 
         // Search by title or slug
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('title', 'like', "%{$filters['search']}%")
-                  ->orWhere('slug', 'like', "%{$filters['search']}%");
+                    ->orWhere('slug', 'like', "%{$filters['search']}%");
             });
         }
 
         // Filter by Type
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->ofType($filters['type']);
         }
 
@@ -91,9 +92,9 @@ class PageService
         try {
             $data['company_id'] = $companyId;
             $data['created_by'] = Auth::id();
-            
+
             // 1. Slug Handling: Use provided slug, or auto-generate from title
-            $slugBase = !empty($data['slug']) ? $data['slug'] : $data['title'];
+            $slugBase = ! empty($data['slug']) ? $data['slug'] : $data['title'];
             $data['slug'] = $this->generateUniqueSlug($slugBase, $companyId);
 
             // 2. SEO Fallback: If SEO title is empty, use the main title
@@ -104,9 +105,9 @@ class PageService
             $page = Page::create($data);
 
             Log::info('[PageService] Page created successfully', [
-                'page_id'    => $page->id,
+                'page_id' => $page->id,
                 'company_id' => $companyId,
-                'slug'       => $page->slug,
+                'slug' => $page->slug,
             ]);
 
             return $page;
@@ -114,8 +115,8 @@ class PageService
         } catch (Throwable $e) {
             Log::error('[PageService] Failed to create page', [
                 'company_id' => $companyId,
-                'error'      => $e->getMessage(),
-                'data'       => $data,
+                'error' => $e->getMessage(),
+                'data' => $data,
             ]);
             throw $e;
         }
@@ -130,14 +131,14 @@ class PageService
             $data['updated_by'] = Auth::id();
 
             // Handle Slug updates carefully
-            if (!empty($data['slug']) && $data['slug'] !== $page->slug) {
+            if (! empty($data['slug']) && $data['slug'] !== $page->slug) {
                 // User manually changed the slug
                 $data['slug'] = $this->generateUniqueSlug($data['slug'], $page->company_id, $page->id);
-            } elseif (!empty($data['title']) && $data['title'] !== $page->title && empty($data['slug'])) {
+            } elseif (! empty($data['title']) && $data['title'] !== $page->title && empty($data['slug'])) {
                 // Title changed and no custom slug provided? We usually KEEP the old slug to prevent broken links (SEO best practice).
                 // However, if you want it to auto-update, you would call generateUniqueSlug here.
                 // We will leave the slug alone to protect SEO rankings.
-                unset($data['slug']); 
+                unset($data['slug']);
             }
 
             $page->update($data);
@@ -149,7 +150,7 @@ class PageService
         } catch (Throwable $e) {
             Log::error('[PageService] Failed to update page', [
                 'page_id' => $page->id,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -160,13 +161,13 @@ class PageService
      */
     public function togglePublish(Page $page): bool
     {
-        $page->is_published = !$page->is_published;
+        $page->is_published = ! $page->is_published;
         $page->updated_by = Auth::id();
         $page->save();
 
         Log::info('[PageService] Page publish toggled', [
-            'page_id' => $page->id, 
-            'new_status' => $page->is_published
+            'page_id' => $page->id,
+            'new_status' => $page->is_published,
         ]);
 
         return $page->is_published;
@@ -206,11 +207,11 @@ class PageService
                 Page::firstOrCreate(
                     ['company_id' => $companyId, 'slug' => $page['slug']],
                     [
-                        'title'        => $page['title'],
-                        'type'         => $page['type'],
+                        'title' => $page['title'],
+                        'type' => $page['type'],
                         'is_published' => false, // Start as draft so tenant can fill in their details
-                        'content'      => "<h2>{$page['title']}</h2><p>Please update this content with your company specifics.</p>",
-                        'seo_title'    => $page['title'],
+                        'content' => "<h2>{$page['title']}</h2><p>Please update this content with your company specifics.</p>",
+                        'seo_title' => $page['title'],
                     ]
                 );
             }
@@ -241,7 +242,7 @@ class PageService
             ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
             ->exists()
         ) {
-            $slug = $baseSlug . '-' . $counter;
+            $slug = $baseSlug.'-'.$counter;
             $counter++;
         }
 

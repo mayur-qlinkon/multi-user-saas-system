@@ -69,7 +69,6 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-            
 
             $table->unique(['company_id', 'user_id']);
             $table->unique(['company_id', 'employee_code']);

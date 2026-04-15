@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoiceReturnItem extends Model
 {
-    use HasFactory;     
+    use HasFactory;
 
     protected $fillable = [
         'invoice_return_id',
@@ -37,17 +37,17 @@ class InvoiceReturnItem extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'is_restocked'    => 'boolean',
-        'quantity'        => 'float',
-        'unit_price'      => 'float',
+        'is_restocked' => 'boolean',
+        'quantity' => 'float',
+        'unit_price' => 'float',
         'discount_amount' => 'float',
-        'taxable_value'   => 'float',
-        'tax_percent'     => 'float',
-        'cgst_amount'     => 'float',
-        'sgst_amount'     => 'float',
-        'igst_amount'     => 'float',
-        'tax_amount'      => 'float',
-        'total_amount'    => 'float',
+        'taxable_value' => 'float',
+        'tax_percent' => 'float',
+        'cgst_amount' => 'float',
+        'sgst_amount' => 'float',
+        'igst_amount' => 'float',
+        'tax_amount' => 'float',
+        'total_amount' => 'float',
     ];
 
     // ─────────────────────────────────────────────────────────

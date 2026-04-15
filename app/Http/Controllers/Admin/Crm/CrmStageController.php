@@ -70,27 +70,28 @@ class CrmStageController extends Controller
             $stage = CrmStage::create(array_merge(
                 $request->validated(),
                 [
-                    'company_id'       => Auth::user()->company_id,
-                    'crm_pipeline_id'  => $pipeline->id,
-                    'sort_order'       => $request->input('sort_order', $maxOrder + 1),
+                    'company_id' => Auth::user()->company_id,
+                    'crm_pipeline_id' => $pipeline->id,
+                    'sort_order' => $request->input('sort_order', $maxOrder + 1),
                 ]
             ));
 
             Log::info('[CrmStage] Created', [
-                'stage_id'    => $stage->id,
-                'name'        => $stage->name,
+                'stage_id' => $stage->id,
+                'name' => $stage->name,
                 'pipeline_id' => $pipeline->id,
-                'by'          => Auth::id(),
+                'by' => Auth::id(),
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => "Stage \"{$stage->name}\" added.",
-                'stage'   => $stage->load('pipeline:id,name'),
+                'stage' => $stage->load('pipeline:id,name'),
             ]);
 
         } catch (Throwable $e) {
             Log::error('[CrmStage] Store failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to create stage.'], 500);
         }
     }
@@ -106,7 +107,7 @@ class CrmStageController extends Controller
         $this->authorizeStage($stage, $pipeline);
 
         // ── Won/Lost uniqueness check (excluding self) ──
-        if ($request->boolean('is_won') && !$stage->is_won) {
+        if ($request->boolean('is_won') && ! $stage->is_won) {
             $existing = CrmStage::where('crm_pipeline_id', $pipeline->id)
                 ->where('is_won', true)->where('id', '!=', $stage->id)->exists();
             if ($existing) {
@@ -117,7 +118,7 @@ class CrmStageController extends Controller
             }
         }
 
-        if ($request->boolean('is_lost') && !$stage->is_lost) {
+        if ($request->boolean('is_lost') && ! $stage->is_lost) {
             $existing = CrmStage::where('crm_pipeline_id', $pipeline->id)
                 ->where('is_lost', true)->where('id', '!=', $stage->id)->exists();
             if ($existing) {
@@ -136,11 +137,12 @@ class CrmStageController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Stage \"{$stage->name}\" updated.",
-                'stage'   => $stage->fresh(),
+                'stage' => $stage->fresh(),
             ]);
 
         } catch (Throwable $e) {
             Log::error('[CrmStage] Update failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to update.'], 500);
         }
     }
@@ -185,6 +187,7 @@ class CrmStageController extends Controller
 
         } catch (Throwable $e) {
             Log::error('[CrmStage] Delete failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to delete.'], 500);
         }
     }
@@ -199,7 +202,7 @@ class CrmStageController extends Controller
         $this->authorizePipeline($pipeline);
 
         $request->validate([
-            'order'   => ['required', 'array'],
+            'order' => ['required', 'array'],
             'order.*' => ['integer'],
         ]);
 
@@ -213,7 +216,7 @@ class CrmStageController extends Controller
 
             Log::info('[CrmStage] Reordered', [
                 'pipeline_id' => $pipeline->id,
-                'by'          => Auth::id(),
+                'by' => Auth::id(),
             ]);
 
             return response()->json([
@@ -223,6 +226,7 @@ class CrmStageController extends Controller
 
         } catch (Throwable $e) {
             Log::error('[CrmStage] Reorder failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'Failed to reorder.'], 500);
         }
     }

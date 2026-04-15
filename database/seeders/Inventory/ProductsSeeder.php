@@ -2,8 +2,17 @@
 
 namespace Database\Seeders\Inventory;
 
+use App\Models\Attribute;
+use App\Models\AttributeValue;
+use App\Models\Category;
+use App\Models\Company;
+use App\Models\Product;
+use App\Models\ProductSku;
+use App\Models\Supplier;
+use App\Models\Unit;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProductsSeeder extends Seeder
 {
@@ -14,149 +23,130 @@ class ProductsSeeder extends Seeder
         DB::beginTransaction();
 
         try {
+            // 1. Ensure Company Exists
+            $company = Company::firstOrCreate(
+                ['id' => $companyId],
+                ['name' => 'Test Company ' . $companyId, 'email' => 'company'.$companyId.'@test.com']
+            );
+
+            // 2. Fetch or Create Dependencies (The Fallback Mechanism)
+            $unit = Unit::firstOrCreate(
+                ['name' => 'Pieces'], 
+                ['short_name' => 'pcs', 'is_active' => true]
+            );
+
+            $clothingCategory = Category::firstOrCreate(
+                ['name' => 'Clothing', 'company_id' => $company->id],
+                ['slug' => 'clothing-'.$company->id, 'is_active' => true]
+            );
+
+            $electronicsCategory = Category::firstOrCreate(
+                ['name' => 'Electronics', 'company_id' => $company->id],
+                ['slug' => 'electronics-'.$company->id, 'is_active' => true]
+            );
+
+            $supplier = Supplier::firstOrCreate(
+                ['name' => 'Global Tech Supplies', 'company_id' => $company->id],
+                ['email' => 'contact@globaltech.com', 'is_active' => true]
+            );
 
             /*
             |--------------------------------------------------------------------------
-            | ASSUMPTIONS (IMPORTANT)
-            |--------------------------------------------------------------------------
-            | - units table has at least ID = 1 (e.g., "Nos")
-            | - categories exist (or nullable)
-            | - suppliers exist (or nullable)
-            | - attributes + values exist for variant mapping
-            */
-
-            $unitId = 1;
-
-            /*
-            |--------------------------------------------------------------------------
-            | PRODUCT 1 → VARIABLE PRODUCT (2 SKUs)
+            | PRODUCT 1 → VARIABLE PRODUCT (Using Factories)
             |--------------------------------------------------------------------------
             */
+            // Ensure Attribute and Values exist for "Size"
+            $sizeAttribute = Attribute::firstOrCreate(['name' => 'Size', 'company_id' => $company->id]);
+            $sizeM = AttributeValue::firstOrCreate(['attribute_id' => $sizeAttribute->id, 'value' => 'M']);
+            $sizeL = AttributeValue::firstOrCreate(['attribute_id' => $sizeAttribute->id, 'value' => 'L']);
 
-            $product1Id = DB::table('products')->insertGetId([
-                'company_id' => $companyId,
-                'category_id' => 1 ?? null,
-                'supplier_id' => null,
-                'name' => 'Cotton T-Shirt',
-                'slug' => 'cotton-tshirt-'.$companyId,
-                'type' => 'variable',
-                'barcode_symbology' => 'CODE128',
-                'hsn_code' => '6109',
-                'product_unit_id' => $unitId,
-                'sale_unit_id' => $unitId,
-                'purchase_unit_id' => $unitId,
-                'description' => 'Premium cotton t-shirt',
-                'is_active' => true,
-                'show_in_storefront' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
+            $variableProduct = Product::factory()
+                ->variable()
+                ->for($company)
+                ->create([
+                    'category_id' => $clothingCategory->id,
+                    'supplier_id' => $supplier->id,
+                    'name' => 'Premium Cotton T-Shirt',
+                    'slug' => 'premium-cotton-tshirt-' . $company->id,
+                    'product_unit_id' => $unit->id,
+                    'sale_unit_id' => $unit->id,
+                    'purchase_unit_id' => $unit->id,
+                ]);
+
+            // Create SKU for Size M
+            $skuM = ProductSku::factory()->for($company)->for($variableProduct, 'product')->create([
+                'unit_id' => $unit->id,
+                'sku' => 'TSHIRT-M-' . $company->id,
+                'barcode' => '1111111111' . $company->id,
+            ]);
+            
+            // Create SKU for Size L
+            $skuL = ProductSku::factory()->for($company)->for($variableProduct, 'product')->create([
+                'unit_id' => $unit->id,
+                'sku' => 'TSHIRT-L-' . $company->id,
+                'barcode' => '2222222222' . $company->id,
             ]);
 
-            // SKU 1 (Size M)
-            $sku1Id = DB::table('product_skus')->insertGetId([
-                'company_id' => $companyId,
-                'product_id' => $product1Id,
-                'unit_id' => $unitId,
-                'sku' => 'TSHIRT-M-'.$companyId,
-                'barcode' => '1111111111',
-                'cost' => 300,
-                'price' => 500,
-                'mrp' => 599,
-                'gst_rate' => 5,
-                'stock_alert' => 10,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // SKU 2 (Size L)
-            $sku2Id = DB::table('product_skus')->insertGetId([
-                'company_id' => $companyId,
-                'product_id' => $product1Id,
-                'unit_id' => $unitId,
-                'sku' => 'TSHIRT-L-'.$companyId,
-                'barcode' => '2222222222',
-                'cost' => 320,
-                'price' => 550,
-                'mrp' => 649,
-                'gst_rate' => 5,
-                'stock_alert' => 10,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | OPTIONAL: ATTRIBUTE MAPPING (ONLY IF EXISTS)
-            |--------------------------------------------------------------------------
-            | Example assumes:
-            | attribute_id = 1 (Size)
-            | values: M=1, L=2
-            */
-
+            // Map Attributes to SKUs
             DB::table('product_sku_values')->insert([
-                [
-                    'product_sku_id' => $sku1Id,
-                    'attribute_id' => 1,
-                    'attribute_value_id' => 1, // M
-                ],
-                [
-                    'product_sku_id' => $sku2Id,
-                    'attribute_id' => 1,
-                    'attribute_value_id' => 2, // L
-                ],
+                ['product_sku_id' => $skuM->id, 'attribute_id' => $sizeAttribute->id, 'attribute_value_id' => $sizeM->id],
+                ['product_sku_id' => $skuL->id, 'attribute_id' => $sizeAttribute->id, 'attribute_value_id' => $sizeL->id],
             ]);
 
             /*
             |--------------------------------------------------------------------------
-            | PRODUCT 2 → SINGLE PRODUCT (1 SKU)
+            | PRODUCT 2 → SINGLE PRODUCT (Using Factories)
             |--------------------------------------------------------------------------
             */
+            $singleProduct = Product::factory()
+                ->for($company)
+                ->create([
+                    'category_id' => $electronicsCategory->id,
+                    'supplier_id' => $supplier->id,
+                    'name' => 'Wireless Mouse Pro',
+                    'slug' => 'wireless-mouse-pro-' . $company->id,
+                    'type' => 'single',
+                    'product_unit_id' => $unit->id,
+                    'sale_unit_id' => $unit->id,
+                    'purchase_unit_id' => $unit->id,
+                ]);
 
-            $product2Id = DB::table('products')->insertGetId([
-                'company_id' => $companyId,
-                'category_id' => 2 ?? null,
-                'supplier_id' => null,
-                'name' => 'Wireless Mouse',
-                'slug' => 'wireless-mouse-'.$companyId,
-                'type' => 'single',
-                'barcode_symbology' => 'CODE128',
-                'hsn_code' => '8471',
-                'product_unit_id' => $unitId,
-                'sale_unit_id' => $unitId,
-                'purchase_unit_id' => $unitId,
-                'description' => '2.4GHz wireless optical mouse',
-                'is_active' => true,
-                'show_in_storefront' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
+            ProductSku::factory()->for($company)->for($singleProduct, 'product')->create([
+                'unit_id' => $unit->id,
+                'sku' => 'MOUSE-PRO-' . $company->id,
+                'barcode' => '3333333333' . $company->id,
             ]);
 
-            DB::table('product_skus')->insert([
-                'company_id' => $companyId,
-                'product_id' => $product2Id,
-                'unit_id' => $unitId,
-                'sku' => 'MOUSE-001-'.$companyId,
-                'barcode' => '3333333333',
-                'cost' => 200,
-                'price' => 350,
-                'mrp' => 399,
-                'gst_rate' => 18,
-                'stock_alert' => 5,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            /*
+            |--------------------------------------------------------------------------
+            | BULK FAKE DATA (Optional: Generates 10 random single products)
+            |--------------------------------------------------------------------------
+            */
+            Product::factory()
+                ->count(10)
+                ->for($company)
+                ->create([
+                    'category_id' => $electronicsCategory->id,
+                    'product_unit_id' => $unit->id,
+                    'sale_unit_id' => $unit->id,
+                    'purchase_unit_id' => $unit->id,
+                ])->each(function ($product) use ($company, $unit) {
+                    ProductSku::factory()->for($company)->for($product, 'product')->create([
+                        'unit_id' => $unit->id,
+                    ]);
+                });
 
             DB::commit();
 
             if (isset($this->command)) {
-                $this->command->info("✅ Products & SKUs seeded successfully for Company ID: {$companyId}");
+                $this->command->info("✅ Robust Products seeded successfully for Company ID: {$companyId}");
             }
 
         } catch (\Exception $e) {
             DB::rollBack();
 
             if (isset($this->command)) {
-                $this->command->error('❌ Failed to seed products: '.$e->getMessage());
+                $this->command->error('❌ Failed to seed products: ' . $e->getMessage());
             }
         }
     }

@@ -6,11 +6,11 @@ use App\Models\Hrm\HrmTask;
 use App\Models\Hrm\HrmTaskAssignment;
 use App\Models\Hrm\HrmTaskAttachment;
 use App\Models\Hrm\HrmTaskComment;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Pagination\LengthAwarePaginator;
 use InvalidArgumentException;
 
 class HrmTaskService
@@ -25,16 +25,16 @@ class HrmTaskService
             $assignees = $data['assignees'] ?? [];
 
             // 2. If a primary assignee exists, push them into the array
-            if (!empty($data['primary_assignee'])) {
+            if (! empty($data['primary_assignee'])) {
                 $assignees[] = $data['primary_assignee'];
             }
 
-            // 3. Clean the array to prevent duplicate database entries 
+            // 3. Clean the array to prevent duplicate database entries
             // (in case the user selected the same person in both UI dropdowns)
             $assignees = array_unique($assignees);
 
             // 4. Now run your sync function with the clean, merged array
-            if (!empty($assignees)) {
+            if (! empty($assignees)) {
                 $this->syncAssignees($task, $assignees, $data['primary_assignee'] ?? null);
             }
 
@@ -49,12 +49,12 @@ class HrmTaskService
 
             // 1. Check if the frontend sent assignment data in this update
             if (array_key_exists('assignees', $data) || array_key_exists('primary_assignee', $data)) {
-                
+
                 // 2. Grab the array, or default to empty
                 $assignees = $data['assignees'] ?? [];
 
                 // 3. Push the primary assignee into the array if one was submitted
-                if (!empty($data['primary_assignee'])) {
+                if (! empty($data['primary_assignee'])) {
                     $assignees[] = $data['primary_assignee'];
                 }
 
@@ -71,7 +71,7 @@ class HrmTaskService
 
     public function delete(HrmTask $task): void
     {
-        DB::transaction(fn() => $task->delete());
+        DB::transaction(fn () => $task->delete());
     }
 
     /**
@@ -79,7 +79,7 @@ class HrmTaskService
      */
     public function updateStatus(HrmTask $task, string $newStatus, ?string $note = null): HrmTask
     {
-        if (!$task->canTransitionTo($newStatus)) {
+        if (! $task->canTransitionTo($newStatus)) {
             $allowed = implode(', ', HrmTask::STATUS_TRANSITIONS[$task->status] ?? []);
             throw new InvalidArgumentException(
                 "Cannot transition from '{$task->status}' to '{$newStatus}'. Allowed: {$allowed}"
@@ -103,7 +103,7 @@ class HrmTaskService
             HrmTaskComment::create([
                 'hrm_task_id' => $task->id,
                 'user_id' => Auth::id(),
-                'body' => "Status changed to " . HrmTask::STATUS_LABELS[$newStatus],
+                'body' => 'Status changed to '.HrmTask::STATUS_LABELS[$newStatus],
                 'is_system' => true,
             ]);
 
@@ -134,7 +134,7 @@ class HrmTaskService
      */
     public function addAttachment(HrmTask $task, UploadedFile $file): HrmTaskAttachment
     {
-        $path = $file->store('hrm/task-attachments/' . $task->id, 'public');
+        $path = $file->store('hrm/task-attachments/'.$task->id, 'public');
 
         return HrmTaskAttachment::create([
             'hrm_task_id' => $task->id,
@@ -176,26 +176,26 @@ class HrmTaskService
     {
         $query = HrmTask::with(['createdByUser', 'assignees.user']);
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->byStatus($filters['status']);
         }
-        if (!empty($filters['priority'])) {
+        if (! empty($filters['priority'])) {
             $query->byPriority($filters['priority']);
         }
-        if (!empty($filters['project'])) {
+        if (! empty($filters['project'])) {
             $query->where('project', $filters['project']);
         }
-        if (!empty($filters['employee_id'])) {
-            $query->whereHas('assignments', fn($q) => $q->where('employee_id', $filters['employee_id']));
+        if (! empty($filters['employee_id'])) {
+            $query->whereHas('assignments', fn ($q) => $q->where('employee_id', $filters['employee_id']));
         }
-        if (!empty($filters['overdue'])) {
+        if (! empty($filters['overdue'])) {
             $query->overdue();
         }
         if (! empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('title', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('project', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('category', 'like', '%' . $filters['search'] . '%');
+                $q->where('title', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('project', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('category', 'like', '%'.$filters['search'].'%');
             });
         }
 

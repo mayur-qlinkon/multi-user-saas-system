@@ -110,10 +110,12 @@
 
               {{-- 3. Create PO Button (Pushed to the right) --}}
                 <div class="ml-auto flex shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                    @if(has_permission('purchases.create'))
                     <a href="{{ route('admin.purchases.create') }}"
                         class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap">
                         <i data-lucide="plus" class="w-4 h-4"></i> Create PO
                     </a>
+                    @endif
                 </div>
             </form>
         </div>
@@ -219,20 +221,23 @@
                                     <div
                                         class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
 
+                                        @if(has_permission('purchases.view'))
                                         <a href="{{ route('admin.purchases.show', $purchase->id) }}"
                                             class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                             title="View PO">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
+                                        @endif
 
-                                        @if ($purchase->status !== 'received' && $purchase->status !== 'cancelled')
+                                        @if ($purchase->status !== 'received' && $purchase->status !== 'cancelled' && has_permission('purchases.update'))
                                             <a href="{{ route('admin.purchases.edit', $purchase->id) }}"
                                                 class="w-8 h-8 rounded border border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-colors"
                                                 title="Edit PO">
                                                 <i data-lucide="edit" class="w-4 h-4"></i>
                                             </a>
                                         @endif
-                                        @if ($purchase->status !== 'cancelled')
+
+                                        @if ($purchase->status !== 'cancelled' && has_permission('purchases.add_payment'))
                                             <button type="button"
                                                 @click="openPaymentModal({{ $purchase->id }}, '{{ $purchase->payment_status }}', {{ $purchase->total_amount }}, {{ $purchase->balance_amount }})"
                                                 class="w-8 h-8 rounded border border-green-200 text-green-600 hover:bg-green-50 flex items-center justify-center transition-colors"

@@ -215,11 +215,13 @@
                             style="background: var(--brand-600);">
                             Search
                         </button>
+                        @if(has_permission('orders.create'))
                         <a href="{{ route('admin.orders.create') }}"
                             class="flex-1 sm:flex-none px-4 py-2 text-center rounded-xl text-sm font-bold text-white transition-colors hover:opacity-90"
                             style="background: var(--brand-600);">
                             Create
                         </a>
+                        @endif
                     </div>
 
                     {{-- Clear Filters Link --}}
@@ -374,11 +376,13 @@
 
                 {{-- Actions ── --}}
                 <div class="flex items-center gap-2">
+                    @if(has_permission('orders.view'))
                     <a href="{{ route('admin.orders.show', $order->id) }}"
                         class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                         title="View Details">
                         <i data-lucide="eye" class="w-4 h-4"></i>
                     </a>
+                    @endif
 
                     {{-- 🌟 NEW: Edit Button (Only for Admin orders that are not fulfilled/cancelled) --}}
                     @if($order->source === 'admin' && in_array($order->status, ['inquiry', 'confirmed', 'processing']))

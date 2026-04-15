@@ -92,7 +92,7 @@
                 <option value="">All Employees</option>
                 @foreach($employees as $emp)
                     <option value="{{ $emp->id }}" {{ $employeeId == $emp->id ? 'selected' : '' }}>
-                        {{ $emp->user->name }} ({{ $emp->employee_code }})
+                        {{ $emp->user->name ?? "" }} ({{ $emp->employee_code ?? "" }})
                     </option>
                 @endforeach
             </select>
@@ -200,7 +200,7 @@
                                 </div>
                                 <div>
                                     <p class="font-semibold text-gray-800 text-xs leading-tight">{{ $balance->employee->user->name ?? '—' }}</p>
-                                    <p class="text-[10px] text-gray-400">{{ $balance->employee->employee_code }}</p>
+                                    <p class="text-[10px] text-gray-400">{{ $balance->employee->employee_code??"" }}</p>
                                 </div>
                             </div>
                         </td>

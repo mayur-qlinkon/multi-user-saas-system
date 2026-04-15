@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();                                
-            
+            $table->id();
+
             $table->foreignId('company_id')
                 ->nullable()
                 ->constrained()
@@ -19,7 +19,7 @@ return new class extends Migration
             // --- Core Auth Details ---
             $table->string('name', 100);
             $table->string('email', 150);
-            $table->string('phone', 20)->nullable();            
+            $table->string('phone', 20)->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
 
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->foreignId('state_id')->nullable()->constrained('states');
             $table->string('country', 100)->default('India');
             $table->string('zip_code', 20)->nullable();
-            
+
             // --- System Status ---
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
 

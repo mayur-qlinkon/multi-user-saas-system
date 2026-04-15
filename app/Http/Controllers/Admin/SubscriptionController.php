@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Plan;
 use App\Models\CompanySubscription;
+use App\Models\Plan;
 use Illuminate\Support\Facades\Auth;
 
 class SubscriptionController extends Controller

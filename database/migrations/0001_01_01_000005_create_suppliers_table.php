@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('suppliers', function (Blueprint $table) {
-            $table->id(); 
+            $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('store_id')->nullable()->constrained()->nullOnDelete();
-            
+
             // --- 👤 Basic Contact Details ---
             $table->string('name', 150);
             $table->string('email', 100)->nullable();
@@ -20,16 +20,16 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->string('city', 100)->nullable();
             $table->string('pincode', 10)->nullable();
-            
+
             // 🌟 THE ROOT FIX: Link to our master States table
-            $table->foreignId('state_id')->nullable()->constrained('states'); 
+            $table->foreignId('state_id')->nullable()->constrained('states');
 
             // --- 🇮🇳 Indian Compliance ---
-            $table->string('gstin', 15)->nullable()->unique(); 
-            $table->string('pan', 10)->nullable(); 
-            
+            $table->string('gstin', 15)->nullable()->unique();
+            $table->string('pan', 10)->nullable();
+
             // Registration Types: regular, composition, unregistered, sez, overseas
-            $table->string('registration_type')->default('regular'); 
+            $table->string('registration_type')->default('regular');
 
             // --- 🏦 Banking (Essential for B2B Payments) ---
             $table->string('bank_name')->nullable();
@@ -40,10 +40,10 @@ return new class extends Migration
             // --- 💰 Financials & Credit Control ---
             $table->decimal('opening_balance', 15, 2)->default(0);
             $table->enum('balance_type', ['payable', 'advance'])->default('payable');
-            
-            // 🔥 Pro-Tip: current_balance allows instant "Who do I owe money?" reports 
+
+            // 🔥 Pro-Tip: current_balance allows instant "Who do I owe money?" reports
             // without calculating 10,000 ledger rows every time.
-            $table->decimal('current_balance', 15, 2)->default(0); 
+            $table->decimal('current_balance', 15, 2)->default(0);
 
             $table->unsignedSmallInteger('credit_days')->default(0);
             $table->decimal('credit_limit', 15, 2)->default(0);

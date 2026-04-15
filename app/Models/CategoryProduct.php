@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CategoryProduct extends Model
 {
@@ -21,9 +22,9 @@ class CategoryProduct extends Model
     ];
 
     protected $casts = [
-        'is_active'   => 'boolean',
+        'is_active' => 'boolean',
         'is_featured' => 'boolean',
-        'sort_order'  => 'integer',
+        'sort_order' => 'integer',
     ];
 
     // ════════════════════════════════════════════════════
@@ -122,19 +123,19 @@ class CategoryProduct extends Model
      * Ignores duplicate — won't throw on re-attach.
      */
     public static function attachProduct(
-        int  $categoryId,
-        int  $productId,
-        bool $isActive   = true,
+        int $categoryId,
+        int $productId,
+        bool $isActive = true,
         bool $isFeatured = false,
-        ?int $sortOrder  = null
+        ?int $sortOrder = null
     ): static {
         return static::firstOrCreate(
             ['category_id' => $categoryId, 'product_id' => $productId],
             [
-                'is_active'   => $isActive,
+                'is_active' => $isActive,
                 'is_featured' => $isFeatured,
-                'sort_order'  => $sortOrder ?? (static::where('category_id', $categoryId)->max('sort_order') + 1),
-                'added_by'    => Auth::id(),
+                'sort_order' => $sortOrder ?? (static::where('category_id', $categoryId)->max('sort_order') + 1),
+                'added_by' => Auth::id(),
             ]
         );
     }
@@ -155,16 +156,18 @@ class CategoryProduct extends Model
      */
     public static function reorderInCategory(int $categoryId, array $productIds): bool
     {
-        if (empty($productIds)) return true;
+        if (empty($productIds)) {
+            return true;
+        }
 
         $cases = '';
-        $ids   = implode(',', array_map('intval', $productIds));
+        $ids = implode(',', array_map('intval', $productIds));
 
         foreach ($productIds as $sortOrder => $productId) {
             $cases .= "WHEN {$productId} THEN {$sortOrder} ";
         }
 
-        \Illuminate\Support\Facades\DB::statement("
+        DB::statement("
             UPDATE category_products
             SET sort_order = CASE product_id {$cases} END,
                 updated_at = NOW()
@@ -185,11 +188,11 @@ class CategoryProduct extends Model
             ->pluck('product_id')
             ->toArray();
 
-        $toAdd    = array_diff($productIds, $existing);
+        $toAdd = array_diff($productIds, $existing);
         $toRemove = array_diff($existing, $productIds);
 
         // Remove products no longer in category
-        if (!empty($toRemove)) {
+        if (! empty($toRemove)) {
             static::where('category_id', $categoryId)
                 ->whereIn('product_id', $toRemove)
                 ->delete();

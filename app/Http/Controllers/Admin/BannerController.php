@@ -23,15 +23,15 @@ class BannerController extends Controller
     //  INDEX
     // ════════════════════════════════════════════════════
     public function index(Request $request): View
-    {        
+    {
 
-        $type     = $request->get('type');
+        $type = $request->get('type');
         $position = $request->get('position');
 
-        $logs = $this->bannerService->getAdminList(            
-            type:      $type,
-            position:  $position,
-            perPage:   20
+        $logs = $this->bannerService->getAdminList(
+            type: $type,
+            position: $position,
+            perPage: 20
         );
 
         // Available filter options for the blade
@@ -80,7 +80,7 @@ class BannerController extends Controller
 
             // ── Targeting — nullable is fine if not selected ──
             $data['category_id'] = $validated['category_id'] ?? null;
-            $data['product_id']  = $validated['product_id']  ?? null;
+            $data['product_id'] = $validated['product_id'] ?? null;
 
             $banner = $this->bannerService->store($data);
 
@@ -94,8 +94,8 @@ class BannerController extends Controller
 
         } catch (Throwable $e) {
             Log::error('[BannerController] Store failed', [
-                'user_id'    => Auth::id(),                
-                'error'      => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
             ]);
 
             return back()->withInput()->with('error', 'Failed to create banner. Please try again.');
@@ -106,7 +106,7 @@ class BannerController extends Controller
     //  SHOW
     // ════════════════════════════════════════════════════
     public function show(Banner $banner): View
-    {        
+    {
 
         $banner->load(['creator', 'updater', 'category', 'product']);
 
@@ -117,7 +117,7 @@ class BannerController extends Controller
     //  EDIT
     // ════════════════════════════════════════════════════
     public function edit(Banner $banner): View
-    {        
+    {
 
         $categories = Category::orderBy('name')->get(['id', 'name']);
 
@@ -130,9 +130,9 @@ class BannerController extends Controller
     //  UPDATE
     // ════════════════════════════════════════════════════
     public function update(Request $request, Banner $banner): RedirectResponse
-    {        
+    {
 
-       $validated = $this->validateBanner($request, isUpdate: true);
+        $validated = $this->validateBanner($request, isUpdate: true);
 
         try {
             $data = $validated;
@@ -154,7 +154,7 @@ class BannerController extends Controller
 
             return redirect()
                 ->route('admin.banners.index')
-                ->with('success', "Banner updated successfully!");
+                ->with('success', 'Banner updated successfully!');
 
         } catch (\InvalidArgumentException $e) {
             return back()->withInput()->withErrors(['image' => $e->getMessage()]);
@@ -162,8 +162,8 @@ class BannerController extends Controller
         } catch (Throwable $e) {
             Log::error('[BannerController] Update failed', [
                 'banner_id' => $banner->id,
-                'user_id'   => Auth::id(),
-                'error'     => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
             ]);
 
             return back()->withInput()->with('error', 'Failed to update banner. Please try again.');
@@ -174,15 +174,15 @@ class BannerController extends Controller
     //  DESTROY
     // ════════════════════════════════════════════════════
     public function destroy(Request $request, Banner $banner): RedirectResponse
-    {        
+    {
 
         $permanent = $request->boolean('permanent');
-        $success   = $this->bannerService->delete($banner, $permanent);
+        $success = $this->bannerService->delete($banner, $permanent);
 
         if ($success) {
             $msg = $permanent
-                ? "Banner permanently deleted."
-                : "Banner moved to trash. It can be restored.";
+                ? 'Banner permanently deleted.'
+                : 'Banner moved to trash. It can be restored.';
 
             return redirect()
                 ->route('admin.banners.index')
@@ -196,15 +196,15 @@ class BannerController extends Controller
     //  TOGGLE ACTIVE — AJAX
     // ════════════════════════════════════════════════════
     public function toggleActive(Banner $banner): JsonResponse
-    {        
+    {
 
         $success = $this->bannerService->toggleActive($banner);
 
         if ($success) {
             return response()->json([
-                'success'   => true,
+                'success' => true,
                 'is_active' => $banner->fresh()->is_active,
-                'message'   => $banner->fresh()->is_active ? 'Banner activated.' : 'Banner deactivated.',
+                'message' => $banner->fresh()->is_active ? 'Banner activated.' : 'Banner deactivated.',
             ]);
         }
 
@@ -220,13 +220,13 @@ class BannerController extends Controller
     public function reorder(Request $request): JsonResponse
     {
         $request->validate([
-            'ids'   => 'required|array|min:1',
+            'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:banners,id',
         ]);
-                
-        $ids       = $request->input('ids');
 
-        $count = Banner::whereIn('id', $ids)            
+        $ids = $request->input('ids');
+
+        $count = Banner::whereIn('id', $ids)
             ->count();
 
         if ($count !== count($ids)) {
@@ -248,22 +248,22 @@ class BannerController extends Controller
     //  DUPLICATE — AJAX
     // ════════════════════════════════════════════════════
     public function duplicate(Banner $banner): JsonResponse
-    {        
+    {
 
         try {
             $newBanner = $this->bannerService->duplicate($banner);
 
             return response()->json([
-                'success'    => true,
-                'message'    => "Banner duplicated as '{$newBanner->title}'.",
-                'banner_id'  => $newBanner->id,
-                'edit_url'   => route('admin.banners.edit', $newBanner->id),
+                'success' => true,
+                'message' => "Banner duplicated as '{$newBanner->title}'.",
+                'banner_id' => $newBanner->id,
+                'edit_url' => route('admin.banners.edit', $newBanner->id),
             ]);
 
         } catch (Throwable $e) {
             Log::error('[BannerController] Duplicate failed', [
                 'banner_id' => $banner->id,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -279,7 +279,7 @@ class BannerController extends Controller
     public function restore(int $id): JsonResponse
     {
         $banner = Banner::withTrashed()
-            ->where('id', $id)            
+            ->where('id', $id)
             ->firstOrFail();
 
         $success = $this->bannerService->restore($id);
@@ -303,7 +303,7 @@ class BannerController extends Controller
     // ════════════════════════════════════════════════════
     //  PRIVATE HELPERS
     // ════════════════════════════════════════════════════
-  
+
     /**
      * Shared validation rules for store and update.
      * Image is required on create, optional on update.
@@ -315,27 +315,27 @@ class BannerController extends Controller
             : 'required|file|image|mimes:jpg,jpeg,png,webp,svg|max:5120';
 
         return $request->validate([
-            'type'               => 'required|in:hero,promo,ad,category,popup',
-            'position'           => 'required|string|max:100',
-            'title'              => 'nullable|string|max:255',
-            'subtitle'           => 'nullable|string|max:255',
-            'alt_text'           => 'nullable|string|max:255',
-            'image'              => $imageRule,
-            'mobile_image'       => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'remove_mobile_image'=> 'nullable|boolean',
-            'link'               => 'nullable|url|max:500',
-            'button_text'        => 'nullable|string|max:100',
-            'target'             => 'nullable|in:_self,_blank',
-            'category_id'        => 'nullable|integer|exists:categories,id',
-            'product_id'         => 'nullable|integer|exists:products,id',
-            'is_active'          => 'nullable|boolean',
-            'sort_order'         => 'nullable|integer|min:0',
-            'starts_at'          => 'nullable|date',
-            'ends_at'            => 'nullable|date|after_or_equal:starts_at',
-            'meta'               => 'nullable|array',
-            'meta.bg_color'      => 'nullable|string|max:20',
-            'meta.text_color'    => 'nullable|string|max:20',
-            'meta.animation'     => 'nullable|string|in:fade,slide,zoom,none',
+            'type' => 'required|in:hero,promo,ad,category,popup',
+            'position' => 'required|string|max:100',
+            'title' => 'nullable|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'alt_text' => 'nullable|string|max:255',
+            'image' => $imageRule,
+            'mobile_image' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'remove_mobile_image' => 'nullable|boolean',
+            'link' => 'nullable|url|max:500',
+            'button_text' => 'nullable|string|max:100',
+            'target' => 'nullable|in:_self,_blank',
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'product_id' => 'nullable|integer|exists:products,id',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'starts_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
+            'meta' => 'nullable|array',
+            'meta.bg_color' => 'nullable|string|max:20',
+            'meta.text_color' => 'nullable|string|max:20',
+            'meta.animation' => 'nullable|string|in:fade,slide,zoom,none',
         ]);
     }
 }

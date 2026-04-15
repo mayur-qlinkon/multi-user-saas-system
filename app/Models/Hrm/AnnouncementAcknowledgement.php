@@ -2,9 +2,9 @@
 
 namespace App\Models\Hrm;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 
 class AnnouncementAcknowledgement extends Model
 {
@@ -15,9 +15,9 @@ class AnnouncementAcknowledgement extends Model
     ];
 
     protected $casts = [
-        'read_at'         => 'datetime',
+        'read_at' => 'datetime',
         'acknowledged_at' => 'datetime',
-        'dismissed_at'    => 'datetime',
+        'dismissed_at' => 'datetime',
     ];
 
     // ── Relationships ──
@@ -36,7 +36,7 @@ class AnnouncementAcknowledgement extends Model
 
     public function getIsReadAttribute(): bool
     {
-        return !is_null($this->read_at);
+        return ! is_null($this->read_at);
     }
 
     public function getIsAcknowledgedAttribute(): bool

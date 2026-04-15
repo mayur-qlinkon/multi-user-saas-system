@@ -2,19 +2,19 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
-use App\Models\User;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Department extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     protected $fillable = [
         'company_id',
@@ -37,7 +37,7 @@ class Department extends Model
             ->logAll()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Department {$this->name} was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Department {$this->name} was {$event}");
     }
 
     // ── Relationships ──

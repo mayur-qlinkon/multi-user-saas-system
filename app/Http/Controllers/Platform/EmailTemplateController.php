@@ -34,6 +34,15 @@ class EmailTemplateController extends Controller
                 'product_name', 'message', 'store_name', 'order_number', 'inquiry_date',
             ],
         ],
+        'leave_request_owner' => [
+            'label' => 'Leave Request — Admin Notification',
+            'description' => 'Sent to targeted admins/owners when an employee requests leave.',
+            'variables' => [
+                // Removed the {} so Alpine.js handles the {{ }} wrapping cleanly
+                'employee_name', 'leave_type', 'from_date', 'to_date',
+                'total_days', 'reason', 'action_url',
+            ],
+        ],
     ];
 
     public function index(): View

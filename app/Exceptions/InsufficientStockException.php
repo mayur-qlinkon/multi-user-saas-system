@@ -3,13 +3,14 @@
 namespace App\Exceptions;
 
 use App\Models\ProductSku;
+use Illuminate\Http\JsonResponse;
 
 class InsufficientStockException extends \RuntimeException
 {
     public function __construct(
         public readonly ProductSku $sku,
-        public readonly float      $available,
-        public readonly float      $requested
+        public readonly float $available,
+        public readonly float $requested
     ) {
         parent::__construct(
             "Insufficient stock for SKU [{$sku->sku}]. Available: {$available}, Requested: {$requested}"
@@ -20,14 +21,14 @@ class InsufficientStockException extends \RuntimeException
      * Render as JSON for API responses.
      * Laravel calls this automatically if it exists.
      */
-    public function render(): \Illuminate\Http\JsonResponse
+    public function render(): JsonResponse
     {
         return response()->json([
             'success' => false,
             'message' => $this->getMessage(),
-            'errors'  => [
+            'errors' => [
                 'stock' => [
-                    'sku'       => $this->sku->sku,
+                    'sku' => $this->sku->sku,
                     'available' => $this->available,
                     'requested' => $this->requested,
                 ],

@@ -2,63 +2,64 @@
 
 namespace App\Imports;
 
+use App\Models\CrmActivity;
 use App\Models\CrmLead;
 use App\Models\CrmLeadSource;
 use App\Models\CrmPipeline;
 use App\Models\CrmStage;
 use App\Models\CrmTag;
-use App\Models\CrmActivity;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
 use Throwable;
 
-class LeadsImport implements
-    ToCollection,
-    WithHeadingRow,
-    WithValidation,
-    SkipsOnError,
-    SkipsEmptyRows,
-    WithBatchInserts,
-    WithChunkReading
+class LeadsImport implements SkipsEmptyRows, SkipsOnError, ToCollection, WithBatchInserts, WithChunkReading, WithHeadingRow, WithValidation
 {
     // ── Result tracking ──
-    public int   $imported   = 0;
-    public int   $skipped    = 0;
-    public int   $duplicates = 0;
-    public array $errors     = [];
+    public int $imported = 0;
+
+    public int $skipped = 0;
+
+    public int $duplicates = 0;
+
+    public array $errors = [];
+
     public array $skippedRows = [];
 
-    private int     $companyId;
-    private ?int    $pipelineId;
-    private ?int    $stageId;
-    private array   $sourceMap  = [];
-    private array   $tagMap     = [];
+    private int $companyId;
+
+    private ?int $pipelineId;
+
+    private ?int $stageId;
+
+    private array $sourceMap = [];
+
+    private array $tagMap = [];
 
     public function __construct(
-        int  $companyId,
+        int $companyId,
         ?int $pipelineId = null,
-        ?int $stageId    = null
+        ?int $stageId = null
     ) {
-        $this->companyId  = $companyId;
+        $this->companyId = $companyId;
         $this->pipelineId = $pipelineId;
-        $this->stageId    = $stageId;
+        $this->stageId = $stageId;
 
         // ── Pre-load source and tag maps for fast lookup ──
         CrmLeadSource::where('company_id', $companyId)
             ->get(['id', 'name'])
-            ->each(fn($s) => $this->sourceMap[strtolower($s->name)] = $s->id);
+            ->each(fn ($s) => $this->sourceMap[strtolower($s->name)] = $s->id);
 
         CrmTag::where('company_id', $companyId)
             ->get(['id', 'name'])
-            ->each(fn($t) => $this->tagMap[strtolower($t->name)] = $t->id);
+            ->each(fn ($t) => $this->tagMap[strtolower($t->name)] = $t->id);
     }
 
     // ════════════════════════════════════════════════════
@@ -69,10 +70,11 @@ class LeadsImport implements
     {
         // Resolve pipeline/stage once for the whole import
         $pipelineId = $this->pipelineId ?? $this->resolveDefaultPipeline();
-        $stageId    = $this->stageId    ?? $this->resolveFirstStage($pipelineId);
+        $stageId = $this->stageId ?? $this->resolveFirstStage($pipelineId);
 
-        if (!$pipelineId || !$stageId) {
+        if (! $pipelineId || ! $stageId) {
             $this->errors[] = 'No active pipeline or stage found. Set up your CRM pipeline first.';
+
             return;
         }
 
@@ -80,7 +82,7 @@ class LeadsImport implements
             $rowNum = $index + 2; // +2 because row 1 is heading
 
             try {
-                $name  = trim($row['name'] ?? $row['full_name'] ?? '');
+                $name = trim($row['name'] ?? $row['full_name'] ?? '');
                 $phone = trim($row['phone'] ?? $row['mobile'] ?? '');
                 $email = trim($row['email'] ?? '');
 
@@ -88,6 +90,7 @@ class LeadsImport implements
                 if (empty($name)) {
                     $this->skipped++;
                     $this->skippedRows[] = "Row {$rowNum}: Name is empty — skipped.";
+
                     continue;
                 }
 
@@ -100,12 +103,13 @@ class LeadsImport implements
                     if ($exists) {
                         $this->duplicates++;
                         $this->skippedRows[] = "Row {$rowNum}: {$name} ({$phone}) — duplicate phone, skipped.";
+
                         continue;
                     }
                 }
 
                 // ── Duplicate detection by email ──
-                if ($email && !$phone) {
+                if ($email && ! $phone) {
                     $exists = CrmLead::where('company_id', $this->companyId)
                         ->where('email', $email)
                         ->exists();
@@ -113,6 +117,7 @@ class LeadsImport implements
                     if ($exists) {
                         $this->duplicates++;
                         $this->skippedRows[] = "Row {$rowNum}: {$name} ({$email}) — duplicate email, skipped.";
+
                         continue;
                     }
                 }
@@ -132,25 +137,25 @@ class LeadsImport implements
 
                 // ── Create lead ──
                 $lead = CrmLead::create([
-                    'company_id'         => $this->companyId,
-                    'crm_pipeline_id'    => $pipelineId,
-                    'crm_stage_id'       => $stageId,
+                    'company_id' => $this->companyId,
+                    'crm_pipeline_id' => $pipelineId,
+                    'crm_stage_id' => $stageId,
                     'crm_lead_source_id' => $sourceId,
-                    'name'               => $name,
-                    'phone'              => $phone ?: null,
-                    'email'              => $email ?: null,
-                    'company_name'       => trim($row['company'] ?? $row['company_name'] ?? '') ?: null,
-                    'address'            => trim($row['address'] ?? '') ?: null,
-                    'city'               => trim($row['city'] ?? '') ?: null,
-                    'state'              => trim($row['state'] ?? '') ?: null,
-                    'zip_code'           => trim($row['pin'] ?? $row['zip_code'] ?? $row['pincode'] ?? '') ?: null,
-                    'country'            => trim($row['country'] ?? 'India') ?: 'India',
-                    'instagram_id'       => trim($row['instagram'] ?? $row['instagram_id'] ?? '') ?: null,
-                    'website'            => trim($row['website'] ?? '') ?: null,
-                    'priority'           => $priority,
-                    'lead_value'         => is_numeric($row['value'] ?? $row['lead_value'] ?? '') ? $row['value'] ?? $row['lead_value'] : null,
-                    'description'        => trim($row['notes'] ?? $row['description'] ?? '') ?: null,
-                    'created_by'         => Auth::id(),
+                    'name' => $name,
+                    'phone' => $phone ?: null,
+                    'email' => $email ?: null,
+                    'company_name' => trim($row['company'] ?? $row['company_name'] ?? '') ?: null,
+                    'address' => trim($row['address'] ?? '') ?: null,
+                    'city' => trim($row['city'] ?? '') ?: null,
+                    'state' => trim($row['state'] ?? '') ?: null,
+                    'zip_code' => trim($row['pin'] ?? $row['zip_code'] ?? $row['pincode'] ?? '') ?: null,
+                    'country' => trim($row['country'] ?? 'India') ?: 'India',
+                    'instagram_id' => trim($row['instagram'] ?? $row['instagram_id'] ?? '') ?: null,
+                    'website' => trim($row['website'] ?? '') ?: null,
+                    'priority' => $priority,
+                    'lead_value' => is_numeric($row['value'] ?? $row['lead_value'] ?? '') ? $row['value'] ?? $row['lead_value'] : null,
+                    'description' => trim($row['notes'] ?? $row['description'] ?? '') ?: null,
+                    'created_by' => Auth::id(),
                 ]);
 
                 // ── Sync tags if provided ──
@@ -176,25 +181,26 @@ class LeadsImport implements
 
                 // ── Activity log ──
                 CrmActivity::logAuto(
-                    leadId:      $lead->id,
-                    type:        'lead_created',
+                    leadId: $lead->id,
+                    type: 'lead_created',
                     description: 'Lead imported via CSV/Excel',
-                    meta:        ['imported_by' => Auth::id()],
-                    companyId:   $this->companyId
+                    meta: ['imported_by' => Auth::id()],
+                    companyId: $this->companyId
                 );
 
                 $this->imported++;
 
             } catch (Throwable $e) {
                 $this->skipped++;
-                $this->errors[] = "Row {$rowNum}: " . $e->getMessage();
+                $this->errors[] = "Row {$rowNum}: ".$e->getMessage();
                 Log::error('[LeadsImport] Row failed', [
-                    'row'   => $rowNum,
+                    'row' => $rowNum,
                     'error' => $e->getMessage(),
                 ]);
             }
         }
     }
+
     // ════════════════════════════════════════════════════
     //  PRE-VALIDATION FORMATTING (The Excel Trap Fix)
     // ════════════════════════════════════════════════════
@@ -204,7 +210,7 @@ class LeadsImport implements
         if (isset($data['phone'])) {
             $data['phone'] = (string) $data['phone'];
         }
-        
+
         // Do the same for 'mobile' since you use it as a fallback in your collection
         if (isset($data['mobile'])) {
             $data['mobile'] = (string) $data['mobile'];
@@ -214,7 +220,7 @@ class LeadsImport implements
         if (isset($data['value'])) {
             $data['value'] = (string) $data['value'];
         }
-        
+
         if (isset($data['pin'])) {
             $data['pin'] = (string) $data['pin'];
         }
@@ -230,19 +236,19 @@ class LeadsImport implements
     {
         return [
             // Only name is required — everything else optional
-            '*.name'      => ['nullable', 'string', 'max:150'],
+            '*.name' => ['nullable', 'string', 'max:150'],
             '*.full_name' => ['nullable', 'string', 'max:150'],
-            '*.phone'     => ['nullable', 'string', 'max:20'],
-            '*.email'     => ['nullable', 'email', 'max:150'],
-            '*.website'   => ['nullable', 'url', 'max:255'],
+            '*.phone' => ['nullable', 'string', 'max:20'],
+            '*.email' => ['nullable', 'email', 'max:150'],
+            '*.website' => ['nullable', 'url', 'max:255'],
         ];
     }
 
     public function customValidationMessages(): array
     {
         return [
-            '*.email.email'   => 'Row :attribute: Invalid email address.',
-            '*.website.url'   => 'Row :attribute: Website must be a valid URL.',
+            '*.email.email' => 'Row :attribute: Invalid email address.',
+            '*.website.url' => 'Row :attribute: Website must be a valid URL.',
         ];
     }
 
@@ -261,8 +267,15 @@ class LeadsImport implements
     //  PERFORMANCE — batch + chunk settings
     // ════════════════════════════════════════════════════
 
-    public function batchSize(): int   { return 100; }
-    public function chunkSize(): int   { return 200; }
+    public function batchSize(): int
+    {
+        return 100;
+    }
+
+    public function chunkSize(): int
+    {
+        return 200;
+    }
 
     // ════════════════════════════════════════════════════
     //  RESULT SUMMARY
@@ -271,12 +284,12 @@ class LeadsImport implements
     public function getResult(): array
     {
         return [
-            'imported'    => $this->imported,
-            'duplicates'  => $this->duplicates,
-            'skipped'     => $this->skipped,
-            'errors'      => $this->errors,
-            'skipped_rows'=> $this->skippedRows,
-            'total'       => $this->imported + $this->skipped + $this->duplicates,
+            'imported' => $this->imported,
+            'duplicates' => $this->duplicates,
+            'skipped' => $this->skipped,
+            'errors' => $this->errors,
+            'skipped_rows' => $this->skippedRows,
+            'total' => $this->imported + $this->skipped + $this->duplicates,
         ];
     }
 
@@ -287,14 +300,16 @@ class LeadsImport implements
     private function resolveDefaultPipeline(): ?int
     {
         return CrmPipeline::where('company_id', $this->companyId)
-                ->where('is_default', true)->where('is_active', true)->value('id')
+            ->where('is_default', true)->where('is_active', true)->value('id')
             ?? CrmPipeline::where('company_id', $this->companyId)
                 ->where('is_active', true)->orderBy('sort_order')->value('id');
     }
 
     private function resolveFirstStage(?int $pipelineId): ?int
     {
-        if (!$pipelineId) return null;
+        if (! $pipelineId) {
+            return null;
+        }
 
         return CrmStage::where('crm_pipeline_id', $pipelineId)
             ->where('company_id', $this->companyId)

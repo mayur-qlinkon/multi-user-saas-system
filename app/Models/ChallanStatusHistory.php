@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ChallanStatusHistory extends Model
 {
@@ -43,13 +43,16 @@ class ChallanStatusHistory extends Model
     // ════════════════════════════════════════════════════
 
     // Who triggered the change — matches changed_by_type column
-    const ACTOR_ADMIN   = 'admin';
-    const ACTOR_SYSTEM  = 'system';   // auto-transitions (recalculateStatus)
-    const ACTOR_DRIVER  = 'driver';   // future: driver app
-    const ACTOR_CLIENT  = 'client';   // future: client portal
+    const ACTOR_ADMIN = 'admin';
+
+    const ACTOR_SYSTEM = 'system';   // auto-transitions (recalculateStatus)
+
+    const ACTOR_DRIVER = 'driver';   // future: driver app
+
+    const ACTOR_CLIENT = 'client';   // future: client portal
 
     const ACTOR_LABELS = [
-        self::ACTOR_ADMIN  => 'Admin',
+        self::ACTOR_ADMIN => 'Admin',
         self::ACTOR_SYSTEM => 'System',
         self::ACTOR_DRIVER => 'Driver',
         self::ACTOR_CLIENT => 'Client',
@@ -164,7 +167,7 @@ class ChallanStatusHistory extends Model
         static::updating(function (ChallanStatusHistory $history) {
             throw new \LogicException(
                 "ChallanStatusHistory [{$history->id}] is immutable and cannot be updated. "
-                . "Audit trail records must never be modified."
+                .'Audit trail records must never be modified.'
             );
         });
 
@@ -172,7 +175,7 @@ class ChallanStatusHistory extends Model
         static::deleting(function (ChallanStatusHistory $history) {
             throw new \LogicException(
                 "ChallanStatusHistory [{$history->id}] cannot be deleted. "
-                . "Audit trail records are permanent."
+                .'Audit trail records are permanent.'
             );
         });
     }

@@ -46,7 +46,7 @@ class LeadStageChanged
 
     public function __construct(
         public readonly CrmLead $lead,
-        public readonly int     $fromStageId,
-        public readonly int     $toStageId,
+        public readonly int $fromStageId,
+        public readonly int $toStageId,
     ) {}
 }

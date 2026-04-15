@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
+use Spatie\Activitylog\Traits\LogsActivity;
+
 class Setting extends Model
 {
-    use Tenantable,LogsActivity;
+    use LogsActivity,Tenantable;
+
     protected $fillable = [
         'company_id',
         'store_id',
@@ -18,13 +20,14 @@ class Setting extends Model
         'group',
         'type',
     ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logOnly(['key', 'value'])
             ->logOnlyDirty()           // only log what actually changed
             ->dontSubmitEmptyLogs()    // skip if nothing changed
-            ->setDescriptionForEvent(fn(string $event) => "Setting {$this->key} was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Setting {$this->key} was {$event}");
     }
 
     /*

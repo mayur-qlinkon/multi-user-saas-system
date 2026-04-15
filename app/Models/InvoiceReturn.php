@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class InvoiceReturn extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -64,27 +64,27 @@ class InvoiceReturn extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'return_date'      => 'date',
-        'approved_at'      => 'datetime',
-        'billing_address'  => 'array', // JSON to Array
+        'return_date' => 'date',
+        'approved_at' => 'datetime',
+        'billing_address' => 'array', // JSON to Array
         'shipping_address' => 'array', // JSON to Array
-        'restock'          => 'boolean',
-        'stock_updated'    => 'boolean',
+        'restock' => 'boolean',
+        'stock_updated' => 'boolean',
         // Mathematical precision casting
-        'exchange_rate'    => 'float',
-        'max_returnable_qty'=> 'float',
-        'refunded_amount'  => 'float',
-        'subtotal'         => 'float',
-        'discount_amount'  => 'float',
-        'taxable_amount'   => 'float',
-        'cgst_amount'      => 'float',
-        'sgst_amount'      => 'float',
-        'igst_amount'      => 'float',
-        'tax_amount'       => 'float',
-        'shipping_charge'  => 'float',
-        'other_charges'    => 'float',
-        'round_off'        => 'float',
-        'grand_total'      => 'float',
+        'exchange_rate' => 'float',
+        'max_returnable_qty' => 'float',
+        'refunded_amount' => 'float',
+        'subtotal' => 'float',
+        'discount_amount' => 'float',
+        'taxable_amount' => 'float',
+        'cgst_amount' => 'float',
+        'sgst_amount' => 'float',
+        'igst_amount' => 'float',
+        'tax_amount' => 'float',
+        'shipping_charge' => 'float',
+        'other_charges' => 'float',
+        'round_off' => 'float',
+        'grand_total' => 'float',
     ];
 
     /**
@@ -97,7 +97,7 @@ class InvoiceReturn extends Model
             ->logAll()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => "Invoice Return (Credit Note) has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Invoice Return (Credit Note) has been {$eventName}");
     }
 
     // ─────────────────────────────────────────────────────────

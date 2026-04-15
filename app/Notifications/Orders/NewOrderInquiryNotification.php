@@ -20,12 +20,12 @@ class NewOrderInquiryNotification extends Notification
     public function toArray($notifiable): array
     {
         return [
-            'title'    => 'New Order Inquiry',
-            'message'  => "Order #{$this->order->order_number} received from {$this->order->customer_name}.",
-            'link'     => route('admin.orders.show', $this->order->id),
-            'icon'     => 'shopping-cart', // Matches Lucide name
-            'color'    => 'green',         // UI theme color
-            'type'     => 'new_order'
+            'title' => 'New Order Inquiry',
+            'message' => "Order #{$this->order->order_number} received from {$this->order->customer_name}.",
+            'link' => route('admin.orders.show', $this->order->id),
+            'icon' => 'shopping-cart', // Matches Lucide name
+            'color' => 'green',         // UI theme color
+            'type' => 'new_order',
         ];
     }
 }

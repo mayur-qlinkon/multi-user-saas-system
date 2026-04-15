@@ -17,7 +17,7 @@ class PermissionController extends Controller
     public function index()
     {
         $permissions = Permission::orderBy('module_group')->orderBy('name')->get();
-        
+
         // Dynamically fetch unique module groups from the database for the dropdown
         $moduleGroups = Permission::select('module_group')
             ->distinct()
@@ -33,20 +33,20 @@ class PermissionController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'module_group' => ['required', 'string', 'max:255'],
-            'slug'         => ['nullable', 'string', 'max:255', 'unique:permissions,slug'],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:permissions,slug'],
         ]);
 
         // Auto-generate slug from module_group + name (e.g. 'pos_create_quick_product') if left empty
-        $data['slug'] = !empty($data['slug']) 
-            ? Str::slug($data['slug'], '_') 
-            : Str::slug($data['module_group'] . '_' . $data['name'], '_');
+        $data['slug'] = ! empty($data['slug'])
+            ? Str::slug($data['slug'], '_')
+            : Str::slug($data['module_group'].'_'.$data['name'], '_');
 
         Permission::create($data);
 
         return redirect()->route('platform.permissions.index')
-                         ->with('success', 'Permission created successfully.');
+            ->with('success', 'Permission created successfully.');
     }
 
     /**
@@ -55,24 +55,24 @@ class PermissionController extends Controller
     public function update(Request $request, Permission $permission)
     {
         $data = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'module_group' => ['required', 'string', 'max:255'],
-            'slug'         => [
-                'nullable', 
-                'string', 
-                'max:255', 
-                Rule::unique('permissions', 'slug')->ignore($permission->id)
+            'slug' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('permissions', 'slug')->ignore($permission->id),
             ],
         ]);
 
-        $data['slug'] = !empty($data['slug']) 
-            ? Str::slug($data['slug'], '_') 
-            : Str::slug($data['module_group'] . '_' . $data['name'], '_');
+        $data['slug'] = ! empty($data['slug'])
+            ? Str::slug($data['slug'], '_')
+            : Str::slug($data['module_group'].'_'.$data['name'], '_');
 
         $permission->update($data);
 
         return redirect()->route('platform.permissions.index')
-                         ->with('success', 'Permission updated successfully.');
+            ->with('success', 'Permission updated successfully.');
     }
 
     /**
@@ -92,7 +92,7 @@ class PermissionController extends Controller
     {
         // Programmatically call your central PermissionSeeder
         Artisan::call('db:seed', [
-            '--class' => 'Database\\Seeders\\Platform\\PermissionSeeder'
+            '--class' => 'Database\\Seeders\\Platform\\PermissionSeeder',
         ]);
 
         return back()->with('success', 'Enterprise permissions synced successfully from Seeder!');

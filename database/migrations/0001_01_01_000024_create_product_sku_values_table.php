@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-       // Pivot for linking variations (e.g., Red, Large) to a specific SKU
+        // Pivot for linking variations (e.g., Red, Large) to a specific SKU
         Schema::create('product_sku_values', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_sku_id')->constrained('product_skus')->cascadeOnDelete();

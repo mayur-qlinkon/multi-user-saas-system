@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Services\Hrm\AttendanceService;
+use Illuminate\Console\Command;
 
 class AutoCheckoutCommand extends Command
 {

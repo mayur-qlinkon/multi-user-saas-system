@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Admin\Hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hrm\WorkLog;
 use App\Models\Hrm\Employee;
+use App\Models\Hrm\WorkLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class WorkLogController extends Controller
 {
@@ -79,6 +78,7 @@ class WorkLogController extends Controller
     public function destroy(WorkLog $workLog)
     {
         $workLog->delete();
+
         return response()->json(['success' => true, 'message' => 'Work log deleted.']);
     }
 

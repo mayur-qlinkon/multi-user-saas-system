@@ -30,17 +30,18 @@
 @section('content')
 
     {{-- 🌟 Injected $invoice into Alpine --}}
-    <div class="pb-20" x-data="invoiceForm(@js($units ?? []), @js($companyState), @js($invoice))">
+    <div class="pb-20" x-data="invoiceForm(@js($units ?? []), @js($companyState), @js($invoice), @js($clients ?? []))">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Edit Invoice:
                     {{ $invoice->invoice_number }}</h1>
             </div>
-            <div class="flex items-center gap-3">
+            {{-- UI Fix: Make buttons full width on mobile, auto width on screens sm+ --}}
+            <div class="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 justify-end">
                 <a href="{{ route('admin.invoices.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2">Cancel</a>
                 <button type="submit" form="mainInvoiceForm"
-                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center gap-2">
+                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2">
                     <i data-lucide="check-circle" class="w-4 h-4"></i> Update Invoice
                 </button>
             </div>
@@ -77,35 +78,62 @@
             {{-- 1. TRANSACTION HEADER --}}
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                 <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+                    
+                    {{-- Customer Selection (Spans 2 columns) --}}
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Customer <span
-                                class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Customer <span class="text-red-500">*</span></label>
                         <div class="flex gap-2 items-start">
                             <div class="relative flex-1">
-                                <select name="customer_id" x-model="formData.customer_id"
-                                    @change="updateCustomerData($event)"
-                                    class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white font-bold text-gray-700">
-                                    <option value="">-- Select Customer --</option>
-                                    @foreach ($clients ?? [] as $client)
-                                        {{-- 🌟 Added data-gstin --}}
-                                        <option value="{{ $client->id }}" data-state="{{ $client->state_name_only }}"
-                                            data-name="{{ $client->name }}" data-gstin="{{ $client->gst_number ?? '' }}">
-                                            {{ $client->name }} ({{ $client->phone }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                                {{-- 🌟 Show GSTIN dynamically if available --}}
-                                <div x-show="formData.customer_gstin" x-cloak
-                                    class="mt-1 text-[11px] font-bold text-gray-500">
+                                {{-- Searchable Input --}}
+                                <div class="flex gap-1 w-full relative" @click.away="isClientDropdownOpen = false">
+                                    <div class="relative flex-1">
+                                        <input type="text" x-model="clientSearchTerm" 
+                                            @focus="isClientDropdownOpen = true"
+                                            @input="isClientDropdownOpen = true; formData.customer_id = ''"
+                                            placeholder="Search customer by name or phone..."
+                                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white font-bold text-gray-700">
+                                        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                    </div>
+
+                                    {{-- Hidden Input for Laravel Form Submission --}}
+                                    <input type="hidden" name="customer_id" x-model="formData.customer_id">
+
+                                    {{-- Floating Dropdown List --}}
+                                    <ul x-show="isClientDropdownOpen" x-cloak x-transition
+                                        class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto overscroll-contain top-full left-0 custom-scrollbar">
+                                        
+                                        <li x-show="filteredClientList.length === 0" class="px-4 py-4 text-sm text-gray-500 text-center font-medium">
+                                            No matching customers found.
+                                        </li>
+
+                                        <template x-for="client in filteredClientList" :key="client.id">
+                                            <li @click="selectCustomer(client)"
+                                                class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
+                                                <div class="font-bold text-[13px] text-gray-800" x-text="client.name"></div>
+                                                <div class="text-[11px] text-gray-500 mt-0.5 flex flex-wrap items-center gap-2">
+                                                    <span x-show="client.phone" x-text="'📞 ' + client.phone"></span>
+                                                    <span x-show="client.gst_number || client.gstin" class="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 text-[9px] font-bold text-gray-600" x-text="'GST: ' + (client.gst_number || client.gstin)"></span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+
+                                {{-- GSTIN Display --}}
+                                <div x-show="formData.customer_gstin" x-cloak class="mt-1.5 pl-1 text-[11px] font-bold text-gray-500">
                                     GSTIN: <span class="text-blue-600" x-text="formData.customer_gstin"></span>
                                 </div>
                             </div>
+                            
+                            {{-- Guest Toggle Button --}}
                             <button type="button" @click="toggleGuestMode()"
                                 :class="isGuest ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'"
-                                class="px-4 py-4 rounded text-xs font-bold uppercase tracking-widest transition-colors border border-transparent">
+                                class="px-4 py-4 rounded text-xs font-bold uppercase tracking-widest transition-colors border border-transparent shrink-0">
                                 <span x-text="isGuest ? 'Guest Active' : 'Guest'"></span>
                             </button>
                         </div>
+
+                        {{-- Guest Name Input --}}
                         <div x-show="isGuest" x-cloak class="mt-3">
                             <input type="text" name="customer_name" x-model="formData.customer_name"
                                 placeholder="Enter Guest Name..."
@@ -113,10 +141,9 @@
                         </div>
                     </div>
 
-
+                    {{-- Remaining Fields --}}
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Invoice
-                            Date</label>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Invoice Date</label>
                         <input type="date" name="invoice_date" x-model="formData.invoice_date" required
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none font-medium">
                     </div>
@@ -126,9 +153,9 @@
                         <input type="date" name="due_date" x-model="formData.due_date"
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none font-medium">
                     </div>
+
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">GST
-                            Treatment</label>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">GST Treatment</label>
                         <select name="gst_treatment" x-model="formData.gst_treatment"
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white font-medium">
                             <option value="unregistered">Unregistered Business (B2C)</option>
@@ -138,21 +165,19 @@
                             <option value="sez">SEZ</option>
                         </select>
                     </div>
+
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Store
-                            Branch</label>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Store Branch</label>
                         <select name="store_id" required x-model="formData.store_id" @change="updateStoreData($event)"
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white">
                             @foreach ($stores ?? [] as $store)
-                                <option value="{{ $store->id }}"
-                                    data-state="{{ $store->state->name ?? $companyState }}">{{ $store->name }}</option>
+                                <option value="{{ $store->id }}" data-state="{{ $store->state->name ?? $companyState }}">{{ $store->name }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Stock
-                            Warehouse</label>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Stock Warehouse</label>
                         <select name="warehouse_id" required x-model="formData.warehouse_id"
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white">
                             <option value="">-- Select Warehouse --</option>
@@ -162,7 +187,7 @@
                         </select>
                     </div>
 
-                    <div class="mt-[-1px]"> {{-- Slight margin tweak to align with other inputs --}}
+                    <div class="mt-[-1px]">
                         <x-state-select name="supply_state" label="Place of Supply (State)" x-model="formData.supply_state"
                             @change="calculate()" class="!bg-white !border-gray-300 !font-bold !text-[#108c2a]" />
                     </div>
@@ -233,13 +258,12 @@
 
                 <div class="overflow-x-auto min-h-[200px]">
                     <table class="w-full text-left border-collapse">
-                        <thead
-                            class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-5 py-4 min-w-[250px]">PRODUCT</th>
-                                <th class="px-4 py-4 w-[160px]">BASE UNIT PRICE</th>
-                                <th class="px-4 py-4 w-[180px] text-center">QTY</th>
-                                <th class="px-5 py-4 w-[160px] text-right">TOTAL (INC TAX)</th>
+                                <th class="px-4 py-4 min-w-[140px] w-[160px]">BASE UNIT PRICE</th>
+                                <th class="px-4 py-4 min-w-[140px] w-[180px] text-center">QTY</th>
+                                <th class="px-5 py-4 min-w-[120px] w-[160px] text-right">TOTAL (INC TAX)</th>
                                 <th class="px-4 py-4 w-[60px] text-center"></th>
                             </tr>
                         </thead>
@@ -293,27 +317,26 @@
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3">
-                                        <div class="relative">
-                                            <span
-                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="relative w-full min-w-[100px]">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
                                             <input type="number" step="0.01" x-model="item.unit_price"
                                                 @input="calculate()"
-                                                class="w-full border border-gray-300 rounded px-2 pl-7 py-2 text-sm focus:border-brand-500 outline-none font-bold text-gray-700">
+                                                class="w-full h-10 md:h-9 border border-gray-300 rounded px-2 pl-7 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 shadow-sm transition-all">
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center justify-center">
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="flex items-center justify-center min-w-[120px]">
                                             <button type="button"
                                                 @click="item.quantity = Math.max(1, parseFloat(item.quantity || 0) - 1); calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">-</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">-</button>
                                             <input type="number" step="0.0001" x-model="item.quantity"
                                                 @input="calculate()"
-                                                class="w-16 h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700">
+                                                class="w-16 h-10 md:h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700 shadow-inner">
                                             <button type="button"
                                                 @click="item.quantity = parseFloat(item.quantity || 0) + 1; calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">+</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">+</button>
                                         </div>
                                     </td>
 
@@ -491,12 +514,16 @@
                         </select>
                     </div>
                 </div>
-                <div class="p-5 border-t border-gray-100 bg-white grid grid-cols-2 gap-3">
+                <div class="p-4 sm:p-5 border-t border-gray-100 bg-white grid gap-3 grid-cols-2 sm:grid-cols-2"> 
+                <!-- Note: I kept the existing classes but added 'sm:p-5' to ensure padding adapts smoothly -->
+
                     <button type="button" @click="closeItemModal()"
-                        class="bg-gray-100 text-gray-700 font-bold text-sm py-2.5 rounded-lg">Cancel</button>
+                        class="col-span-1 bg-gray-100 text-gray-700 font-bold text-sm py-2.5 rounded-lg">Cancel</button>
+                    
                     <button type="button" @click="saveItemModal()"
-                        class="bg-[#108c2a] text-white font-bold text-sm py-2.5 rounded-lg">Save Changes</button>
+                        class="col-span-1 bg-[#108c2a] text-white font-bold text-sm py-2.5 rounded-lg">Save Changes</button>
                 </div>
+
             </div>
         </div>
     </div>
@@ -504,7 +531,7 @@
 
 @push('scripts')
     <script>
-        function invoiceForm(allUnits = [], companyState = '', invoiceData = null) {
+        function invoiceForm(allUnits = [], companyState = '', invoiceData = null, allClients = []) {
 
             // 🌟 Map old line items from database
             let initialItems = [];
@@ -542,6 +569,20 @@
                 isSearching: false,
                 globalSearchResults: [],
                 showResults: false,
+                clientsList: allClients,
+                clientSearchTerm: invoiceData ? (invoiceData.customer_name || '') : '',
+                isClientDropdownOpen: false,
+
+                get filteredClientList() {
+                    if (this.clientSearchTerm.trim() === '') {
+                        return this.clientsList;
+                    }
+                    const term = this.clientSearchTerm.toLowerCase();
+                    return this.clientsList.filter(client => {
+                        return client.name.toLowerCase().includes(term) || 
+                            (client.phone && client.phone.includes(term));
+                    });
+                },
 
                 isGuest: invoiceData ? !invoiceData.customer_id : false,
 
@@ -603,23 +644,27 @@
                     if (this.isGuest) {
                         this.formData.customer_id = '';
                         this.formData.customer_name = '';
+                        this.clientSearchTerm = ''; // <-- ADD THIS LINE
                         this.formData.supply_state = this.company_state;
                     }
                     this.calculate();
                 },
 
-                updateCustomerData(e) {
-                    const opt = e.target.options[e.target.selectedIndex];
-                    if (opt.value) {
-                        this.isGuest = false;
-                        this.formData.supply_state = opt.dataset.state || this.company_state;
-                        this.formData.customer_name = opt.dataset.name;
-                        this.formData.customer_gstin = opt.dataset.gstin || '';
-                        this.formData.gst_treatment = this.formData.customer_gstin ? 'registered' : 'unregistered';
-                    } else {
-                        this.formData.customer_gstin = '';
-                        this.formData.gst_treatment = 'unregistered';
-                    }
+                selectCustomer(client) {
+                    this.isGuest = false;
+                    
+                    // Update Alpine State
+                    this.formData.customer_id = client.id;
+                    this.clientSearchTerm = client.name; 
+                    
+                    // Update Snapshot Data
+                    this.formData.supply_state = client.state_name_only || client.state?.name || this.company_state;
+                    this.formData.customer_name = client.name;
+                    this.formData.customer_gstin = client.gst_number || client.gstin || '';
+
+                    this.formData.gst_treatment = this.formData.customer_gstin ? 'registered' : 'unregistered';
+
+                    this.isClientDropdownOpen = false;
                     this.calculate();
                 },
                 updateStoreData(e) {

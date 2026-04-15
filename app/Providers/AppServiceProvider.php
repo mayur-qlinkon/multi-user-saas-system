@@ -2,27 +2,22 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
-
-use App\Models\Hrm\Announcement;
-use App\Policies\Hrm\AnnouncementPolicy;
-
 use App\Models\Category;
 use App\Models\Company;
-
+use App\Models\Hrm\Announcement;
+use App\Models\User;
+use App\Policies\Hrm\AnnouncementPolicy;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register(): void
-    {
-       
-    }
+    public function register(): void {}
 
     /**
      * Bootstrap any application services.
@@ -35,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
 
             // ── Resolve company from URL slug — no auth needed ──
             // Works for public storefront where owner is not logged in
-            $slug    = request()->route('slug');
+            $slug = request()->route('slug');
             $company = null;
 
             if ($slug) {
@@ -44,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             // ── Fallback: if somehow still null (edge case) ──
-            if (!$company && Auth::check()) {
+            if (! $company && Auth::check()) {
                 $company = Auth::user()->company;
             }
 
@@ -59,16 +54,16 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with(compact('company', 'navCategories'));
         });
-        
+
         // ── 2. ADMIN VIEW LOGIC (New & IDE Friendly) ──
         View::composer('layouts.admin', function ($view) {
             if (Auth::check()) {
-                /** @var \App\Models\User $user */
+                /** @var User $user */
                 $user = Auth::user(); // This line tells VS Code to look at your User Model
-                
+
                 $view->with([
                     'unreadNotifications' => $user->unreadNotificationsLimit()->get(),
-                    'unreadCount'         => $user->unreadNotifications()->count()
+                    'unreadCount' => $user->unreadNotifications()->count(),
                 ]);
             }
         });

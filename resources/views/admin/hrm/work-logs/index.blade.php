@@ -198,7 +198,7 @@
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    @if($log->status === 'submitted')
+                                    @if($log->status === 'submitted' && has_permission('work_logs.approve'))
                                         <button @click="approveLog({{ $log->id }})"
                                             class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-green-50 text-green-500 hover:bg-green-100 hover:text-green-700 transition-colors"
                                             title="Approve">

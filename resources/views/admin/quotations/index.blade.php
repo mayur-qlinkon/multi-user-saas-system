@@ -35,10 +35,12 @@
                 <p class="text-sm text-gray-500 font-medium">Manage and track your customer proposals.</p>
             </div>
             <div class="flex items-center gap-2">
+                @if(has_permission('quotations.create'))
                 <a href="{{ route('admin.quotations.create') }}"
                     class="bg-brand-500  hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
                     <i data-lucide="plus" class="w-4 h-4"></i> Create Quotation
                 </a>
+                @endif
             </div>
         </div>
 
@@ -130,10 +132,16 @@
                                 {{-- 1. Details --}}
                                 <td class="px-6 py-4">
                                     <div class="flex flex-col">
-                                        <a href="{{ route('admin.quotations.show', $quotation->id) }}"
+
+                                        <a href="
+                                        @if(has_permission('quotations.view'))
+                                            {{ route('admin.quotations.show', $quotation->id) }}
+                                         @endif
+                                         "
                                             class="font-extrabold text-[#108c2a] text-[13px] hover:underline">
                                             {{ $quotation->quotation_number }}
                                         </a>
+
                                         <span class="text-[11px] text-gray-500 mt-0.5 font-medium">
                                             {{ $quotation->quotation_date->format('d M, Y') }}
                                         </span>
@@ -192,23 +200,28 @@
                                 {{-- 6. Actions --}}
                                 <td class="px-6 py-4 text-right">
                                     <div
-                                        class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        class="flex items-center justify-end gap-2 transition-opacity">
 
                                         {{-- View Button --}}
+                                        @if(has_permission('quotations.view'))
                                         <a href="{{ route('admin.quotations.show', $quotation->id) }}"
                                             class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                             title="View Quotation">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
+                                        @endif
 
+                                        @if(has_permission('quotations.download_pdf'))
                                         <a href="{{ route('admin.quotations.pdf', $quotation->id) }}"
                                             class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                             title="Download Quotation">
                                             <i data-lucide="download" class="w-4 h-4"></i>
                                         </a>
+                                        @endif
+
                                         @if ($quotation->status !== 'converted')
                                             {{-- Mark Sent Button (Quick Action) --}}
-                                            @if ($quotation->status === 'draft')
+                                            @if ($quotation->status === 'draft' && has_permission('quotations.mark_sent'))
                                                 <form action="{{ route('admin.quotations.mark_sent', $quotation->id) }}"
                                                     method="POST" class="inline-block">
                                                     @csrf
@@ -221,15 +234,18 @@
                                             @endif
 
                                             {{-- Edit Button --}}
+                                            @if(has_permission('quotations.update'))
                                             <a href="{{ route('admin.quotations.edit', $quotation->id) }}"
                                                 class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                                 title="Edit Quotation">
                                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                                             </a>
+                                            @endif
 
 
 
                                             {{-- Convert to Invoice Button --}}
+                                            @if(has_permission('quotations.convert'))
                                             <form action="{{ route('admin.quotations.convert', $quotation->id) }}"
                                                 method="POST" @submit.prevent="confirmConvert($event.target)"
                                                 class="inline-block">
@@ -240,8 +256,10 @@
                                                     <i data-lucide="file-check-2" class="w-4 h-4"></i>
                                                 </button>
                                             </form>
+                                            @endif
 
                                             {{-- Archive Button --}}
+                                            @if(has_permission('quotations.delete'))
                                             <form action="{{ route('admin.quotations.destroy', $quotation->id) }}"
                                                 method="POST" @submit.prevent="confirmArchive($event.target)"
                                                 class="inline-block">
@@ -252,6 +270,8 @@
                                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                 </button>
                                             </form>
+                                            @endif
+
                                         @endif
                                     </div>
                                 </td>

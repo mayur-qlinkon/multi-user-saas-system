@@ -2,19 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Traits\Tenantable;
-
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Client extends Model
 {
-    use HasFactory, SoftDeletes, Tenantable,LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes,Tenantable;
 
     protected $fillable = [
         'company_id',
@@ -26,10 +25,10 @@ class Client extends Model
         'email',
         'phone',
         'gst_number',
-        'registration_type', 
+        'registration_type',
         'address',
         'city',
-        'state_id',        
+        'state_id',
         'zip_code',
         'country',
         'notes',
@@ -40,13 +39,13 @@ class Client extends Model
         'is_active' => 'boolean',
     ];
 
-     public function getActivitylogOptions(): LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logAll() // Logs every fillable attribute
             ->logOnlyDirty() // ONLY logs attributes that actually changed
             ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn(string $eventName) => "Client has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Client has been {$eventName}");
     }
 
     /**

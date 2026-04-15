@@ -15,10 +15,10 @@ class AssignSubscriptionRequest extends FormRequest
     {
         return [
             'company_id' => ['required', 'exists:companies,id'],
-            'plan_id'    => ['required', 'exists:plans,id'],
-            'starts_at'  => ['nullable', 'date'],
+            'plan_id' => ['required', 'exists:plans,id'],
+            'starts_at' => ['nullable', 'date'],
             'expires_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'is_active'  => ['boolean']
+            'is_active' => ['boolean'],
         ];
     }
-}   
+}

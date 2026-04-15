@@ -4,7 +4,7 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Banners</h1>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Banners</h1>
         <p class="text-xs text-gray-400 font-medium mt-0.5">Manage homepage, promo and popup banners</p>
     </div>
 @endsection
@@ -334,20 +334,24 @@
         {{-- ── Page Header ── --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-[#212538] tracking-tight">Banners & Promotions</h1>
+                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Banners & Promotions</h1>
                 <p class="text-sm text-gray-400 font-medium mt-0.5">Control what appears on your public storefront</p>
             </div>
             <div class="flex items-center gap-2">
+                @if(has_permission('banners.reorder'))
                 <button type="button" id="sort-mode-btn" onclick="toggleSortMode()"
                     class="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
                     <i data-lucide="grip-vertical" class="w-4 h-4"></i>
                     <span id="sort-mode-label">Reorder</span>
                 </button>
+                @endif
+                @if(has_permission('banners.create'))
                 <a href="{{ route('admin.banners.create') }}"
                     class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Add Banner
                 </a>
+                @endif
             </div>
         </div>
 
@@ -539,34 +543,42 @@
                             <div class="flex items-center justify-between">
 
                                 {{-- Toggle active ── --}}
+                                @if(has_permission('banners.toggle_status'))
                                 <label class="toggle-switch" title="{{ $banner->is_active ? 'Deactivate' : 'Activate' }}">
                                     <input type="checkbox" {{ $banner->is_active ? 'checked' : '' }}
                                         onchange="toggleBannerActive({{ $banner->id }}, this)">
                                     <div class="toggle-track"></div>
                                     <div class="toggle-thumb"></div>
                                 </label>
+                                @endif
 
                                 {{-- Action buttons ── --}}
                                 <div class="flex items-center gap-1.5">
 
                                     {{-- Duplicate ── --}}
+                                    @if(has_permission('banners.duplicate'))
                                     <button type="button" onclick="duplicateBanner({{ $banner->id }})"
                                         class="action-btn copy" title="Duplicate">
                                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                     </button>
+                                    @endif
 
                                     {{-- Edit ── --}}
+                                    @if(has_permission('banners.update'))
                                     <a href="{{ route('admin.banners.edit', $banner->id) }}" class="action-btn edit"
                                         title="Edit">
                                         <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                     </a>
+                                    @endif
 
                                     {{-- Delete ── --}}
+                                    @if(has_permission('banners.delete'))
                                     <button type="button"
                                         onclick="deleteBanner({{ $banner->id }}, '{{ addslashes($banner->title ?? 'this banner') }}')"
                                         class="action-btn del" title="Delete">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>
+                                    @endif
 
                                 </div>
                             </div>

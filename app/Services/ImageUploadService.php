@@ -5,8 +5,8 @@ namespace App\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 use InvalidArgumentException;
 use Throwable;
 
@@ -29,7 +29,7 @@ class ImageUploadService
 
     public function __construct()
     {
-        $this->manager = new ImageManager(new Driver());
+        $this->manager = new ImageManager(new Driver);
     }
 
     // ════════════════════════════════════════════════════
@@ -47,19 +47,19 @@ class ImageUploadService
      *   format    string   Output format: webp|jpg|jpeg|png|gif (default: webp)
      *   quality   int      Compression quality 1–100 (default: 80)
      *
-     * @throws InvalidArgumentException  on invalid file type or size
-     * @throws Throwable                 on processing/storage failure
+     * @throws InvalidArgumentException on invalid file type or size
+     * @throws Throwable on processing/storage failure
      */
     public function upload(UploadedFile $file, string $path, array $options = []): string
     {
         // ── 1. Extract options ──
-        $disk    = $options['disk']     ?? 'public';
+        $disk = $options['disk'] ?? 'public';
         $oldFile = $options['old_file'] ?? null;
-        $width   = $options['width']    ?? null;
-        $height  = $options['height']   ?? null;
-        $crop    = $options['crop']     ?? false;
+        $width = $options['width'] ?? null;
+        $height = $options['height'] ?? null;
+        $crop = $options['crop'] ?? false;
         $quality = (int) ($options['quality'] ?? 80);
-        $format  = strtolower($options['format'] ?? 'webp');
+        $format = strtolower($options['format'] ?? 'webp');
 
         // ── 2. Validate ──
         $this->validate($file);
@@ -72,7 +72,7 @@ class ImageUploadService
         // ── 4. Process and store raster image ──
         try {
             $filename = $this->generateFilename($format);
-            $fullPath = trim($path, '/') . '/' . $filename;
+            $fullPath = trim($path, '/').'/'.$filename;
 
             // Read into memory
             $image = $this->manager->read($file);
@@ -98,26 +98,26 @@ class ImageUploadService
             $this->deleteOld($oldFile, $disk);
 
             Log::info('[ImageUpload] Success', [
-                'path'          => $fullPath,
-                'format'        => $format,
-                'width'         => $width,
-                'height'        => $height,
-                'quality'       => $quality,
+                'path' => $fullPath,
+                'format' => $format,
+                'width' => $width,
+                'height' => $height,
+                'quality' => $quality,
                 'original_name' => $file->getClientOriginalName(),
-                'size_kb'       => round($file->getSize() / 1024, 1),
+                'size_kb' => round($file->getSize() / 1024, 1),
             ]);
 
             return $fullPath;
 
         } catch (Throwable $e) {
             Log::error('[ImageUpload] Processing failed', [
-                'path'          => $path,
-                'format'        => $format,
+                'path' => $path,
+                'format' => $format,
                 'original_name' => $file->getClientOriginalName(),
-                'mime'          => $file->getMimeType(),
-                'size_kb'       => round($file->getSize() / 1024, 1),
-                'error'         => $e->getMessage(),
-                'trace'         => $e->getTraceAsString(),
+                'mime' => $file->getMimeType(),
+                'size_kb' => round($file->getSize() / 1024, 1),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Re-throw so BannerService / SettingController transactions can rollback
@@ -133,7 +133,9 @@ class ImageUploadService
      */
     public function delete(?string $path, string $disk = 'public'): void
     {
-        if (!$path) return;
+        if (! $path) {
+            return;
+        }
 
         try {
             if (Storage::disk($disk)->exists($path)) {
@@ -147,8 +149,8 @@ class ImageUploadService
         } catch (Throwable $e) {
             // Never crash the calling code over a file delete failure
             Log::warning('[ImageUpload] Delete failed', [
-                'path'  => $path,
-                'disk'  => $disk,
+                'path' => $path,
+                'disk' => $disk,
                 'error' => $e->getMessage(),
             ]);
         }
@@ -173,15 +175,18 @@ class ImageUploadService
     // ════════════════════════════════════════════════════
     public function exists(?string $path, string $disk = 'public'): bool
     {
-        if (!$path) return false;
+        if (! $path) {
+            return false;
+        }
 
         try {
             return Storage::disk($disk)->exists($path);
         } catch (Throwable $e) {
             Log::warning('[ImageUpload] Exists check failed', [
-                'path'  => $path,
+                'path' => $path,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -199,16 +204,16 @@ class ImageUploadService
         $mime = $file->getMimeType();
         $size = $file->getSize();
 
-        if (!in_array($mime, self::ALLOWED_MIMES, true)) {
+        if (! in_array($mime, self::ALLOWED_MIMES, true)) {
             throw new InvalidArgumentException(
-                "[ImageUpload] Invalid MIME type [{$mime}]. " .
-                "Allowed: " . implode(', ', self::ALLOWED_MIMES)
+                "[ImageUpload] Invalid MIME type [{$mime}]. ".
+                'Allowed: '.implode(', ', self::ALLOWED_MIMES)
             );
         }
 
         if ($size > self::MAX_SIZE_BYTES) {
-            $sizeMb    = round($size / 1024 / 1024, 2);
-            $maxMb     = self::MAX_SIZE_BYTES / 1024 / 1024;
+            $sizeMb = round($size / 1024 / 1024, 2);
+            $maxMb = self::MAX_SIZE_BYTES / 1024 / 1024;
             throw new InvalidArgumentException(
                 "[ImageUpload] File too large [{$sizeMb}MB]. Maximum allowed: {$maxMb}MB."
             );
@@ -223,20 +228,20 @@ class ImageUploadService
      */
     private function storeSvg(
         UploadedFile $file,
-        string       $path,
-        string       $disk,
-        ?string      $oldFile
+        string $path,
+        string $disk,
+        ?string $oldFile
     ): string {
         try {
             $filename = $this->generateFilename('svg');
-            $fullPath = trim($path, '/') . '/' . $filename;
+            $fullPath = trim($path, '/').'/'.$filename;
 
             Storage::disk($disk)->put($fullPath, $file->getContent());
 
             $this->deleteOld($oldFile, $disk);
 
             Log::info('[ImageUpload] SVG stored directly', [
-                'path'          => $fullPath,
+                'path' => $fullPath,
                 'original_name' => $file->getClientOriginalName(),
             ]);
 
@@ -244,7 +249,7 @@ class ImageUploadService
 
         } catch (Throwable $e) {
             Log::error('[ImageUpload] SVG store failed', [
-                'path'  => $path,
+                'path' => $path,
                 'error' => $e->getMessage(),
             ]);
             throw $e;
@@ -261,9 +266,9 @@ class ImageUploadService
     {
         return match ($format) {
             'jpg', 'jpeg' => $image->toJpeg($quality),
-            'png'         => $image->toPng(),   // lossless — quality param ignored
-            'gif'         => $image->toGif(),
-            default       => $image->toWebp($quality), // webp default
+            'png' => $image->toPng(),   // lossless — quality param ignored
+            'gif' => $image->toGif(),
+            default => $image->toWebp($quality), // webp default
         };
     }
 
@@ -275,7 +280,7 @@ class ImageUploadService
      */
     private function generateFilename(string $extension): string
     {
-        return uniqid('img_', true) . '_' . time() . '.' . $extension;
+        return uniqid('img_', true).'_'.time().'.'.$extension;
     }
 
     // ════════════════════════════════════════════════════
@@ -287,7 +292,9 @@ class ImageUploadService
      */
     private function deleteOld(?string $oldFile, string $disk): void
     {
-        if (!$oldFile) return;
+        if (! $oldFile) {
+            return;
+        }
         $this->delete($oldFile, $disk);
     }
 }

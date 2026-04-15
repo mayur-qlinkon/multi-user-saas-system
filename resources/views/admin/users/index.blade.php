@@ -10,9 +10,9 @@
     <div class="pb-10">
 
         {{-- Header & Actions --}}
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-center justify-between gap-4">
             <div>
-                <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest">All Users</h3>
+                <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest">User Management</h3>
                 <p class="text-sm text-gray-500 mt-1">Manage your cashiers, managers, and their store assignments.</p>
             </div>
             <div class="flex items-center gap-2">
@@ -27,12 +27,14 @@
                             <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
                             User Limit Reached
                         </span>
+                        @if(has_permission('users.create'))
                         <button type="button"
                             class="bg-gray-100 text-gray-400 px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 cursor-not-allowed"
                             title="You have reached your staff limit. Upgrade your plan to add more users.">
                             <i data-lucide="user-plus" class="w-4 h-4"></i>
                             Add Staff Member
                         </button>
+                        @endif
                     </div>
                 @endif
             </div>
@@ -100,8 +102,8 @@
                         <tr class="bg-gray-50/80 border-b border-gray-100">
                             <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider">Staff Member</th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider">Assigned Role</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider">Assigned Stores</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Assigned Stores</th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status</th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                         </tr>
                     </thead>
@@ -124,7 +126,7 @@
                                         {{ $user->roles->first()->name ?? 'No Role' }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 hidden sm:table-cell">
                                     @php
                                         // Count total stores in the system vs stores assigned to this user
                                         $totalSystemStores = $stores->count();
@@ -158,14 +160,14 @@
                                                     $hiddenStores = $user->stores->skip(2)->pluck('name')->implode(', ');
                                                 @endphp
                                                 <span title="Also assigned to: {{ $hiddenStores }}" 
-                                                    class="cursor-help inline-flex items-center text-[10px] font-black text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100 hover:bg-brand-100 hover:border-brand-300 transition-colors">
+                                                    class="truncate cursor-help inline-flex items-center text-[10px] font-black text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100 hover:bg-brand-100 hover:border-brand-300 transition-colors">
                                                     +{{ $userStoreCount - 2 }} More
                                                 </span>
-                                            @endif
+                                        @endif
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 hidden sm:table-cell">
                                     @if ($user->status === 'active')
                                         <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Active</span>
                                     @else
@@ -173,33 +175,41 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity transition-opacity">
                                         
                                         {{-- Show Button --}}
-                                        <a href="{{ route('admin.users.show', $user->id) }}" 
-                                           class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-200 hover:text-gray-800 flex items-center justify-center transition-colors"
-                                           title="View Staff Details">
-                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </a>
+                                        @if(has_permission('users.view'))
+                                            <a href="{{ route('admin.users.show', $user->id) }}" 
+                                            class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-200 hover:text-gray-800 flex items-center justify-center transition-colors"
+                                            title="View Staff Details">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </a>
+                                        @endif
 
                                         @if (auth()->id() !== $user->id && ($user->roles->first()->slug ?? '') !== 'owner')
                                             {{-- Edit Button --}}
-                                            <a href="{{ route('admin.users.edit', $user->id) }}" 
-                                               class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors"
-                                               title="Edit Staff">
-                                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                                            </a>
+                                            @if(has_permission('users.update'))
+                                                <a href="{{ route('admin.users.edit', $user->id) }}" 
+                                                class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors"
+                                                title="Edit Staff">
+                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                </a>
+                                            @endif
 
                                             {{-- Delete Button (Using standard form + JS confirmation) --}}
-                                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to remove {{ addslashes($user->name) }}? This action cannot be undone.');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
-                                                    title="Remove Staff">
-                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                </button>
-                                            </form>
+                                            @if(has_permission('users.delete'))
+                                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" 
+                                                    class="inline-block delete-staff-form" 
+                                                    data-name="{{ addslashes($user->name) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit"
+                                                        class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
+                                                        title="Remove Staff">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>
@@ -264,6 +274,42 @@
                 }, 300);
             });
         }
+    
+    
+    
+        // SweetAlert Delete Confirmation (Using Event Delegation for AJAX compatibility)
+        document.addEventListener('submit', function(e) {
+            // Check if the submitted form has our specific class
+            if (e.target && e.target.classList.contains('delete-staff-form')) {
+                e.preventDefault(); // Stop immediate submission
+                
+                const form = e.target;
+                const staffName = form.getAttribute('data-name');
+
+                Swal.fire({
+                    title: 'Remove Staff Member?',
+                    html: `Are you sure you want to remove <b>${staffName}</b>?<br>This action cannot be undone.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444', // Tailwind red-500
+                    cancelButtonColor: '#6b7280',  // Tailwind gray-500
+                    confirmButtonText: 'Yes, remove them!',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true // Puts primary action on the right
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show loading state while processing
+                        Swal.fire({
+                            title: 'Removing...',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+                        form.submit(); // Submit the form
+                    }
+                });
+            }
+        });
+
     });
 </script>
     

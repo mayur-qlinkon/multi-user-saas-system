@@ -20,8 +20,8 @@ class PermissionSeeder extends Seeder
             'notifications' => ['view'],
 
             // ── POS & Sales ──
-            'pos' => ['access', 'create_sale', 'scan_item', 'create_quick_product', 'apply_discount', 'view_receipt'],
-            'orders' => ['view', 'create', 'update', 'delete', 'change_status', 'update_logistics', 'cancel', 'add_note', 'mark_paid', 'download_receipt'],
+            'pos' => ['access', 'create_sale', 'create_quick_product', 'create_quick_client', 'apply_discount'],
+            'orders' => ['view', 'create', 'update', 'delete', 'change_status', 'cancel', 'add_note', 'record_payment', 'download_receipt'],
             'quotations' => ['view', 'create', 'update', 'delete', 'convert', 'mark_sent', 'download_pdf'],
 
             // ── Accounting & Billing ──
@@ -29,76 +29,64 @@ class PermissionSeeder extends Seeder
             'invoice_returns' => ['view', 'create', 'update', 'delete', 'confirm'],
             'purchases' => ['view', 'create', 'update', 'delete', 'add_payment', 'download_pdf'],
             'purchase_returns' => ['view', 'create', 'update', 'delete', 'add_payment', 'download_pdf'],
-            'expenses' => ['view', 'create', 'update', 'delete', 'approve', 'reject', 'reimburse'],
-            'expense_categories' => ['view', 'create', 'update', 'delete', 'toggle_status'],
+            'expenses' => ['view', 'create', 'update', 'delete', 'approve', 'reimburse'],
+            'expense_categories' => ['view', 'create', 'update', 'delete'],
 
             // ── Catalog & Inventory ──
-            'products' => ['view', 'create', 'update', 'delete', 'toggle_status', 'duplicate'],
+            'products' => ['view', 'create', 'update', 'delete', 'duplicate'],
             'categories' => ['view', 'create', 'update', 'delete'],
             'attributes' => ['view', 'create', 'update', 'delete'],
-            'attribute_values' => ['create', 'update', 'delete'],
             'units' => ['view', 'create', 'update', 'delete'],
             'labels' => ['view', 'print'],
 
             // ── CRM Module ──
             'crm_dashboard' => ['view'],
-            'crm_leads' => ['view', 'create', 'update', 'delete', 'convert', 'change_stage', 'import', 'export', 'download_template', 'log_activity', 'update_score'],
-            'crm_tasks' => ['view', 'create', 'update', 'delete', 'complete'],
+            'crm_leads' => ['view', 'create', 'update', 'delete', 'convert', 'change_stage', 'import', 'export'],
+            'crm_tasks' => ['view', 'create', 'complete'],
             'crm_pipelines' => ['view', 'create', 'update', 'delete'],
             'crm_stages' => ['view', 'create', 'update', 'delete', 'reorder'],
             'crm_sources' => ['view', 'create', 'update', 'delete'],
             'crm_tags' => ['view', 'create', 'update', 'delete'],
 
-            // ── Operations & Logistics ──
-            'transport_receipts' => ['view', 'create', 'update', 'delete'],
-            'production' => ['view', 'create', 'update', 'delete'],
-
             // ── Storefront & Marketing ──
-            'merchandising' => ['view', 'update', 'add_product', 'remove_product', 'reorder', 'toggle_featured', 'toggle_active'],
-            'storefront_sections' => ['view', 'create', 'update', 'delete', 'toggle_status', 'reorder', 'duplicate', 'manage_products'],
+            'storefront_sections' => ['view', 'create', 'update', 'delete', 'toggle_status', 'reorder', 'duplicate'],
             'pages' => ['view', 'create', 'update', 'delete', 'toggle_publish'],
-            'banners' => ['view', 'create', 'update', 'delete', 'toggle_status', 'duplicate', 'reorder', 'restore'],
+            'banners' => ['view', 'create', 'update', 'delete', 'toggle_status', 'duplicate', 'reorder'],
 
             // ── People & HR ──
-            'clients' => ['view', 'create', 'update', 'delete'],
+            'clients' => ['view', 'create', 'update', 'delete', 'export'],
             'suppliers' => ['view', 'create', 'update', 'delete', 'export'],
             'users' => ['view', 'create', 'update', 'delete'],
             'hrm' => ['view', 'manage_attendance', 'manage_payroll'],
             'employee_dashboard' => ['view'],
-            'employees' => ['view', 'create', 'update', 'delete', 'manage_salary_structures'],
+            'employees' => ['view', 'create', 'update', 'delete'],
             'departments' => ['view', 'create', 'update', 'delete'],
             'designations' => ['view', 'create', 'update', 'delete'],
             'shifts' => ['view', 'create', 'update', 'delete'],
             'holidays' => ['view', 'create', 'update', 'delete'],
             'attendance' => ['view', 'scan', 'report', 'override'],
             'attendance_rules' => ['view', 'create', 'update', 'delete'],
-            'office_locations' => ['view', 'update', 'generate_qr', 'view_poster'],
-            'leave_types' => ['view', 'create', 'update', 'delete'],
-            'leave_balances' => ['view', 'update', 'initialize', 'carry_forward'],
+            'office_locations' => ['view', 'update', 'generate_qr'],
             'leaves' => ['view', 'create', 'approve', 'reject', 'cancel'],
             'salary_components' => ['view', 'create', 'update', 'delete'],
             'salary_slips' => ['view', 'generate', 'approve', 'mark_paid', 'download_pdf', 'delete'],
             'hrm_tasks' => ['view', 'create', 'update', 'delete', 'change_status', 'add_comment', 'add_attachment', 'download_attachment', 'delete_attachment'],
-            'announcements' => ['view', 'create', 'update', 'delete', 'publish', 'unpublish', 'schedule', 'duplicate', 'restore', 'download_attachment'],
-            'work_logs' => ['view', 'create', 'update', 'delete', 'approve'],
-            'my_leaves' => ['view', 'create', 'update', 'delete'],
-            'my_attendance' => ['view'],
-            'my_tasks' => ['view', 'update_progress', 'add_comment', 'add_attachment', 'download_attachment'],
-            'my_work_logs' => ['view', 'create', 'update', 'delete'],
-            'my_salary_slips' => ['view', 'download_pdf'],
+            'announcements' => ['view', 'create', 'update', 'delete', 'publish', 'duplicate'],
+            'work_logs' => ['view', 'approve'],
 
             // ── System Architecture (Super Admin Level) ──
             'roles' => ['view', 'create', 'update', 'delete'],
             'stores' => ['view', 'create', 'update', 'delete', 'switch'],
             'warehouses' => ['view', 'create', 'update', 'delete'],
-            'payment_methods' => ['view', 'create', 'update', 'delete', 'reorder'],
+            'payment_methods' => ['view', 'create', 'update', 'delete'],
 
             // ── Pre-Sales ──
             'inquiries' => ['view', 'create', 'update', 'delete', 'convert_to_quotation'],
 
             // ── Dispatch & Compliance ──
-            'challans' => ['view', 'create', 'update', 'delete', 'change_status', 'mark_delivered', 'download_pdf'],
-            'challan_returns' => ['view', 'create', 'update', 'delete', 'download_pdf'],
+            'challans' => ['view', 'create', 'update', 'delete', 'change_status', 'download_pdf'],
+            'challan_returns' => ['view', 'create', 'update', 'download_pdf'],
+            'bulk_import' => ['view', 'categories', 'units', 'products'],
         ];
 
         DB::beginTransaction();

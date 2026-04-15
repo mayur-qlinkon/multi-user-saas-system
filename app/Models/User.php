@@ -129,6 +129,40 @@ class User extends Authenticatable
     }
 
     /**
+     * Alias for hasPermission to match standard policy syntax
+     */
+    public function hasPermissionTo($permission)
+    {
+        return $this->hasPermission($permission);
+    }
+
+    /**
+     * Check if the user has ANY of the given permissions in an array
+     */
+    public function hasAnyPermission(array $permissions)
+    {
+        if (is_super_admin()) {
+            return true;
+        }
+
+        // 1. Check if they are the owner (owners can do everything)
+        if ($this->roles->contains('slug', 'owner')) {
+            return true;
+        }
+
+        // Flatten the user's permissions and check if any intersect with the requested array
+        $userPermissions = $this->roles()
+            ->with('permissions')
+            ->get()
+            ->pluck('permissions')
+            ->flatten()
+            ->pluck('slug')
+            ->toArray();
+
+        return ! empty(array_intersect($permissions, $userPermissions));
+    }
+
+    /**
      * HRM Employee relationship
      */
     public function employee(): HasOne
@@ -152,5 +186,15 @@ class User extends Authenticatable
     public function unreadNotificationsLimit()
     {
         return $this->unreadNotifications()->latest()->limit(5);
+    }
+
+    /**
+     * Route notifications for the mail channel.
+     * This strictly prevents Laravel from trying to send emails to blank/invalid addresses.
+     */
+    public function routeNotificationForMail($notification)
+    {
+        // Only allow the notification to send if the email is perfectly valid
+        return filter_var($this->email, FILTER_VALIDATE_EMAIL) ? $this->email : null;
     }
 }

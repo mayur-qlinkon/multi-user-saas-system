@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
@@ -26,15 +27,15 @@ class PaymentMethodController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'label'      => 'required|string|max:100',
-            'slug'       => 'nullable|string|max:50|unique:payment_methods,slug',
-            'gateway'    => 'nullable|string|max:50',
+            'label' => 'required|string|max:100',
+            'slug' => 'nullable|string|max:50|unique:payment_methods,slug',
+            'gateway' => 'nullable|string|max:50',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
         // Auto-generate slug from label if not provided
         $validated['slug'] = $validated['slug'] ? Str::slug($validated['slug']) : Str::slug($validated['label']);
-        
+
         // Handle checkboxes safely (works for both JSON and standard forms)
         $validated['is_online'] = $request->boolean('is_online');
         $validated['is_active'] = $request->boolean('is_active');
@@ -44,9 +45,9 @@ class PaymentMethodController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Payment method created successfully.',
-                'data'    => $paymentMethod
+                'data' => $paymentMethod,
             ]);
         }
 
@@ -59,9 +60,9 @@ class PaymentMethodController extends Controller
     public function update(Request $request, PaymentMethod $paymentMethod)
     {
         $validated = $request->validate([
-            'label'      => 'required|string|max:100',
-            'slug'       => 'required|string|max:50|unique:payment_methods,slug,' . $paymentMethod->id,
-            'gateway'    => 'nullable|string|max:50',
+            'label' => 'required|string|max:100',
+            'slug' => 'required|string|max:50|unique:payment_methods,slug,'.$paymentMethod->id,
+            'gateway' => 'nullable|string|max:50',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -74,14 +75,15 @@ class PaymentMethodController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Payment method updated successfully.',
-                'data'    => $paymentMethod
+                'data' => $paymentMethod,
             ]);
         }
 
         return back()->with('success', 'Payment method updated successfully.');
     }
+
     /**
      * Save the drag-and-drop new sort order.
      */
@@ -90,7 +92,7 @@ class PaymentMethodController extends Controller
         $request->validate([
             'order' => 'required|array',
             'order.*.id' => 'required|exists:payment_methods,id',
-            'order.*.sort_order' => 'required|integer'
+            'order.*.sort_order' => 'required|integer',
         ]);
 
         foreach ($request->order as $item) {
@@ -109,8 +111,8 @@ class PaymentMethodController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'success' => true, 
-                'message' => 'Payment method deleted successfully.'
+                'success' => true,
+                'message' => 'Payment method deleted successfully.',
             ]);
         }
 

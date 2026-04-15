@@ -33,7 +33,7 @@
             <form action="{{ route('admin.challans.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
 
                 {{-- 1. Search Group (Input + Search + Clear) --}}
-                <div class="flex flex-row items-center gap-2 flex-1 max-w-lg w-full">
+                <div class="flex flex-col sm:flex-row items-center gap-2 flex-1 max-w-lg w-full">
                     <div class="relative flex-1">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text" name="search" value="{{ request('search') }}"
@@ -41,7 +41,7 @@
                             class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all placeholder-gray-400">
                     </div>
 
-                    <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm shrink-0">
+                    <button type="submit" class="w-full sm:w-auto bg-gray-800 hover:bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm shrink-0">
                         Search
                     </button>
 
@@ -65,7 +65,7 @@
                     </button>
 
                     <div x-show="filterOpen" x-cloak x-transition
-                        class="absolute right-0 mt-2 w-64 bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-4">
+                        class="absolute right-0 left-0 sm:left-auto mt-2 w-full sm:w-72 bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-4">
 
                         <div class="mb-3">
                             <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Direction</label>
@@ -106,12 +106,14 @@
                 </div>
 
                {{-- 3. Create Button --}}
+               @if(has_permission('challans.create'))
                 <div class="ml-auto flex shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
                     <a href="{{ route('admin.challans.create') }}"
                         class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap">
                         <i data-lucide="plus" class="w-4 h-4"></i> Create Challan
                     </a>
                 </div>
+                @endif
             </form>
         </div>
 
@@ -123,9 +125,9 @@
                         <tr>
                             <th class="px-6 py-4">CHALLAN DETAILS</th>
                             <th class="px-6 py-4">PARTY</th>
-                            <th class="px-6 py-4">TYPE & DIR</th>
+                            <th class="px-6 py-4 hidden md:table-cell">TYPE & DIR</th>
                             <th class="px-6 py-4 text-center">STATUS</th>
-                            <th class="px-6 py-4 text-right">TOTAL VALUE</th>
+                            <th class="px-6 py-4 text-right hidden md:table-cell">TOTAL VALUE</th>
                             <th class="px-6 py-4 text-right">ACTIONS</th>
                         </tr>
                     </thead>
@@ -156,7 +158,7 @@
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 hidden md:table-cell">
                                     <div class="flex flex-col">
                                         <span class="text-[12px] font-bold text-gray-700">
                                             {{ $challan->type_label }}
@@ -190,59 +192,70 @@
                                     </span>
                                 </td>
 
-                                <td class="px-6 py-4 text-right">
+                                <td class="px-6 py-4 text-right hidden md:table-cell">
                                     <span class="font-extrabold text-gray-800">₹{{ number_format($challan->total_value, 2) }}</span>
                                 </td>
 
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div class="flex items-center justify-end gap-2 transition-opacity transition-opacity">
 
                                         {{-- View Button --}}
+                                        @if(has_permission('challans.view'))
                                         <a href="{{ route('admin.challans.show', $challan->id) }}"
-                                            class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
+                                            class="w-10 h-10 md:w-8 md:h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                             title="View Challan">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
-
-                                        {{-- Process Return Button --}}
-                                        @if ($challan->is_returnable && $challan->status !== 'cancelled')
-                                            <a href="{{ route('admin.challan-returns.create', $challan->id) }}"
-                                                class="w-8 h-8 rounded border border-amber-200 text-amber-600 hover:bg-amber-50 flex items-center justify-center transition-colors"
-                                                title="Process Return">
-                                                <i data-lucide="undo-2" class="w-4 h-4"></i>
-                                            </a>
                                         @endif
 
+                                        {{-- Process Return Button --}}
+                                        @if(has_permission('challan_returns.create'))
+                                            @if ($challan->is_returnable && $challan->status !== 'cancelled')
+                                            <a href="{{ route('admin.challan-returns.create', ['challan' => $challan->id]) }}"
+                                                class="w-10 h-10 md:w-8 md:h-8 rounded border border-amber-200 text-amber-600 hover:bg-amber-50 flex items-center justify-center transition-colors"
+                                                    title="Process Return">
+                                                    <i data-lucide="undo-2" class="w-4 h-4"></i>
+                                                </a>
+                                            @endif
+                                        @endif
+                                            
+                                            
                                         {{-- 🌟 Quick Status Update Button --}}
-                                        @if (!in_array($challan->status, ['closed', 'cancelled']))
-                                            <button type="button"
-                                                @click="openStatusModal({{ $challan->id }}, '{{ $challan->challan_number }}', '{{ $challan->status }}')"
-                                                class="w-8 h-8 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition-colors"
-                                                title="Update Status">
-                                                <i data-lucide="truck" class="w-4 h-4"></i>
-                                            </button>
+                                        @if(has_permission('challans.change_status'))
+                                            @if (!in_array($challan->status, ['closed', 'cancelled']))
+                                                <button type="button"
+                                                    @click="openStatusModal({{ $challan->id }}, '{{ $challan->challan_number }}', '{{ $challan->status }}')"
+                                                    class="w-10 h-10 md:w-8 md:h-8 rounded border border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition-colors"
+                                                    title="Update Status">
+                                                    <i data-lucide="truck" class="w-4 h-4"></i>
+                                                </button>
+                                            @endif
                                         @endif
 
                                         {{-- Edit Button --}}
-                                        @if ($challan->status !== 'cancelled')
-                                            <a href="{{ route('admin.challans.edit', $challan->id) }}"
-                                                class="w-8 h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
-                                                title="Edit Challan">
-                                                <i data-lucide="pencil" class="w-4 h-4"></i>
-                                            </a>
+                                        @if(has_permission('challans.update'))
+                                            @if ($challan->status !== 'cancelled')
+                                                <a href="{{ route('admin.challans.edit', $challan->id) }}"
+                                                    class="w-10 h-10 md:w-8 md:h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
+                                                    title="Edit Challan">
+                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                </a>
+                                            @endif
                                         @endif
 
                                         {{-- Delete Button (Unrestricted as requested) --}}
-                                        <form action="{{ route('admin.challans.destroy', $challan->id) }}"
-                                            method="POST" @submit.prevent="confirmDelete($event.target)"
-                                            class="inline-block">
-                                            @csrf @method('DELETE')
-                                            <button type="submit"
-                                                class="w-8 h-8 rounded border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors"
-                                                title="Delete Challan">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </form>
+                                        @if(has_permission('challans.delete'))
+                                            <form action="{{ route('admin.challans.destroy', $challan->id) }}"
+                                                method="POST" @submit.prevent="confirmDelete($event.target)"
+                                                class="inline-block">
+                                                @csrf @method('DELETE')
+                                                <button type="submit"
+                                                    class="w-10 h-10 md:w-8 md:h-8 rounded border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors"
+                                                    title="Delete Challan">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                         
                                     </div>
                                 </td>
@@ -271,7 +284,7 @@
         {{-- 🌟 QUICK STATUS MODAL --}}
         <div x-show="isStatusModalOpen" x-cloak
             class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-            <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            <div class="bg-white w-full mx-4 sm:mx-0 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
                 x-show="isStatusModalOpen" x-transition @click.away="closeStatusModal()">
 
                 <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">

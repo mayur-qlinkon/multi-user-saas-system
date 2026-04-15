@@ -3,21 +3,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Challan;
-use App\Models\Client;
-use App\Models\Supplier;
-use App\Models\Store;
-use App\Models\Warehouse;
-use App\Models\Unit;
-use App\Models\State;
 use App\Http\Requests\Admin\StoreChallanRequest;
 use App\Http\Requests\Admin\UpdateChallanRequest;
+use App\Models\Challan;
+use App\Models\Client;
+use App\Models\State;
+use App\Models\Store;
+use App\Models\Supplier;
+use App\Models\Unit;
+use App\Models\Warehouse;
 use App\Services\ChallanService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Exception;
+use Illuminate\Validation\Rule;
 
 class ChallanController extends Controller
 {
@@ -38,7 +40,7 @@ class ChallanController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('challan_number', 'like', "%{$search}%")
-                  ->orWhere('party_name', 'like', "%{$search}%");
+                    ->orWhere('party_name', 'like', "%{$search}%");
             });
         }
 
@@ -67,24 +69,24 @@ class ChallanController extends Controller
     public function create()
     {
         // Fetch active masters for the dropdowns
-        $clients    = Client::where('is_active', true)->orderBy('name')->get();
-        $suppliers  = Supplier::where('is_active', true)->orderBy('name')->get();
-        $stores     = Store::where('is_active', true)->orderBy('name')->get();
+        $clients = Client::where('is_active', true)->orderBy('name')->get();
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
+        $stores = Store::where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
-        $units      = Unit::where('is_active', true)->get();
-        $states     = State::orderBy('name')->get();
+        $units = Unit::where('is_active', true)->get();
+        $states = State::orderBy('name')->get();
 
         $typeLabels = Challan::TYPE_LABELS;
 
         return view('admin.challans.create', [
-            'clients'      => $clients,
-            'suppliers'    => $suppliers,
-            'stores'       => $stores,
-            'warehouses'   => $warehouses,
-            'units'        => $units,
-            'states'       => $states,
-            'typeLabels'       => $typeLabels,
-            'batchEnabled' => batch_enabled()
+            'clients' => $clients,
+            'suppliers' => $suppliers,
+            'stores' => $stores,
+            'warehouses' => $warehouses,
+            'units' => $units,
+            'states' => $states,
+            'typeLabels' => $typeLabels,
+            'batchEnabled' => batch_enabled(),
         ]);
     }
 
@@ -98,22 +100,23 @@ class ChallanController extends Controller
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success'  => true, 
-                    'message'  => 'Challan created successfully!', 
-                    'redirect' => route('admin.challans.show', $challan->id)
+                    'success' => true,
+                    'message' => 'Challan created successfully!',
+                    'redirect' => route('admin.challans.show', $challan->id),
                 ]);
             }
 
             return redirect()->route('admin.challans.show', $challan->id)
-                             ->with('success', 'Challan created successfully.');
+                ->with('success', 'Challan created successfully.');
 
         } catch (Exception $e) {
-            Log::error('Challan Creation Failed: ' . $e->getMessage());
-            
+            Log::error('Challan Creation Failed: '.$e->getMessage());
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
-            return back()->withInput()->with('error', 'Failed to create challan: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to create challan: '.$e->getMessage());
         }
     }
 
@@ -124,18 +127,18 @@ class ChallanController extends Controller
     {
         // Eager load everything needed for the view/PDF template
         $challan->load([
-            'store', 
-            'client', 
-            'supplier', 
-            'branchStore', 
-            'fromState', 
+            'store',
+            'client',
+            'supplier',
+            'branchStore',
+            'fromState',
             'toState',
-            'createdBy', 
+            'createdBy',
             'dispatchedBy',
-            'items.product', 
-            'items.productSku', 
+            'items.product',
+            'items.productSku',
             // 'items.unit',
-            'statusHistory.changedBy'
+            'statusHistory.changedBy',
         ]);
 
         return view('admin.challans.show', compact('challan'));
@@ -150,35 +153,35 @@ class ChallanController extends Controller
         // The ChallanService strictly guards the `items` array from being edited if status is dispatched/received.
 
         $challan->load(['items.product', 'items.productSku']);
-        
-        $clients    = Client::where('is_active', true)->orderBy('name')->get();
-        $suppliers  = Supplier::where('is_active', true)->orderBy('name')->get();
-        $stores     = Store::where('is_active', true)->orderBy('name')->get();
+
+        $clients = Client::where('is_active', true)->orderBy('name')->get();
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
+        $stores = Store::where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
-        $units      = Unit::where('is_active', true)->get();
-        $states     = State::orderBy('name')->get();
+        $units = Unit::where('is_active', true)->get();
+        $states = State::orderBy('name')->get();
 
         // 🌟 Root fix for date formats applied here so Alpine.js doesn't fail on UTC conversion
         $challan->items->each(function ($item) {
             if ($item->manufacturing_date) {
-                $item->manufacturing_date = \Carbon\Carbon::parse($item->manufacturing_date)->format('Y-m-d');
+                $item->manufacturing_date = Carbon::parse($item->manufacturing_date)->format('Y-m-d');
             }
             if ($item->expiry_date) {
-                $item->expiry_date = \Carbon\Carbon::parse($item->expiry_date)->format('Y-m-d');
+                $item->expiry_date = Carbon::parse($item->expiry_date)->format('Y-m-d');
             }
         });
         $typeLabels = Challan::TYPE_LABELS;
 
         return view('admin.challans.edit', [
-            'challan'      => $challan,
-            'clients'      => $clients,
-            'suppliers'    => $suppliers,
-            'stores'       => $stores,
-            'warehouses'   => $warehouses,
-            'units'        => $units,
-            'states'       => $states,
-            'typeLabels'       => $typeLabels,
-            'batchEnabled' => batch_enabled()
+            'challan' => $challan,
+            'clients' => $clients,
+            'suppliers' => $suppliers,
+            'stores' => $stores,
+            'warehouses' => $warehouses,
+            'units' => $units,
+            'states' => $states,
+            'typeLabels' => $typeLabels,
+            'batchEnabled' => batch_enabled(),
         ]);
     }
 
@@ -192,22 +195,23 @@ class ChallanController extends Controller
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success'  => true, 
-                    'message'  => 'Challan updated successfully!', 
-                    'redirect' => route('admin.challans.show', $challan->id)
+                    'success' => true,
+                    'message' => 'Challan updated successfully!',
+                    'redirect' => route('admin.challans.show', $challan->id),
                 ]);
             }
 
             return redirect()->route('admin.challans.show', $challan->id)
-                             ->with('success', 'Challan updated successfully.');
+                ->with('success', 'Challan updated successfully.');
 
         } catch (Exception $e) {
-            Log::error('Challan Update Failed: ' . $e->getMessage());
-            
+            Log::error('Challan Update Failed: '.$e->getMessage());
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
-            return back()->withInput()->with('error', 'Failed to update challan: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to update challan: '.$e->getMessage());
         }
     }
 
@@ -228,17 +232,18 @@ class ChallanController extends Controller
             if (request()->wantsJson()) {
                 return response()->json(['success' => true, 'message' => 'Challan deleted successfully.']);
             }
-            
+
             return redirect()->route('admin.challans.index')
-                             ->with('success', 'Challan deleted successfully.');
+                ->with('success', 'Challan deleted successfully.');
 
         } catch (Exception $e) {
-            Log::error('Challan Deletion Failed: ' . $e->getMessage());
-            
+            Log::error('Challan Deletion Failed: '.$e->getMessage());
+
             if (request()->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Failed to delete challan.'], 500);
             }
-            return back()->with('error', 'Failed to delete challan: ' . $e->getMessage());
+
+            return back()->with('error', 'Failed to delete challan: '.$e->getMessage());
         }
     }
 
@@ -248,20 +253,20 @@ class ChallanController extends Controller
     public function downloadPdf(Challan $challan)
     {
         $challan->load([
-            'store', 
-            'client', 
-            'supplier', 
-            'branchStore', 
-            'fromState', 
+            'store',
+            'client',
+            'supplier',
+            'branchStore',
+            'fromState',
             'toState',
-            'items.product', 
-            'items.productSku',             
+            'items.product',
+            'items.productSku',
         ]);
-        
-        $pdf = Pdf::loadView('admin.challans.pdf', compact('challan'))
-                  ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Challan_' . $challan->challan_number . '.pdf');
+        $pdf = Pdf::loadView('admin.challans.pdf', compact('challan'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Challan_'.$challan->challan_number.'.pdf');
     }
 
     /**
@@ -271,29 +276,28 @@ class ChallanController extends Controller
     {
         try {
             $request->validate([
-                'status' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys(Challan::STATUS_LABELS))],
-                'notes'  => ['nullable', 'string', 'max:500']
+                'status' => ['required', 'string', Rule::in(array_keys(Challan::STATUS_LABELS))],
+                'notes' => ['nullable', 'string', 'max:500'],
             ]);
 
             // We securely pass just the status and notes to the service.
             // By NOT passing an 'items' array, the service's strict $isEditingItems guard remains false,
             // allowing the status to update, and correctly triggering the processInventoryMovement() if needed!
             $this->challanService->updateChallan($challan, [
-                'status'         => $request->status,
+                'status' => $request->status,
                 'internal_notes' => $request->notes ?? $challan->internal_notes,
             ]);
 
-            return response()->json([
-                'success' => true, 
-                'message' => "Challan marked as " . Challan::STATUS_LABELS[$request->status] . " successfully!"
-            ]);
+            return redirect()
+                ->route('admin.challans.index')
+                ->with('success', 'Challan marked as '.Challan::STATUS_LABELS[$request->status].' successfully!');
 
         } catch (Exception $e) {
-            Log::error('Challan Status Update Failed: ' . $e->getMessage());
-            
+            Log::error('Challan Status Update Failed: '.$e->getMessage());
+
             return response()->json([
-                'success' => false, 
-                'message' => $e->getMessage()
+                'success' => false,
+                'message' => $e->getMessage(),
             ], 422);
         }
     }

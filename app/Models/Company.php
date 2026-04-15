@@ -51,9 +51,11 @@ class Company extends Model
     | Relationships
     |--------------------------------------------------------------------------
     */
-    public function state() {
+    public function state()
+    {
         return $this->belongsTo(State::class);
     }
+
     /**
      * Company has many users
      */
@@ -99,6 +101,7 @@ class Company extends Model
     {
         return $query->where('is_active', true);
     }
+
     public function subscription()
     {
         return $this->hasOne(CompanySubscription::class);

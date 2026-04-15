@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Services\Platform;
 
 use App\Models\Company;
-use App\Models\User;
 use App\Models\Role;
 use App\Models\Store;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -17,31 +18,31 @@ class CompanyOnboardingService
     public function onboard(array $data): Company
     {
         return DB::transaction(function () use ($data) {
-            
+
             // 1. Create the Company
             $slug = ! empty($data['slug'])
                 ? $data['slug']
-                : Str::slug($data['company_name']) . '-' . Str::lower(Str::random(5));
+                : Str::slug($data['company_name']).'-'.Str::lower(Str::random(5));
 
             $company = Company::create([
-                'name'       => $data['company_name'],
-                'slug'       => $slug,
-                'email'      => $data['company_email'],
-                'phone'      => $data['phone'] ?? null,
-                'city'       => $data['city'] ?? null,
-                'state_id'   => $data['state_id'],
+                'name' => $data['company_name'],
+                'slug' => $slug,
+                'email' => $data['company_email'],
+                'phone' => $data['phone'] ?? null,
+                'city' => $data['city'] ?? null,
+                'state_id' => $data['state_id'],
                 'gst_number' => $data['gst_number'] ?? null,
-                'is_active'  => $data['is_active'] ?? true,
+                'is_active' => $data['is_active'] ?? true,
             ]);
 
             // 2. Create the Owner (User)
             $owner = User::create([
-                'company_id'   => $company->id,
-                'name'         => $data['owner_name'],
-                'email'        => $data['owner_email'],
-                'password'     => Hash::make($data['owner_password']),
-                'state_id'     => $data['state_id'],
-                'status'       => 'active',
+                'company_id' => $company->id,
+                'name' => $data['owner_name'],
+                'email' => $data['owner_email'],
+                'password' => Hash::make($data['owner_password']),
+                'state_id' => $data['state_id'],
+                'status' => 'active',
             ]);
 
             // 3. Assign the 'Owner' Role (scoped to this company)
@@ -54,10 +55,10 @@ class CompanyOnboardingService
             // 4. Create the Default Store (Crucial for the ERP to function)
             $store = Store::create([
                 'company_id' => $company->id,
-                'name'       => $data['company_name'] . ' - Main Branch',
-                'slug'       => Str::slug($data['company_name'] . '-main'),
-                'state_id'   => $data['state_id'],
-                'is_active'  => true,
+                'name' => $data['company_name'].' - Main Branch',
+                'slug' => Str::slug($data['company_name'].'-main'),
+                'state_id' => $data['state_id'],
+                'is_active' => true,
             ]);
 
             // 5. Attach Store to User so they can log in without layout crashing
@@ -73,14 +74,14 @@ class CompanyOnboardingService
     public function update(Company $company, array $data): Company
     {
         $company->update([
-            'name'       => $data['company_name'],
-            'slug'       => $data['slug'],
-            'email'      => $data['company_email'],
-            'phone'      => $data['phone'] ?? null,
-            'city'       => $data['city'] ?? null,
-            'state_id'   => $data['state_id'],
+            'name' => $data['company_name'],
+            'slug' => $data['slug'],
+            'email' => $data['company_email'],
+            'phone' => $data['phone'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state_id' => $data['state_id'],
             'gst_number' => $data['gst_number'] ?? null,
-            'is_active'  => $data['is_active'] ?? true,
+            'is_active' => $data['is_active'] ?? true,
         ]);
 
         return $company;

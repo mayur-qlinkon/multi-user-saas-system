@@ -101,17 +101,20 @@
                         Edit
                     </a>
                 @endif
-                @if (has_permission('manage.purchase'))
+
                     <button onclick="window.print()"
                         class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm">
                         <i data-lucide="printer" class="w-4 h-4"></i> Print
                     </button>
 
+                    @if(has_permission('purchases.download_pdf'))
                     <a href="{{ route('admin.purchases.pdf', $purchase->id) }}" target="_blank"
                         class="bg-white border border-gray-200 hover:bg-red-50 hover:text-red-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm"
                         title="Download PDF">
                         <i data-lucide="file-text" class="w-4 h-4"></i> PDF
                     </a>
+                    @endif
+                    
 
                     @php
                         $waText = urlencode(
@@ -131,7 +134,7 @@
 
                         Share
                     </a>
-                @endif
+                
             </div>
         </div>
 

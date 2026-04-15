@@ -28,8 +28,8 @@ class MarkLeadLostCleanup
             $cancelledCount = CrmTask::where('crm_lead_id', $lead->id)
                 ->whereIn('status', ['pending', 'in_progress'])
                 ->update([
-                    'status'       => 'cancelled',
-                    'updated_at'   => now(),
+                    'status' => 'cancelled',
+                    'updated_at' => now(),
                 ]);
 
             // ── Clear follow-up schedule ──
@@ -40,23 +40,23 @@ class MarkLeadLostCleanup
 
             if ($cancelledCount > 0) {
                 CrmActivity::logAuto(
-                    leadId:      $lead->id,
-                    type:        'stage_change',
+                    leadId: $lead->id,
+                    type: 'stage_change',
                     description: "Lead marked lost — {$cancelledCount} pending task(s) cancelled",
-                    meta:        ['cancelled_tasks' => $cancelledCount],
-                    companyId:   $lead->company_id
+                    meta: ['cancelled_tasks' => $cancelledCount],
+                    companyId: $lead->company_id
                 );
             }
 
             Log::info('[CrmListener] Lead lost cleanup done', [
-                'lead_id'          => $lead->id,
-                'tasks_cancelled'  => $cancelledCount,
+                'lead_id' => $lead->id,
+                'tasks_cancelled' => $cancelledCount,
             ]);
 
         } catch (\Throwable $e) {
             Log::error('[CrmListener] MarkLeadLostCleanup failed', [
                 'lead_id' => $lead->id,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

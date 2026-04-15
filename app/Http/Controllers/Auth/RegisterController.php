@@ -28,8 +28,8 @@ class RegisterController extends Controller
         $data = $request->validated();
         $imagePath = null;
         if ($request->hasFile('image')) {
-              $data['image_path'] = $request->file('image')
-            ->store('profile-images', 'public');
+            $data['image_path'] = $request->file('image')
+                ->store('profile-images', 'public');
         }
 
         $user = $this->authService->register($data);

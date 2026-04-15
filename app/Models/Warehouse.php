@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Warehouse extends Model
 {
     use HasFactory, SoftDeletes,Tenantable;
@@ -27,7 +28,7 @@ class Warehouse extends Model
 
     protected $casts = [
         'is_default' => 'boolean',
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -37,5 +38,9 @@ class Warehouse extends Model
     {
         return $this->belongsTo(Store::class);
     }
-    public function state() { return $this->belongsTo(State::class); }
+
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
 }

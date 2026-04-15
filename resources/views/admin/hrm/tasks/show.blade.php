@@ -391,6 +391,7 @@
                                 class="field-input resize-none"></textarea>
                         </div>
                         <div class="flex justify-end mt-2">
+                            @if(has_permission('hrm_tasks.add_comment'))
                             <button type="button"
                                 @click="submitComment({{ $task->id }}, null)"
                                 :disabled="submittingComment || !commentBody.trim()"
@@ -400,6 +401,7 @@
                                 <span x-show="!submittingComment">Post Comment</span>
                                 <span x-show="submittingComment">Posting...</span>
                             </button>
+                            @endif
                         </div>
                     </div>
 
@@ -439,17 +441,21 @@
                                             </p>
                                         </div>
                                         <div class="flex items-center gap-1.5 flex-shrink-0">
-                                            <a href="{{ route('admin.hrm.tasks.attachments.download', $attachment) }}" target="_blank"
-                                                class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                                                title="Download">
-                                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                                            </a>
-                                            <button type="button"
-                                                onclick="deleteAttachment({{ $attachment->id }}, '{{ addslashes($attachment->original_name ?? $attachment->file_name) }}')"
-                                                class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                                                title="Delete">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                            </button>
+                                            @if(has_permission('hrm_tasks.download_attachment'))
+                                                <a href="{{ route('admin.hrm.tasks.attachments.download', $attachment) }}" target="_blank"
+                                                    class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                                                    title="Download">
+                                                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                                </a>
+                                            @endif
+                                            @if(has_permission('hrm_tasks.delete_attachment'))
+                                                <button type="button"
+                                                    onclick="deleteAttachment({{ $attachment->id }}, '{{ addslashes($attachment->original_name ?? $attachment->file_name) }}')"
+                                                    class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                                                    title="Delete">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
@@ -477,6 +483,7 @@
                                 :style="'--file-bg: var(--brand-600)'"
                                 x-bind:style="''"
                                 id="fileInputElem">
+                            @if(has_permission('hrm_tasks.add_attachment'))
                             <button type="button"
                                 @click="upload({{ $task->id }})"
                                 :disabled="!selectedFile || uploading"
@@ -486,6 +493,7 @@
                                 <span x-show="!uploading">Upload</span>
                                 <span x-show="uploading">Uploading...</span>
                             </button>
+                            @endif
                         </div>
                         <p x-show="selectedFile" x-cloak class="text-[11px] text-gray-400 mt-1.5">
                             Selected: <span x-text="selectedFile?.name" class="font-semibold"></span>

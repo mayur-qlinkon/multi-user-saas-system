@@ -23,7 +23,7 @@ return new class extends Migration
                 'supplier',
                 'customer',
                 'employee',
-                'other'
+                'other',
             ])->nullable()->index();
             $table->unsignedBigInteger('party_id')->nullable()->index();
 
@@ -36,9 +36,9 @@ return new class extends Migration
             $table->string('payment_number')->unique();              // PAY-2024-0001
             $table->string('reference')->nullable();                 // cheque no / UTR / UPI ref
             $table->date('payment_date');
-    
+
             $table->enum('type', ['sent', 'received'])->index();     // sent = paid to supplier, received = from customer
-            
+
             $table->decimal('amount', 15, 2);
             $table->decimal('amount_received', 15, 2)->default(0);
             $table->decimal('change_returned', 15, 2)->default(0);
@@ -50,7 +50,6 @@ return new class extends Migration
             // Future safe
             $table->string('currency_code', 3)->default('INR');
             $table->decimal('exchange_rate', 10, 4)->default(1);
-
 
             $table->text('notes')->nullable();
             $table->timestamps();

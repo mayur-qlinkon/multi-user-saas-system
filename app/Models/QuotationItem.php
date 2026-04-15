@@ -12,7 +12,7 @@ class QuotationItem extends Model
 
     protected $fillable = [
         'quotation_id',
-        
+
         // Relational IDs (Nullable for historical fallback)
         'product_id',
         'product_sku_id',
@@ -27,7 +27,7 @@ class QuotationItem extends Model
         'quantity',
         'unit_price',
         'tax_type',
-        
+
         // 💰 Discounts
         'discount_type',
         'discount_amount',
@@ -49,16 +49,16 @@ class QuotationItem extends Model
      * 🌟 CRITICAL: Cast decimals to floats so frontend frameworks handle the math properly
      */
     protected $casts = [
-        'quantity'        => 'float',
-        'unit_price'      => 'float',
+        'quantity' => 'float',
+        'unit_price' => 'float',
         'discount_amount' => 'float',
-        'taxable_value'   => 'float',
-        'tax_percent'     => 'float',
-        'cgst_amount'     => 'float',
-        'sgst_amount'     => 'float',
-        'igst_amount'     => 'float',
-        'tax_amount'      => 'float',
-        'total_amount'    => 'float',
+        'taxable_value' => 'float',
+        'tax_percent' => 'float',
+        'cgst_amount' => 'float',
+        'sgst_amount' => 'float',
+        'igst_amount' => 'float',
+        'tax_amount' => 'float',
+        'total_amount' => 'float',
     ];
 
     // ─────────────────────────────────────────────────────────
@@ -94,6 +94,6 @@ class QuotationItem extends Model
      */
     public function getDisplayNameAttribute(): string
     {
-        return $this->product_name . ($this->sku_code ? " ({$this->sku_code})" : '');
+        return $this->product_name.($this->sku_code ? " ({$this->sku_code})" : '');
     }
 }

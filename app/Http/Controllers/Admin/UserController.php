@@ -89,6 +89,10 @@ class UserController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        if ($user->client()->exists()) {
+            abort(404);
+        }
+
         $user->load(['roles', 'stores', 'employee']);
 
         return view('admin.users.show', compact('user'));
@@ -101,6 +105,10 @@ class UserController extends Controller
     {
         if ($user->company_id !== Auth::user()->company_id) {
             abort(403, 'Unauthorized access.');
+        }
+
+        if ($user->client()->exists()) {
+            abort(404);
         }
 
         $companyId = Auth::user()->company_id;
@@ -122,6 +130,10 @@ class UserController extends Controller
     {
         if ($user->company_id !== Auth::user()->company_id) {
             abort(403, 'Unauthorized access.');
+        }
+
+        if ($user->client()->exists()) {
+            abort(404);
         }
 
         try {
@@ -152,6 +164,10 @@ class UserController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
+        if ($user->client()->exists()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
         // Prevent users from deleting themselves
         if ($user->id === Auth::id()) {
             return response()->json(['success' => false, 'message' => 'You cannot delete your own account.'], 400);
@@ -160,10 +176,8 @@ class UserController extends Controller
         try {
             $this->userService->deleteUser($user);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'User deleted successfully.',
-            ]);
+            return redirect()->route('admin.users.index')
+                ->with('success', 'User deleted successfully.');
 
         } catch (\Exception $e) {
             return response()->json([

@@ -29,10 +29,10 @@ class DepartmentSeeder extends Seeder
                 DB::table('departments')->updateOrInsert(
                     [
                         'company_id' => $companyId,
-                        'name'       => $dept['name'], // Unique constraint is company_id + name
+                        'name' => $dept['name'], // Unique constraint is company_id + name
                     ],
                     array_merge($dept, [
-                        'is_active'  => true,
+                        'is_active' => true,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ])
@@ -47,7 +47,7 @@ class DepartmentSeeder extends Seeder
         } catch (\Exception $e) {
             DB::rollBack();
             if (isset($this->command)) {
-                $this->command->error("❌ Failed to seed departments: " . $e->getMessage());
+                $this->command->error('❌ Failed to seed departments: '.$e->getMessage());
             }
         }
     }

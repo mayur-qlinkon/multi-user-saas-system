@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin\Hrm;
 
+use App\Events\Hrm\LeaveRequested;
 use App\Http\Controllers\Controller;
+use App\Models\Hrm\Employee;
 use App\Models\Hrm\Leave;
 use App\Models\Hrm\LeaveType;
-use App\Models\Hrm\Employee;
 use App\Services\Hrm\LeaveService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class LeaveController extends Controller
@@ -59,16 +61,31 @@ class LeaveController extends Controller
         try {
             $leave = $this->leaveService->apply($validated);
 
+            // ✅ Fire event OUTSIDE wantsJson — fires for BOTH form POST and JSON
+            Log::info('[LeaveRequested] Event fired', [
+                'leave_id' => $leave->id,
+                'company_id' => $leave->company_id,
+                'employee_id' => $leave->employee_id,
+            ]);
+            event(new LeaveRequested($leave));
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => true, 'message' => 'Leave request submitted.', 'data' => $leave]);
             }
 
             return redirect()->route('admin.hrm.leaves.index')
                 ->with('success', 'Leave request submitted successfully.');
+
         } catch (\Exception $e) {
+            Log::error('[LeaveRequested] Store failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
+
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
@@ -84,6 +101,7 @@ class LeaveController extends Controller
     {
         try {
             $leave = $this->leaveService->approve($leave, $request->input('remarks'));
+
             return response()->json(['success' => true, 'message' => 'Leave approved.', 'data' => $leave]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -94,6 +112,7 @@ class LeaveController extends Controller
     {
         try {
             $leave = $this->leaveService->reject($leave, $request->input('remarks'));
+
             return response()->json(['success' => true, 'message' => 'Leave rejected.', 'data' => $leave]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -106,6 +125,7 @@ class LeaveController extends Controller
 
         try {
             $leave = $this->leaveService->cancel($leave, $request->input('reason'));
+
             return response()->json(['success' => true, 'message' => 'Leave cancelled.', 'data' => $leave]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);

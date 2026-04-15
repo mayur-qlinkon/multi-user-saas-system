@@ -98,23 +98,29 @@
     {{-- ════════ HEADER BAR ════════ --}}
     <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div class="flex items-center gap-2 flex-wrap">
+            @if(has_permission('crm_sources.view'))
             <a href="{{ route('admin.crm.sources.index') }}"
                 class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <i data-lucide="radio-tower" class="w-4 h-4"></i>
                 Lead Sources
             </a>
+            @endif
+            @if(has_permission('crm_tags.view'))
             <a href="{{ route('admin.crm.tags.index') }}"
                 class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <i data-lucide="tag" class="w-4 h-4"></i>
                 Tags
             </a>
+            @endif
         </div>
+        @if(has_permission('crm_pipelines.create'))
         <button @click="openCreate()"
             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity"
             style="background: var(--brand-600)">
             <i data-lucide="plus" class="w-4 h-4"></i>
             New Pipeline
         </button>
+        @endif
     </div>
 
     {{-- ════════ ERROR BANNER ════════ --}}
@@ -216,24 +222,30 @@
                             Set Default
                         </button>
 
+                        @if(has_permission('crm_stages.view'))
                         <a :href="`/admin/crm/pipelines/${pipeline.id}/stages`"
                             class="inline-flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90 text-white"
                             style="background: var(--brand-600)">
                             <i data-lucide="layers" class="w-3.5 h-3.5"></i>
                             Manage Stages
                         </a>
+                        @endif
 
+                        @if(has_permission('crm_pipelines.update'))
                         <button @click="openEdit(pipeline)"
                             class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                             title="Edit">
                             <i data-lucide="edit" class="w-4 h-4"></i>
                         </button>
+                        @endif
 
+                        @if(has_permission('crm_pipelines.delete'))
                         <button @click="deletePipeline(pipeline.id, pipeline.name)"
                             class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                             title="Delete">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                         </button>
+                        @endif
                     </div>
                 </div>
 

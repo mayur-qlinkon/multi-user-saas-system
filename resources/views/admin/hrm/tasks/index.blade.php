@@ -178,12 +178,14 @@
             @endif
 
             {{-- Create Task --}}
-            <a href="{{ route('admin.hrm.tasks.create') }}"
-                class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
-                style="background: var(--brand-600)">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                Create Task
-            </a>
+            @if(has_permission('hrm_tasks.create'))
+                <a href="{{ route('admin.hrm.tasks.create') }}"
+                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                    style="background: var(--brand-600)">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    Create Task
+                </a>
+            @endif
 
         </div>
     </form>
@@ -303,26 +305,34 @@
                             {{-- Actions --}}
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <a href="{{ route('admin.hrm.tasks.show', $task) }}"
-                                        class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                                        title="View">
-                                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                                    </a>
-                                    <a href="{{ route('admin.hrm.tasks.edit', $task) }}"
-                                        class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-amber-50 text-amber-500 hover:bg-amber-100 hover:text-amber-700 transition-colors"
-                                        title="Edit">
-                                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                    </a>
-                                    <button onclick="quickStatus({{ $task->id }}, '{{ $task->status }}')"
-                                        class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors"
-                                        title="Update Status">
-                                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                    <button onclick="confirmDelete({{ $task->id }}, '{{ addslashes($task->title) }}')"
-                                        class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                                        title="Delete">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    </button>
+                                    @if(has_permission('hrm_tasks.view'))
+                                        <a href="{{ route('admin.hrm.tasks.show', $task) }}"
+                                            class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                                            title="View">
+                                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                        </a>
+                                    @endif
+                                    @if(has_permission('hrm_tasks.update'))
+                                        <a href="{{ route('admin.hrm.tasks.edit', $task) }}"
+                                            class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-amber-50 text-amber-500 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                            title="Edit">
+                                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                        </a>
+                                    @endif
+                                    @if(has_permission('hrm_tasks.change_status'))
+                                        <button onclick="quickStatus({{ $task->id }}, '{{ $task->status }}')"
+                                            class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                                            title="Update Status">
+                                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    @endif
+                                    @if(has_permission('hrm_tasks.delete'))
+                                        <button onclick="confirmDelete({{ $task->id }}, '{{ addslashes($task->title) }}')"
+                                            class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                                            title="Delete">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

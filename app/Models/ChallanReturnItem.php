@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ChallanReturnItem extends Model
 {
@@ -31,7 +31,7 @@ class ChallanReturnItem extends Model
      */
     protected $casts = [
         'qty_returned' => 'decimal:2',
-        'qty_damaged'  => 'decimal:2',
+        'qty_damaged' => 'decimal:2',
     ];
 
     // ════════════════════════════════════════════════════
@@ -86,7 +86,9 @@ class ChallanReturnItem extends Model
      */
     public function getDamagePercentAttribute(): float
     {
-        if ($this->qty_returned <= 0) return 0.0;
+        if ($this->qty_returned <= 0) {
+            return 0.0;
+        }
 
         return (float) round(
             ($this->qty_damaged / $this->qty_returned) * 100,
@@ -136,16 +138,16 @@ class ChallanReturnItem extends Model
             if ($item->qty_damaged > $item->qty_returned) {
                 throw new \InvalidArgumentException(
                     "qty_damaged ({$item->qty_damaged}) cannot exceed "
-                    . "qty_returned ({$item->qty_returned}) "
-                    . "on challan_item_id [{$item->challan_item_id}]."
+                    ."qty_returned ({$item->qty_returned}) "
+                    ."on challan_item_id [{$item->challan_item_id}]."
                 );
             }
 
             // qty_returned must be positive
             if ($item->qty_returned <= 0) {
                 throw new \InvalidArgumentException(
-                    "qty_returned must be greater than 0 "
-                    . "on challan_item_id [{$item->challan_item_id}]."
+                    'qty_returned must be greater than 0 '
+                    ."on challan_item_id [{$item->challan_item_id}]."
                 );
             }
         });
@@ -154,14 +156,14 @@ class ChallanReturnItem extends Model
         static::updating(function (ChallanReturnItem $item) {
             // Allow only damage_note to be updated (e.g. typo fix)
             $allowedDirty = ['damage_note'];
-            $dirty        = array_keys($item->getDirty());
-            $illegal      = array_diff($dirty, $allowedDirty);
+            $dirty = array_keys($item->getDirty());
+            $illegal = array_diff($dirty, $allowedDirty);
 
-            if (!empty($illegal)) {
+            if (! empty($illegal)) {
                 throw new \LogicException(
                     "ChallanReturnItem [{$item->id}] cannot update fields: ["
-                    . implode(', ', $illegal) . "]. "
-                    . "Only [damage_note] is editable after creation."
+                    .implode(', ', $illegal).']. '
+                    .'Only [damage_note] is editable after creation.'
                 );
             }
         });
@@ -169,7 +171,7 @@ class ChallanReturnItem extends Model
         static::deleting(function (ChallanReturnItem $item) {
             throw new \LogicException(
                 "ChallanReturnItem [{$item->id}] cannot be deleted. "
-                . "Return line items are permanent records."
+                .'Return line items are permanent records.'
             );
         });
     }

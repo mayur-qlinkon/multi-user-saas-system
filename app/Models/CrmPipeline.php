@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class CrmPipeline extends Model
 {
@@ -21,9 +21,9 @@ class CrmPipeline extends Model
     ];
 
     protected $casts = [
-        'is_default'  => 'boolean',
-        'is_active'   => 'boolean',
-        'sort_order'  => 'integer',
+        'is_default' => 'boolean',
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     // ════════════════════════════════════════════════════

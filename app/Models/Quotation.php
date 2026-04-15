@@ -4,21 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Quotation extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'company_id',
         'store_id',
-        
+
         // Customer Snapshots & Links
         'customer_id',
         'customer_name',
@@ -31,7 +30,7 @@ class Quotation extends Model
         // Tracking & Auditing
         'created_by',
         'sent_by',
-        
+
         // References & Dates
         'quotation_number',
         'reference_number',
@@ -68,7 +67,7 @@ class Quotation extends Model
         // Notes & Terms
         'notes',
         'terms_conditions',
-        
+
         // Sending Status
         'is_sent',
         'sent_at',
@@ -76,31 +75,32 @@ class Quotation extends Model
 
     /**
      * The attributes that should be cast.
+     *
      * * @var array<string, string>
      */
     protected $casts = [
         'quotation_date' => 'date',
-        'valid_until'    => 'date',
-        'converted_at'   => 'datetime',
-        'sent_at'        => 'datetime',
-        'is_sent'        => 'boolean',
+        'valid_until' => 'date',
+        'converted_at' => 'datetime',
+        'sent_at' => 'datetime',
+        'is_sent' => 'boolean',
         // 🌟 CRITICAL: Cast JSON strings back to arrays automatically
-        'billing_address'  => 'array',
+        'billing_address' => 'array',
         'shipping_address' => 'array',
-        
+
         // Ensure financials are cast as floats for accurate math/display
-        'subtotal'        => 'float',
+        'subtotal' => 'float',
         'discount_amount' => 'float',
-        'taxable_amount'  => 'float',
-        'cgst_amount'     => 'float',
-        'sgst_amount'     => 'float',
-        'igst_amount'     => 'float',
-        'tax_amount'      => 'float',
+        'taxable_amount' => 'float',
+        'cgst_amount' => 'float',
+        'sgst_amount' => 'float',
+        'igst_amount' => 'float',
+        'tax_amount' => 'float',
         'shipping_charge' => 'float',
-        'other_charges'   => 'float',
-        'round_off'       => 'float',
-        'grand_total'     => 'float',
-        'exchange_rate'   => 'float',
+        'other_charges' => 'float',
+        'round_off' => 'float',
+        'grand_total' => 'float',
+        'exchange_rate' => 'float',
     ];
 
     // ─────────────────────────────────────────────────────────
@@ -151,9 +151,10 @@ class Quotation extends Model
      */
     public function getIsExpiredAttribute(): bool
     {
-        if (!$this->valid_until) {
+        if (! $this->valid_until) {
             return false;
         }
+
         return now()->startOfDay()->greaterThan($this->valid_until);
     }
 
@@ -171,6 +172,6 @@ class Quotation extends Model
             ->logAll() // Logs every fillable attribute
             ->logOnlyDirty() // ONLY logs attributes that actually changed
             ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn(string $eventName) => "Quotation has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Quotation has been {$eventName}");
     }
 }

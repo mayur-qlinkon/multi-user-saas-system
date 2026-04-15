@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('batch_number')->nullable();
             $table->date('manufacturing_date')->nullable();
             $table->date('expiry_date')->nullable();
-            $table->decimal('purchase_price', 15, 2)->default(0);        
+            $table->decimal('purchase_price', 15, 2)->default(0);
             $table->integer('qty')->default(0);
             $table->integer('remaining_qty')->default(0);
             $table->boolean('is_active')->default(true);

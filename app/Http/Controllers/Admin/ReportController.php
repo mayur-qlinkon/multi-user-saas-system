@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Services\ReportService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
@@ -31,11 +32,11 @@ class ReportController extends Controller
         // 2. Fetch Data via Service (Heavy lifting is done efficiently in the DB)
         $salesSummary = $this->reportService->getSalesSummary($companyId, $startDate, $endDate);
         $purchaseSummary = $this->reportService->getPurchaseSummary($companyId, $startDate, $endDate);
-        
+
         // Fetch top 10 best sellers and top 10 worst sellers
         $topProducts = $this->reportService->getProductPerformance($companyId, $startDate, $endDate, 10, 'desc');
         $lowProducts = $this->reportService->getProductPerformance($companyId, $startDate, $endDate, 10, 'asc');
-        
+
         $salesBySource = $this->reportService->getSalesBySource($companyId, $startDate, $endDate);
 
         // 3. Return to the Dashboard View
@@ -58,7 +59,7 @@ class ReportController extends Controller
     private function parseDateRange(Request $request)
     {
         $filter = $request->input('date_filter', 'this_month'); // Default to 'This Month'
-        
+
         $start = Carbon::now()->startOfMonth();
         $end = Carbon::now()->endOfMonth();
         $label = 'This Month';
@@ -86,16 +87,16 @@ class ReportController extends Controller
                 if ($request->filled(['start_date', 'end_date'])) {
                     $start = Carbon::parse($request->start_date)->startOfDay();
                     $end = Carbon::parse($request->end_date)->endOfDay();
-                    $label = $start->format('d M Y') . ' to ' . $end->format('d M Y');
+                    $label = $start->format('d M Y').' to '.$end->format('d M Y');
                 }
                 break;
         }
 
         return [
-            'start'  => $start->format('Y-m-d H:i:s'),
-            'end'    => $end->format('Y-m-d H:i:s'),
-            'label'  => $label,
-            'filter' => $filter
+            'start' => $start->format('Y-m-d H:i:s'),
+            'end' => $end->format('Y-m-d H:i:s'),
+            'label' => $label,
+            'filter' => $filter,
         ];
     }
 }

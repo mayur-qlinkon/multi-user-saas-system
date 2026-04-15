@@ -37,7 +37,13 @@
       "Bash(vendor/bin/pint --dirty --format agent app/Http/Controllers/Platform/EmailTemplateController.php routes/platform.php)",
       "Bash(php -l resources/views/platform/email-templates.blade.php)",
       "Bash(vendor/bin/pint --dirty --format agent app/Services/EmailService.php app/Http/Controllers/StorefrontController.php app/Http/Controllers/OrderController.php)",
-      "Bash(vendor/bin/pint app/Mail/TemplateMail.php --format agent)"
+      "Bash(vendor/bin/pint app/Mail/TemplateMail.php --format agent)",
+      "Bash(grep -r \"Hrm\\\\\\\\\\\\\\\\Employee\" \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlinkonSoftware\\\\app\\\\Http\\\\Middleware\")",
+      "Bash(vendor/bin/pint app/Http/Middleware/IsCustomer.php app/Http/Middleware/RoleMiddleware.php app/Http/Controllers/Auth/LoginController.php app/Http/Controllers/Auth/Customer/CustomerAuthController.php --format agent)",
+      "Bash(vendor/bin/pint app/Services/Hrm/AttendanceExportService.php app/Exports/AttendanceExport.php app/Http/Controllers/Admin/Hrm/AttendanceController.php --format agent)",
+      "Bash(vendor/bin/pint app/Exports/AttendanceCalendarExport.php app/Services/Hrm/AttendanceExportService.php app/Http/Controllers/Admin/Hrm/AttendanceController.php --format agent)",
+      "Bash(vendor/bin/pint database/seeders/HRM/AttendanceSeeder.php --format agent)",
+      "Bash(grep -n \"is_super_admin\\\\|super_admin\" \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlinkonSoftware/database/migrations\"/*)"
     ]
   }
 }

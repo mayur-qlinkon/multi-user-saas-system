@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Traits\Tenantable; // 🛡️ Added the Iron Wall
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // 🛡️ Added the Iron Wall
 
 class ProductMedia extends Model
 {
@@ -40,9 +40,9 @@ class ProductMedia extends Model
     public function getMediaUrlAttribute()
     {
         if ($this->media_type === 'youtube') {
-            return $this->media_path; 
+            return $this->media_path;
         }
 
-        return asset('storage/' . $this->media_path);
+        return asset('storage/'.$this->media_path);
     }
 }

@@ -4,7 +4,7 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Storefront Sections</h1>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Storefront Sections</h1>
         <p class="text-xs text-gray-400 font-medium mt-0.5">Design your homepage layout · Drag to reorder</p>
     </div>
 @endsection
@@ -396,22 +396,26 @@
         {{-- ── Page Header ── --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-[#212538] tracking-tight">Storefront Sections</h1>
+                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Storefront Sections</h1>
                 <p class="text-sm text-gray-400 font-medium mt-0.5">
                     Drag to reorder · Toggle visibility · Build your homepage layout
                 </p>
             </div>
             <div class="flex items-center gap-2">
+                @if(has_permission('storefront_sections.reorder'))
                 <button type="button" id="reorder-btn" onclick="toggleReorderMode()"
                     class="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
                     <i data-lucide="grip-vertical" class="w-4 h-4"></i>
                     <span id="reorder-label">Reorder</span>
                 </button>
+                @endif
+                @if(has_permission('storefront_sections.create'))
                 <a href="{{ route('admin.storefront-sections.create') }}"
                     class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Add Section
                 </a>
+                @endif
             </div>
         </div>
 
@@ -588,24 +592,30 @@
                                 <div class="flex items-center gap-1.5">
 
                                     {{-- Duplicate ── --}}
+                                    @if(has_permission('storefront_sections.duplicate'))
                                     <button type="button"
                                         onclick="duplicateSection({{ $section->id }}, '{{ addslashes($section->title) }}')"
                                         class="card-action btn-copy" title="Duplicate">
                                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                     </button>
+                                    @endif
 
                                     {{-- Edit ── --}}
+                                    @if(has_permission('storefront_sections.update'))
                                     <a href="{{ route('admin.storefront-sections.edit', $section->id) }}"
                                         class="card-action btn-edit" title="Edit">
                                         <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                     </a>
+                                    @endif
 
                                     {{-- Delete ── --}}
+                                    @if(has_permission('storefront_sections.delete'))
                                     <button type="button"
                                         onclick="deleteSection({{ $section->id }}, '{{ addslashes($section->title) }}')"
                                         class="card-action btn-delete" title="Delete">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>
+                                    @endif
                                 </div>
                             </div>
 

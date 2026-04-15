@@ -5,9 +5,9 @@ namespace App\Models;
 use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
@@ -15,7 +15,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Expense extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, Tenantable, LogsActivity, InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, LogsActivity, SoftDeletes, Tenantable;
 
     /**
      * The attributes that are mass assignable.
@@ -24,8 +24,8 @@ class Expense extends Model implements HasMedia
         'company_id',
         'user_id',
         'store_id',
-        'expense_category_id',    
-        'expense_number',        
+        'expense_category_id',
+        'expense_number',
         // Merchant & Tax
         'currency_code',
         'exchange_rate',
@@ -34,7 +34,7 @@ class Expense extends Model implements HasMedia
         'merchant_name',
         'merchant_gstin',
         'reference_number',
-        'expense_date',        
+        'expense_date',
         // Financials
         'payment_status', // 'unpaid', 'partial', 'paid'
         'round_off',
@@ -42,7 +42,7 @@ class Expense extends Model implements HasMedia
         'cgst_amount',
         'sgst_amount',
         'igst_amount',
-        'total_amount',        
+        'total_amount',
         // Attributes
         'is_reimbursable',
         'is_billable',
@@ -50,7 +50,7 @@ class Expense extends Model implements HasMedia
         'attachment',
         'source',
         'notes',
-        
+
         'approved_by',
         'approved_at',
     ];
@@ -59,33 +59,33 @@ class Expense extends Model implements HasMedia
      * The attributes that should be cast.
      */
     protected $casts = [
-        'expense_date'    => 'date',
-        'approved_at'     => 'datetime',
-        
-        'exchange_rate'   => 'decimal:4',
-        'tax_percent'     => 'decimal:2',
-        'round_off'       => 'decimal:2',
-        'base_amount'     => 'decimal:2',
-        'cgst_amount'     => 'decimal:2',
-        'sgst_amount'     => 'decimal:2',
-        'igst_amount'     => 'decimal:2',
-        'total_amount'    => 'decimal:2',
-        
+        'expense_date' => 'date',
+        'approved_at' => 'datetime',
+
+        'exchange_rate' => 'decimal:4',
+        'tax_percent' => 'decimal:2',
+        'round_off' => 'decimal:2',
+        'base_amount' => 'decimal:2',
+        'cgst_amount' => 'decimal:2',
+        'sgst_amount' => 'decimal:2',
+        'igst_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+
         'is_reimbursable' => 'boolean',
-        'is_billable'     => 'boolean',
+        'is_billable' => 'boolean',
     ];
 
     // ════════════════════════════════════════════════════
     //  ACTIVITY LOGGING (Audit Trail)
     // ════════════════════════════════════════════════════
-    
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => "Expense has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Expense has been {$eventName}");
     }
 
     // ════════════════════════════════════════════════════
@@ -95,8 +95,8 @@ class Expense extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('receipts')
-             ->useDisk('public') // Or 's3' if you use AWS
-             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
+            ->useDisk('public') // Or 's3' if you use AWS
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
     }
 
     // ════════════════════════════════════════════════════

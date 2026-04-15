@@ -38,6 +38,7 @@ class DesignationController extends Controller
 
         try {
             $designation = $this->designationService->create($validated);
+
             return response()->json(['success' => true, 'message' => 'Designation created.', 'data' => $designation]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -55,6 +56,7 @@ class DesignationController extends Controller
 
         try {
             $designation = $this->designationService->update($designation, $validated);
+
             return response()->json(['success' => true, 'message' => 'Designation updated.', 'data' => $designation]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -65,6 +67,7 @@ class DesignationController extends Controller
     {
         try {
             $this->designationService->delete($designation);
+
             return response()->json(['success' => true, 'message' => 'Designation deleted.']);
         } catch (\RuntimeException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);

@@ -72,16 +72,22 @@ class SettingController extends Controller
 
             $roles = Role::where('company_id', $companyId)->orderBy('name')->get();
 
-            $users = User::where('company_id', $companyId)
+            $users = User::internal()->where('company_id', $companyId)
                 ->with('roles:id,name')
                 ->orderBy('name')
                 ->get(['id', 'name']);
 
-            $raw = get_setting('notify_new_order', null, $companyId);
+            $rawOrder = get_setting('notify_new_order', null, $companyId);
+            $rawLeave = get_setting('notify_leave_request', null, $companyId);
             $notificationConfig = [
-                'notify_new_order' => $raw
-                    ? (json_decode($raw, true) ?: ['roles' => ['owner'], 'users' => []])
+                'notify_new_order' => $rawOrder
+                    ? (json_decode($rawOrder, true) ?: ['roles' => ['owner'], 'users' => []])
                     : ['roles' => ['owner'], 'users' => []],
+
+                // Add this new block for leave requests
+                'notify_leave_request' => $rawLeave
+                        ? (json_decode($rawLeave, true) ?: ['roles' => ['owner'], 'users' => []])
+                        : ['roles' => ['owner'], 'users' => []],
             ];
 
             return view('admin.settings', compact('company', 'states', 'roles', 'users', 'notificationConfig'));
@@ -262,7 +268,7 @@ class SettingController extends Controller
         $companyId = Auth::user()->company_id;
 
         // Add new event keys here as the system grows.
-        $events = ['notify_new_order'];
+        $events = ['notify_new_order', 'notify_leave_request'];
 
         DB::transaction(function () use ($request, $companyId, $events) {
             foreach ($events as $eventKey) {

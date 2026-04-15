@@ -3,14 +3,14 @@
 namespace App\Models;
 
 use App\Traits\Tenantable;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CrmTask extends Model
 {
-    use Tenantable, SoftDeletes;
+    use SoftDeletes, Tenantable;
 
     protected $fillable = [
         'company_id',
@@ -30,28 +30,28 @@ class CrmTask extends Model
     ];
 
     protected $casts = [
-        'due_at'        => 'datetime',
-        'completed_at'  => 'datetime',
-        'remind_at'     => 'datetime',
+        'due_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'remind_at' => 'datetime',
         'reminder_sent' => 'boolean',
     ];
 
     public const TYPES = [
         'follow_up' => 'Follow Up',
-        'call'      => 'Call',
-        'meeting'   => 'Meeting',
-        'whatsapp'  => 'WhatsApp',
-        'email'     => 'Email',
-        'demo'      => 'Demo',
-        'other'     => 'Other',
+        'call' => 'Call',
+        'meeting' => 'Meeting',
+        'whatsapp' => 'WhatsApp',
+        'email' => 'Email',
+        'demo' => 'Demo',
+        'other' => 'Other',
     ];
 
     public const STATUSES = [
-        'pending'     => ['label' => 'Pending',     'color' => '#eab308'],
+        'pending' => ['label' => 'Pending',     'color' => '#eab308'],
         'in_progress' => ['label' => 'In Progress', 'color' => '#3b82f6'],
-        'completed'   => ['label' => 'Completed',   'color' => '#22c55e'],
-        'cancelled'   => ['label' => 'Cancelled',   'color' => '#6b7280'],
-        'overdue'     => ['label' => 'Overdue',     'color' => '#ef4444'],
+        'completed' => ['label' => 'Completed',   'color' => '#22c55e'],
+        'cancelled' => ['label' => 'Cancelled',   'color' => '#6b7280'],
+        'overdue' => ['label' => 'Overdue',     'color' => '#ef4444'],
     ];
 
     // ════════════════════════════════════════════════════
@@ -90,13 +90,13 @@ class CrmTask extends Model
     public function scopeOverdue(Builder $q): Builder
     {
         return $q->where('due_at', '<', now())
-                 ->whereIn('status', ['pending', 'in_progress']);
+            ->whereIn('status', ['pending', 'in_progress']);
     }
 
     public function scopeDueToday(Builder $q): Builder
     {
         return $q->whereDate('due_at', today())
-                 ->whereIn('status', ['pending', 'in_progress']);
+            ->whereIn('status', ['pending', 'in_progress']);
     }
 
     public function scopeForUser(Builder $q, int $userId): Builder
@@ -108,9 +108,9 @@ class CrmTask extends Model
     public function scopeNeedsReminder(Builder $q): Builder
     {
         return $q->where('reminder_sent', false)
-                 ->whereNotNull('remind_at')
-                 ->where('remind_at', '<=', now())
-                 ->whereIn('status', ['pending', 'in_progress']);
+            ->whereNotNull('remind_at')
+            ->where('remind_at', '<=', now())
+            ->whereIn('status', ['pending', 'in_progress']);
     }
 
     // ════════════════════════════════════════════════════
@@ -151,8 +151,8 @@ class CrmTask extends Model
     public function complete(string $note = ''): void
     {
         $this->update([
-            'status'          => 'completed',
-            'completed_at'    => now(),
+            'status' => 'completed',
+            'completed_at' => now(),
             'completion_note' => $note,
         ]);
     }
@@ -172,8 +172,8 @@ class CrmTask extends Model
 
         return [
             'due_today' => (clone $base)->dueToday()->count(),
-            'overdue'   => (clone $base)->overdue()->count(),
-            'pending'   => (clone $base)->pending()->count(),
+            'overdue' => (clone $base)->overdue()->count(),
+            'pending' => (clone $base)->pending()->count(),
         ];
     }
 }

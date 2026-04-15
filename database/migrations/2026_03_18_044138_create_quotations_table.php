@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('customer_phone', 20)->nullable();
             $table->string('customer_email')->nullable();
             $table->string('customer_gstin', 50)->nullable();
-            
+
             // 📍 Address Snapshots
             $table->json('billing_address')->nullable();
             $table->json('shipping_address')->nullable();
@@ -39,9 +39,9 @@ return new class extends Migration
 
             // 🔄 Conversion Link
             $table->foreignId('converted_to_invoice_id')
-                  ->nullable()
-                  ->constrained('invoices')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('invoices')
+                ->nullOnDelete();
             $table->dateTime('converted_at')->nullable();
 
             // 📊 Status
@@ -51,7 +51,7 @@ return new class extends Migration
                 'accepted',
                 'rejected',
                 'expired',
-                'converted'
+                'converted',
             ])->default('draft')->index();
 
             // 🌍 Currency & Exchange (Matching your Invoice schema)
@@ -65,7 +65,7 @@ return new class extends Migration
                 'unregistered',
                 'composition',
                 'overseas',
-                'sez'
+                'sez',
             ])->default('unregistered');
 
             // 💰 Financials

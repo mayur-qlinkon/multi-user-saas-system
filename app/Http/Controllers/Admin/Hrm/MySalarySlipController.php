@@ -4,30 +4,35 @@ namespace App\Http\Controllers\Admin\Hrm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Hrm\SalarySlip;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class MySalarySlipController extends Controller
 {
     protected function myEmployee()
     {
         $emp = Auth::user()->employee;
-        abort_if(!$emp, 403, 'No employee record linked to your account.');
+        abort_if(! $emp, 403, 'No employee record linked to your account.');
+
         return $emp;
     }
 
     public function index(Request $request)
     {
-        if (!Auth::user()->employee) {
+        if (! Auth::user()->employee) {
             return view('admin.hrm.employee.no-profile');
         }
         $employee = $this->myEmployee();
 
         $query = SalarySlip::where('employee_id', $employee->id);
 
-        if ($request->filled('year'))   $query->where('year', $request->year);
-        if ($request->filled('status')) $query->where('status', $request->status);
+        if ($request->filled('year')) {
+            $query->where('year', $request->year);
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
         $slips = $query->orderByDesc('year')->orderByDesc('month')
             ->paginate(15)->withQueryString();

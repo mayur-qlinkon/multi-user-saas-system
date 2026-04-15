@@ -12,10 +12,10 @@ class EmployeeDashboardController extends Controller
 {
     public function index()
     {
-        $user     = Auth::user();
+        $user = Auth::user();
         $employee = $user->employee;
 
-        if (!$employee) {
+        if (! $employee) {
             return view('admin.hrm.employee.no-profile');
         }
 

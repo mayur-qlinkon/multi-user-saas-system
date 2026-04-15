@@ -9,7 +9,7 @@ class Module extends Model
     protected $fillable = [
         'name',
         'slug',
-        'is_active'
+        'is_active',
     ];
 
     public function plans()

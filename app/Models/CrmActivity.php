@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Traits\Tenantable;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class CrmActivity extends Model
 {
@@ -23,22 +23,22 @@ class CrmActivity extends Model
     ];
 
     protected $casts = [
-        'meta'    => 'array',
+        'meta' => 'array',
         'is_auto' => 'boolean',
     ];
 
     // Activity types with labels and icons for UI
     public const TYPES = [
-        'note'           => ['label' => 'Note',           'icon' => 'file-text'],
-        'call'           => ['label' => 'Call',            'icon' => 'phone'],
-        'whatsapp'       => ['label' => 'WhatsApp',        'icon' => 'message-circle'],
-        'email'          => ['label' => 'Email',           'icon' => 'mail'],
-        'meeting'        => ['label' => 'Meeting',         'icon' => 'users'],
-        'stage_change'   => ['label' => 'Stage Changed',   'icon' => 'arrow-right'],
-        'lead_created'   => ['label' => 'Lead Created',    'icon' => 'plus-circle'],
-        'converted'      => ['label' => 'Converted',       'icon' => 'check-circle'],
+        'note' => ['label' => 'Note',           'icon' => 'file-text'],
+        'call' => ['label' => 'Call',            'icon' => 'phone'],
+        'whatsapp' => ['label' => 'WhatsApp',        'icon' => 'message-circle'],
+        'email' => ['label' => 'Email',           'icon' => 'mail'],
+        'meeting' => ['label' => 'Meeting',         'icon' => 'users'],
+        'stage_change' => ['label' => 'Stage Changed',   'icon' => 'arrow-right'],
+        'lead_created' => ['label' => 'Lead Created',    'icon' => 'plus-circle'],
+        'converted' => ['label' => 'Converted',       'icon' => 'check-circle'],
         'task_completed' => ['label' => 'Task Completed',  'icon' => 'check-square'],
-        'score_changed'  => ['label' => 'Score Updated',   'icon' => 'trending-up'],
+        'score_changed' => ['label' => 'Score Updated',   'icon' => 'trending-up'],
     ];
 
     // ════════════════════════════════════════════════════
@@ -101,21 +101,21 @@ class CrmActivity extends Model
      * Log a manual activity (note, call, whatsapp etc.)
      */
     public static function log(
-        int     $leadId,
-        string  $type,
-        string  $description,
-        ?array  $meta    = null,
-        ?int    $userId  = null,
-        int     $companyId = 0
+        int $leadId,
+        string $type,
+        string $description,
+        ?array $meta = null,
+        ?int $userId = null,
+        int $companyId = 0
     ): self {
         return static::create([
-            'company_id'   => $companyId ?: Auth::user()?->company_id,
-            'crm_lead_id'  => $leadId,
-            'user_id'      => $userId ?? Auth::id(),
-            'type'         => $type,
-            'description'  => $description,
-            'meta'         => $meta,
-            'is_auto'      => false,
+            'company_id' => $companyId ?: Auth::user()?->company_id,
+            'crm_lead_id' => $leadId,
+            'user_id' => $userId ?? Auth::id(),
+            'type' => $type,
+            'description' => $description,
+            'meta' => $meta,
+            'is_auto' => false,
         ]);
     }
 
@@ -123,20 +123,20 @@ class CrmActivity extends Model
      * Log an automatic system activity (Observer-driven)
      */
     public static function logAuto(
-        int    $leadId,
+        int $leadId,
         string $type,
         string $description,
-        ?array $meta      = null,
-        int    $companyId = 0
+        ?array $meta = null,
+        int $companyId = 0
     ): self {
         return static::create([
-            'company_id'  => $companyId,
+            'company_id' => $companyId,
             'crm_lead_id' => $leadId,
-            'user_id'     => null,
-            'type'        => $type,
+            'user_id' => null,
+            'type' => $type,
             'description' => $description,
-            'meta'        => $meta,
-            'is_auto'     => true,
+            'meta' => $meta,
+            'is_auto' => true,
         ]);
     }
 }

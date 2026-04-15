@@ -2,37 +2,47 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Store;
+use App\Models\User;
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
-use App\Models\User;
-use App\Models\Store;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Employee extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     // ── Constants ──
 
     const STATUS_ACTIVE = 'active';
+
     const STATUS_INACTIVE = 'inactive';
+
     const STATUS_TERMINATED = 'terminated';
+
     const STATUS_ON_NOTICE = 'on_notice';
+
     const STATUS_ABSCONDING = 'absconding';
 
     const TYPE_FULL_TIME = 'full_time';
+
     const TYPE_PART_TIME = 'part_time';
+
     const TYPE_CONTRACT = 'contract';
+
     const TYPE_INTERN = 'intern';
+
     const TYPE_FREELANCER = 'freelancer';
 
     const SALARY_MONTHLY = 'monthly';
+
     const SALARY_DAILY = 'daily';
+
     const SALARY_HOURLY = 'hourly';
 
     const STATUS_LABELS = [
@@ -105,7 +115,7 @@ class Employee extends Model
 
         $sequence = $latest ? ((int) last(explode('-', $latest))) + 1 : 1;
 
-        return "{$prefix}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+        return "{$prefix}-".str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 
     // ── Activity Log ──
@@ -116,7 +126,7 @@ class Employee extends Model
             ->logAll()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Employee {$this->employee_code} was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Employee {$this->employee_code} was {$event}");
     }
 
     // ── Relationships ──

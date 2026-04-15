@@ -20,7 +20,7 @@ class PurchaseItem extends Model
         // Ownership
         'purchase_id',
         'company_id',
-        
+
         // Product References
         'product_id',
         'product_sku_id',
@@ -67,27 +67,27 @@ class PurchaseItem extends Model
     protected $casts = [
         // Dates
         'manufacturing_date' => 'date',
-        'expiry_date'        => 'date',
+        'expiry_date' => 'date',
 
         // Percentages (5,2 in DB)
-        'tax_percent'        => 'decimal:2',
-        'cgst_percent'       => 'decimal:2',
-        'sgst_percent'       => 'decimal:2',
-        'igst_percent'       => 'decimal:2',
-        'discount_percent'   => 'decimal:2',
+        'tax_percent' => 'decimal:2',
+        'cgst_percent' => 'decimal:2',
+        'sgst_percent' => 'decimal:2',
+        'igst_percent' => 'decimal:2',
+        'discount_percent' => 'decimal:2',
 
         // Quantities and Amounts (15,4 in DB for high precision in ERPs)
-        'quantity'           => 'decimal:4',
-        'quantity_received'  => 'decimal:4',
-        'unit_cost'          => 'decimal:4',
-        'discount_amount'    => 'decimal:4',
-        'subtotal'           => 'decimal:4',
-        'taxable_amount'     => 'decimal:4',
-        'cgst_amount'        => 'decimal:4',
-        'sgst_amount'        => 'decimal:4',
-        'igst_amount'        => 'decimal:4',
-        'tax_amount'         => 'decimal:4',
-        'total_price'        => 'decimal:4',
+        'quantity' => 'decimal:4',
+        'quantity_received' => 'decimal:4',
+        'unit_cost' => 'decimal:4',
+        'discount_amount' => 'decimal:4',
+        'subtotal' => 'decimal:4',
+        'taxable_amount' => 'decimal:4',
+        'cgst_amount' => 'decimal:4',
+        'sgst_amount' => 'decimal:4',
+        'igst_amount' => 'decimal:4',
+        'tax_amount' => 'decimal:4',
+        'total_price' => 'decimal:4',
     ];
 
     /*

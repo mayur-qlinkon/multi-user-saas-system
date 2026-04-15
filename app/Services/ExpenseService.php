@@ -22,8 +22,8 @@ class ExpenseService
 
                 // 1. Enforce ownership and defaults
                 $data['company_id'] = $companyId;
-                $data['user_id']    = $data['user_id'] ?? Auth::id();
-                
+                $data['user_id'] = $data['user_id'] ?? Auth::id();
+
                 // 2. Generate unique sequential expense number (e.g. EXP-202403-0001)
                 $data['expense_number'] = $this->generateExpenseNumber($companyId);
 
@@ -39,18 +39,18 @@ class ExpenseService
                 }
 
                 Log::info('[ExpenseService] Expense logged successfully', [
-                    'expense_id'     => $expense->id,
+                    'expense_id' => $expense->id,
                     'expense_number' => $expense->expense_number,
-                    'user_id'        => Auth::id(),
+                    'user_id' => Auth::id(),
                 ]);
 
                 return $expense;
 
             } catch (Throwable $e) {
                 Log::error('[ExpenseService] Failed to store expense', [
-                    'error'   => $e->getMessage(),
+                    'error' => $e->getMessage(),
                     'payload' => collect($data)->except(['attachment', 'receipt'])->toArray(),
-                    'trace'   => $e->getTraceAsString(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
                 throw $e; // Bubble up to controller to trigger 500/422 response
             }
@@ -69,13 +69,13 @@ class ExpenseService
                     // Merge existing state with new data to ensure accurate math
                     $calculationData = array_merge($expense->toArray(), $data);
                     $this->calculateTaxes($calculationData);
-                    
+
                     // Pull the newly calculated tax fields back into the update payload
-                    $data['cgst_amount']  = $calculationData['cgst_amount'];
-                    $data['sgst_amount']  = $calculationData['sgst_amount'];
-                    $data['igst_amount']  = $calculationData['igst_amount'];
+                    $data['cgst_amount'] = $calculationData['cgst_amount'];
+                    $data['sgst_amount'] = $calculationData['sgst_amount'];
+                    $data['igst_amount'] = $calculationData['igst_amount'];
                     $data['total_amount'] = $calculationData['total_amount'];
-                    $data['round_off']    = $calculationData['round_off'];
+                    $data['round_off'] = $calculationData['round_off'];
                 }
 
                 $expense->update($data);
@@ -97,7 +97,7 @@ class ExpenseService
             } catch (Throwable $e) {
                 Log::error('[ExpenseService] Failed to update expense', [
                     'expense_id' => $expense->id,
-                    'error'      => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
                 throw $e;
             }
@@ -111,7 +111,7 @@ class ExpenseService
     {
         $validStatuses = ['draft', 'pending_approval', 'approved', 'rejected', 'reimbursed'];
 
-        if (!in_array($newStatus, $validStatuses)) {
+        if (! in_array($newStatus, $validStatuses)) {
             throw new \InvalidArgumentException("Invalid expense status: {$newStatus}");
         }
 
@@ -141,14 +141,14 @@ class ExpenseService
     // ════════════════════════════════════════════════════
 
     /**
-     * Pass-by-reference tax calculator. 
+     * Pass-by-reference tax calculator.
      * Accurately splits Indian GST into CGST/SGST or IGST.
      */
     private function calculateTaxes(array &$data): void
     {
-        $base    = (float) ($data['base_amount'] ?? 0);
+        $base = (float) ($data['base_amount'] ?? 0);
         $percent = (float) ($data['tax_percent'] ?? 0);
-        $type    = $data['tax_type'] ?? 'none';
+        $type = $data['tax_type'] ?? 'none';
 
         // Reset taxes
         $data['cgst_amount'] = 0.00;
@@ -165,12 +165,12 @@ class ExpenseService
 
         // Calculate exact total
         $exactTotal = $base + $data['cgst_amount'] + $data['sgst_amount'] + $data['igst_amount'];
-        
+
         // Round off to nearest integer (Standard Indian Accounting Practice for final invoices)
         $roundedTotal = round($exactTotal);
-        
+
         $data['total_amount'] = $roundedTotal;
-        $data['round_off']    = round($roundedTotal - $exactTotal, 2);
+        $data['round_off'] = round($roundedTotal - $exactTotal, 2);
     }
 
     /**
@@ -179,17 +179,17 @@ class ExpenseService
      */
     private function generateExpenseNumber(int $companyId): string
     {
-        $prefix = 'EXP-' . date('Ym') . '-';
+        $prefix = 'EXP-'.date('Ym').'-';
 
         // 🌟 ADD withTrashed() HERE
         $latestExpense = Expense::withTrashed()
             ->where('company_id', $companyId)
             ->where('expense_number', 'like', "{$prefix}%")
-            ->lockForUpdate() 
+            ->lockForUpdate()
             ->orderByDesc('id')
             ->first();
 
-        if (!$latestExpense) {
+        if (! $latestExpense) {
             $sequence = 1;
         } else {
             // Extract the last 4 digits and increment
@@ -197,6 +197,6 @@ class ExpenseService
             $sequence = $lastSequence + 1;
         }
 
-        return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 }

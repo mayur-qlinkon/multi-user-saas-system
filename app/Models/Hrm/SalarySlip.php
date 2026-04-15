@@ -2,31 +2,38 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
-use App\Models\User;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class SalarySlip extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     // ── Constants ──
 
     const STATUS_DRAFT = 'draft';
+
     const STATUS_GENERATED = 'generated';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_PAID = 'paid';
+
     const STATUS_CANCELLED = 'cancelled';
 
     const PAYMENT_BANK_TRANSFER = 'bank_transfer';
+
     const PAYMENT_CASH = 'cash';
+
     const PAYMENT_CHEQUE = 'cheque';
+
     const PAYMENT_UPI = 'upi';
 
     const STATUS_LABELS = [
@@ -79,7 +86,7 @@ class SalarySlip extends Model
             ->logOnly(['status', 'net_salary', 'payment_mode', 'payment_date'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Salary slip {$this->slip_number} was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Salary slip {$this->slip_number} was {$event}");
     }
 
     // ── Boot ──
@@ -95,7 +102,7 @@ class SalarySlip extends Model
 
     public static function generateSlipNumber(int $companyId, int $month, int $year): string
     {
-        $prefix = 'SAL-' . $year . str_pad($month, 2, '0', STR_PAD_LEFT);
+        $prefix = 'SAL-'.$year.str_pad($month, 2, '0', STR_PAD_LEFT);
         $latest = static::withTrashed()
             ->where('company_id', $companyId)
             ->where('slip_number', 'like', "{$prefix}-%")
@@ -104,7 +111,7 @@ class SalarySlip extends Model
 
         $sequence = $latest ? ((int) last(explode('-', $latest))) + 1 : 1;
 
-        return "{$prefix}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+        return "{$prefix}-".str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 
     // ── Relationships ──

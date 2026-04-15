@@ -51,23 +51,23 @@ class WarehouseController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'store_id'       => ['required', Rule::exists('stores', 'id')->where('company_id', Auth::user()->company_id)],
-            'name'           => ['required', 'string', 'max:255'],
-            'code'           => ['nullable', 'string', 'max:50'],
+            'store_id' => ['required', Rule::exists('stores', 'id')->where('company_id', Auth::user()->company_id)],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['nullable', 'string', 'max:50'],
             'contact_person' => ['nullable', 'string', 'max:100'],
-            'phone'          => ['nullable', 'string', 'max:20'],
-            'email'          => ['nullable', 'email', 'max:100'],
-            'address'        => ['nullable', 'string'],
-            'city'           => ['nullable', 'string', 'max:100'],
-            'state_id'       => ['nullable', 'exists:states,id'],
-            'zip_code'       => ['nullable', 'string', 'max:20'],
-            'country'        => ['nullable', 'string', 'max:100'],
-            'is_default'     => ['nullable', 'boolean'],
-            'is_active'      => ['nullable', 'boolean'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:100'],
+            'address' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state_id' => ['nullable', 'exists:states,id'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'is_default' => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $validated['is_default'] = $request->boolean('is_default', false);
-        $validated['is_active']  = $request->boolean('is_active', true);
+        $validated['is_active'] = $request->boolean('is_active', true);
         $validated['company_id'] = Auth::user()->company_id;
 
         try {
@@ -83,9 +83,10 @@ class WarehouseController extends Controller
             });
 
             return redirect()->route('admin.warehouses.index')->with('success', 'Warehouse created successfully.');
-            
+
         } catch (Exception $e) {
-            Log::error('Error creating warehouse: ' . $e->getMessage());
+            Log::error('Error creating warehouse: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'An error occurred while creating the warehouse. Please try again.');
         }
     }
@@ -108,18 +109,18 @@ class WarehouseController extends Controller
             },
             'sku.unit',
             'sku.product.saleUnit',
-            'sku.product.productUnit'
+            'sku.product.productUnit',
         ])
-        ->where('warehouse_id', $warehouse->id)
-        ->where('qty', '>', 0); // Hide zero-stock items from the UI
+            ->where('warehouse_id', $warehouse->id)
+            ->where('qty', '>', 0); // Hide zero-stock items from the UI
 
         // Inject dynamic batch tracking if enabled globally
         if (function_exists('batch_enabled') && batch_enabled()) {
             $stocksQuery->with(['sku.batches' => function ($query) use ($warehouse) {
                 $query->where('warehouse_id', $warehouse->id)
-                      ->where('remaining_qty', '>', 0)
-                      ->where('is_active', true)
-                      ->orderBy('expiry_date', 'asc'); // FEFO ordering
+                    ->where('remaining_qty', '>', 0)
+                    ->where('is_active', true)
+                    ->orderBy('expiry_date', 'asc'); // FEFO ordering
             }]);
         }
 
@@ -158,23 +159,23 @@ class WarehouseController extends Controller
         }
 
         $validated = $request->validate([
-            'store_id'       => ['required', Rule::exists('stores', 'id')->where('company_id', Auth::user()->company_id)],
-            'name'           => ['required', 'string', 'max:255'],
-            'code'           => ['nullable', 'string', 'max:50'],
+            'store_id' => ['required', Rule::exists('stores', 'id')->where('company_id', Auth::user()->company_id)],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['nullable', 'string', 'max:50'],
             'contact_person' => ['nullable', 'string', 'max:100'],
-            'phone'          => ['nullable', 'string', 'max:20'],
-            'email'          => ['nullable', 'email', 'max:100'],
-            'address'        => ['nullable', 'string'],
-            'city'           => ['nullable', 'string', 'max:100'],
-            'state_id'       => ['nullable', 'exists:states,id'],
-            'zip_code'       => ['nullable', 'string', 'max:20'],
-            'country'        => ['nullable', 'string', 'max:100'],
-            'is_default'     => ['nullable', 'boolean'],
-            'is_active'      => ['nullable', 'boolean'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:100'],
+            'address' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'state_id' => ['nullable', 'exists:states,id'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'is_default' => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $validated['is_default'] = $request->boolean('is_default', false);
-        $validated['is_active']  = $request->boolean('is_active', false);
+        $validated['is_active'] = $request->boolean('is_active', false);
 
         try {
             DB::transaction(function () use ($validated, $warehouse) {
@@ -189,9 +190,10 @@ class WarehouseController extends Controller
             });
 
             return redirect()->route('admin.warehouses.index')->with('success', 'Warehouse updated successfully.');
-            
+
         } catch (Exception $e) {
-            Log::error('Error updating warehouse: ' . $e->getMessage());
+            Log::error('Error updating warehouse: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'An error occurred while updating the warehouse. Please try again.');
         }
     }
@@ -211,9 +213,11 @@ class WarehouseController extends Controller
 
         try {
             $warehouse->delete();
+
             return redirect()->route('admin.warehouses.index')->with('success', 'Warehouse deleted successfully.');
         } catch (Exception $e) {
-            Log::error('Error deleting warehouse: ' . $e->getMessage());
+            Log::error('Error deleting warehouse: '.$e->getMessage());
+
             return back()->with('error', 'Failed to delete warehouse. It may be linked to existing inventory records.');
         }
     }

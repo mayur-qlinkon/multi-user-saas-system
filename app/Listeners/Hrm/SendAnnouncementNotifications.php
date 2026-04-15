@@ -21,16 +21,18 @@ class SendAnnouncementNotifications
             ->get()
             ->filter(function ($user) use ($announcement) {
                 // Use a manual check matching the 'forAudience' scope logic
-                if ($announcement->target_audience === 'all') return true;
-                
+                if ($announcement->target_audience === 'all') {
+                    return true;
+                }
+
                 $targetIds = $announcement->target_ids ?? [];
-                
+
                 return match ($announcement->target_audience) {
-                    'department'  => in_array($user->employee?->hrm_department_id, $targetIds),
+                    'department' => in_array($user->employee?->hrm_department_id, $targetIds),
                     'designation' => in_array($user->employee?->hrm_designation_id, $targetIds),
-                    'role'        => $user->roles->whereIn('id', $targetIds)->isNotEmpty(),
-                    'user'        => in_array($user->id, $targetIds),
-                    default       => false,
+                    'role' => $user->roles->whereIn('id', $targetIds)->isNotEmpty(),
+                    'user' => in_array($user->id, $targetIds),
+                    default => false,
                 };
             });
 

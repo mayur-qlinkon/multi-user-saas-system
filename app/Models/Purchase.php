@@ -5,16 +5,15 @@ namespace App\Models;
 use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
-use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Purchase extends Model
 {
-    use HasFactory, SoftDeletes, Tenantable,LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes,Tenantable;
 
     /**
      * The attributes that are mass assignable.
@@ -77,31 +76,32 @@ class Purchase extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'purchase_date'   => 'date',
-        'due_date'        => 'date',
-        
+        'purchase_date' => 'date',
+        'due_date' => 'date',
+
         // Decimal casting ensures accuracy for financial calculations
-        'subtotal'        => 'decimal:2',
+        'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'taxable_amount'  => 'decimal:2',
-        'cgst_amount'     => 'decimal:2',
-        'sgst_amount'     => 'decimal:2',
-        'igst_amount'     => 'decimal:2',
-        'tax_amount'      => 'decimal:2',
-        'shipping_cost'   => 'decimal:2',
-        'other_charges'   => 'decimal:2',
-        'round_off'       => 'decimal:2',
-        'total_amount'    => 'decimal:2',
-        'paid_amount'     => 'decimal:2',
-        'balance_amount'  => 'decimal:2',
+        'taxable_amount' => 'decimal:2',
+        'cgst_amount' => 'decimal:2',
+        'sgst_amount' => 'decimal:2',
+        'igst_amount' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'shipping_cost' => 'decimal:2',
+        'other_charges' => 'decimal:2',
+        'round_off' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'balance_amount' => 'decimal:2',
     ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logAll() // Logs every fillable attribute
             ->logOnlyDirty() // ONLY logs attributes that actually changed
             ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn(string $eventName) => "Purchase has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Purchase has been {$eventName}");
     }
 
     /*
@@ -145,6 +145,4 @@ class Purchase extends Model
     {
         return $this->hasMany(PurchaseItem::class);
     }
-    
-
 }

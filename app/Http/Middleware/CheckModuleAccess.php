@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\CompanySubscription;
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\CompanySubscription;
 use Illuminate\Support\Facades\Auth;
 
 class CheckModuleAccess
@@ -14,7 +14,7 @@ class CheckModuleAccess
         $user = Auth::user();
 
         // Let super admins pass through
-        if (!$user || !$user->company_id) {
+        if (! $user || ! $user->company_id) {
             return $next($request);
         }
 
@@ -24,20 +24,20 @@ class CheckModuleAccess
             ->where('is_active', true)
             ->where(function ($query) {
                 $query->whereNull('expires_at')
-                      ->orWhere('expires_at', '>', now());
+                    ->orWhere('expires_at', '>', now());
             })
             ->first();
 
         // If no active subscription or plan is found, block them
-        if (!$subscription || !$subscription->plan) {
+        if (! $subscription || ! $subscription->plan) {
             abort(403, 'No active subscription found.');
         }
 
         // Check if the plan's modules contain the requested module slug (e.g., 'pos')
         $hasAccess = $subscription->plan->modules->contains('slug', $moduleSlug);
 
-        if (!$hasAccess) {
-            abort(403, 'Your current plan does not include access to the ' . strtoupper($moduleSlug) . ' module. Please upgrade your plan.');
+        if (! $hasAccess) {
+            abort(403, 'Your current plan does not include access to the '.strtoupper($moduleSlug).' module. Please upgrade your plan.');
         }
 
         return $next($request);

@@ -2,35 +2,43 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
 use App\Models\User;
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class HrmTask extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     protected $table = 'hrm_tasks';
 
     // ── Constants ──
 
     const PRIORITY_LOW = 'low';
+
     const PRIORITY_MEDIUM = 'medium';
+
     const PRIORITY_HIGH = 'high';
+
     const PRIORITY_URGENT = 'urgent';
 
     const STATUS_PENDING = 'pending';
+
     const STATUS_IN_PROGRESS = 'in_progress';
+
     const STATUS_IN_REVIEW = 'in_review';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CANCELLED = 'cancelled';
+
     const STATUS_ON_HOLD = 'on_hold';
 
     const STATUS_LABELS = [
@@ -100,7 +108,7 @@ class HrmTask extends Model
             ->logOnly(['status', 'priority', 'due_date', 'progress_percent'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Task '{$this->title}' was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Task '{$this->title}' was {$event}");
     }
 
     // ── Relationships ──
@@ -172,6 +180,7 @@ class HrmTask extends Model
     public function canTransitionTo(string $newStatus): bool
     {
         $allowed = self::STATUS_TRANSITIONS[$this->status] ?? [];
+
         return in_array($newStatus, $allowed);
     }
 
@@ -201,6 +210,6 @@ class HrmTask extends Model
     {
         return $this->due_date
             && $this->due_date->isPast()
-            && !in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_CANCELLED]);
+            && ! in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_CANCELLED]);
     }
 }

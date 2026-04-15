@@ -113,10 +113,12 @@
 
                {{-- 3. Create Return Button (Pushed to the right) --}}
                 <div class="ml-auto flex shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                    @if(has_permission('purchase_returns.create'))
                     <a href="{{ route('admin.purchase-returns.create') }}"
                         class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap">
                         <i data-lucide="plus" class="w-4 h-4"></i> Create Return
                     </a>
+                    @endif
                 </div>
             </form>
         </div>
@@ -222,13 +224,15 @@
                                     <div
                                         class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
 
+                                        @if(has_permission('purchase_returns.view'))
                                         <a href="{{ route('admin.purchase-returns.show', $return->id) }}"
                                             class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
                                             title="View Return">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
+                                        @endif
 
-                                        @if ($return->status !== 'cancelled')
+                                        @if ($return->status !== 'cancelled' && has_permission('purchase_returns.add_payment'))
                                             <button type="button"
                                                 @click="openPaymentModal({{ $return->id }}, '{{ $return->payment_status }}')"
                                                 class="w-8 h-8 rounded border border-green-200 text-green-600 hover:bg-green-50 flex items-center justify-center transition-colors"
@@ -237,7 +241,7 @@
                                             </button>
                                         @endif
 
-                                        @if ($return->status !== 'returned' && $return->status !== 'cancelled')
+                                        @if ($return->status !== 'returned' && $return->status !== 'cancelled' && has_permission('purchase_returns.update'))
                                             <a href="{{ route('admin.purchase-returns.edit', $return->id) }}"
                                                 class="w-8 h-8 rounded border border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-colors"
                                                 title="Edit Return">
@@ -246,6 +250,7 @@
                                         @endif
 
                                         @if ($return->status !== 'returned')
+                                            @if(has_permission('purchase_returns.delete'))
                                             <form action="{{ route('admin.purchase-returns.destroy', $return->id) }}"
                                                 method="POST" @submit.prevent="confirmDelete($event.target)"
                                                 class="inline-block">
@@ -256,6 +261,7 @@
                                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                 </button>
                                             </form>
+                                            @endif
                                         @else
                                             <div class="w-8 h-8 rounded border border-gray-100 text-gray-300 flex items-center justify-center cursor-not-allowed"
                                                 title="Cannot delete finalized return">

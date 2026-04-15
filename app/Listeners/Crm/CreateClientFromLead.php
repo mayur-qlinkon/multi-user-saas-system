@@ -30,9 +30,10 @@ class CreateClientFromLead
         // Skip if already linked to a client
         if ($lead->client_id) {
             Log::info('[CrmListener] Lead already has client_id — skipping create', [
-                'lead_id'   => $lead->id,
+                'lead_id' => $lead->id,
                 'client_id' => $lead->client_id,
             ]);
+
             return;
         }
 
@@ -52,15 +53,15 @@ class CreateClientFromLead
                 $lead->updateQuietly(['client_id' => $existingClient->id]);
 
                 CrmActivity::logAuto(
-                    leadId:      $lead->id,
-                    type:        'converted',
+                    leadId: $lead->id,
+                    type: 'converted',
                     description: "Linked to existing client: {$existingClient->name}",
-                    meta:        ['client_id' => $existingClient->id, 'existing' => true],
-                    companyId:   $lead->company_id
+                    meta: ['client_id' => $existingClient->id, 'existing' => true],
+                    companyId: $lead->company_id
                 );
 
                 Log::info('[CrmListener] Lead linked to existing client', [
-                    'lead_id'   => $lead->id,
+                    'lead_id' => $lead->id,
                     'client_id' => $existingClient->id,
                 ]);
 
@@ -69,16 +70,16 @@ class CreateClientFromLead
 
             // ── Create new Client from lead data ──
             $client = Client::create([
-                'company_id'   => $lead->company_id,
-                'name'         => $lead->name,
+                'company_id' => $lead->company_id,
+                'name' => $lead->name,
                 'company_name' => $lead->company_name,
-                'email'        => $lead->email,
-                'phone'        => $lead->phone,
-                'address'      => $lead->address,
-                'city'         => $lead->city,
-                'country'      => $lead->country ?? 'India',
-                'zip_code'     => $lead->zip_code,
-                'is_active'    => true,
+                'email' => $lead->email,
+                'phone' => $lead->phone,
+                'address' => $lead->address,
+                'city' => $lead->city,
+                'country' => $lead->country ?? 'India',
+                'zip_code' => $lead->zip_code,
+                'is_active' => true,
             ]);
 
             // Link client back to lead
@@ -86,24 +87,24 @@ class CreateClientFromLead
             $lead->updateQuietly(['client_id' => $client->id]);
 
             CrmActivity::logAuto(
-                leadId:      $lead->id,
-                type:        'converted',
+                leadId: $lead->id,
+                type: 'converted',
                 description: "New client created: {$client->name} (#{$client->id})",
-                meta:        ['client_id' => $client->id, 'existing' => false],
-                companyId:   $lead->company_id
+                meta: ['client_id' => $client->id, 'existing' => false],
+                companyId: $lead->company_id
             );
 
             Log::info('[CrmListener] New client created from lead', [
-                'lead_id'   => $lead->id,
+                'lead_id' => $lead->id,
                 'client_id' => $client->id,
-                'name'      => $client->name,
+                'name' => $client->name,
             ]);
 
         } catch (\Throwable $e) {
             // Never crash — conversion already happened, client creation is secondary
             Log::error('[CrmListener] CreateClientFromLead failed', [
                 'lead_id' => $lead->id,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

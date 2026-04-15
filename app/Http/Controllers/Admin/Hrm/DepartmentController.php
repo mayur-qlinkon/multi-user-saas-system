@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin\Hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Hrm\Department;
+use App\Models\User;
 use App\Services\Hrm\DepartmentService;
 use Closure;
 use Illuminate\Http\Request;
@@ -48,6 +48,7 @@ class DepartmentController extends Controller
 
         try {
             $department = $this->departmentService->create($validated);
+
             return response()->json(['success' => true, 'message' => 'Department created.', 'data' => $department]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -66,6 +67,7 @@ class DepartmentController extends Controller
 
         try {
             $department = $this->departmentService->update($department, $validated);
+
             return response()->json(['success' => true, 'message' => 'Department updated.', 'data' => $department]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -76,6 +78,7 @@ class DepartmentController extends Controller
     {
         try {
             $this->departmentService->delete($department);
+
             return response()->json(['success' => true, 'message' => 'Department deleted.']);
         } catch (\RuntimeException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -98,7 +101,7 @@ class DepartmentController extends Controller
                     ->whereKey($value)
                     ->exists();
 
-                if (!$isValidHead) {
+                if (! $isValidHead) {
                     $fail('Selected department head must be an active staff user.');
                 }
             },

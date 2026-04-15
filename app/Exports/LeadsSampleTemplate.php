@@ -3,19 +3,13 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class LeadsSampleTemplate implements
-    FromArray,
-    WithHeadings,
-    WithStyles,
-    ShouldAutoSize,
-    WithTitle
+class LeadsSampleTemplate implements FromArray, ShouldAutoSize, WithHeadings, WithStyles, WithTitle
 {
     public function title(): string
     {
@@ -112,8 +106,8 @@ class LeadsSampleTemplate implements
         return [
             // Header row — dark background, white bold text
             1 => [
-                'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
-                'fill'      => ['fillType' => 'solid', 'startColor' => ['rgb' => '1e293b']],
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+                'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '1e293b']],
                 'alignment' => ['horizontal' => 'center'],
             ],
             // Example rows — light blue tint

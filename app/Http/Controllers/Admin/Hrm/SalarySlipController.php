@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Admin\Hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Hrm\SalarySlip;
-use App\Models\Hrm\SalaryComponent;
 use App\Models\Hrm\Employee;
+use App\Models\Hrm\SalarySlip;
 use App\Services\Hrm\SalaryService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class SalarySlipController extends Controller
 {
@@ -64,14 +63,16 @@ class SalarySlipController extends Controller
         ]);
 
         try {
-            if (!empty($validated['employee_id'])) {
+            if (! empty($validated['employee_id'])) {
                 $employee = Employee::findOrFail($validated['employee_id']);
                 $slip = $this->salaryService->generateSlip($employee, $validated['month'], $validated['year']);
+
                 return response()->json(['success' => true, 'message' => 'Salary slip generated.', 'data' => $slip]);
             }
 
             // Bulk generation
             $results = $this->salaryService->generateBulk($validated['month'], $validated['year']);
+
             return response()->json([
                 'success' => true,
                 'message' => "Generated: {$results['success']}, Failed: {$results['failed']}",
@@ -86,6 +87,7 @@ class SalarySlipController extends Controller
     {
         try {
             $slip = $this->salaryService->approve($salarySlip);
+
             return response()->json(['success' => true, 'message' => 'Salary slip approved.', 'data' => $slip]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -102,6 +104,7 @@ class SalarySlipController extends Controller
 
         try {
             $slip = $this->salaryService->markPaid($salarySlip, $validated);
+
             return response()->json(['success' => true, 'message' => 'Salary slip marked as paid.', 'data' => $slip]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -115,8 +118,8 @@ class SalarySlipController extends Controller
         }
 
         // Permanently delete the related items first
-        $salarySlip->items()->forceDelete(); 
-        
+        $salarySlip->items()->forceDelete();
+
         // Permanently delete the slip to free up the unique index
         $salarySlip->forceDelete();
 

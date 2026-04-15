@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Admin\Crm;
 
-use App\Http\Controllers\Controller;
 use App\Exports\LeadsExport;
+use App\Exports\LeadsSampleTemplate;
+use App\Http\Controllers\Controller;
 use App\Imports\LeadsImport;
 use App\Models\CrmPipeline;
 use Illuminate\Http\JsonResponse;
@@ -22,12 +23,12 @@ class CrmImportExportController extends Controller
     // ════════════════════════════════════════════════════
 
     public function importPage()
-    {        
+    {
 
         $pipelines = CrmPipeline::query()
             ->active()
             ->ordered()
-            ->with(['stages' => fn($q) => $q->active()->ordered()])
+            ->with(['stages' => fn ($q) => $q->active()->ordered()])
             ->get();
 
         return view('admin.crm.leads.import', compact('pipelines'));
@@ -41,9 +42,9 @@ class CrmImportExportController extends Controller
     public function import(Request $request): JsonResponse
     {
         $request->validate([
-            'file'        => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'], // 10MB max
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'], // 10MB max
             'pipeline_id' => ['nullable', 'integer', 'exists:crm_pipelines,id'],
-            'stage_id'    => ['nullable', 'integer', 'exists:crm_stages,id'],
+            'stage_id' => ['nullable', 'integer', 'exists:crm_stages,id'],
         ]);
 
         $companyId = Auth::user()->company_id;
@@ -54,7 +55,7 @@ class CrmImportExportController extends Controller
                 ->where('company_id', $companyId)
                 ->exists();
 
-            if (!$belongs) {
+            if (! $belongs) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Selected pipeline does not belong to your company.',
@@ -64,9 +65,9 @@ class CrmImportExportController extends Controller
 
         try {
             $importer = new LeadsImport(
-                companyId:  $companyId,
+                companyId: $companyId,
                 pipelineId: $request->pipeline_id,
-                stageId:    $request->stage_id,
+                stageId: $request->stage_id,
             );
 
             Excel::import($importer, $request->file('file'));
@@ -75,39 +76,38 @@ class CrmImportExportController extends Controller
 
             Log::info('[CrmImport] Import completed', [
                 'company_id' => $companyId,
-                'by'         => Auth::id(),
-                'imported'   => $result['imported'],
-                'skipped'    => $result['skipped'],
+                'by' => Auth::id(),
+                'imported' => $result['imported'],
+                'skipped' => $result['skipped'],
                 'duplicates' => $result['duplicates'],
             ]);
 
             return response()->json([
-                'success'    => true,
-                'message'    => "Import complete — {$result['imported']} lead(s) imported.",
-                'result'     => $result,
+                'success' => true,
+                'message' => "Import complete — {$result['imported']} lead(s) imported.",
+                'result' => $result,
             ]);
 
         } catch (ValidationException $e) {
             // Laravel Excel validation errors (from rules())
-            $failures = collect($e->failures())->map(fn($f) =>
-                "Row {$f->row()}: " . implode(', ', $f->errors())
+            $failures = collect($e->failures())->map(fn ($f) => "Row {$f->row()}: ".implode(', ', $f->errors())
             )->toArray();
 
             return response()->json([
-                'success'  => false,
-                'message'  => 'File has validation errors.',
-                'errors'   => $failures,
+                'success' => false,
+                'message' => 'File has validation errors.',
+                'errors' => $failures,
             ], 422);
 
         } catch (Throwable $e) {
             Log::error('[CrmImport] Import failed', [
                 'company_id' => $companyId,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage(),
+                'message' => 'Import failed: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -127,12 +127,12 @@ class CrmImportExportController extends Controller
             'from', 'to',
         ]);
 
-        $filename = 'crm-leads-' . now()->format('Y-m-d') . '.xlsx';
+        $filename = 'crm-leads-'.now()->format('Y-m-d').'.xlsx';
 
         Log::info('[CrmExport] Export triggered', [
             'company_id' => $companyId,
-            'by'         => Auth::id(),
-            'filters'    => $filters,
+            'by' => Auth::id(),
+            'filters' => $filters,
         ]);
 
         return Excel::download(
@@ -149,7 +149,7 @@ class CrmImportExportController extends Controller
     public function template()
     {
         return Excel::download(
-            new \App\Exports\LeadsSampleTemplate(),
+            new LeadsSampleTemplate,
             'crm-leads-import-template.xlsx'
         );
     }

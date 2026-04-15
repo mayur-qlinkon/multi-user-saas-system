@@ -48,10 +48,10 @@ class SystemSetting extends Model
     {
         return match ($this->type) {
             'boolean', 'bool' => filter_var($this->value, FILTER_VALIDATE_BOOLEAN),
-            'integer', 'int'  => (int) $this->value,
-            'json', 'array'   => json_decode($this->value, true),
+            'integer', 'int' => (int) $this->value,
+            'json', 'array' => json_decode($this->value, true),
             'float', 'double' => (float) $this->value,
-            default           => $this->value,
+            default => $this->value,
         };
     }
 
@@ -76,15 +76,15 @@ class SystemSetting extends Model
         string $key,
         mixed $value,
         string $group = 'general',
-        string $type  = 'string'
+        string $type = 'string'
     ): self {
 
         if (is_array($value) || is_object($value)) {
             $value = json_encode($value);
-            $type  = 'json';
+            $type = 'json';
         } elseif (is_bool($value)) {
             $value = $value ? '1' : '0';
-            $type  = 'boolean';
+            $type = 'boolean';
         }
 
         return self::updateOrCreate(
@@ -92,7 +92,7 @@ class SystemSetting extends Model
             [
                 'value' => (string) $value,
                 'group' => $group,
-                'type'  => $type,
+                'type' => $type,
             ]
         );
     }

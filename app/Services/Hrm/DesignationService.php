@@ -9,13 +9,14 @@ class DesignationService
 {
     public function create(array $data): Designation
     {
-        return DB::transaction(fn() => Designation::create($data));
+        return DB::transaction(fn () => Designation::create($data));
     }
 
     public function update(Designation $designation, array $data): Designation
     {
         return DB::transaction(function () use ($designation, $data) {
             $designation->update($data);
+
             return $designation->fresh();
         });
     }
@@ -25,6 +26,6 @@ class DesignationService
         if ($designation->employees()->exists()) {
             throw new \RuntimeException('Cannot delete designation with assigned employees.');
         }
-        DB::transaction(fn() => $designation->delete());
+        DB::transaction(fn () => $designation->delete());
     }
 }

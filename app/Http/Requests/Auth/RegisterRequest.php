@@ -28,7 +28,7 @@ class RegisterRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'company_name' => ['required','string','max:150'],
+            'company_name' => ['required', 'string', 'max:150'],
 
             /*
             |--------------------------------------------------------------------------
@@ -36,14 +36,14 @@ class RegisterRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'name'     => ['required','string','min:2','max:100'],
-            'email'    => ['required','email','max:150','unique:users,email'],
+            'name' => ['required', 'string', 'min:2', 'max:100'],
+            'email' => ['required', 'email', 'max:150', 'unique:users,email'],
 
             'password' => [
                 'required',
                 'string',
                 'min:8',
-                'confirmed'
+                'confirmed',
             ],
 
             /*
@@ -52,18 +52,18 @@ class RegisterRequest extends FormRequest
             |--------------------------------------------------------------------------
             */
 
-            'phone_number' => ['nullable','digits_between:10,15'],
+            'phone_number' => ['nullable', 'digits_between:10,15'],
 
-            'address'  => ['nullable','string'],
+            'address' => ['nullable', 'string'],
             'state_id' => ['nullable', 'exists:states,id'],
-            'country'  => ['nullable','string','max:100'],
-            'zip_code' => ['nullable','string','max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'zip_code' => ['nullable', 'string', 'max:20'],
 
             'image' => [
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048'
+                'max:2048',
             ],
         ];
     }
@@ -72,11 +72,11 @@ class RegisterRequest extends FormRequest
     {
         return [
             'company_name.required' => 'Company name is required.',
-            'name.required'         => 'Full name is required.',
-            'email.unique'          => 'This email is already registered.',
-            'password.confirmed'    => 'Passwords do not match.',
-            'password.min'          => 'Password must be at least 8 characters.',
-            'image.max'             => 'Profile image must be under 2MB.',
+            'name.required' => 'Full name is required.',
+            'email.unique' => 'This email is already registered.',
+            'password.confirmed' => 'Passwords do not match.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'image.max' => 'Profile image must be under 2MB.',
         ];
     }
 }

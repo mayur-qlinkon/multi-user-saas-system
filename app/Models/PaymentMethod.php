@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\Tenantable;
 
 class PaymentMethod extends Model
 {
@@ -23,10 +23,11 @@ class PaymentMethod extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'is_online'  => 'boolean',
-        'is_active'  => 'boolean',
+        'is_online' => 'boolean',
+        'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
+
     public static function getForSelector()
     {
         return self::where('is_active', true)

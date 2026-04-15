@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-       // The exact current snapshot of stock per warehouse
+        // The exact current snapshot of stock per warehouse
         Schema::create('product_stocks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete(); // Iron Wall
             $table->foreignId('product_sku_id')->constrained('product_skus')->cascadeOnDelete();
             $table->foreignId('warehouse_id')->constrained('warehouses')->cascadeOnDelete();
-            
+
             $table->integer('qty')->default(0);
             $table->string('rack_number')->nullable()->comment('e.g., A-12'); // Moved here from your old pivot!
-            
+
             $table->timestamps();
             $table->unique(['product_sku_id', 'warehouse_id']); // A SKU can only have ONE stock record per warehouse
         });

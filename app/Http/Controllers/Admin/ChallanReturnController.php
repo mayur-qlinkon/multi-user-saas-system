@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreChallanReturnRequest;
+use App\Http\Requests\Admin\UpdateChallanReturnRequest;
 use App\Models\Challan;
 use App\Models\ChallanReturn;
 use App\Services\ChallanReturnService;
-use App\Http\Requests\Admin\StoreChallanReturnRequest;
-use App\Http\Requests\Admin\UpdateChallanReturnRequest;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ChallanReturnController extends Controller
 {
@@ -30,10 +30,10 @@ class ChallanReturnController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('return_number', 'like', "%{$search}%")
-                  ->orWhereHas('challan', function ($q) use ($search) {
-                      $q->where('challan_number', 'like', "%{$search}%")
+                ->orWhereHas('challan', function ($q) use ($search) {
+                    $q->where('challan_number', 'like', "%{$search}%")
                         ->orWhere('party_name', 'like', "%{$search}%");
-                  });
+                });
         }
 
         // Status/Condition Filter
@@ -49,10 +49,11 @@ class ChallanReturnController extends Controller
     /**
      * Show the form for creating a new return against a specific challan.
      */
-    public function create(Challan $challan)
+    public function create(Request $request)
     {
+        $challan = Challan::findOrFail($request->challan);
         // 1. Ensure the challan is physically returnable
-        if (!$challan->is_returnable) {
+        if (! $challan->is_returnable) {
             return redirect()->route('admin.challans.show', $challan->id)
                 ->with('error', 'This challan is not marked as returnable.');
         }
@@ -81,9 +82,9 @@ class ChallanReturnController extends Controller
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success'  => true,
-                    'message'  => 'Return processed successfully.',
-                    'redirect' => route('admin.challan-returns.show', $return->id)
+                    'success' => true,
+                    'message' => 'Return processed successfully.',
+                    'redirect' => route('admin.challan-returns.show', $return->id),
                 ]);
             }
 
@@ -91,13 +92,13 @@ class ChallanReturnController extends Controller
                 ->with('success', 'Challan return processed successfully.');
 
         } catch (Exception $e) {
-            Log::error('Challan Return Failed: ' . $e->getMessage());
+            Log::error('Challan Return Failed: '.$e->getMessage());
 
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
 
-            return back()->withInput()->with('error', 'Failed to process return: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to process return: '.$e->getMessage());
         }
     }
 
@@ -108,10 +109,10 @@ class ChallanReturnController extends Controller
     {
         // Eager load nested relationships for the view
         $challanReturn->load([
-            'challan.store', 
-            'items.challanItem.product', 
+            'challan.store',
+            'items.challanItem.product',
             'items.challanItem.productSku',
-            'createdBy'
+            'createdBy',
         ]);
 
         return view('admin.challan-returns.show', compact('challanReturn'));
@@ -126,7 +127,7 @@ class ChallanReturnController extends Controller
         $challanReturn->load([
             'challan',
             'items.challanItem.product',
-            'items.challanItem.productSku'
+            'items.challanItem.productSku',
         ]);
 
         return view('admin.challan-returns.edit', compact('challanReturn'));
@@ -144,7 +145,8 @@ class ChallanReturnController extends Controller
                 ->with('success', 'Return record updated successfully.');
 
         } catch (Exception $e) {
-            Log::error('Return Update Failed: ' . $e->getMessage());
+            Log::error('Return Update Failed: '.$e->getMessage());
+
             return back()->withInput()->with('error', $e->getMessage());
         }
     }
@@ -155,14 +157,14 @@ class ChallanReturnController extends Controller
     public function downloadPdf(ChallanReturn $challanReturn)
     {
         $challanReturn->load([
-            'challan.store', 
-            'items.challanItem.product', 
-            'items.challanItem.productSku'
+            'challan.store',
+            'items.challanItem.product',
+            'items.challanItem.productSku',
         ]);
 
         $pdf = Pdf::loadView('admin.challan-returns.pdf', compact('challanReturn'))
-                  ->setPaper('a4', 'portrait');
+            ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Return_' . $challanReturn->return_number . '.pdf');
+        return $pdf->download('Return_'.$challanReturn->return_number.'.pdf');
     }
 }

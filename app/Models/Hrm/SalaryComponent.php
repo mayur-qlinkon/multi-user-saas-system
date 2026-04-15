@@ -2,20 +2,22 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalaryComponent extends Model
 {
-    use Tenantable, SoftDeletes;
+    use SoftDeletes, Tenantable;
 
     const TYPE_EARNING = 'earning';
+
     const TYPE_DEDUCTION = 'deduction';
 
     const CALC_FIXED = 'fixed';
+
     const CALC_PERCENTAGE = 'percentage';
 
     protected $fillable = [

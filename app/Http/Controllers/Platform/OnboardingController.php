@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Store;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OnboardingController extends Controller
@@ -26,21 +26,21 @@ class OnboardingController extends Controller
         DB::transaction(function () use ($request) {
             // 1. Create the store (Tenantable trait handles company_id automatically!)
             $store = Store::create([
-                'name'    => $request->name,
-                'phone'   => $request->phone,
+                'name' => $request->name,
+                'phone' => $request->phone,
                 'address' => $request->address,
-                'city'    => $request->city,
+                'city' => $request->city,
                 'is_active' => true,
             ]);
 
             // 2. Assign the currently logged-in owner to this new store via the store_user pivot table
             auth()->user()->stores()->attach($store->id);
-            
+
             // 3. Set this as their active session store
             session(['store_id' => $store->id]);
         });
 
         return redirect()->route('admin.dashboard')
-                         ->with('success', 'Your primary store has been created! Welcome to your dashboard.');
+            ->with('success', 'Your primary store has been created! Welcome to your dashboard.');
     }
 }

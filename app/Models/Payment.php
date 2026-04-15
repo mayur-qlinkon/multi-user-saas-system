@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
@@ -21,13 +21,13 @@ class Payment extends Model
         'company_id',
         'store_id',
         'created_by',
-        'payment_method_id',        
+        'payment_method_id',
         // Polymorphic Party (Customer / Supplier)
         'party_type',
-        'party_id',        
+        'party_id',
         // Polymorphic Document Reference (Invoice / Purchase Order)
         'paymentable_type',
-        'paymentable_id',        
+        'paymentable_id',
         'payment_number',
         'reference',
         'payment_date',
@@ -35,7 +35,7 @@ class Payment extends Model
         'amount',
         'amount_received',
         'change_returned',
-        'payment_for',  
+        'payment_for',
         'currency_code',
         'exchange_rate',
         'status', // 'pending', 'completed', 'cancelled', 'bounced'
@@ -46,11 +46,11 @@ class Payment extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'payment_date'    => 'date',
-        'amount'          => 'decimal:2',
+        'payment_date' => 'date',
+        'amount' => 'decimal:2',
         'amount_received' => 'decimal:2',
         'change_returned' => 'decimal:2',
-        'exchange_rate'   => 'decimal:4',
+        'exchange_rate' => 'decimal:4',
     ];
     // -------------------------------------------------------------------------
     // STANDARD RELATIONSHIPS
@@ -94,7 +94,7 @@ class Payment extends Model
      */
     public function paymentable(): MorphTo
     {
-        // Because the method is called 'paymentable', 
+        // Because the method is called 'paymentable',
         // Laravel automatically looks for 'paymentable_type' and 'paymentable_id'
         return $this->morphTo();
     }

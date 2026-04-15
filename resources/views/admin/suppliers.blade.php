@@ -50,24 +50,21 @@
                 <div class="flex items-center gap-2 w-full lg:w-auto justify-end overflow-x-auto pb-1 lg:pb-0">
 
                     @if (has_permission('suppliers.export'))
-                    <button type="button" @click="exportCSV()"
-                        class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-[#108c2a]"></i> CSV
-                    </button>
-                    @endif
-
-                    @if (has_permission('suppliers.export'))
-                    <button type="button" @click="exportPDF()"
-                        class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
-                        <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
-                    </button>
+                        <button type="button" @click="exportCSV()"
+                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-[#108c2a]"></i> CSV
+                        </button>                                        
+                        <button type="button" @click="exportPDF()"
+                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
+                            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
+                        </button>
                     @endif
 
                     @if (has_permission('suppliers.create'))
-                    <button type="button" @click="openCreateModal()"
-                        class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 ml-1 whitespace-nowrap">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Add Supplier
-                    </button>
+                        <button type="button" @click="openCreateModal()"
+                            class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 ml-1 whitespace-nowrap">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Supplier
+                        </button>
                     @endif
                 </div>
 
@@ -140,24 +137,24 @@
                                     <div
                                         class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         @if (has_permission('suppliers.update'))
-                                        <button @click="openEditModal({{ $supplier->toJson() }})"
-                                            class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors"
-                                            title="Edit">
-                                            <i data-lucide="pencil" class="w-4 h-4"></i>
-                                        </button>
+                                            <button @click="openEditModal({{ $supplier->toJson() }})"
+                                                class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors"
+                                                title="Edit">
+                                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                                            </button>
                                         @endif
 
                                         
                                         @if (has_permission('suppliers.delete'))
-                                        <form action="{{ route('admin.suppliers.destroy', $supplier->id) }}" method="POST"
-                                            @submit.prevent="confirmDelete($event.target)" class="inline-block">
-                                            @csrf @method('DELETE')
-                                            <button type="submit"
-                                                class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
-                                                title="Delete">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </form>
+                                            <form action="{{ route('admin.suppliers.destroy', $supplier->id) }}" method="POST"
+                                                @submit.prevent="confirmDelete($event.target)" class="inline-block">
+                                                @csrf @method('DELETE')
+                                                <button type="submit"
+                                                    class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
+                                                    title="Delete">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </form>
                                         @endif
                                     </div>
                                 </td>

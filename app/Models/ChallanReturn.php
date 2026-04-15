@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Traits\Tenantable;
 
 class ChallanReturn extends Model
 {
@@ -34,7 +35,7 @@ class ChallanReturn extends Model
     ];
 
     /**
-     * @property \Illuminate\Support\Carbon $return_date
+     * @property Carbon $return_date
      */
     protected $casts = [
         'return_date' => 'datetime',
@@ -61,18 +62,20 @@ class ChallanReturn extends Model
     //  CONSTANTS
     // ════════════════════════════════════════════════════
 
-    const CONDITION_GOOD    = 'good';
+    const CONDITION_GOOD = 'good';
+
     const CONDITION_DAMAGED = 'damaged';
+
     const CONDITION_PARTIAL = 'partial';
 
     const CONDITION_LABELS = [
-        self::CONDITION_GOOD    => 'Good Condition',
+        self::CONDITION_GOOD => 'Good Condition',
         self::CONDITION_DAMAGED => 'Damaged',
         self::CONDITION_PARTIAL => 'Partial Return',
     ];
 
     const CONDITION_COLORS = [
-        self::CONDITION_GOOD    => 'green',
+        self::CONDITION_GOOD => 'green',
         self::CONDITION_DAMAGED => 'red',
         self::CONDITION_PARTIAL => 'amber',
     ];
@@ -153,7 +156,7 @@ class ChallanReturn extends Model
      */
     public function getHasDamageAttribute(): bool
     {
-        return $this->items->contains(fn($item) => $item->qty_damaged > 0);
+        return $this->items->contains(fn ($item) => $item->qty_damaged > 0);
     }
 
     /**
@@ -198,7 +201,7 @@ class ChallanReturn extends Model
     public static function generateNumber(int $companyId, ?string $prefix = null): string
     {
         $prefix = $prefix ?? 'CR';
-        $year   = now()->format('Y');
+        $year = now()->format('Y');
 
         $latestReturn = static::where('company_id', $companyId)
             ->where('return_number', 'like', "{$prefix}-{$year}-%")
@@ -213,7 +216,7 @@ class ChallanReturn extends Model
             $sequence = 1;
         }
 
-        return "{$prefix}-{$year}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+        return "{$prefix}-{$year}-".str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 
     // ════════════════════════════════════════════════════
@@ -227,7 +230,7 @@ class ChallanReturn extends Model
 
     public function scopeWithDamage(Builder $query): Builder
     {
-        return $query->whereHas('items', fn($q) => $q->where('qty_damaged', '>', 0));
+        return $query->whereHas('items', fn ($q) => $q->where('qty_damaged', '>', 0));
     }
 
     public function scopeOfCondition(Builder $query, string $condition): Builder
@@ -263,14 +266,14 @@ class ChallanReturn extends Model
         static::updating(function (ChallanReturn $return) {
             // Allow only notes and condition to be updated post-creation
             $allowedDirty = ['notes', 'condition', 'received_by'];
-            $dirty        = array_keys($return->getDirty());
-            $illegal      = array_diff($dirty, $allowedDirty);
+            $dirty = array_keys($return->getDirty());
+            $illegal = array_diff($dirty, $allowedDirty);
 
-            if (!empty($illegal)) {
+            if (! empty($illegal)) {
                 throw new \LogicException(
                     "ChallanReturn [{$return->id}] cannot update fields: ["
-                    . implode(', ', $illegal) . "]. "
-                    . "Only [notes, condition, received_by] are editable after creation."
+                    .implode(', ', $illegal).']. '
+                    .'Only [notes, condition, received_by] are editable after creation.'
                 );
             }
         });
@@ -278,8 +281,8 @@ class ChallanReturn extends Model
         static::deleting(function (ChallanReturn $return) {
             throw new \LogicException(
                 "ChallanReturn [{$return->id}] cannot be deleted. "
-                . "Return records are permanent inventory events. "
-                . "Reverse via a new corrective entry."
+                .'Return records are permanent inventory events. '
+                .'Reverse via a new corrective entry.'
             );
         });
     }

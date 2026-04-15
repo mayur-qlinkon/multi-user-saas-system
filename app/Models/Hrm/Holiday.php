@@ -2,23 +2,27 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
 use App\Models\User;
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Holiday extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     const TYPE_NATIONAL = 'national';
+
     const TYPE_STATE = 'state';
+
     const TYPE_COMPANY = 'company';
+
     const TYPE_RESTRICTED = 'restricted';
+
     const TYPE_OPTIONAL = 'optional';
 
     const TYPE_LABELS = [
@@ -68,7 +72,7 @@ class Holiday extends Model
             ->logAll()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Holiday {$this->name} was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Holiday {$this->name} was {$event}");
     }
 
     // ── Relationships ──
@@ -117,6 +121,7 @@ class Holiday extends Model
         if ($this->end_date) {
             return $this->date->diffInDays($this->end_date) + 1;
         }
+
         return 1;
     }
 }

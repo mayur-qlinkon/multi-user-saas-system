@@ -75,10 +75,12 @@
 
             {{-- Right Side: Add Button --}}
             <div class="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0">
-                <a href="{{ route('admin.hrm.announcements.create') }}"
-                    class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap active:scale-95">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Create Announcement
-                </a>
+                @if(has_permission('announcements.create'))
+                    <a href="{{ route('admin.hrm.announcements.create') }}"
+                        class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap active:scale-95">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Create Announcement
+                    </a>
+                @endif
             </div>
         </form>
     </div>
@@ -188,23 +190,41 @@
                                 <div class="flex items-center justify-end gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                                     {{-- Quick Publish Button --}}
                                     @if(!$announcement->is_published)
-                                        <button @click="publishAnnouncement({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Publish Now"
-                                            class="w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 flex items-center justify-center transition-colors">
-                                            <i data-lucide="send" class="w-4 h-4 text-green-600"></i>
+                                        @if(has_permission('announcements.publish'))
+                                            <button @click="publishAnnouncement({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Publish Now"
+                                                class="w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 flex items-center justify-center transition-colors">
+                                                <i data-lucide="send" class="w-4 h-4 text-green-600"></i>
+                                            </button>
+                                        @endif
+                                    @endif
+
+                                    @if(has_permission('announcements.view'))
+                                        <a href="{{ route('admin.hrm.announcements.show', $announcement) }}" title="View"
+                                            class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                    @endif
+                                    
+                                    @if(has_permission('announcements.update'))
+                                        <a href="{{ route('admin.hrm.announcements.edit', $announcement) }}" title="Edit"
+                                            class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors">
+                                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                                        </a>
+                                    @endif
+
+                                    @if(has_permission('announcements.create'))
+                                        <button @click="duplicateAnnouncement({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Duplicate as Draft"
+                                            class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors">
+                                            <i data-lucide="copy-plus" class="w-4 h-4"></i>
                                         </button>
                                     @endif
-                                    <a href="{{ route('admin.hrm.announcements.show', $announcement) }}" title="View"
-                                        class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
-                                        <i data-lucide="eye" class="w-4 h-4"></i>
-                                    </a>
-                                    <a href="{{ route('admin.hrm.announcements.edit', $announcement) }}" title="Edit"
-                                        class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors">
-                                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                                    </a>
-                                    <button @click="confirmDelete({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Delete"
-                                        class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    </button>
+
+                                    @if(has_permission('announcements.delete'))
+                                        <button @click="confirmDelete({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Delete"
+                                            class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -268,6 +288,33 @@ window.announcementIndex = function() {
                     }
                 } catch {
                     BizAlert.toast('Network error while publishing.', 'error');
+                }
+            });
+        },
+
+        // --- DUPLICATE FUNCTION ---
+        duplicateAnnouncement(id, title) {
+            BizAlert.confirm('Duplicate Announcement', `Duplicate "${title}" as a new draft?`, 'Yes, Duplicate').then(async r => {
+                if (!r.isConfirmed) return;
+
+                try {
+                    const response = await fetch(`{{ url('admin/hrm/announcements') }}/${id}/duplicate`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                    });
+                    const res = await response.json();
+
+                    if (res.success) {
+                        BizAlert.toast(res.message || 'Duplicated successfully!', 'success');
+                        setTimeout(() => { window.location.href = res.redirect; }, 600);
+                    } else {
+                        BizAlert.toast(res.message || 'Failed to duplicate.', 'error');
+                    }
+                } catch {
+                    BizAlert.toast('Network error while duplicating.', 'error');
                 }
             });
         },

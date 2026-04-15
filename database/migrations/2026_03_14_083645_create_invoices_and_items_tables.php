@@ -14,17 +14,17 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('store_id')->constrained()->cascadeOnDelete();
             $table->foreignId('warehouse_id')->constrained()->restrictOnDelete();
-            
+
             $table->foreignId('customer_id')->nullable()->constrained('clients')->restrictOnDelete();
             $table->string('customer_name')->nullable(); // Vital for walk-in customers without an account
             $table->foreignId('created_by')->constrained('users');
-            
+
             // ⚠️ IMPROVEMENT 4 & 5: Salesperson and POS Terminal
             $table->foreignId('salesperson_id')->nullable()->constrained('users');
             $table->unsignedBigInteger('pos_terminal_id')->nullable()->index();
 
             $table->string('invoice_number', 50);
-            
+
             // 🌟 The Unified Identifier
             $table->enum('source', ['pos', 'direct', 'online'])->default('direct');
 
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->date('due_date')->nullable();
 
             // Indian GST Context
-            $table->string('supply_state', 100); 
+            $table->string('supply_state', 100);
             $table->enum('gst_treatment', ['registered', 'unregistered', 'composition', 'overseas', 'sez'])->default('unregistered');
 
             // ⚠️ IMPROVEMENT 7: Address Snapshots (JSON is great for storing structured snapshot data)
@@ -46,21 +46,21 @@ return new class extends Migration
             // Financials
             $table->decimal('subtotal', 15, 4)->default(0);
             $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
-            $table->decimal('discount_amount', 15, 4)->default(0); 
+            $table->decimal('discount_amount', 15, 4)->default(0);
             $table->decimal('taxable_amount', 15, 4)->default(0);
-            
+
             $table->decimal('cgst_amount', 15, 4)->default(0);
             $table->decimal('sgst_amount', 15, 4)->default(0);
             $table->decimal('igst_amount', 15, 4)->default(0);
             $table->decimal('tax_amount', 15, 4)->default(0);
-            
+
             $table->decimal('shipping_charge', 15, 4)->default(0);
             $table->decimal('other_charges', 15, 4)->default(0);
-            $table->decimal('round_off', 8, 2)->default(0); 
-            
+            $table->decimal('round_off', 8, 2)->default(0);
+
             // Final Payable amounts
             $table->decimal('grand_total', 15, 2)->default(0);
-            
+
             // ⚠️ IMPROVEMENT 2: Separated Statuses
             $table->enum('status', ['draft', 'confirmed', 'cancelled'])->default('draft')->index();
             $table->string('payment_status', 30)->default('unpaid')->index();
@@ -76,7 +76,7 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-            
+
             // ⚠️ IMPROVEMENT 1: Unique Invoice Number strictly PER COMPANY
             $table->unique(['company_id', 'invoice_number']);
             $table->index(['company_id', 'invoice_date']);
@@ -86,39 +86,39 @@ return new class extends Migration
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('invoice_id')->constrained()->cascadeOnDelete();
-            
+
             $table->foreignId('product_id')->constrained();
             $table->foreignId('product_sku_id')->constrained();
             $table->foreignId('unit_id')->constrained();
 
             $table->string('product_name');
             $table->string('hsn_code', 50)->nullable();
-            
+
             $table->decimal('quantity', 10, 4);
-            $table->decimal('unit_price', 15, 4); 
-            
+            $table->decimal('unit_price', 15, 4);
+
             $table->enum('tax_type', ['inclusive', 'exclusive'])->default('exclusive');
-            
+
             $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
             $table->decimal('discount_amount', 15, 4)->default(0);
 
             $table->decimal('taxable_value', 15, 4)->default(0);
             $table->decimal('tax_percent', 5, 2)->default(0);
-            
+
             $table->decimal('cgst_amount', 15, 4)->default(0);
             $table->decimal('sgst_amount', 15, 4)->default(0);
             $table->decimal('igst_amount', 15, 4)->default(0);
             $table->decimal('tax_amount', 15, 4)->default(0);
-            
-            $table->decimal('total_amount', 15, 4)->default(0); 
+
+            $table->decimal('total_amount', 15, 4)->default(0);
             $table->decimal('return_quantity', 10, 4)->default(0);
 
             $table->timestamps();
-        });        
+        });
     }
 
     public function down(): void
-    {        
+    {
         Schema::dropIfExists('invoice_items');
         Schema::dropIfExists('invoices');
     }

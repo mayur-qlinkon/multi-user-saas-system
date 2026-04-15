@@ -7,14 +7,14 @@ use App\Http\Requests\Admin\StorePurchaseReturnRequest;
 use App\Http\Requests\Admin\UpdatePurchaseReturnRequest;
 use App\Models\Purchase;
 use App\Models\PurchaseReturn;
+use App\Models\PurchaseReturnItem;
 use App\Models\Store;
 use App\Models\Supplier;
-use App\Models\Warehouse;
 use App\Models\Unit;
+use App\Models\Warehouse;
 use App\Services\PurchaseReturnService;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -38,13 +38,13 @@ class PurchaseReturnController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('return_number', 'like', "%{$search}%")
-                  ->orWhere('supplier_credit_note_number', 'like', "%{$search}%")
-                  ->orWhereHas('purchase', function ($pq) use ($search) {
-                      $pq->where('purchase_number', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('supplier', function ($sq) use ($search) {
-                      $sq->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('supplier_credit_note_number', 'like', "%{$search}%")
+                    ->orWhereHas('purchase', function ($pq) use ($search) {
+                        $pq->where('purchase_number', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('supplier', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -68,7 +68,7 @@ class PurchaseReturnController extends Controller
      */
     public function create(Request $request)
     {
-        // We load these so the UI can display them, though realistically 
+        // We load these so the UI can display them, though realistically
         // a return inherits the supplier/warehouse of the original PO.
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
@@ -83,10 +83,10 @@ class PurchaseReturnController extends Controller
         }
 
         return view('admin.purchase-returns.create', compact(
-            'suppliers', 
-            'warehouses', 
-            'stores', 
-            'units', 
+            'suppliers',
+            'warehouses',
+            'stores',
+            'units',
             'originalPurchase'
         ));
     }
@@ -103,30 +103,30 @@ class PurchaseReturnController extends Controller
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success' => true, 
-                    'message' => 'Purchase Return created successfully!', 
-                    'redirect' => route('admin.purchase-returns.show', $purchaseReturn->id)
+                    'success' => true,
+                    'message' => 'Purchase Return created successfully!',
+                    'redirect' => route('admin.purchase-returns.show', $purchaseReturn->id),
                 ]);
             }
 
             return redirect()->route('admin.purchase-returns.show', $purchaseReturn->id)
-                             ->with('success', 'Purchase Return generated successfully.');
+                ->with('success', 'Purchase Return generated successfully.');
 
         } catch (\Exception $e) {
             // 🐛 DEVELOPER DEBUGGING: Logs exactly where it failed without exposing to user
             Log::error('Purchase Return Creation Failed', [
                 'error' => $e->getMessage(),
-                'line'  => $e->getLine(),
-                'file'  => $e->getFile(),
-                'data'  => $request->except(['_token']) // Log submitted data for tracing
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'data' => $request->except(['_token']), // Log submitted data for tracing
             ]);
-            
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
-            
+
             // Fallback safe: returns user to form with their typed inputs
-            return back()->withInput()->with('error', 'Failed to create return: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Failed to create return: '.$e->getMessage());
         }
     }
 
@@ -137,15 +137,15 @@ class PurchaseReturnController extends Controller
     public function show(PurchaseReturn $purchaseReturn)
     {
         $purchaseReturn->load([
-            'supplier', 
-            'store', 
-            'warehouse', 
+            'supplier',
+            'store',
+            'warehouse',
             'purchase',      // The original PO
-            'creator', 
-            'items.product', 
-            'items.productSku', 
+            'creator',
+            'items.product',
+            'items.productSku',
             'items.unit',
-            'items.originalPurchaseItem' // Optional: if you defined this relation
+            'items.originalPurchaseItem', // Optional: if you defined this relation
         ]);
 
         return view('admin.purchase-returns.show', compact('purchaseReturn'));
@@ -158,20 +158,20 @@ class PurchaseReturnController extends Controller
     {
         if ($purchaseReturn->status === 'returned') {
             return redirect()->route('admin.purchase-returns.show', $purchaseReturn->id)
-                             ->with('error', 'Cannot edit a finalized return.');
+                ->with('error', 'Cannot edit a finalized return.');
         }
 
         $purchaseReturn->load([
-            'purchase.items.product', 
-            'purchase.items.productSku', 
+            'purchase.items.product',
+            'purchase.items.productSku',
             'purchase.items.unit',
-            'items' 
+            'items',
         ]);
-        
+
         // 🌟 NEW: Calculate available quantities strictly EXCLUDING the current draft return
         $purchaseItemIds = $purchaseReturn->purchase->items->pluck('id');
-        
-        $returnedQuantities = \App\Models\PurchaseReturnItem::whereIn('purchase_item_id', $purchaseItemIds)
+
+        $returnedQuantities = PurchaseReturnItem::whereIn('purchase_item_id', $purchaseItemIds)
             ->where('purchase_return_id', '!=', $purchaseReturn->id) // Exclude current draft
             ->whereHas('purchaseReturn', function ($q) {
                 $q->where('status', '!=', 'cancelled');
@@ -204,28 +204,30 @@ class PurchaseReturnController extends Controller
 
             if ($request->wantsJson()) {
                 return response()->json([
-                    'success' => true, 
-                    'message' => 'Purchase Return updated successfully!', 
-                    'redirect' => route('admin.purchase-returns.show', $purchaseReturn->id)
+                    'success' => true,
+                    'message' => 'Purchase Return updated successfully!',
+                    'redirect' => route('admin.purchase-returns.show', $purchaseReturn->id),
                 ]);
             }
 
             return redirect()->route('admin.purchase-returns.show', $purchaseReturn->id)
-                             ->with('success', 'Purchase Return updated successfully.');
+                ->with('success', 'Purchase Return updated successfully.');
 
         } catch (\Exception $e) {
             Log::error('Purchase Return Update Failed', [
                 'return_id' => $purchaseReturn->id,
-                'error'     => $e->getMessage(),
-                'data'      => $request->except(['_token'])
+                'error' => $e->getMessage(),
+                'data' => $request->except(['_token']),
             ]);
-            
+
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
-            return back()->withInput()->with('error', 'Failed to update return: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to update return: '.$e->getMessage());
         }
     }
+
     /**
      * Update only the refund/payment status of a Purchase Return.
      */
@@ -237,24 +239,23 @@ class PurchaseReturnController extends Controller
             ]);
 
             $purchaseReturn->update([
-                'payment_status' => $request->payment_status
+                'payment_status' => $request->payment_status,
             ]);
 
             return response()->json([
-                'success' => true, 
-                'message' => 'Refund status updated successfully!'
+                'success' => true,
+                'message' => 'Refund status updated successfully!',
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Return Payment Update Error: ' . $e->getMessage());
-            
+            Log::error('Return Payment Update Error: '.$e->getMessage());
+
             return response()->json([
-                'success' => false, 
-                'message' => $e->getMessage()
+                'success' => false,
+                'message' => $e->getMessage(),
             ], 422);
         }
     }
-
 
     /**
      * 7. DESTROY RECORD
@@ -265,10 +266,11 @@ class PurchaseReturnController extends Controller
         // 🛡️ ERP GUARD: Never delete finalized returns, it corrupts the stock ledger history.
         if ($purchaseReturn->status === 'returned') {
             $msg = 'Cannot delete a finalized return. Stock has already been deducted.';
-            
+
             if (request()->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $msg], 403);
             }
+
             return back()->with('error', $msg);
         }
 
@@ -282,26 +284,28 @@ class PurchaseReturnController extends Controller
             if (request()->wantsJson()) {
                 return response()->json(['success' => true, 'message' => 'Purchase Return deleted successfully.']);
             }
-            
+
             return redirect()->route('admin.purchase-returns.index')
-                             ->with('success', 'Purchase Return deleted successfully.');
-                             
+                ->with('success', 'Purchase Return deleted successfully.');
+
         } catch (\Exception $e) {
             Log::error('Purchase Return Deletion Failed', ['return_id' => $purchaseReturn->id, 'error' => $e->getMessage()]);
-            
+
             if (request()->wantsJson()) {
                 return response()->json(['success' => false, 'message' => 'Failed to delete record. Please check logs.'], 500);
             }
+
             return back()->with('error', 'Failed to delete Purchase Return.');
         }
     }
+
     public function downloadPdf(PurchaseReturn $purchaseReturn)
     {
         $purchaseReturn->load(['supplier', 'store', 'warehouse', 'purchase', 'items.product', 'items.productSku', 'items.unit']);
-        
-        $pdf = Pdf::loadView('admin.purchase-returns.pdf', compact('purchaseReturn'))
-                  ->setPaper('a4', 'portrait');
 
-        return $pdf->download('Return_Note_' . $purchaseReturn->return_number . '.pdf');
+        $pdf = Pdf::loadView('admin.purchase-returns.pdf', compact('purchaseReturn'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('Return_Note_'.$purchaseReturn->return_number.'.pdf');
     }
 }

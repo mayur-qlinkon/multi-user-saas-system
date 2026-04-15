@@ -246,15 +246,18 @@
                         </div>
                         <div class="p-6 space-y-3">
                             @if($expense->status === 'pending_approval' && $canApprove)
-                                <div class="flex gap-3">
+                                <div class="flex gap-3">                                    
                                     <button @click="updateStatus('approved')"
                                         class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                         <i data-lucide="check-circle" class="w-4 h-4"></i> Approve
-                                    </button>
+                                    </button>                                    
+
+                                    @if(has_permission('expenses.reject'))
                                     <button @click="updateStatus('rejected')"
                                         class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2">
                                         <i data-lucide="x-circle" class="w-4 h-4"></i> Reject
                                     </button>
+                                    @endif
                                 </div>
                             @endif
 

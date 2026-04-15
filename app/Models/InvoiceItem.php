@@ -12,14 +12,14 @@ class InvoiceItem extends Model
         'product_name', 'hsn_code', 'quantity', 'unit_price',
         'tax_type', 'discount_type', 'discount_amount', 'taxable_value',
         'tax_percent', 'cgst_amount', 'sgst_amount', 'igst_amount',
-        'tax_amount', 'total_amount', 'return_quantity'
+        'tax_amount', 'total_amount', 'return_quantity',
     ];
 
     protected $casts = [
-        'quantity'      => 'decimal:4',
-        'unit_price'    => 'decimal:4',
+        'quantity' => 'decimal:4',
+        'unit_price' => 'decimal:4',
         'taxable_value' => 'decimal:4',
-        'total_amount'  => 'decimal:4',
+        'total_amount' => 'decimal:4',
     ];
 
     public function invoice(): BelongsTo

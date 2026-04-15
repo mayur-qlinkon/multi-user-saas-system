@@ -4,7 +4,7 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">CRM Settings</h1>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CRM Settings</h1>
         <p class="text-xs text-gray-400 font-medium mt-0.5">Lead sources and tags</p>
     </div>
 @endsection
@@ -219,14 +219,18 @@
 
                         {{-- Actions ── --}}
                         <div class="flex items-center gap-1">
+                            @if(has_permission('crm_sources.update'))
                             <button @click="startEditSource(source)"
                                 class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                 <i data-lucide="edit" class="w-3.5 h-3.5"></i>
                             </button>
+                            @endif
+                            @if(has_permission('crm_sources.delete'))
                             <button @click="deleteSource(source.id, source.name)"
                                 class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
+                            @endif
                         </div>
                     </div>
 
@@ -271,6 +275,7 @@
         </div>
 
         {{-- Add Source form ── --}}
+        @if(has_permission('crm_sources.create'))
         <div class="bg-white border border-gray-100 rounded-2xl p-5 mt-2">
             <p class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Add Lead Source</p>
 
@@ -309,6 +314,7 @@
                 </p>
             </div>
         </div>
+        @endif
     </div>
 
     {{-- ═══════════════════════════════
@@ -338,14 +344,19 @@
 
                         {{-- Actions ── --}}
                         <div class="flex items-center gap-1">
+                            @if(has_permission('crm_tags.update'))
                             <button @click="startEditTag(tag)"
                                 class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
+                            @endif
+
+                            @if(has_permission('crm_tags.delete'))
                             <button @click="deleteTag(tag.id, tag.name)"
                                 class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             </button>
+                            @endif
                         </div>
                     </div>
 
@@ -397,6 +408,7 @@
         </div>
 
         {{-- Add Tag form ── --}}
+        @if(has_permission('crm_tags.create'))
         <div class="bg-white border border-gray-100 rounded-2xl p-5 mt-2">
             <p class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Add Tag</p>
 
@@ -436,6 +448,7 @@
                 <span x-text="tagAdding ? 'Adding...' : 'Add Tag'"></span>
             </button>
         </div>
+        @endif
     </div>
 
 </div>

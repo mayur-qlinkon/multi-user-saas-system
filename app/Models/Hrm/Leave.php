@@ -2,28 +2,33 @@
 
 namespace App\Models\Hrm;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Spatie\Activitylog\LogOptions;
-use App\Traits\Tenantable;
 use App\Models\User;
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Leave extends Model
 {
-    use Tenantable, SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes, Tenantable;
 
     // ── Constants ──
 
     const STATUS_PENDING = 'pending';
+
     const STATUS_APPROVED = 'approved';
+
     const STATUS_REJECTED = 'rejected';
+
     const STATUS_CANCELLED = 'cancelled';
 
     const DAY_FULL = 'full_day';
+
     const DAY_FIRST_HALF = 'first_half';
+
     const DAY_SECOND_HALF = 'second_half';
 
     const STATUS_LABELS = [
@@ -66,7 +71,7 @@ class Leave extends Model
             ->logOnly(['status', 'from_date', 'to_date', 'total_days', 'admin_remarks'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) => "Leave request was {$event}");
+            ->setDescriptionForEvent(fn (string $event) => "Leave request was {$event}");
     }
 
     // ── Relationships ──
@@ -74,6 +79,11 @@ class Leave extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function leaveType(): BelongsTo

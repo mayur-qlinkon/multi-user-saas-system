@@ -316,72 +316,157 @@
                     </div>
                 @endif
 
-                {{-- Product Guide sections ── --}}
+                {{-- Product Guide / Plant Education sections ── --}}
                 @if ($product->product_guide && count($product->product_guide))
-                    <div class="mb-10">
-                        <h2 class="text-[18px] sm:text-[22px] font-bold text-gray-900 mb-5 flex items-center gap-2.5">
-                            <i data-lucide="book-open" class="w-5 h-5 text-[#3ba2e3]"></i>
-                            Product Guide
-                        </h2>
-                        <div class="space-y-3 sm:space-y-4">
-                            @foreach ($product->product_guide as $guide)
-                                <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
-                                    x-data="{ open: false }"> {{-- 1. All closed by default --}}
 
-                                    {{-- Accordion trigger ── --}}
-                                    <div @click="open = !open"
-                                        class="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer select-none">
+                    @if(has_module('plant_education'))
+                        @php
+                            $plantCareMap = collect($product->product_guide)->whereIn('title', ['Sunlight', 'Watering'])->keyBy('title');
+                            $extraGuides  = collect($product->product_guide)->whereNotIn('title', ['Sunlight', 'Watering'])->values();
+                        @endphp
 
-                                        <span class="text-[14px] sm:text-[15px] font-bold text-gray-800 pr-4"
-                                            data-guide-title="{{ $loop->index }}">{{ $guide['title'] ?? '' }}</span>
-
-                                        <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-
-                                            {{-- 2. Highly Prominent Speak button ── --}}
-                                            <button type="button"
-                                                @click.stop="toggleSpeak({{ $loop->index }})"
-                                                class="flex items-center gap-1.5 rounded-full sm:rounded-lg px-2.5 py-2.5 sm:px-3 sm:py-1.5 border transition-all duration-200 shadow-sm"
-                                                :class="speakingKey === {{ $loop->index }}
-                                                    ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                                                    : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'"
-                                                :title="speakingKey === {{ $loop->index }} ? 'Stop Reading' : 'Listen'">
-                                                
-                                                <i data-lucide="volume-2" class="w-4 h-4"
-                                                    x-show="speakingKey !== {{ $loop->index }}"></i>
-                                                
-                                                <i data-lucide="square" class="w-4 h-4 fill-current"
-                                                    x-show="speakingKey === {{ $loop->index }}" style="display: none;"></i>
-                                                
-                                                {{-- Text Label (Hidden on small mobile, visible on iPad/PC) --}}
-                                                <span class="hidden sm:inline text-[11px] font-black uppercase tracking-wider" 
-                                                      x-text="speakingKey === {{ $loop->index }} ? 'Stop' : 'Listen'">
-                                                </span>
-                                            </button>
-
-                                            {{-- Vertical Divider (iPad/PC only) --}}
-                                            <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
-
-                                            <i data-lucide="chevron-down"
-                                                class="w-5 h-5 text-gray-400 transition-transform duration-300 flex-shrink-0"
-                                                :class="{ 'rotate-180': open }"></i>
+                        {{-- Plant Care Cards: simple open display, no accordion, no speak ── --}}
+                        @if($plantCareMap->isNotEmpty())
+                            <div class="mb-8">
+                                <h2 class="text-[18px] sm:text-[22px] font-bold text-gray-900 mb-4 flex items-center gap-2.5">
+                                    <i data-lucide="leaf" class="w-5 h-5 text-green-600"></i>
+                                    Plant Education
+                                </h2>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    @if($plantCareMap->has('Sunlight') && ($plantCareMap->get('Sunlight')['description'] ?? ''))
+                                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <span class="text-xl">☀️</span>
+                                                <span class="text-[13px] font-bold text-amber-800">Sunlight</span>
+                                            </div>
+                                            <p class="text-sm text-gray-700 leading-relaxed">{{ $plantCareMap->get('Sunlight')['description'] }}</p>
                                         </div>
-                                    </div>
-
-                                    {{-- Accordion visual body ── --}}
-                                   <div x-show="open" x-transition
-                                        class="px-4 sm:px-5 py-4 text-[13.5px] sm:text-[14px] text-gray-600 leading-relaxed border-t border-gray-100 bg-white">
-                                        {{ $guide['description'] ?? '' }}
-                                    </div>
-
-                                    {{-- 3. HIDDEN BODY FOR JS READER (This fixes the JS Bug!) ── --}}
-                                    <div class="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden" data-guide-index="{{ $loop->index }}">
-                                        {{ $guide['description'] ?? '' }}
-                                    </div>
-
+                                    @endif
+                                    @if($plantCareMap->has('Watering') && ($plantCareMap->get('Watering')['description'] ?? ''))
+                                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-5">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <span class="text-xl">💧</span>
+                                                <span class="text-[13px] font-bold text-blue-800">Watering</span>
+                                            </div>
+                                            <p class="text-sm text-gray-700 leading-relaxed">{{ $plantCareMap->get('Watering')['description'] }}</p>
+                                        </div>
+                                    @endif
                                 </div>
-                            @endforeach
+                            </div>
+                        @endif
+
+                        {{-- Additional guide sections in accordion ── --}}
+                        @if($extraGuides->isNotEmpty())
+                            <div class="mb-10">
+                                <h2 class="text-[18px] sm:text-[22px] font-bold text-gray-900 mb-5 flex items-center gap-2.5">
+                                    <i data-lucide="book-open" class="w-5 h-5 text-[#3ba2e3]"></i>
+                                    Product Guide
+                                </h2>
+                                <div class="space-y-3 sm:space-y-4">
+                                    @foreach ($extraGuides as $guide)
+                                        <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
+                                            x-data="{ open: false }">
+
+                                            <div @click="open = !open"
+                                                class="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer select-none">
+
+                                                <span class="text-[14px] sm:text-[15px] font-bold text-gray-800 pr-4"
+                                                    data-guide-title="{{ $loop->index }}">{{ $guide['title'] ?? '' }}</span>
+
+                                                <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                                                    <button type="button"
+                                                        @click.stop="toggleSpeak({{ $loop->index }})"
+                                                        class="flex items-center gap-1.5 rounded-full sm:rounded-lg px-2.5 py-2.5 sm:px-3 sm:py-1.5 border transition-all duration-200 shadow-sm"
+                                                        :class="speakingKey === {{ $loop->index }}
+                                                            ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                                                            : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'"
+                                                        :title="speakingKey === {{ $loop->index }} ? 'Stop Reading' : 'Listen'">
+                                                        <i data-lucide="volume-2" class="w-4 h-4"
+                                                            x-show="speakingKey !== {{ $loop->index }}"></i>
+                                                        <i data-lucide="square" class="w-4 h-4 fill-current"
+                                                            x-show="speakingKey === {{ $loop->index }}" style="display: none;"></i>
+                                                        <span class="hidden sm:inline text-[11px] font-black uppercase tracking-wider"
+                                                              x-text="speakingKey === {{ $loop->index }} ? 'Stop' : 'Listen'"></span>
+                                                    </button>
+                                                    <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
+                                                    <i data-lucide="chevron-down"
+                                                        class="w-5 h-5 text-gray-400 transition-transform duration-300 flex-shrink-0"
+                                                        :class="{ 'rotate-180': open }"></i>
+                                                </div>
+                                            </div>
+
+                                            <div x-show="open" x-transition
+                                                class="px-4 sm:px-5 py-4 text-[13.5px] sm:text-[14px] text-gray-600 leading-relaxed border-t border-gray-100 bg-white">
+                                                {{ $guide['description'] ?? $guide['desc'] ?? '' }}
+                                            </div>
+
+                                            <div class="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden" data-guide-index="{{ $loop->index }}">
+                                                {{ $guide['description'] ?? $guide['desc'] ?? '' }}
+                                            </div>
+
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                    @else
+
+                        {{-- Standard accordion display for non-plant tenants ── --}}
+                        <div class="mb-10">
+                            <h2 class="text-[18px] sm:text-[22px] font-bold text-gray-900 mb-5 flex items-center gap-2.5">
+                                <i data-lucide="book-open" class="w-5 h-5 text-[#3ba2e3]"></i>
+                                Product Guide
+                            </h2>
+                            <div class="space-y-3 sm:space-y-4">
+                                @foreach ($product->product_guide as $guide)
+                                    <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
+                                        x-data="{ open: false }">
+
+                                        <div @click="open = !open"
+                                            class="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 bg-gray-50/50 hover:bg-gray-50 transition-colors cursor-pointer select-none">
+
+                                            <span class="text-[14px] sm:text-[15px] font-bold text-gray-800 pr-4"
+                                                data-guide-title="{{ $loop->index }}">{{ $guide['title'] ?? '' }}</span>
+
+                                            <div class="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                                                <button type="button"
+                                                    @click.stop="toggleSpeak({{ $loop->index }})"
+                                                    class="flex items-center gap-1.5 rounded-full sm:rounded-lg px-2.5 py-2.5 sm:px-3 sm:py-1.5 border transition-all duration-200 shadow-sm"
+                                                    :class="speakingKey === {{ $loop->index }}
+                                                        ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                                                        : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'"
+                                                    :title="speakingKey === {{ $loop->index }} ? 'Stop Reading' : 'Listen'">
+                                                    <i data-lucide="volume-2" class="w-4 h-4"
+                                                        x-show="speakingKey !== {{ $loop->index }}"></i>
+                                                    <i data-lucide="square" class="w-4 h-4 fill-current"
+                                                        x-show="speakingKey === {{ $loop->index }}" style="display: none;"></i>
+                                                    <span class="hidden sm:inline text-[11px] font-black uppercase tracking-wider"
+                                                          x-text="speakingKey === {{ $loop->index }} ? 'Stop' : 'Listen'"></span>
+                                                </button>
+                                                <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
+                                                <i data-lucide="chevron-down"
+                                                    class="w-5 h-5 text-gray-400 transition-transform duration-300 flex-shrink-0"
+                                                    :class="{ 'rotate-180': open }"></i>
+                                            </div>
+                                        </div>
+
+                                        <div x-show="open" x-transition
+                                            class="px-4 sm:px-5 py-4 text-[13.5px] sm:text-[14px] text-gray-600 leading-relaxed border-t border-gray-100 bg-white">
+                                            {{ $guide['description'] ?? $guide['desc'] ?? '' }}
+                                        </div>
+
+                                        <div class="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden" data-guide-index="{{ $loop->index }}">
+                                            {{ $guide['description'] ?? $guide['desc'] ?? '' }}
+                                        </div>
+
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+
+                    @endif
+
                 @endif
 
                 {{-- Related Products ── --}}

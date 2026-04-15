@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Banner extends Model
 {
@@ -38,13 +38,13 @@ class Banner extends Model
     ];
 
     protected $casts = [
-        'is_active'   => 'boolean',
-        'sort_order'  => 'integer',
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
         'click_count' => 'integer',
-        'view_count'  => 'integer',
-        'starts_at'   => 'datetime',
-        'ends_at'     => 'datetime',
-        'meta'        => 'array',
+        'view_count' => 'integer',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+        'meta' => 'array',
     ];
 
     /*
@@ -90,14 +90,15 @@ class Banner extends Model
     public function scopeIsLive($query)
     {
         $now = now();
+
         return $query->where('is_active', true)
             ->where(function ($q) use ($now) {
                 $q->whereNull('starts_at')
-                  ->orWhere('starts_at', '<=', $now);
+                    ->orWhere('starts_at', '<=', $now);
             })
             ->where(function ($q) use ($now) {
                 $q->whereNull('ends_at')
-                  ->orWhere('ends_at', '>=', $now);
+                    ->orWhere('ends_at', '>=', $now);
             })
             ->orderBy('sort_order', 'asc');
     }
@@ -120,19 +121,27 @@ class Banner extends Model
 
     public function getImageUrlAttribute(): string
     {
-        return asset('storage/' . $this->image);
+        return asset('storage/'.$this->image);
     }
 
     public function getMobileImageUrlAttribute(): ?string
     {
-        return $this->mobile_image ? asset('storage/' . $this->mobile_image) : $this->image_url;
+        return $this->mobile_image ? asset('storage/'.$this->mobile_image) : $this->image_url;
     }
+
     public function getIsLiveNowAttribute(): bool
     {
-        if (!$this->is_active) return false;
+        if (! $this->is_active) {
+            return false;
+        }
         $now = now();
-        if ($this->starts_at && $this->starts_at->gt($now)) return false;
-        if ($this->ends_at   && $this->ends_at->lt($now))   return false;
+        if ($this->starts_at && $this->starts_at->gt($now)) {
+            return false;
+        }
+        if ($this->ends_at && $this->ends_at->lt($now)) {
+            return false;
+        }
+
         return true;
     }
 }

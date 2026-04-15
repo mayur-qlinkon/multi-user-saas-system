@@ -18,45 +18,45 @@ class CrmStageSeeder extends Seeder
         // Define CRM stages
         $stages = [
             [
-                'name'       => 'New',
-                'color'      => '#6b7280',
-                'is_won'     => false,
-                'is_lost'    => false,
+                'name' => 'New',
+                'color' => '#6b7280',
+                'is_won' => false,
+                'is_lost' => false,
                 'sort_order' => 1,
             ],
             [
-                'name'       => 'Contacted',
-                'color'      => '#3b82f6',
-                'is_won'     => false,
-                'is_lost'    => false,
+                'name' => 'Contacted',
+                'color' => '#3b82f6',
+                'is_won' => false,
+                'is_lost' => false,
                 'sort_order' => 2,
             ],
             [
-                'name'       => 'Qualified',
-                'color'      => '#f59e0b',
-                'is_won'     => false,
-                'is_lost'    => false,
+                'name' => 'Qualified',
+                'color' => '#f59e0b',
+                'is_won' => false,
+                'is_lost' => false,
                 'sort_order' => 3,
             ],
             [
-                'name'       => 'Proposal',
-                'color'      => '#10b981',
-                'is_won'     => false,
-                'is_lost'    => false,
+                'name' => 'Proposal',
+                'color' => '#10b981',
+                'is_won' => false,
+                'is_lost' => false,
                 'sort_order' => 4,
             ],
             [
-                'name'       => 'Won',
-                'color'      => '#14b8a6',
-                'is_won'     => true,
-                'is_lost'    => false,
+                'name' => 'Won',
+                'color' => '#14b8a6',
+                'is_won' => true,
+                'is_lost' => false,
                 'sort_order' => 5,
             ],
             [
-                'name'       => 'Lost',
-                'color'      => '#ef4444',
-                'is_won'     => false,
-                'is_lost'    => true,
+                'name' => 'Lost',
+                'color' => '#ef4444',
+                'is_won' => false,
+                'is_lost' => true,
                 'sort_order' => 6,
             ],
         ];
@@ -67,16 +67,16 @@ class CrmStageSeeder extends Seeder
             foreach ($stages as $stage) {
                 DB::table('crm_stages')->updateOrInsert(
                     [
-                        'company_id'       => $companyId,
-                        'crm_pipeline_id'  => $defaultPipelineId,
-                        'name'             => $stage['name'],
+                        'company_id' => $companyId,
+                        'crm_pipeline_id' => $defaultPipelineId,
+                        'name' => $stage['name'],
                     ],
                     array_merge($stage, [
-                        'company_id'      => $companyId,
+                        'company_id' => $companyId,
                         'crm_pipeline_id' => $defaultPipelineId,
-                        'is_active'       => true,
-                        'created_at'      => now(),
-                        'updated_at'      => now(),
+                        'is_active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ])
                 );
             }
@@ -90,7 +90,7 @@ class CrmStageSeeder extends Seeder
         } catch (\Exception $e) {
             DB::rollBack();
             if (isset($this->command)) {
-                $this->command->error("❌ Failed to seed CRM stages: " . $e->getMessage());
+                $this->command->error('❌ Failed to seed CRM stages: '.$e->getMessage());
             }
         }
     }

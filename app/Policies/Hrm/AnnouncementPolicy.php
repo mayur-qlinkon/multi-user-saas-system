@@ -15,36 +15,38 @@ class AnnouncementPolicy
      */
     public function before(User $user, string $ability): ?bool
     {
-        if ($user->hasRole(['owner', 'super-admin'])) {
+        // Use hasAnyRole instead of hasRole when passing an array
+        if ($user->hasAnyRole(['owner', 'super-admin'])) {
             return true;
         }
+
         return null;
     }
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission(['view-announcements', 'manage-announcements']);
+        return $user->hasAnyPermission(['announcements.view', 'announcements.create']);
     }
 
     public function view(User $user, Announcement $announcement): bool
     {
-        return $user->hasAnyPermission(['view-announcements', 'manage-announcements']);
+        return $user->hasAnyPermission(['announcements.view', 'announcements.create']);
     }
 
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('manage-announcements');
+        return $user->hasPermissionTo('announcements.create');
     }
 
     public function update(User $user, Announcement $announcement): bool
     {
-        if (!$user->hasPermissionTo('manage-announcements')) {
+        if (! $user->hasPermissionTo('announcements.view')) {
             return false;
         }
 
         // Published announcements need extra permission to edit
         if ($announcement->status === Announcement::STATUS_PUBLISHED) {
-            return $user->hasPermissionTo('edit-published-announcements');
+            return $user->hasPermissionTo('announcements.update');
         }
 
         return true; // draft / scheduled — freely editable
@@ -52,12 +54,12 @@ class AnnouncementPolicy
 
     public function delete(User $user, Announcement $announcement): bool
     {
-        if (!$user->hasPermissionTo('manage-announcements')) {
+        if (! $user->hasPermissionTo('announcements.view')) {
             return false;
         }
 
         if ($announcement->status === Announcement::STATUS_PUBLISHED) {
-            return $user->hasPermissionTo('delete-published-announcements');
+            return $user->hasPermissionTo('announcements.delete');
         }
 
         return true;
@@ -65,17 +67,17 @@ class AnnouncementPolicy
 
     public function restore(User $user, Announcement $announcement): bool
     {
-        return $user->hasPermissionTo('manage-announcements');
+        return $user->hasPermissionTo('announcements.create');
     }
 
     public function forceDelete(User $user, Announcement $announcement): bool
     {
-        return $user->hasPermissionTo('force-delete-announcements');
+        return $user->hasPermissionTo('announcements.delete');
     }
 
     public function publish(User $user, Announcement $announcement): bool
     {
-        return $user->hasPermissionTo('publish-announcements')
+        return $user->hasPermissionTo('announcements.publish')
             && in_array($announcement->status, [
                 Announcement::STATUS_DRAFT,
                 Announcement::STATUS_SCHEDULED,
@@ -84,12 +86,12 @@ class AnnouncementPolicy
 
     public function unpublish(User $user, Announcement $announcement): bool
     {
-        return $user->hasPermissionTo('publish-announcements')
+        return $user->hasPermissionTo('announcements.publish')
             && $announcement->status === Announcement::STATUS_PUBLISHED;
     }
 
     public function duplicate(User $user, Announcement $announcement): bool
     {
-        return $user->hasPermissionTo('manage-announcements');
+        return $user->hasPermissionTo('announcements.duplicate');
     }
 }

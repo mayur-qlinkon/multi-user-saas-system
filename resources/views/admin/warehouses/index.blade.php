@@ -36,10 +36,12 @@
                 </div>
 
                 {{-- Add Button (Redirects to Create Page) --}}
-                <a href="{{ route('admin.warehouses.create') }}"
-                    class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 whitespace-nowrap shrink-0">
-                    <i data-lucide="plus-circle" class="w-5 h-5"></i> Add Warehouse
-                </a>
+                @if(has_permission('warehouses.create'))
+                    <a href="{{ route('admin.warehouses.create') }}"
+                        class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 whitespace-nowrap shrink-0">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> Add Warehouse
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -104,30 +106,37 @@
                                     <div class="flex items-center justify-end gap-1 sm:gap-2">
                                         
                                         {{-- 🌟 NEW: View Inventory/Details Button --}}
-                                        <a href="{{ route('admin.warehouses.show', $warehouse->id) }}"
-                                            class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-50 transition-colors"
-                                            title="View Inventory">
-                                            <i data-lucide="eye" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-                                        </a>
+                                        @if(has_permission('warehouses.view'))
+                                            <a href="{{ route('admin.warehouses.show', $warehouse->id) }}"
+                                                class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-50 transition-colors"
+                                                title="View Inventory">
+                                                <i data-lucide="eye" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                                            </a>
+                                        @endif
+
 
                                         {{-- Edit Button (Redirects to Edit Page) --}}
-                                        <a href="{{ route('admin.warehouses.edit', $warehouse->id) }}"
-                                            class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-brand-100 text-brand-600 hover:bg-brand-50 transition-colors"
-                                            title="Edit">
-                                            <i data-lucide="edit-3" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-                                        </a>
+                                        @if(has_permission('warehouses.update'))
+                                            <a href="{{ route('admin.warehouses.edit', $warehouse->id) }}"
+                                                class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-brand-100 text-brand-600 hover:bg-brand-50 transition-colors"
+                                                title="Edit">
+                                                <i data-lucide="edit-3" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                                            </a>
+                                        @endif
 
                                         {{-- Delete Button --}}
-                                        <form action="{{ route('admin.warehouses.destroy', $warehouse->id) }}"
-                                            method="POST" @submit.prevent="confirmDelete($event.target)"
-                                            class="inline-block">
-                                            @csrf @method('DELETE')
-                                            <button type="submit"
-                                                class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
-                                                title="Delete">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-                                            </button>
-                                        </form>
+                                        @if(has_permission('warehouses.delete'))
+                                            <form action="{{ route('admin.warehouses.destroy', $warehouse->id) }}"
+                                                method="POST" @submit.prevent="confirmDelete($event.target)"
+                                                class="inline-block">
+                                                @csrf @method('DELETE')
+                                                <button type="submit"
+                                                    class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
+                                                    title="Delete">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

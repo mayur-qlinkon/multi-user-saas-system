@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Hrm;
 
+use App\Events\Hrm\AnnouncementPublished;
 use App\Http\Controllers\Controller;
 use App\Models\Hrm\Announcement;
 use App\Models\Hrm\Department;
@@ -9,16 +10,11 @@ use App\Models\Hrm\Designation;
 use App\Models\Role;
 use App\Models\Store;
 use App\Models\User;
-
 use App\Services\Hrm\AnnouncementService;
-
-use App\Events\Hrm\AnnouncementPublished;
-
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -34,7 +30,7 @@ class AnnouncementController extends Controller
     {
         $this->authorize('viewAny', Announcement::class);
 
-        $filters       = $request->only(['search', 'type', 'status', 'priority', 'is_pinned', 'sort_by', 'sort_dir', 'per_page']);
+        $filters = $request->only(['search', 'type', 'status', 'priority', 'is_pinned', 'sort_by', 'sort_dir', 'per_page']);
         $announcements = $this->announcementService->getList($filters);
 
         if ($request->wantsJson()) {
@@ -42,10 +38,10 @@ class AnnouncementController extends Controller
         }
 
         return view('admin.hrm.announcements.index', [
-            'announcements'   => $announcements,
-            'filters'         => $filters,
-            'typeOptions'     => Announcement::TYPE_LABELS,
-            'statusOptions'   => Announcement::STATUS_LABELS,
+            'announcements' => $announcements,
+            'filters' => $filters,
+            'typeOptions' => Announcement::TYPE_LABELS,
+            'statusOptions' => Announcement::STATUS_LABELS,
             'priorityOptions' => Announcement::PRIORITY_LABELS,
         ]);
     }
@@ -57,9 +53,9 @@ class AnnouncementController extends Controller
         $this->authorize('create', Announcement::class);
 
         return view('admin.hrm.announcements.create', [
-            'typeOptions'     => Announcement::TYPE_LABELS,
+            'typeOptions' => Announcement::TYPE_LABELS,
             'priorityOptions' => Announcement::PRIORITY_LABELS,
-            'targetOptions'   => $this->getTargetOptions(),
+            'targetOptions' => $this->getTargetOptions(),
         ]);
     }
 
@@ -72,8 +68,8 @@ class AnnouncementController extends Controller
         $validated = $request->validate($this->rules());
 
         if ($request->hasFile('attachment')) {
-            $file                         = $request->file('attachment');
-            $validated['attachment']      = $file->store('hrm/announcements', 'public');
+            $file = $request->file('attachment');
+            $validated['attachment'] = $file->store('hrm/announcements', 'public');
             $validated['attachment_name'] = $file->getClientOriginalName();
         }
 
@@ -83,7 +79,7 @@ class AnnouncementController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Announcement created.',
-                'data'    => $announcement,
+                'data' => $announcement,
             ], 201);
         }
 
@@ -100,8 +96,8 @@ class AnnouncementController extends Controller
         $announcement->load(['createdByUser', 'publishedByUser', 'acknowledgements.user'])
             ->loadCount([
                 'acknowledgements',
-                'acknowledgements as read_count'         => fn($q) => $q->whereNotNull('read_at'),
-                'acknowledgements as acknowledged_count' => fn($q) => $q->whereNotNull('acknowledged_at'),
+                'acknowledgements as read_count' => fn ($q) => $q->whereNotNull('read_at'),
+                'acknowledgements as acknowledged_count' => fn ($q) => $q->whereNotNull('acknowledged_at'),
             ]);
 
         if ($request->wantsJson()) {
@@ -118,10 +114,10 @@ class AnnouncementController extends Controller
         $this->authorize('update', $announcement);
 
         return view('admin.hrm.announcements.edit', [
-            'announcement'    => $announcement,
-            'typeOptions'     => Announcement::TYPE_LABELS,
+            'announcement' => $announcement,
+            'typeOptions' => Announcement::TYPE_LABELS,
             'priorityOptions' => Announcement::PRIORITY_LABELS,
-            'targetOptions'   => $this->getTargetOptions(),
+            'targetOptions' => $this->getTargetOptions(),
         ]);
     }
 
@@ -138,7 +134,7 @@ class AnnouncementController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Announcement updated.',
-                'data'    => $announcement,
+                'data' => $announcement,
             ]);
         }
 
@@ -176,7 +172,7 @@ class AnnouncementController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Announcement published successfully.',
-            'data'    => $announcement,
+            'data' => $announcement,
         ]);
     }
 
@@ -191,7 +187,7 @@ class AnnouncementController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Announcement moved back to draft.',
-            'data'    => $announcement,
+            'data' => $announcement,
         ]);
     }
 
@@ -213,7 +209,7 @@ class AnnouncementController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Announcement scheduled.',
-            'data'    => $announcement,
+            'data' => $announcement,
         ]);
     }
 
@@ -226,9 +222,9 @@ class AnnouncementController extends Controller
         $copy = $this->announcementService->duplicate($announcement);
 
         return response()->json([
-            'success'  => true,
-            'message'  => 'Duplicated as draft.',
-            'data'     => $copy,
+            'success' => true,
+            'message' => 'Duplicated as draft.',
+            'data' => $copy,
             'redirect' => route('admin.hrm.announcements.edit', $copy),
         ]);
     }
@@ -244,7 +240,7 @@ class AnnouncementController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Announcement restored.',
-            'data'    => $announcement,
+            'data' => $announcement,
         ]);
     }
 
@@ -257,18 +253,18 @@ class AnnouncementController extends Controller
         $isPublished = $announcement?->status === Announcement::STATUS_PUBLISHED;
 
         return [
-            'title'                    => ['required', 'string', 'max:255'],
-            'content'                  => ['required', 'string'],
-            'type'                     => ['required', Rule::in(array_keys(Announcement::TYPE_LABELS))],
-            'priority'                 => ['required', Rule::in(array_keys(Announcement::PRIORITY_LABELS))],
-            'target_audience'          => ['required', Rule::in(array_keys(Announcement::TARGET_LABELS))],
-            'target_ids'               => ['required_unless:target_audience,all', 'nullable', 'array', 'min:1'],
-            'target_ids.*'             => ['integer'],
-            'publish_at'               => $isPublished ? ['sometimes'] : ['nullable', 'date'],
-            'expire_at'                => ['nullable', 'date', 'after:publish_at'],
+            'title' => ['required', 'string', 'max:255'],
+            'content' => ['required', 'string'],
+            'type' => ['required', Rule::in(array_keys(Announcement::TYPE_LABELS))],
+            'priority' => ['required', Rule::in(array_keys(Announcement::PRIORITY_LABELS))],
+            'target_audience' => ['required', Rule::in(array_keys(Announcement::TARGET_LABELS))],
+            'target_ids' => ['required_unless:target_audience,all', 'nullable', 'array', 'min:1'],
+            'target_ids.*' => ['integer'],
+            'publish_at' => $isPublished ? ['sometimes'] : ['nullable', 'date'],
+            'expire_at' => ['nullable', 'date', 'after:publish_at'],
             'requires_acknowledgement' => ['boolean'],
-            'is_pinned'                => ['boolean'],
-            'attachment'               => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png,zip', 'max:10240'],
+            'is_pinned' => ['boolean'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png,zip', 'max:10240'],
         ];
     }
 
@@ -278,15 +274,15 @@ class AnnouncementController extends Controller
     private function getTargetOptions(): array
     {
         return [
-            'departments'  => Department::orderBy('name')->pluck('name', 'id'),
-            'stores'       => Store::orderBy('name')->pluck('name', 'id'),
+            'departments' => Department::orderBy('name')->pluck('name', 'id'),
+            'stores' => Store::orderBy('name')->pluck('name', 'id'),
             'designations' => Designation::orderBy('name')->pluck('name', 'id'),
-            'roles'        => Role::orderBy('name')->pluck('name', 'id'),
-            'users'        => User::orderBy('name')->get(['id', 'name', 'email']),
+            'roles' => Role::orderBy('name')->pluck('name', 'id'),
+            'users' => User::internal()->orderBy('name')->get(['id', 'name', 'email']),
         ];
     }
 
-    // ── Download Attachment ──    
+    // ── Download Attachment ──
 
     // ── Download Attachment ──
 
@@ -294,19 +290,18 @@ class AnnouncementController extends Controller
     {
         $this->authorize('view', $announcement);
 
-        if (!$announcement->attachment) {
+        if (! $announcement->attachment) {
             return back()->with('error', 'No attachment mapped to this announcement.');
         }
 
         // Check exact absolute path where Laravel stores 'public' disk files
-        $path = storage_path('app/public/' . $announcement->attachment);
+        $path = storage_path('app/public/'.$announcement->attachment);
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return back()->with('error', 'The file was deleted or is missing from the server.');
         }
 
         // response()->download() forces the browser to download the file directly
         return response()->download($path, $announcement->attachment_name ?? 'announcement-document');
     }
-
 }

@@ -20,14 +20,14 @@ return new class extends Migration
             $table->longText('content');
 
             $table->enum('type', ['general', 'policy', 'event', 'holiday', 'urgent', 'celebration'])
-                  ->default('general');
+                ->default('general');
             $table->enum('priority', ['low', 'normal', 'high', 'critical'])
-                  ->default('normal');
+                ->default('normal');
             $table->enum('status', ['draft', 'scheduled', 'published', 'expired'])
-                  ->default('draft');
+                ->default('draft');
 
-            $table->enum('target_audience', ['all', 'department', 'store', 'designation','role','users'])
-                  ->default('all');
+            $table->enum('target_audience', ['all', 'department', 'store', 'designation', 'role', 'users'])
+                ->default('all');
             $table->json('target_ids')->nullable(); // array of IDs based on target_audience
 
             $table->timestamp('publish_at')->nullable();
@@ -44,11 +44,11 @@ return new class extends Migration
             $table->softDeletes();
 
             // Indexes
-            $table->index(['company_id', 'status', 'publish_at'],   'ann_company_status_publish');
-            $table->index(['company_id', 'type', 'status'],         'ann_company_type_status');
-            $table->index(['company_id', 'priority', 'status'],     'ann_company_priority_status');
-            $table->index(['company_id', 'expire_at'],              'ann_company_expire');
-            $table->index(['company_id', 'is_pinned', 'status'],    'ann_company_pinned_status');
+            $table->index(['company_id', 'status', 'publish_at'], 'ann_company_status_publish');
+            $table->index(['company_id', 'type', 'status'], 'ann_company_type_status');
+            $table->index(['company_id', 'priority', 'status'], 'ann_company_priority_status');
+            $table->index(['company_id', 'expire_at'], 'ann_company_expire');
+            $table->index(['company_id', 'is_pinned', 'status'], 'ann_company_pinned_status');
         });
     }
 

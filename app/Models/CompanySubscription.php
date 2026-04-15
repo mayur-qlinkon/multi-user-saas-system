@@ -11,7 +11,7 @@ class CompanySubscription extends Model
         'plan_id',
         'starts_at',
         'expires_at',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [

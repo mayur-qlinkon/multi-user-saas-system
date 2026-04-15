@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\CrmActivity;
 use App\Models\CrmLead;
 use App\Models\CrmPipeline;
-use App\Models\CrmStage;
 use App\Models\CrmTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +16,7 @@ class CrmDashboardController extends Controller
     public function index()
     {
         $companyId = Auth::user()->company_id;
-        $userId    = Auth::id();
+        $userId = Auth::id();
 
         // ════════════════════════════════════════════════════
         //  1. TOP STATS
@@ -26,13 +25,13 @@ class CrmDashboardController extends Controller
         $base = CrmLead::where('company_id', $companyId);
 
         $stats = [
-            'total'       => (clone $base)->count(),
-            'converted'   => (clone $base)->where('is_converted', true)->count(),
-            'hot'         => (clone $base)->where('priority', 'hot')->count(),
-            'overdue'     => (clone $base)->whereNotNull('next_followup_at')
-                                ->where('next_followup_at', '<', now())
-                                ->where('is_converted', false)
-                                ->count(),
+            'total' => (clone $base)->count(),
+            'converted' => (clone $base)->where('is_converted', true)->count(),
+            'hot' => (clone $base)->where('priority', 'hot')->count(),
+            'overdue' => (clone $base)->whereNotNull('next_followup_at')
+                ->where('next_followup_at', '<', now())
+                ->where('is_converted', false)
+                ->count(),
             'total_value' => (clone $base)->where('is_converted', false)->sum('lead_value'),
         ];
 
@@ -44,7 +43,7 @@ class CrmDashboardController extends Controller
         $pipelines = CrmPipeline::where('company_id', $companyId)
             ->active()
             ->ordered()
-            ->with(['stages' => fn($q) => $q->active()->ordered()])
+            ->with(['stages' => fn ($q) => $q->active()->ordered()])
             ->get();
 
         $stageStats = [];
@@ -74,9 +73,9 @@ class CrmDashboardController extends Controller
             ->with('source:id,name')
             ->orderByDesc('count')
             ->get()
-            ->map(fn($row) => [
+            ->map(fn ($row) => [
                 'source' => $row->source?->name ?? 'Unknown',
-                'count'  => $row->count,
+                'count' => $row->count,
             ]);
 
         // ════════════════════════════════════════════════════
@@ -121,9 +120,8 @@ class CrmDashboardController extends Controller
         $myTasks = CrmTask::where('company_id', $companyId)
             ->where('assigned_to', $userId)
             ->whereIn('status', ['pending', 'in_progress'])
-            ->where(fn($q) =>
-                $q->whereDate('due_at', today())         // due today
-                  ->orWhere('due_at', '<', now())        // overdue
+            ->where(fn ($q) => $q->whereDate('due_at', today())         // due today
+                ->orWhere('due_at', '<', now())        // overdue
             )
             ->with(['lead:id,name,phone'])
             ->orderBy('due_at')
@@ -157,26 +155,25 @@ class CrmDashboardController extends Controller
                 ->get(['id', 'name'])
                 ->map(function ($user) use ($companyId) {
                     $leads = CrmLead::where('company_id', $companyId)
-                        ->whereHas('assignees', fn($q) =>
-                            $q->where('users.id', $user->id)
+                        ->whereHas('assignees', fn ($q) => $q->where('users.id', $user->id)
                         );
 
                     return [
-                        'name'      => $user->name,
-                        'assigned'  => (clone $leads)->count(),
+                        'name' => $user->name,
+                        'assigned' => (clone $leads)->count(),
                         'converted' => (clone $leads)->where('is_converted', true)->count(),
-                        'hot'       => (clone $leads)->where('priority', 'hot')->count(),
-                        'overdue'   => (clone $leads)
+                        'hot' => (clone $leads)->where('priority', 'hot')->count(),
+                        'overdue' => (clone $leads)
                             ->whereNotNull('next_followup_at')
                             ->where('next_followup_at', '<', now())
                             ->where('is_converted', false)
                             ->count(),
-                        'value'     => (float)(clone $leads)
+                        'value' => (float) (clone $leads)
                             ->where('is_converted', false)
                             ->sum('lead_value'),
                     ];
                 })
-                ->filter(fn($s) => $s['assigned'] > 0)
+                ->filter(fn ($s) => $s['assigned'] > 0)
                 ->sortByDesc('assigned')
                 ->values();
         }

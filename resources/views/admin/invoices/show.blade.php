@@ -59,22 +59,24 @@
             return number_format((float) $amount, 2, '.', ',');
         };
 
+        $defaults = "not set";
+
         // Company Details
         $company = $invoice->company ?? auth()->user()->company;
         $store   = $invoice->store;
 
         // Billing priority: invoice snapshot → store accessor (store accessors already fall back to get_setting)
         $billingGstin        = $invoice->gst_number     ?? $store->gst_number     ?? get_setting('gst_number');
-        $billingUpiId        = $invoice->upi_id         ?? $store->upi_id;
-        $billingBankName     = $invoice->bank_name      ?? $store->bank_name;
-        $billingAccName      = $invoice->account_name   ?? $store->account_name;
-        $billingAccNo        = $invoice->account_number ?? $store->account_number;
-        $billingIfsc         = $invoice->ifsc_code      ?? $store->ifsc_code;
+        $billingUpiId        = $invoice->upi_id         ?? $store->upi_id ?? $defaults;
+        $billingBankName     = $invoice->bank_name      ?? $store->bank_name ?? $defaults;
+        $billingAccName      = $invoice->account_name   ?? $store->account_name ?? $defaults;
+        $billingAccNo        = $invoice->account_number ?? $store->account_number ?? $defaults;
+        $billingIfsc         = $invoice->ifsc_code      ?? $store->ifsc_code ?? $defaults;
         $billingSignatureUrl = $invoice->signature
             ? asset('storage/' . $invoice->signature)
-            : $store->signature_url;
-        $billingFooterNote   = $invoice->invoice_footer_note ?? $store->invoice_footer_note;
-        $billingTerms        = $invoice->terms_conditions    ?? $store->invoice_terms;
+            : $store->signature_url ?? $defaults;
+        $billingFooterNote   = $invoice->invoice_footer_note ?? $store->invoice_footer_note ?? $defaults;
+        $billingTerms        = $invoice->terms_conditions    ?? $store->invoice_terms ?? $defaults;
 
         // 🌟 NEW: Indian State Code Mapping
         $stateCodes = [
@@ -134,34 +136,37 @@
     @endphp
 
     <div class="pb-10">
-        {{-- ACTION BAR (Hidden on Print) --}}
-        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
+        {{-- ACTION BAR (Hidden on Print) --}}        
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
             <div>
                 <h1 class="text-xl font-bold text-[#212538] tracking-tight">Invoice Details</h1>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
+            {{-- UI Fix: Allow buttons to wrap cleanly on mobile --}}
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
                 <a href="{{ route('admin.invoices.index') }}"
-                    class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center shadow-sm font-medium">
+                    class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-2 rounded text-sm transition-colors flex items-center shadow-sm font-medium flex-1 sm:flex-none justify-center">
                     <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i> Back
                 </a>
 
-                @if ($invoice->status !== 'cancelled')
+                @if ($invoice->status !== 'cancelled' && has_permission('invoices.update'))
                     <a href="{{ route('admin.invoices.edit', $invoice->id) }}"
-                        class="bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center shadow-sm font-medium">
+                        class="bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 text-gray-600 px-4 py-2 rounded text-sm transition-colors flex items-center shadow-sm font-medium flex-1 sm:flex-none justify-center">
                         <i data-lucide="pencil" class="w-4 h-4 mr-1.5"></i> Edit
                     </a>
                 @endif
 
                 <button onclick="window.print()"
-                    class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Print Invoice
+                    class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 px-4 py-2 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold flex-1 sm:flex-none justify-center">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Print
                 </button>
 
+                @if(has_permission('invoices.download_pdf'))
                 <a href="{{ route('admin.invoices.pdf', $invoice->id) }}" target="_blank"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold">
-                    <i data-lucide="download" class="w-4 h-4"></i> Download PDF
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold flex-1 sm:flex-none justify-center">
+                    <i data-lucide="download" class="w-4 h-4"></i> PDF
                 </a>
+                @endif
 
                 @php
                     $waText = urlencode(
@@ -172,12 +177,10 @@
                 @endphp
                 <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $customerPhone) }}?text={{ $waText }}"
                     target="_blank"
-                    class="bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold">
+                    class="bg-[#25D366] hover:bg-[#1da851] text-white px-4 py-2 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold w-full sm:w-auto justify-center mt-2 sm:mt-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                        <path
-                            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.669.149-.198.297-.768.966-.941 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.058-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.148-.173.198-.297.297-.495.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.371-.273.297-1.04 1.016-1.04 2.479 0 1.463 1.064 2.876 1.213 3.074.148.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.718 2.007-1.411.248-.694.248-1.289.173-1.411-.074-.124-.272-.198-.57-.347z" />
-                        <path
-                            d="M12.004 2C6.486 2 2 6.484 2 12c0 1.991.585 3.847 1.589 5.407L2 22l4.75-1.557A9.956 9.956 0 0012.004 22C17.522 22 22 17.516 22 12S17.522 2 12.004 2z" />
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.669.149-.198.297-.768.966-.941 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.058-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.148-.173.198-.297.297-.495.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.371-.273.297-1.04 1.016-1.04 2.479 0 1.463 1.064 2.876 1.213 3.074.148.198 2.095 3.2 5.076 4.487.709.306 1.262.489 1.693.626.711.226 1.358.194 1.87.118.571-.085 1.758-.718 2.007-1.411.248-.694.248-1.289.173-1.411-.074-.124-.272-.198-.57-.347z" />
+                        <path d="M12.004 2C6.486 2 2 6.484 2 12c0 1.991.585 3.847 1.589 5.407L2 22l4.75-1.557A9.956 9.956 0 0012.004 22C17.522 22 22 17.516 22 12S17.522 2 12.004 2z" />
                     </svg>
                     WhatsApp
                 </a>
@@ -211,25 +214,25 @@
             class="w-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden text-gray-800 print:grayscale print:shadow-none print:border-none">
 
             {{-- Header --}}
-            <div class="p-8 border-b-2 border-gray-800 grid grid-cols-2 gap-6 items-start">
-                <div>
-                    <h1 class="text-3xl font-black uppercase tracking-widest text-gray-900 mb-1">Tax Invoice</h1>
+            <div class="p-5 sm:p-8 border-b-2 border-gray-800 flex flex-col md:flex-row print:flex-row justify-between gap-6 items-start">
+                <div class="w-full md:w-auto">
+                    <h1 class="text-2xl sm:text-3xl font-black uppercase tracking-widest text-gray-900 mb-1">Tax Invoice</h1>
                     <div class="text-sm text-gray-600 font-bold mb-4"># {{ $invoice->invoice_number }}</div>
 
                     @if ($invoice->status === 'cancelled')
-                        <div
-                            class="inline-block border-2 border-red-600 text-red-600 text-lg font-black uppercase px-3 py-1 mb-2 transform -rotate-6">
+                        <div class="inline-block border-2 border-red-600 text-red-600 text-lg font-black uppercase px-3 py-1 mb-2 transform -rotate-6">
                             CANCELLED
                         </div>
                     @endif
                 </div>
-                <div class="text-right text-sm flex flex-col items-end">
+                
+                {{-- UI Fix: Align left on mobile, right on desktop/print --}}
+                <div class="w-full md:w-auto text-left md:text-right print:text-right text-sm flex flex-col items-start md:items-end print:items-end">
                     {{-- 🌟 1. Legal Entity (Company) --}}
-                    <h2 class="text-xl font-black text-gray-900 uppercase leading-none">{{ $company->name }}</h2>
+                    <h2 class="text-lg sm:text-xl font-black text-gray-900 uppercase leading-none">{{ $company->name }}</h2>
                     <div class="text-gray-600 text-[12px] mt-1">
                         @if ($billingGstin)
-                            GSTIN: <span
-                                class="font-bold text-gray-900 uppercase">{{ $billingGstin }}</span><br>
+                            GSTIN: <span class="font-bold text-gray-900 uppercase">{{ $billingGstin }}</span><br>
                         @endif
                         Email: {{ $company->email }}<br>
                         Phone: {{ $company->phone }}
@@ -237,9 +240,8 @@
 
                     {{-- 🌟 2. Operational Branch (Store) --}}
                     @if ($store)
-                        <div class="text-right mt-4">
-                            <h3 class="text-[10px] font-black text-gray-700 uppercase tracking-widest">Branch: <span
-                                    class="font-bold text-black">{{ $store->name }}</span></h3>
+                        <div class="mt-4 text-left md:text-right print:text-right">
+                            <h3 class="text-[10px] font-black text-gray-700 uppercase tracking-widest">Branch: <span class="font-bold text-black">{{ $store->name }}</span></h3>
                             <div class="text-gray-800 text-[13px] leading-tight">
                                 @if ($store->address)
                                     {{ $store->address }}<br>
@@ -253,52 +255,48 @@
             </div>
 
             {{-- Meta & Address Block --}}
-            <div class="p-8 grid grid-cols-2 gap-8 border-b border-gray-200">
+            {{-- UI Fix: Stack on mobile, 2 columns on md/print. Adaptive padding. --}}
+            <div class="p-5 sm:p-8 grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-6 sm:gap-8 border-b border-gray-200">
                 <div class="space-y-4">
                     <div>
                         <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Billed To</h3>
                         <div class="text-sm text-gray-800">
                             <div class="font-bold text-base mb-0.5">{{ $customerName }}</div>
-                            {{-- 🌟 Show Customer GSTIN if B2B --}}
                             @if ($customerGSTIN)
                                 <div class="font-bold text-gray-900 uppercase">GSTIN: {{ $customerGSTIN }}</div>
                             @endif
                             @if ($customerAddress !== 'N/A')
-                                <div class="text-gray-600 leading-tight">{{ $customerAddress }}</div>
+                                <div class="text-gray-600 leading-tight mt-1">{{ $customerAddress }}</div>
                             @endif
                             @if ($customerPhone !== 'N/A')
-                                <div class="text-gray-600">Phone: {{ $customerPhone }}</div>
+                                <div class="text-gray-600 mt-1">Phone: {{ $customerPhone }}</div>
                             @endif
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-1">
+                <div class="space-y-1 bg-gray-50 md:bg-transparent print:bg-transparent p-4 md:p-0 rounded-lg md:rounded-none border md:border-none border-gray-100">
                     <div class="grid grid-cols-2 text-[13px]">
                         <span class="font-bold text-gray-500">Invoice Date:</span>
-                        <span
-                            class="text-right font-semibold">{{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M Y') }}</span>
+                        <span class="text-right font-semibold">{{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M Y') }}</span>
                     </div>
                     @if ($invoice->due_date)
                         <div class="grid grid-cols-2 text-[13px]">
                             <span class="font-bold text-gray-500">Due Date:</span>
-                            <span
-                                class="text-right font-semibold">{{ \Carbon\Carbon::parse($invoice->due_date)->format('d M Y') }}</span>
+                            <span class="text-right font-semibold">{{ \Carbon\Carbon::parse($invoice->due_date)->format('d M Y') }}</span>
                         </div>
                     @endif
                     <div class="grid grid-cols-2 text-[13px]">
                         <span class="font-bold text-gray-500">Place of Supply:</span>
-                        <span class="text-right font-bold text-gray-900">{{ $invoice->supply_state }}
-                            ({{ $stateCode }})</span>
+                        <span class="text-right font-bold text-gray-900">{{ $invoice->supply_state }} ({{ $stateCode }})</span>
                     </div>
                     <div class="grid grid-cols-2 text-[13px]">
                         <span class="font-bold text-gray-500">Invoice Type:</span>
                         <span class="text-right font-bold text-gray-900 uppercase">{{ $invoiceType }}</span>
                     </div>
-                    <div class="grid grid-cols-2 text-[13px] pt-1 border-t border-gray-100">
+                    <div class="grid grid-cols-2 text-[13px] pt-2 mt-1 border-t border-gray-200 md:border-gray-100">
                         <span class="font-bold text-gray-500">Payment Status:</span>
-                        <span
-                            class="text-right font-black uppercase {{ $invoice->payment_status === 'paid' ? 'text-green-600' : 'text-red-500' }}">
+                        <span class="text-right font-black uppercase {{ $invoice->payment_status === 'paid' ? 'text-green-600' : 'text-red-500' }}">
                             {{ $invoice->payment_status }}
                         </span>
                     </div>
@@ -310,7 +308,7 @@
             </div>
 
             {{-- Line Items Table --}}
-            <div class="px-8 py-6">
+            <div class="px-5 sm:px-8 py-6">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead>
@@ -375,8 +373,8 @@
             </div>
 
             {{-- Summary & Totals --}}
-            <div
-                class="px-8 pb-8 page-break-avoid flex flex-col md:flex-row print:flex-row justify-between items-end gap-8 print:gap-4">
+            {{-- UI Fix: Changed items-end to items-start for better mobile stacking, adaptive padding --}}
+            <div class="px-5 sm:px-8 pb-8 page-break-avoid flex flex-col md:flex-row print:flex-row justify-between items-start md:items-end print:items-end gap-8 print:gap-4">
 
                 {{-- Left Side: Notes, Bank Details & QR --}}
                 {{-- Added print:w-1/2 to prevent it from expanding to 100% on paper --}}
@@ -498,7 +496,7 @@
 
             {{-- Footer Note + Terms --}}
             @if ($billingFooterNote || $billingTerms)
-                <div class="px-8 py-6 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 page-break-avoid space-y-3">
+                <div class="px-5 sm:px-8 py-6 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 page-break-avoid space-y-3">
                     @if ($billingFooterNote)
                         <div class="leading-relaxed">{!! nl2br(e($billingFooterNote)) !!}</div>
                     @endif

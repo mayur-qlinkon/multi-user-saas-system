@@ -2,21 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use App\Traits\Tenantable;
 
 class Challan extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia,Tenantable;
+    use HasFactory, InteractsWithMedia, SoftDeletes,Tenantable;
 
     // ════════════════════════════════════════════════════
     //  TABLE & FILLABLE
@@ -28,26 +29,25 @@ class Challan extends Model implements HasMedia
         // Tenancy
         'company_id',
         'store_id',
-        
+
         // Identity
         'challan_number',
         'challan_date',
         'challan_type',
         'direction',
-        
+
         // GST / State
         'from_state_id',
         'to_state_id',
         'is_inter_state',
-        
-        
+
         // Party (simple FKs)
         'client_id',
         'supplier_id',
         'branch_store_id',
         'warehouse_id', // Add this if missing
         'to_warehouse_id', // 🌟 ADD THIS LINE HERE
-        
+
         // Party snapshot
         'party_name',
         'party_address',
@@ -66,7 +66,7 @@ class Challan extends Model implements HasMedia
         // Return tracking
         'is_returnable',
         'return_due_date',
-        'return_received_date',      
+        'return_received_date',
 
         // Source document
         'source_type',
@@ -93,54 +93,73 @@ class Challan extends Model implements HasMedia
     ];
 
     /**
-     * @property \Illuminate\Support\Carbon      $challan_date
-     * @property \Illuminate\Support\Carbon|null $eway_bill_expiry
-     * @property \Illuminate\Support\Carbon|null $return_due_date
-     * @property \Illuminate\Support\Carbon|null $return_received_date
-     * @property \Illuminate\Support\Carbon|null $delivered_at
-     * @property bool                            $is_inter_state
-     * @property bool                            $is_returnable
+     * @property Carbon $challan_date
+     * @property Carbon|null $eway_bill_expiry
+     * @property Carbon|null $return_due_date
+     * @property Carbon|null $return_received_date
+     * @property Carbon|null $delivered_at
+     * @property bool $is_inter_state
+     * @property bool $is_returnable
      */
     protected $casts = [
-        'challan_date'         => 'datetime',
-        'eway_bill_expiry'     => 'datetime',
-        'return_due_date'      => 'datetime',
+        'challan_date' => 'datetime',
+        'eway_bill_expiry' => 'datetime',
+        'return_due_date' => 'datetime',
         'return_received_date' => 'datetime',
-        'delivered_at'         => 'datetime',
-        'is_inter_state'       => 'boolean',
-        'is_returnable'        => 'boolean',
-        'total_qty'            => 'decimal:2',
-        'total_value'          => 'decimal:2',
+        'delivered_at' => 'datetime',
+        'is_inter_state' => 'boolean',
+        'is_returnable' => 'boolean',
+        'total_qty' => 'decimal:2',
+        'total_value' => 'decimal:2',
     ];
 
     // ════════════════════════════════════════════════════
     //  CONSTANTS — single source of truth for all enums
     // ════════════════════════════════════════════════════
 
-    const TYPE_DELIVERY         = 'delivery';
-    const TYPE_JOB_WORK_OUT     = 'job_work_out';
-    const TYPE_JOB_WORK_IN      = 'job_work_in';
-    const TYPE_BRANCH_TRANSFER  = 'branch_transfer';
+    const TYPE_DELIVERY = 'delivery';
+
+    const TYPE_JOB_WORK_OUT = 'job_work_out';
+
+    const TYPE_JOB_WORK_IN = 'job_work_in';
+
+    const TYPE_BRANCH_TRANSFER = 'branch_transfer';
+
     const TYPE_SALE_ON_APPROVAL = 'sale_on_approval';
-    const TYPE_CONSIGNMENT      = 'consignment';
-    const TYPE_REPAIR_OUT       = 'repair_out';
-    const TYPE_EXHIBITION       = 'exhibition';
-    const TYPE_RETURNABLE       = 'returnable';
-    const TYPE_NON_RETURNABLE   = 'non_returnable';
+
+    const TYPE_CONSIGNMENT = 'consignment';
+
+    const TYPE_REPAIR_OUT = 'repair_out';
+
+    const TYPE_EXHIBITION = 'exhibition';
+
+    const TYPE_RETURNABLE = 'returnable';
+
+    const TYPE_NON_RETURNABLE = 'non_returnable';
 
     const DIRECTION_OUTWARD = 'outward';
-    const DIRECTION_INWARD  = 'inward';
 
-    const STATUS_DRAFT               = 'draft';
-    const STATUS_DISPATCHED          = 'dispatched';
-    const STATUS_IN_TRANSIT          = 'in_transit';
-    const STATUS_DELIVERED           = 'delivered';
-    const STATUS_PARTIALLY_RETURNED  = 'partially_returned';
-    const STATUS_FULLY_RETURNED      = 'fully_returned';
-    const STATUS_CONVERTED           = 'converted_to_invoice';
+    const DIRECTION_INWARD = 'inward';
+
+    const STATUS_DRAFT = 'draft';
+
+    const STATUS_DISPATCHED = 'dispatched';
+
+    const STATUS_IN_TRANSIT = 'in_transit';
+
+    const STATUS_DELIVERED = 'delivered';
+
+    const STATUS_PARTIALLY_RETURNED = 'partially_returned';
+
+    const STATUS_FULLY_RETURNED = 'fully_returned';
+
+    const STATUS_CONVERTED = 'converted_to_invoice';
+
     const STATUS_PARTIALLY_CONVERTED = 'partially_converted';
-    const STATUS_CLOSED              = 'closed';
-    const STATUS_CANCELLED           = 'cancelled';
+
+    const STATUS_CLOSED = 'closed';
+
+    const STATUS_CANCELLED = 'cancelled';
 
     // Types that are always returnable by nature
     const RETURNABLE_TYPES = [
@@ -154,17 +173,17 @@ class Challan extends Model implements HasMedia
 
     // Valid status transitions — prevents illegal state changes
     const STATUS_TRANSITIONS = [
-        self::STATUS_DRAFT               => [self::STATUS_DISPATCHED, self::STATUS_CANCELLED],
-        self::STATUS_DISPATCHED          => [self::STATUS_IN_TRANSIT, self::STATUS_DELIVERED, self::STATUS_CANCELLED],
-        self::STATUS_IN_TRANSIT          => [self::STATUS_DELIVERED, self::STATUS_CANCELLED],
-        self::STATUS_DELIVERED           => [
+        self::STATUS_DRAFT => [self::STATUS_DISPATCHED, self::STATUS_CANCELLED],
+        self::STATUS_DISPATCHED => [self::STATUS_IN_TRANSIT, self::STATUS_DELIVERED, self::STATUS_CANCELLED],
+        self::STATUS_IN_TRANSIT => [self::STATUS_DELIVERED, self::STATUS_CANCELLED],
+        self::STATUS_DELIVERED => [
             self::STATUS_PARTIALLY_RETURNED,
             self::STATUS_FULLY_RETURNED,
             self::STATUS_CONVERTED,
             self::STATUS_PARTIALLY_CONVERTED,
             self::STATUS_CLOSED,
         ],
-        self::STATUS_PARTIALLY_RETURNED  => [
+        self::STATUS_PARTIALLY_RETURNED => [
             self::STATUS_FULLY_RETURNED,
             self::STATUS_PARTIALLY_CONVERTED,
             self::STATUS_CONVERTED,
@@ -175,51 +194,51 @@ class Challan extends Model implements HasMedia
             self::STATUS_PARTIALLY_RETURNED,
             self::STATUS_CLOSED,
         ],
-        self::STATUS_FULLY_RETURNED      => [self::STATUS_CLOSED],
-        self::STATUS_CONVERTED           => [self::STATUS_CLOSED],
-        self::STATUS_CLOSED              => [],  // terminal
-        self::STATUS_CANCELLED           => [],  // terminal
+        self::STATUS_FULLY_RETURNED => [self::STATUS_CLOSED],
+        self::STATUS_CONVERTED => [self::STATUS_CLOSED],
+        self::STATUS_CLOSED => [],  // terminal
+        self::STATUS_CANCELLED => [],  // terminal
     ];
 
     // Human-readable labels — use in blade/views
     const TYPE_LABELS = [
-        self::TYPE_DELIVERY         => 'Delivery',
-        self::TYPE_JOB_WORK_OUT     => 'Job Work (Out)',
-        self::TYPE_JOB_WORK_IN      => 'Job Work (In)',
-        self::TYPE_BRANCH_TRANSFER  => 'Branch Transfer',
+        self::TYPE_DELIVERY => 'Delivery',
+        self::TYPE_JOB_WORK_OUT => 'Job Work (Out)',
+        self::TYPE_JOB_WORK_IN => 'Job Work (In)',
+        self::TYPE_BRANCH_TRANSFER => 'Branch Transfer',
         self::TYPE_SALE_ON_APPROVAL => 'Sale on Approval',
-        self::TYPE_CONSIGNMENT      => 'Consignment',
-        self::TYPE_REPAIR_OUT       => 'Repair / Service',
-        self::TYPE_EXHIBITION       => 'Exhibition',
-        self::TYPE_RETURNABLE       => 'Returnable',
-        self::TYPE_NON_RETURNABLE   => 'Non-Returnable',
+        self::TYPE_CONSIGNMENT => 'Consignment',
+        self::TYPE_REPAIR_OUT => 'Repair / Service',
+        self::TYPE_EXHIBITION => 'Exhibition',
+        self::TYPE_RETURNABLE => 'Returnable',
+        self::TYPE_NON_RETURNABLE => 'Non-Returnable',
     ];
 
     const STATUS_LABELS = [
-        self::STATUS_DRAFT               => 'Draft',
-        self::STATUS_DISPATCHED          => 'Dispatched',
-        self::STATUS_IN_TRANSIT          => 'In Transit',
-        self::STATUS_DELIVERED           => 'Delivered',
-        self::STATUS_PARTIALLY_RETURNED  => 'Partially Returned',
-        self::STATUS_FULLY_RETURNED      => 'Fully Returned',
-        self::STATUS_CONVERTED           => 'Converted to Invoice',
+        self::STATUS_DRAFT => 'Draft',
+        self::STATUS_DISPATCHED => 'Dispatched',
+        self::STATUS_IN_TRANSIT => 'In Transit',
+        self::STATUS_DELIVERED => 'Delivered',
+        self::STATUS_PARTIALLY_RETURNED => 'Partially Returned',
+        self::STATUS_FULLY_RETURNED => 'Fully Returned',
+        self::STATUS_CONVERTED => 'Converted to Invoice',
         self::STATUS_PARTIALLY_CONVERTED => 'Partially Converted',
-        self::STATUS_CLOSED              => 'Closed',
-        self::STATUS_CANCELLED           => 'Cancelled',
+        self::STATUS_CLOSED => 'Closed',
+        self::STATUS_CANCELLED => 'Cancelled',
     ];
 
     // Badge colors for UI (Tailwind-friendly)
     const STATUS_COLORS = [
-        self::STATUS_DRAFT               => 'gray',
-        self::STATUS_DISPATCHED          => 'blue',
-        self::STATUS_IN_TRANSIT          => 'indigo',
-        self::STATUS_DELIVERED           => 'cyan',
-        self::STATUS_PARTIALLY_RETURNED  => 'amber',
-        self::STATUS_FULLY_RETURNED      => 'teal',
-        self::STATUS_CONVERTED           => 'green',
+        self::STATUS_DRAFT => 'gray',
+        self::STATUS_DISPATCHED => 'blue',
+        self::STATUS_IN_TRANSIT => 'indigo',
+        self::STATUS_DELIVERED => 'cyan',
+        self::STATUS_PARTIALLY_RETURNED => 'amber',
+        self::STATUS_FULLY_RETURNED => 'teal',
+        self::STATUS_CONVERTED => 'green',
         self::STATUS_PARTIALLY_CONVERTED => 'lime',
-        self::STATUS_CLOSED              => 'slate',
-        self::STATUS_CANCELLED           => 'red',
+        self::STATUS_CLOSED => 'slate',
+        self::STATUS_CANCELLED => 'red',
     ];
 
     // ════════════════════════════════════════════════════
@@ -245,6 +264,7 @@ class Challan extends Model implements HasMedia
     {
         return $this->belongsTo(State::class, 'to_state_id');
     }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
@@ -266,7 +286,7 @@ class Challan extends Model implements HasMedia
     public function getPartyModelAttribute(): ?Model
     {
         return $this->client ?? $this->supplier ?? $this->branchStore ?? null;
-    }   
+    }
 
     /**
      * Source document — Quotation, Order, Purchase, etc.
@@ -354,14 +374,13 @@ class Challan extends Model implements HasMedia
     /**
      * Total qty pending = sent - returned - invoiced (across all items)
      */
-       /**
+    /**
      * Total qty pending = sent - returned - invoiced (across all items)
      * ⚠️  Always eager-load items to avoid N+1: Challan::with('items')->get()
      */
     public function getPendingQtyAttribute(): float
     {
-        return (float) $this->items->sum(fn($item) =>
-            $item->qty_sent - $item->qty_returned - $item->qty_invoiced
+        return (float) $this->items->sum(fn ($item) => $item->qty_sent - $item->qty_returned - $item->qty_invoiced
         );
     }
 
@@ -378,7 +397,10 @@ class Challan extends Model implements HasMedia
      */
     public function getIsEwayExpiredAttribute(): bool
     {
-        if (!$this->eway_bill_expiry) return false;
+        if (! $this->eway_bill_expiry) {
+            return false;
+        }
+
         return $this->eway_bill_expiry->isPast();
     }
 
@@ -387,9 +409,11 @@ class Challan extends Model implements HasMedia
      */
     public function getDaysUntilReturnDueAttribute(): ?int
     {
-        if (!$this->return_due_date) return null;
+        if (! $this->return_due_date) {
+            return null;
+        }
 
-        /** @var \Illuminate\Support\Carbon $due */
+        /** @var Carbon $due */
         $due = $this->return_due_date;
 
         return (int) now()->diffInDays($due, false);
@@ -400,10 +424,13 @@ class Challan extends Model implements HasMedia
      */
     public function getIsReturnOverdueAttribute(): bool
     {
-        if (!$this->is_returnable || !$this->return_due_date) return false;
+        if (! $this->is_returnable || ! $this->return_due_date) {
+            return false;
+        }
         if (in_array($this->status, [self::STATUS_FULLY_RETURNED, self::STATUS_CLOSED, self::STATUS_CANCELLED])) {
             return false;
         }
+
         return $this->return_due_date->isPast();
     }
 
@@ -434,6 +461,7 @@ class Challan extends Model implements HasMedia
             self::STATUS_IN_TRANSIT,
         ]);
     }
+
     /**
      * Is any item on this challan already invoiced?
      * Replaces the old invoice_id check.
@@ -441,7 +469,7 @@ class Challan extends Model implements HasMedia
     public function getIsConvertedAttribute(): bool
     {
         return $this->items->contains(
-            fn($item) => $item->qty_invoiced > 0
+            fn ($item) => $item->qty_invoiced > 0
         );
     }
 
@@ -467,37 +495,37 @@ class Challan extends Model implements HasMedia
      * @throws \InvalidArgumentException
      */
     public function transitionTo(
-        string  $newStatus,
-        ?string $notes         = null,
-        string  $changedByType = 'admin',
-        ?int    $changedBy     = null
+        string $newStatus,
+        ?string $notes = null,
+        string $changedByType = 'admin',
+        ?int $changedBy = null
     ): void {
         $allowed = self::STATUS_TRANSITIONS[$this->status] ?? [];
 
-        if (!in_array($newStatus, $allowed)) {
+        if (! in_array($newStatus, $allowed)) {
             throw new \InvalidArgumentException(
                 "Cannot transition challan #{$this->challan_number} "
-                . "from [{$this->status}] to [{$newStatus}]. "
-                . "Allowed: [" . implode(', ', $allowed) . "]"
+                ."from [{$this->status}] to [{$newStatus}]. "
+                .'Allowed: ['.implode(', ', $allowed).']'
             );
         }
 
-        $fromStatus   = $this->status;
+        $fromStatus = $this->status;
         $this->status = $newStatus;
 
-        // Auto-set delivered_at timestamp        
-        if ($newStatus === self::STATUS_DELIVERED && !$this->delivered_at) {
-            $this->delivered_at = \Illuminate\Support\Carbon::now();
+        // Auto-set delivered_at timestamp
+        if ($newStatus === self::STATUS_DELIVERED && ! $this->delivered_at) {
+            $this->delivered_at = Carbon::now();
         }
         $this->save();
 
         ChallanStatusHistory::create([
-            'challan_id'      => $this->id,
-            'from_status'     => $fromStatus,
-            'to_status'       => $newStatus,
-            'notes'           => $notes,
+            'challan_id' => $this->id,
+            'from_status' => $fromStatus,
+            'to_status' => $newStatus,
+            'notes' => $notes,
             'changed_by_type' => $changedByType,
-            'changed_by'      => $changedBy ?? Auth::id(),
+            'changed_by' => $changedBy ?? Auth::id(),
         ]);
     }
 
@@ -522,7 +550,7 @@ class Challan extends Model implements HasMedia
      */
     public function syncTotals(): void
     {
-        $this->total_qty   = $this->items()->sum('qty_sent');
+        $this->total_qty = $this->items()->sum('qty_sent');
         $this->total_value = $this->items()->sum('line_value');
         $this->save();
     }
@@ -534,7 +562,7 @@ class Challan extends Model implements HasMedia
     public function recalculateStatus(): void
     {
         // Only applies to challans that have been delivered
-        if (!in_array($this->status, [
+        if (! in_array($this->status, [
             self::STATUS_DELIVERED,
             self::STATUS_PARTIALLY_RETURNED,
             self::STATUS_PARTIALLY_CONVERTED,
@@ -546,12 +574,14 @@ class Challan extends Model implements HasMedia
 
         $items = $this->items;
 
-        $totalSent     = $items->sum('qty_sent');
+        $totalSent = $items->sum('qty_sent');
         $totalReturned = $items->sum('qty_returned');
         $totalInvoiced = $items->sum('qty_invoiced');
-        $totalPending  = $totalSent - $totalReturned - $totalInvoiced;
+        $totalPending = $totalSent - $totalReturned - $totalInvoiced;
 
-        if ($totalSent <= 0) return;
+        if ($totalSent <= 0) {
+            return;
+        }
 
         // Determine new status
         if ($totalPending <= 0 && $totalInvoiced >= $totalSent) {
@@ -579,13 +609,15 @@ class Challan extends Model implements HasMedia
     {
         $p = $this->client ?? $this->supplier ?? $this->branchStore ?? null;
 
-        if (!$p) return;
+        if (! $p) {
+            return;
+        }
 
-        $this->party_name    = $p->name          ?? null;
-        $this->party_phone   = $p->phone          ?? null;
-        $this->party_gst     = $p->gst_number     ?? null;
-        $this->party_address = $p->address        ?? null;
-        $this->party_state   = $p->state?->name   ?? null;
+        $this->party_name = $p->name ?? null;
+        $this->party_phone = $p->phone ?? null;
+        $this->party_gst = $p->gst_number ?? null;
+        $this->party_address = $p->address ?? null;
+        $this->party_state = $p->state?->name ?? null;
     }
 
     /**
@@ -596,21 +628,25 @@ class Challan extends Model implements HasMedia
      */
     public function setReturnDueDate(string $goodsCategory = 'inputs'): void
     {
-        if (!$this->is_returnable) return;
-        if (!$this->challan_date)  return;
+        if (! $this->is_returnable) {
+            return;
+        }
+        if (! $this->challan_date) {
+            return;
+        }
 
-        /** @var \Illuminate\Support\Carbon $date */
+        /** @var Carbon $date */
         $date = $this->challan_date;
 
-        $this->return_due_date = match($goodsCategory) {
+        $this->return_due_date = match ($goodsCategory) {
             'capital_goods' => $date->copy()->addYears(3),
-            default         => $date->copy()->addYear(),
+            default => $date->copy()->addYear(),
         };
     }
 
     // ════════════════════════════════════════════════════
     //  SCOPES — common queries
-    // ════════════════════════════════════════════════════ 
+    // ════════════════════════════════════════════════════
 
     public function scopeForStore(Builder $query, int $storeId): Builder
     {
@@ -712,7 +748,7 @@ class Challan extends Model implements HasMedia
     public static function generateNumber(int $companyId, ?string $prefix = null): string
     {
         $prefix = $prefix ?? 'DC';
-        $year   = now()->format('Y');
+        $year = now()->format('Y');
 
         // 1. Fetch the absolute latest challan number for this prefix/year
         // 🛡️ withTrashed() ensures we don't trip over soft-deleted records!
@@ -732,7 +768,7 @@ class Challan extends Model implements HasMedia
             $sequence = 1;
         }
 
-        return "{$prefix}-{$year}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+        return "{$prefix}-{$year}-".str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
     // ════════════════════════════════════════════════════
     //  BOOT — auto-set returnable flag from type

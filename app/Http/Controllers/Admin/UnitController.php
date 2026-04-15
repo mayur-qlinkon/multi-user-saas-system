@@ -6,21 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 
-
 class UnitController extends Controller
 {
     public function index()
     {
         $units = Unit::latest()->get();
-        return view('admin.units', compact('units'));
+
+        return view('admin.products.units', compact('units'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'       => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'short_name' => ['nullable', 'string', 'max:50'],
-            'is_active'  => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -33,9 +33,9 @@ class UnitController extends Controller
     public function update(Request $request, Unit $unit)
     {
         $validated = $request->validate([
-            'name'       => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'short_name' => ['nullable', 'string', 'max:50'],
-            'is_active'  => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         $validated['is_active'] = $request->boolean('is_active', false);
@@ -48,6 +48,7 @@ class UnitController extends Controller
     public function destroy(Unit $unit)
     {
         $unit->delete();
+
         return back()->with('success', 'Unit deleted successfully.');
     }
 }

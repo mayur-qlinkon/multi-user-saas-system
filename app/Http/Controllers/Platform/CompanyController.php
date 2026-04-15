@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
@@ -19,7 +20,7 @@ class CompanyController extends Controller
     public function index()
     {
         $companies = Company::withCount(['users', 'stores'])
-            ->with(['users' => fn($q) => $q->whereHas('roles', fn($r) => $r->where('slug', 'owner'))->limit(1)])
+            ->with(['users' => fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('slug', 'owner'))->limit(1)])
             ->latest()
             ->get();
 
@@ -29,6 +30,7 @@ class CompanyController extends Controller
     public function create()
     {
         $states = State::where('is_active', true)->orderBy('name')->get();
+
         return view('platform.companies.create', compact('states'));
     }
 
@@ -36,10 +38,11 @@ class CompanyController extends Controller
     {
         try {
             $this->companyService->onboard($request->validated());
+
             return redirect()->route('platform.companies.index')
                 ->with('success', 'Company & Owner onboarded successfully!');
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Onboarding failed: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Onboarding failed: '.$e->getMessage());
         }
     }
 
@@ -52,7 +55,7 @@ class CompanyController extends Controller
             'state',
         ]);
 
-        $owner = $company->users->first(fn($u) => $u->roles->contains('slug', 'owner'));
+        $owner = $company->users->first(fn ($u) => $u->roles->contains('slug', 'owner'));
 
         return view('platform.companies.show', compact('company', 'owner'));
     }
@@ -60,6 +63,7 @@ class CompanyController extends Controller
     public function edit(Company $company)
     {
         $states = State::where('is_active', true)->orderBy('name')->get();
+
         return view('platform.companies.edit', compact('company', 'states'));
     }
 
@@ -67,10 +71,11 @@ class CompanyController extends Controller
     {
         try {
             $this->companyService->update($company, $request->validated());
+
             return redirect()->route('platform.companies.show', $company)
                 ->with('success', 'Company updated successfully!');
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Update failed: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Update failed: '.$e->getMessage());
         }
     }
 
@@ -105,10 +110,10 @@ class CompanyController extends Controller
                 ->with('success', 'Company terminated successfully!');
         } catch (\Exception $e) {
             if (request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Termination failed: ' . $e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Termination failed: '.$e->getMessage()], 500);
             }
 
-            return back()->with('error', 'Termination failed: ' . $e->getMessage());
+            return back()->with('error', 'Termination failed: '.$e->getMessage());
         }
     }
 
@@ -135,9 +140,9 @@ class CompanyController extends Controller
         $taken = $query->exists();
 
         return response()->json([
-            'available' => !$taken,
-            'slug'      => $slug,
-            'message'   => $taken ? 'This slug is already taken.' : 'Slug is available.',
+            'available' => ! $taken,
+            'slug' => $slug,
+            'message' => $taken ? 'This slug is already taken.' : 'Slug is available.',
         ]);
     }
 }

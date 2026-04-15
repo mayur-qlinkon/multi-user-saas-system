@@ -289,7 +289,7 @@
                 <div class="card-body">
                     <div class="flex flex-wrap gap-3">
 
-                        @if($salarySlip->status === 'generated')
+                        @if($salarySlip->status === 'generated' && has_permission('salary_slips.approve'))
                         <button @click="approveSlip()" :disabled="saving"
                             class="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
                             style="background: #f59e0b">
@@ -297,7 +297,7 @@
                         </button>
                         @endif
 
-                        @if($salarySlip->status === 'approved')
+                        @if($salarySlip->status === 'approved'&& has_permission('salary_slips.mark_paid'))
                         <button @click="payModalOpen = true" :disabled="saving"
                             class="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
                             style="background: #10b981">
@@ -314,6 +314,7 @@
 
         {{-- Right: Quick Actions --}}
         <div class="space-y-4">
+            @if(has_permission('salary_slips.download_pdf'))
             <div class="detail-card">
                 <div class="card-header">
                     <div class="card-icon bg-gray-50"><i data-lucide="download" class="w-4 h-4 text-gray-500"></i></div>
@@ -328,6 +329,7 @@
                     </a>
                 </div>
             </div>
+            @endif
 
             <div class="detail-card">
                 <div class="card-header">

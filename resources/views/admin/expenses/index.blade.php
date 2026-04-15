@@ -132,11 +132,13 @@
 
             {{-- Action Buttons ── --}}
             <div class="flex items-center gap-2">
+                @if(has_permission('expenses.create'))
                 <a href="{{ route('admin.expenses.create') }}"
                     class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-500 rounded-xl text-sm font-bold text-white hover:bg-brand-600 transition-opacity"                    >
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Log Expense
                 </a>
+                @endif
             </div>
         </div>
 
@@ -294,24 +296,32 @@
                                     <td class="px-4 py-3.5 text-right">
                                         <div class="flex items-center justify-end gap-1">
 
+                                            @if(has_permission('expenses.view'))
                                             <a href="{{ route('admin.expenses.show', $expense->id) }}"
                                                 class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                                                 title="View Details">
                                                 <i data-lucide="eye" class="w-4 h-4"></i>
                                             </a>
+                                            @endif
 
                                             @if (!$isFinalized)
+                                                @if(has_permission('expenses.update'))
                                                 <a href="{{ route('admin.expenses.edit', $expense->id) }}"
                                                     class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
                                                     title="Edit">
                                                     <i data-lucide="edit" class="w-4 h-4"></i>
                                                 </a>
+                                                @endif
+                                                
+                                                @if(has_permission('expenses.delete'))
                                                 <button type="button"
                                                     @click="deleteExpense({{ $expense->id }}, '{{ $expense->expense_number }}')"
                                                     class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                                                     title="Delete">
                                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                                 </button>
+                                                @endif 
+
                                             @else
                                                 {{-- Visual indicator that edit/delete is locked --}}
                                                 <div class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-200 cursor-not-allowed"

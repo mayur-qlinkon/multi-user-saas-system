@@ -24,13 +24,13 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['employee_id', 'salary_component_id', 'effective_from'], 'emp_sal_struct_unique');
-            
+
             // Provide a shorter custom name for the index (e.g., 'emp_sal_struct_active_idx')
             $table->index(['company_id', 'employee_id', 'is_active'], 'emp_sal_struct_active_idx');
-            
+
             // This one is 63 characters (safe), but you can shorten it too for consistency
             $table->index(['employee_id', 'effective_from'], 'emp_sal_struct_eff_from_idx');
-    
+
         });
     }
 

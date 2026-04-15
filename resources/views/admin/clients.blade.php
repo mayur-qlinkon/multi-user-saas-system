@@ -14,26 +14,34 @@
     </style>
 @endpush
 
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Clients / List</h1>
+@endsection
+
 @section('content')
     <div class="pb-10" x-data="clientManager(@js($clients->items()))">
 
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-[#212538] tracking-tight">Clients Management</h1>
+                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Clients Management</h1>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" @click="exportCSV()"
+                @if(has_permission('clients.export'))
+                    <button type="button" @click="exportCSV()"
+                        class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-green-600"></i> CSV
+                    </button>
+                    <button type="button" @click="exportPDF()"
                     class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-green-600"></i> CSV
-                </button>
-                <button type="button" @click="exportPDF()"
-                    class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                    <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
-                </button>
+                        <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
+                    </button>
+                @endif
+                @if(has_permission('clients.create'))
                 <button type="button" @click="openCreate()"
                     class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 ml-2">
                     <i data-lucide="plus" class="w-4 h-4"></i> Add Client
                 </button>
+                @endif
             </div>
         </div>
 
@@ -131,17 +139,22 @@
                                 <td class="px-6 py-4 text-right">
                                     <div
                                         class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        @if(has_permission('clients.update'))
                                         <button type="button" @click="openEdit({{ $client->id }})"
                                             class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors"
                                             title="Edit Client">
                                             <i data-lucide="pencil" class="w-4 h-4"></i>
                                         </button>
+                                        @endif
+
+                                        @if(has_permission('clients.delete'))
                                         <button type="button"
                                             @click="openDelete({{ $client->id }}, '{{ addslashes($client->name) }}')"
                                             class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
                                             title="Delete Client">
                                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                                         </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

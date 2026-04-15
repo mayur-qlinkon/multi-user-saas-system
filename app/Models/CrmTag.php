@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Traits\Tenantable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Builder;
 
 class CrmTag extends Model
 {
@@ -53,7 +53,9 @@ class CrmTag extends Model
         $ids = [];
         foreach ($names as $name) {
             $name = trim($name);
-            if (!$name) continue;
+            if (! $name) {
+                continue;
+            }
 
             $tag = static::firstOrCreate(
                 ['company_id' => $companyId, 'name' => $name],
@@ -61,6 +63,7 @@ class CrmTag extends Model
             );
             $ids[] = $tag->id;
         }
+
         return $ids;
     }
 }

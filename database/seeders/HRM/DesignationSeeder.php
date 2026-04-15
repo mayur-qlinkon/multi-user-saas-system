@@ -32,26 +32,26 @@ class DesignationSeeder extends Seeder
                 DB::table('designations')->updateOrInsert(
                     [
                         'company_id' => $companyId,
-                        'name'       => $designation['name'],
+                        'name' => $designation['name'],
                     ],
                     array_merge($designation, [
                         'description' => 'Standard company designation',
-                        'is_active'   => true,
-                        'created_at'  => now(),
-                        'updated_at'  => now(),
+                        'is_active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ])
                 );
             }
 
             DB::commit();
             if (isset($this->command)) {
-            $this->command->info("✅ HRM Designations seeded successfully for Company ID: {$companyId}");
+                $this->command->info("✅ HRM Designations seeded successfully for Company ID: {$companyId}");
             }
 
         } catch (\Exception $e) {
             DB::rollBack();
             if (isset($this->command)) {
-            $this->command->error("❌ Failed to seed designations: " . $e->getMessage());
+                $this->command->error('❌ Failed to seed designations: '.$e->getMessage());
             }
         }
     }

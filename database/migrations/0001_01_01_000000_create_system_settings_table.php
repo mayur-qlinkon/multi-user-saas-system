@@ -11,21 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-            Schema::create('system_settings', function (Blueprint $table) {
-                $table->id();
+        Schema::create('system_settings', function (Blueprint $table) {
+            $table->id();
 
-                $table->string('key')->unique();
+            $table->string('key')->unique();
 
-                $table->text('value')->nullable();
+            $table->text('value')->nullable();
 
-                
-                $table->string('group')->nullable(); 
-                // general, branding, billing, seo, social, pages
+            $table->string('group')->nullable();
+            // general, branding, billing, seo, social, pages
 
-                $table->string('type')->nullable();  
+            $table->string('type')->nullable();
 
-                $table->timestamps();
-            });
+            $table->timestamps();
+        });
     }
 
     /**

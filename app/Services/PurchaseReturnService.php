@@ -2,10 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\PurchaseItem;
 use App\Models\PurchaseReturn;
 use App\Models\PurchaseReturnItem;
-use App\Models\PurchaseItem;
-use App\Models\ProductSku;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -22,7 +21,7 @@ class PurchaseReturnService
     {
         return DB::transaction(function () use ($data) {
             $companyId = Auth::user()->company_id;
-            
+
             // 1. Perform Financial Math
             $financials = $this->calculateFinancials($data['items'], $data['tax_type'], (float) ($data['discount_amount'] ?? 0));
 
@@ -31,29 +30,29 @@ class PurchaseReturnService
 
             // 3. Create the Header Record
             $purchaseReturn = PurchaseReturn::create([
-                'company_id'                  => $companyId,
-                'store_id'                    => $data['store_id'],
-                'supplier_id'                 => $data['supplier_id'],
-                'warehouse_id'                => $data['warehouse_id'],
-                'purchase_id'                 => $data['purchase_id'],
-                'created_by'                  => Auth::id(),
-                'return_number'               => $returnNumber,
+                'company_id' => $companyId,
+                'store_id' => $data['store_id'],
+                'supplier_id' => $data['supplier_id'],
+                'warehouse_id' => $data['warehouse_id'],
+                'purchase_id' => $data['purchase_id'],
+                'created_by' => Auth::id(),
+                'return_number' => $returnNumber,
                 'supplier_credit_note_number' => $data['supplier_credit_note_number'] ?? null,
-                'return_date'                 => $data['return_date'],
-                'status'                      => $data['status'],
-                'tax_type'                    => $data['tax_type'],
-                'reason'                      => $data['reason'] ?? null,
-                'notes'                       => $data['notes'] ?? null,
-                
+                'return_date' => $data['return_date'],
+                'status' => $data['status'],
+                'tax_type' => $data['tax_type'],
+                'reason' => $data['reason'] ?? null,
+                'notes' => $data['notes'] ?? null,
+
                 // Inject calculated financials
-                'subtotal'                    => $financials['subtotal'],
-                'discount_amount'             => $financials['discount_amount'],
-                'taxable_amount'              => $financials['taxable_amount'],
-                'cgst_amount'                 => $financials['cgst_amount'],
-                'sgst_amount'                 => $financials['sgst_amount'],
-                'igst_amount'                 => $financials['igst_amount'],
-                'tax_amount'                  => $financials['tax_amount'],
-                'total_amount'                => $financials['total_amount'],
+                'subtotal' => $financials['subtotal'],
+                'discount_amount' => $financials['discount_amount'],
+                'taxable_amount' => $financials['taxable_amount'],
+                'cgst_amount' => $financials['cgst_amount'],
+                'sgst_amount' => $financials['sgst_amount'],
+                'igst_amount' => $financials['igst_amount'],
+                'tax_amount' => $financials['tax_amount'],
+                'total_amount' => $financials['total_amount'],
             ]);
 
             // 4. Create Line Items
@@ -75,34 +74,34 @@ class PurchaseReturnService
     {
         // 🛡️ ERP GUARD: Service-level protection against modifying finalized records
         if ($purchaseReturn->status === 'returned') {
-            throw new \Exception("Cannot modify a Purchase Return that has already been dispatched to the supplier.");
+            throw new \Exception('Cannot modify a Purchase Return that has already been dispatched to the supplier.');
         }
 
         return DB::transaction(function () use ($purchaseReturn, $data) {
-            
+
             // 1. Perform Financial Math
             $financials = $this->calculateFinancials($data['items'], $data['tax_type'], (float) ($data['discount_amount'] ?? 0));
 
             // 2. Update Header
             $purchaseReturn->update([
-                'store_id'                    => $data['store_id'],
-                'supplier_id'                 => $data['supplier_id'],
-                'warehouse_id'                => $data['warehouse_id'],
-                'return_date'                 => $data['return_date'],
+                'store_id' => $data['store_id'],
+                'supplier_id' => $data['supplier_id'],
+                'warehouse_id' => $data['warehouse_id'],
+                'return_date' => $data['return_date'],
                 'supplier_credit_note_number' => $data['supplier_credit_note_number'] ?? null,
-                'status'                      => $data['status'],
-                'tax_type'                    => $data['tax_type'],
-                'reason'                      => $data['reason'] ?? null,
-                'notes'                       => $data['notes'] ?? null,
-                
-                'subtotal'                    => $financials['subtotal'],
-                'discount_amount'             => $financials['discount_amount'],
-                'taxable_amount'              => $financials['taxable_amount'],
-                'cgst_amount'                 => $financials['cgst_amount'],
-                'sgst_amount'                 => $financials['sgst_amount'],
-                'igst_amount'                 => $financials['igst_amount'],
-                'tax_amount'                  => $financials['tax_amount'],
-                'total_amount'                => $financials['total_amount'],
+                'status' => $data['status'],
+                'tax_type' => $data['tax_type'],
+                'reason' => $data['reason'] ?? null,
+                'notes' => $data['notes'] ?? null,
+
+                'subtotal' => $financials['subtotal'],
+                'discount_amount' => $financials['discount_amount'],
+                'taxable_amount' => $financials['taxable_amount'],
+                'cgst_amount' => $financials['cgst_amount'],
+                'sgst_amount' => $financials['sgst_amount'],
+                'igst_amount' => $financials['igst_amount'],
+                'tax_amount' => $financials['tax_amount'],
+                'total_amount' => $financials['total_amount'],
             ]);
 
             // 3. Sync Line Items (Delete missing, update existing, create new)
@@ -131,11 +130,11 @@ class PurchaseReturnService
 
         foreach ($purchaseReturn->items as $item) {
             $this->inventoryService->deductStock(
-                sku:          $item->productSku,
-                warehouseId:  $purchaseReturn->warehouse_id,
-                qty:          (float) $item->quantity,
+                sku: $item->productSku,
+                warehouseId: $purchaseReturn->warehouse_id,
+                qty: (float) $item->quantity,
                 movementType: 'purchase_return',
-                reference:    $purchaseReturn
+                reference: $purchaseReturn
             );
         }
     }
@@ -147,6 +146,7 @@ class PurchaseReturnService
     {
         $itemsToInsert = array_map(function ($item) use ($purchaseReturn) {
             $item['purchase_return_id'] = $purchaseReturn->id;
+
             return $item;
         }, $processedItems);
 
@@ -163,7 +163,7 @@ class PurchaseReturnService
 
         // 1. Delete items removed from the UI
         $itemsToDelete = array_diff($existingItemIds, $submittedItemIds);
-        if (!empty($itemsToDelete)) {
+        if (! empty($itemsToDelete)) {
             PurchaseReturnItem::whereIn('id', $itemsToDelete)->delete();
         }
 
@@ -190,22 +190,26 @@ class PurchaseReturnService
         $totalCgst = 0.0;
         $totalSgst = 0.0;
         $totalIgst = 0.0;
-        
+
         $processedItems = [];
 
         foreach ($rawItems as $item) {
             $qty = (float) $item['quantity'];
             $unitCost = (float) $item['unit_cost'];
             $taxPercent = (float) ($item['tax_percent'] ?? 0);
-            
+
             // Base gross
             $grossAmount = $qty * $unitCost;
             $taxableAmount = $grossAmount; // In returns, line discounts are rare, but we base it on original unit cost
-            
+
             // Calculate Tax based on Header Tax Type (Intra-state vs Inter-state)
             $taxAmount = $taxableAmount * ($taxPercent / 100);
-            $cgstAmt = 0; $sgstAmt = 0; $igstAmt = 0;
-            $cgstPct = 0; $sgstPct = 0; $igstPct = 0;
+            $cgstAmt = 0;
+            $sgstAmt = 0;
+            $igstAmt = 0;
+            $cgstPct = 0;
+            $sgstPct = 0;
+            $igstPct = 0;
 
             if ($taxType === 'cgst_sgst') {
                 $cgstPct = $taxPercent / 2;
@@ -223,27 +227,27 @@ class PurchaseReturnService
             $originalItem = PurchaseItem::find($item['purchase_item_id']);
 
             $processedItems[] = [
-                'id'               => $item['id'] ?? null,
+                'id' => $item['id'] ?? null,
                 'purchase_item_id' => $item['purchase_item_id'],
-                'product_id'       => $item['product_id'],
-                'product_sku_id'   => $item['product_sku_id'],
-                'unit_id'          => $item['unit_id'],
-                'hsn_code'         => $originalItem?->hsn_code,
-                'quantity'         => $qty,
-                'unit_cost'        => $unitCost,
-                'tax_percent'      => $taxPercent,
-                'cgst_percent'     => $cgstPct,
-                'sgst_percent'     => $sgstPct,
-                'igst_percent'     => $igstPct,
-                'taxable_amount'   => round($taxableAmount, 4),
-                'cgst_amount'      => round($cgstAmt, 4),
-                'sgst_amount'      => round($sgstAmt, 4),
-                'igst_amount'      => round($igstAmt, 4),
-                'tax_amount'       => round($taxAmount, 4),
-                'total_price'      => round($lineTotal, 4),
-                'batch_number'     => $item['batch_number'] ?? null,
-                'return_reason'    => $item['return_reason'] ?? null,
-                'notes'            => $item['notes'] ?? null,
+                'product_id' => $item['product_id'],
+                'product_sku_id' => $item['product_sku_id'],
+                'unit_id' => $item['unit_id'],
+                'hsn_code' => $originalItem?->hsn_code,
+                'quantity' => $qty,
+                'unit_cost' => $unitCost,
+                'tax_percent' => $taxPercent,
+                'cgst_percent' => $cgstPct,
+                'sgst_percent' => $sgstPct,
+                'igst_percent' => $igstPct,
+                'taxable_amount' => round($taxableAmount, 4),
+                'cgst_amount' => round($cgstAmt, 4),
+                'sgst_amount' => round($sgstAmt, 4),
+                'igst_amount' => round($igstAmt, 4),
+                'tax_amount' => round($taxAmount, 4),
+                'total_price' => round($lineTotal, 4),
+                'batch_number' => $item['batch_number'] ?? null,
+                'return_reason' => $item['return_reason'] ?? null,
+                'notes' => $item['notes'] ?? null,
             ];
 
             $subtotal += $taxableAmount;
@@ -253,25 +257,25 @@ class PurchaseReturnService
         }
 
         $totalTax = $totalCgst + $totalSgst + $totalIgst;
-        
+
         // Global calculations
         $taxableAfterGlobalDiscount = max(0, $subtotal - $globalDiscountAmount);
-        
+
         // Note: For exact Indian Accounting, if global discount is applied, tax must be re-proportioned.
-        // For simplicity in standard ERPs, Returns usually map exactly to original line item taxes. 
+        // For simplicity in standard ERPs, Returns usually map exactly to original line item taxes.
         // We subtract the global discount from the final total.
         $grandTotal = $subtotal + $totalTax - $globalDiscountAmount;
 
         return [
-            'subtotal'        => round($subtotal, 2),
+            'subtotal' => round($subtotal, 2),
             'discount_amount' => round($globalDiscountAmount, 2),
-            'taxable_amount'  => round($taxableAfterGlobalDiscount, 2),
-            'cgst_amount'     => round($totalCgst, 2),
-            'sgst_amount'     => round($totalSgst, 2),
-            'igst_amount'     => round($totalIgst, 2),
-            'tax_amount'      => round($totalTax, 2),
-            'total_amount'    => round($grandTotal, 2),
-            'items'           => $processedItems,
+            'taxable_amount' => round($taxableAfterGlobalDiscount, 2),
+            'cgst_amount' => round($totalCgst, 2),
+            'sgst_amount' => round($totalSgst, 2),
+            'igst_amount' => round($totalIgst, 2),
+            'tax_amount' => round($totalTax, 2),
+            'total_amount' => round($grandTotal, 2),
+            'items' => $processedItems,
         ];
     }
 
@@ -281,7 +285,7 @@ class PurchaseReturnService
     private function generateReturnNumber(int $companyId): string
     {
         $year = date('Y');
-        
+
         $lastReturn = PurchaseReturn::where('company_id', $companyId)
             ->where('return_number', 'like', "PR-RTN-{$year}-%")
             ->orderBy('id', 'desc')
@@ -293,6 +297,6 @@ class PurchaseReturnService
             $sequence = (int) end($parts) + 1;
         }
 
-        return sprintf("PR-RTN-%s-%05d", $year, $sequence);
+        return sprintf('PR-RTN-%s-%05d', $year, $sequence);
     }
 }

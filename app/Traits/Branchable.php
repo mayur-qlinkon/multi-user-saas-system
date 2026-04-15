@@ -14,11 +14,11 @@ trait Branchable
     {
         // 1. Only apply if a user is logged in AND they have selected a store in their session
         if (Auth::check() && session()->has('store_id')) {
-            
+
             // 2. THE BRANCH WALL (Read Protection)
-            // Auto-append "where store_id = X" to queries. 
+            // Auto-append "where store_id = X" to queries.
             static::addGlobalScope('branch', function (Builder $builder) {
-                $builder->where($builder->getModel()->getTable() . '.store_id', session('store_id'));
+                $builder->where($builder->getModel()->getTable().'.store_id', session('store_id'));
             });
 
             // 3. AUTO-ASSIGN (Write Convenience)

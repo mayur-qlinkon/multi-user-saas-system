@@ -74,15 +74,21 @@
 
                 <div class="flex items-center gap-2.5">
                     <button
-                        class="bg-[#ef4444] hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm hidden">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i> Bulk Delete
+                        x-show="selected.length > 0"
+                        x-transition.opacity
+                        x-cloak
+                        @click="confirmBulkDelete()"
+                        class="bg-[#ef4444] hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Bulk Delete (<span x-text="selected.length"></span>)
                     </button>
 
                     @if (check_plan_limit('products'))
+                        @if(has_permission('products.create'))
                         <a href="{{ route('admin.products.create') }}"
                             class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
                             <i data-lucide="plus" class="w-4 h-4"></i> Add Product
                         </a>
+                        @endif
                     @else
                         <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-bold border border-red-100">
                             <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
@@ -100,6 +106,8 @@
                             class="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-[#f8fafc]">
                             <th class="px-6 py-4 w-10">
                                 <input type="checkbox"
+                                    @change="selected = $event.target.checked ? [{{ $products->pluck('id')->join(',') }}] : []"
+                                    :checked="selected.length > 0 && selected.length === {{ $products->count() }}"
                                     class="rounded border-gray-300 text-[#108c2a] focus:ring-[#108c2a] w-4 h-4 cursor-pointer">
                             </th>
                             <th class="px-6 py-4">PRODUCT</th>
@@ -120,6 +128,8 @@
                                 {{-- Checkbox --}}
                                 <td class="px-6 py-4">
                                     <input type="checkbox"
+                                        x-model.number="selected"
+                                        value="{{ $product->id }}"
                                         class="rounded border-gray-300 text-[#108c2a] focus:ring-[#108c2a] w-4 h-4 cursor-pointer">
                                 </td>
 
@@ -184,14 +194,22 @@
                                 {{-- Action --}}
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-3 text-gray-400">
+                                        
+                                        @if(has_permission('products.view'))
                                         <a href="{{ route('admin.products.show', $product->id) }}"
                                             class="hover:text-indigo-500 transition-colors" title="View">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
+                                        @endif
+
+                                        @if(has_permission('products.update'))
                                         <a href="{{ route('admin.products.edit', $product->id) }}"
                                             class="hover:text-blue-500 transition-colors" title="Edit">
                                             <i data-lucide="edit" class="w-4 h-4"></i>
                                         </a>
+                                        @endif
+
+                                        @if(has_permission('products.duplicate'))
                                         <form action="{{ route('admin.products.duplicate', $product->id) }}"
                                                 method="POST" class="inline-block m-0 p-0">
                                                 @csrf
@@ -200,6 +218,9 @@
                                                     <i data-lucide="copy" class="w-4 h-4"></i>
                                                 </button>
                                         </form>
+                                        @endif
+
+                                        @if(has_permission('products.delete'))
                                         <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST"
                                             @submit.prevent="confirmDelete($event.target)" class="inline-block m-0 p-0">
                                             @csrf @method('DELETE')
@@ -208,6 +229,7 @@
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>
                                         </form>
+                                        @endif 
                                     </div>
                                 </td>
                             </tr>
@@ -241,6 +263,45 @@
     <script>
         function productTable() {
             return {
+                selected: [], // Array to hold selected product IDs
+
+                // New Bulk Delete Function
+                confirmBulkDelete() {
+                    BizAlert.confirm(
+                        'Delete Selected Products?',
+                        `You are about to archive ${this.selected.length} products. This action cannot be undone.`,
+                        'Yes, Archive Them'
+                    ).then(async (result) => {
+                        if (result.isConfirmed) {
+                            BizAlert.loading('Archiving...');
+                            
+                            try {
+                                const response = await fetch('{{ route("admin.products.bulk-delete") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({ ids: this.selected })
+                                });
+
+                                const data = await response.json();
+
+                                if (data.success) {
+                                    // Let the session flash message handle the success alert on reload
+                                    window.location.reload();
+                                } else {
+                                    BizAlert.toast(data.message || 'Failed to delete products', 'error');
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                BizAlert.toast('Network error. Try again.', 'error');
+                            }
+                        }
+                    });
+                },
+
                 confirmDelete(form) {
                     BizAlert.confirm(
                         'Delete Product?',

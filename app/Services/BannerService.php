@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Banner;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,17 +21,17 @@ class BannerService
     public function store(array $data): Banner
     {
         return DB::transaction(function () use ($data) {
-                        
+
             $data['created_by'] = Auth::id();
             $data['updated_by'] = Auth::id();
 
             // ── Process desktop image (required) ──
             if (isset($data['image_file'])) {
                 $data['image'] = $this->uploadImage(
-                    file:   $data['image_file'],
-                    path:   'banners',
-                    width:  1920,
-                    old:    null
+                    file: $data['image_file'],
+                    path: 'banners',
+                    width: 1920,
+                    old: null
                 );
                 unset($data['image_file']);
             }
@@ -38,26 +39,26 @@ class BannerService
             // ── Process mobile image (optional) ──
             if (isset($data['mobile_image_file'])) {
                 $data['mobile_image'] = $this->uploadImage(
-                    file:  $data['mobile_image_file'],
-                    path:  'banners/mobile',
+                    file: $data['mobile_image_file'],
+                    path: 'banners/mobile',
                     width: 800,
-                    old:   null
+                    old: null
                 );
                 unset($data['mobile_image_file']);
             }
 
             // ── Defaults ──
-            $data['sort_order']  = $data['sort_order']  ?? $this->nextSortOrder($data['type'] ?? 'hero');
+            $data['sort_order'] = $data['sort_order'] ?? $this->nextSortOrder($data['type'] ?? 'hero');
             $data['click_count'] = 0;
-            $data['view_count']  = 0;
+            $data['view_count'] = 0;
 
             $banner = Banner::create($data);
 
             Log::info('[Banner] Created', [
-                'banner_id'  => $banner->id,
+                'banner_id' => $banner->id,
                 'company_id' => $banner->company_id,
-                'type'       => $banner->type,
-                'position'   => $banner->position,
+                'type' => $banner->type,
+                'position' => $banner->position,
                 'created_by' => $banner->created_by,
             ]);
 
@@ -77,10 +78,10 @@ class BannerService
             // ── Update desktop image if new one uploaded ──
             if (isset($data['image_file'])) {
                 $data['image'] = $this->uploadImage(
-                    file:  $data['image_file'],
-                    path:  'banners',
+                    file: $data['image_file'],
+                    path: 'banners',
                     width: 1920,
-                    old:   $banner->image
+                    old: $banner->image
                 );
                 unset($data['image_file']);
             }
@@ -88,10 +89,10 @@ class BannerService
             // ── Update mobile image if new one uploaded ──
             if (isset($data['mobile_image_file'])) {
                 $data['mobile_image'] = $this->uploadImage(
-                    file:  $data['mobile_image_file'],
-                    path:  'banners/mobile',
+                    file: $data['mobile_image_file'],
+                    path: 'banners/mobile',
                     width: 800,
-                    old:   $banner->mobile_image
+                    old: $banner->mobile_image
                 );
                 unset($data['mobile_image_file']);
             }
@@ -106,9 +107,9 @@ class BannerService
             $banner->update($data);
 
             Log::info('[Banner] Updated', [
-                'banner_id'  => $banner->id,
+                'banner_id' => $banner->id,
                 'company_id' => $banner->company_id,
-                'changed'    => array_keys($data),
+                'changed' => array_keys($data),
                 'updated_by' => Auth::id(),
             ]);
 
@@ -122,8 +123,8 @@ class BannerService
     public function delete(Banner $banner, bool $permanent = false): bool
     {
         try {
-            $id         = $banner->id;
-            $companyId  = $banner->company_id;
+            $id = $banner->id;
+            $companyId = $banner->company_id;
 
             if ($permanent) {
                 // Delete physical files only on permanent delete
@@ -133,7 +134,7 @@ class BannerService
                 $banner->forceDelete();
 
                 Log::warning('[Banner] Permanently Deleted', [
-                    'banner_id'  => $id,
+                    'banner_id' => $id,
                     'company_id' => $companyId,
                     'deleted_by' => Auth::id(),
                 ]);
@@ -141,7 +142,7 @@ class BannerService
                 $banner->delete(); // soft delete — files preserved
 
                 Log::info('[Banner] Soft Deleted', [
-                    'banner_id'  => $id,
+                    'banner_id' => $id,
                     'company_id' => $companyId,
                     'deleted_by' => Auth::id(),
                 ]);
@@ -153,9 +154,10 @@ class BannerService
             Log::error('[Banner] Delete Failed', [
                 'banner_id' => $banner->id ?? null,
                 'permanent' => $permanent,
-                'error'     => $e->getMessage(),
-                'trace'     => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return false;
         }
     }
@@ -170,7 +172,7 @@ class BannerService
             $banner->restore();
 
             Log::info('[Banner] Restored', [
-                'banner_id'   => $bannerId,
+                'banner_id' => $bannerId,
                 'restored_by' => Auth::id(),
             ]);
 
@@ -179,8 +181,9 @@ class BannerService
         } catch (Throwable $e) {
             Log::error('[Banner] Restore Failed', [
                 'banner_id' => $bannerId,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -192,13 +195,13 @@ class BannerService
     {
         try {
             $banner->update([
-                'is_active'  => !$banner->is_active,
+                'is_active' => ! $banner->is_active,
                 'updated_by' => Auth::id(),
             ]);
 
             Log::info('[Banner] Status Toggled', [
-                'banner_id'  => $banner->id,
-                'is_active'  => $banner->is_active,
+                'banner_id' => $banner->id,
+                'is_active' => $banner->is_active,
                 'updated_by' => Auth::id(),
             ]);
 
@@ -207,8 +210,9 @@ class BannerService
         } catch (Throwable $e) {
             Log::error('[Banner] Toggle Failed', [
                 'banner_id' => $banner->id,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -218,14 +222,16 @@ class BannerService
     // ════════════════════════════════════════════════════
     public function reorder(array $orderedIds): bool
     {
-        if (empty($orderedIds)) return true;
+        if (empty($orderedIds)) {
+            return true;
+        }
 
         try {
             $cases = '';
-            $ids   = implode(',', array_map('intval', $orderedIds));
+            $ids = implode(',', array_map('intval', $orderedIds));
 
             foreach ($orderedIds as $sortOrder => $id) {
-                $id    = (int) $id;
+                $id = (int) $id;
                 $cases .= "WHEN {$id} THEN {$sortOrder} ";
             }
 
@@ -238,7 +244,7 @@ class BannerService
             ");
 
             Log::info('[Banner] Reordered', [
-                'count'      => count($orderedIds),
+                'count' => count($orderedIds),
                 'updated_by' => Auth::id(),
             ]);
 
@@ -246,9 +252,10 @@ class BannerService
 
         } catch (Throwable $e) {
             Log::error('[Banner] Reorder Failed', [
-                'ids'   => $orderedIds,
+                'ids' => $orderedIds,
                 'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -265,7 +272,7 @@ class BannerService
             // Never crash the user experience for analytics
             Log::warning('[Banner] Click Track Failed', [
                 'banner_id' => $banner->id,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -280,7 +287,7 @@ class BannerService
         } catch (Throwable $e) {
             Log::warning('[Banner] View Track Failed', [
                 'banner_id' => $banner->id,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -288,9 +295,9 @@ class BannerService
     // ════════════════════════════════════════════════════
     //  GET ACTIVE BANNERS (storefront use)
     // ════════════════════════════════════════════════════
-    public function getActiveBanners(        
+    public function getActiveBanners(
         string $position = 'home_top',
-        string $type     = 'hero'
+        string $type = 'hero'
     ): Collection {
         try {
             return Banner::query()
@@ -300,40 +307,45 @@ class BannerService
                 ->get();
 
         } catch (Throwable $e) {
-            Log::warning('[Banner] Active Banners Fetch Failed', [                
-                'position'   => $position,
-                'type'       => $type,
-                'error'      => $e->getMessage(),
+            Log::warning('[Banner] Active Banners Fetch Failed', [
+                'position' => $position,
+                'type' => $type,
+                'error' => $e->getMessage(),
             ]);
 
             // Always return empty collection — never crash storefront
-            return new Collection();
+            return new Collection;
         }
     }
 
     // ════════════════════════════════════════════════════
     //  GET ADMIN LIST (paginated, with filters)
     // ════════════════════════════════════════════════════
-    public function getAdminList(        
-        ?string $type     = null,
+    public function getAdminList(
+        ?string $type = null,
         ?string $position = null,
-        int     $perPage  = 20
+        int $perPage = 20
     ) {
         try {
             $query = Banner::with(['creator', 'category', 'product'])
                 ->orderBy('sort_order')
                 ->orderBy('created_at', 'desc');
 
-            if ($type)     $query->where('type', $type);
-            if ($position) $query->where('position', $position);
+            if ($type) {
+                $query->where('type', $type);
+            }
+            if ($position) {
+                $query->where('position', $position);
+            }
 
             return $query->paginate($perPage);
 
         } catch (Throwable $e) {
-            Log::error('[Banner] Admin List Fetch Failed', [                
-                'error'      => $e->getMessage(),
+            Log::error('[Banner] Admin List Fetch Failed', [
+                'error' => $e->getMessage(),
             ]);
-            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
+
+            return new LengthAwarePaginator([], 0, $perPage);
         }
     }
 
@@ -344,19 +356,19 @@ class BannerService
     {
         return DB::transaction(function () use ($banner) {
             $newBanner = $banner->replicate(['click_count', 'view_count', 'created_at', 'updated_at']);
-            $newBanner->title      = $banner->title . ' (Copy)';
-            $newBanner->is_active  = false; // start inactive so owner reviews first
+            $newBanner->title = $banner->title.' (Copy)';
+            $newBanner->is_active = false; // start inactive so owner reviews first
             $newBanner->sort_order = $this->nextSortOrder($banner->type);
             $newBanner->created_by = Auth::id();
             $newBanner->updated_by = Auth::id();
             $newBanner->click_count = 0;
-            $newBanner->view_count  = 0;
+            $newBanner->view_count = 0;
             $newBanner->save();
 
             Log::info('[Banner] Duplicated', [
                 'original_id' => $banner->id,
-                'new_id'      => $newBanner->id,
-                'created_by'  => Auth::id(),
+                'new_id' => $newBanner->id,
+                'created_by' => Auth::id(),
             ]);
 
             return $newBanner;
@@ -373,13 +385,13 @@ class BannerService
     private function uploadImage(mixed $file, string $path, int $width, ?string $old): string
     {
         return $this->imageService->upload(
-            file:    $file,
-            path:    $path,
+            file: $file,
+            path: $path,
             options: [
                 'old_file' => $old,
-                'width'    => $width,
-                'format'   => 'webp',
-                'quality'  => 85,
+                'width' => $width,
+                'format' => 'webp',
+                'quality' => 85,
             ]
         );
     }
@@ -390,7 +402,9 @@ class BannerService
      */
     private function deleteFile(?string $path): void
     {
-        if (!$path) return;
+        if (! $path) {
+            return;
+        }
 
         try {
             if (Storage::disk('public')->exists($path)) {
@@ -398,7 +412,7 @@ class BannerService
             }
         } catch (Throwable $e) {
             Log::warning('[Banner] File Delete Failed', [
-                'path'  => $path,
+                'path' => $path,
                 'error' => $e->getMessage(),
             ]);
         }

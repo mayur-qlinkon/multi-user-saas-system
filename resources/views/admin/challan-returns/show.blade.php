@@ -48,6 +48,10 @@
     </style>
 @endpush
 
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Return Details</h1>
+@endsection
+
 @section('content')
     @php
         // Resolve Company and Store
@@ -76,7 +80,7 @@
         {{-- ACTION BAR (Hidden on Print) --}}
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
             <div>
-                <h1 class="text-xl font-bold text-[#212538] tracking-tight">Return Details</h1>
+                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Challan Return</h1>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -85,20 +89,24 @@
                     <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i> Back
                 </a>
 
-                <a href="{{ route('admin.challan-returns.edit', $challanReturn->id) }}"
-                    class="bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center shadow-sm font-medium">
-                    <i data-lucide="pencil" class="w-4 h-4 mr-1.5"></i> Edit Notes
-                </a>
+                @if(has_permission('challan_returns.update'))
+                    <a href="{{ route('admin.challan-returns.edit', $challanReturn->id) }}"
+                        class="bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 text-gray-600 px-4 py-1.5 rounded text-sm transition-colors flex items-center shadow-sm font-medium">
+                        <i data-lucide="pencil" class="w-4 h-4 mr-1.5"></i> Edit Notes
+                    </a>
+                @endif
 
                 <button onclick="window.print()"
                     class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold">
                     <i data-lucide="printer" class="w-4 h-4"></i> Print Receipt
                 </button>
 
-                <a href="{{ route('admin.challan-returns.pdf', $challanReturn->id) }}" target="_blank"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold">
-                    <i data-lucide="download" class="w-4 h-4"></i> Download PDF
-                </a>
+                @if(has_permission('challan_returns.download_pdf'))
+                    <a href="{{ route('admin.challan-returns.pdf', $challanReturn->id) }}" target="_blank"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded text-sm transition-colors flex items-center gap-1.5 shadow-sm font-bold">
+                        <i data-lucide="download" class="w-4 h-4"></i> Download PDF
+                    </a>
+                @endif
             </div>
         </div>
 

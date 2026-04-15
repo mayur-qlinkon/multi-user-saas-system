@@ -27,19 +27,21 @@
 @section('content')
     <div class="pb-20" x-data="invoiceReturnForm(@js($invoice), @js($companyState))">
 
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">
                     Create Return for <span class="text-[#108c2a]">{{ $invoice->invoice_number }}</span>
                 </h1>
-                <p class="text-sm text-gray-500 font-medium">Select the items the customer is returning to generate a Credit
-                    Note.</p>
+                <p class="text-sm text-gray-500 font-medium">Select the items the customer is returning to generate a Credit Note.</p>
             </div>
-            <div class="flex items-center gap-3">
+            {{-- UI Fix: Stack on mobile, side-by-side on md+ --}}
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
                 <a href="{{ route('admin.invoices.show', $invoice->id) }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-2 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
+                    Cancel
+                </a>
                 <button type="submit" form="returnForm"
-                    class="bg-red-600 hover:bg-red-700 text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center gap-2">
+                    class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-2">
                     <i data-lucide="file-minus" class="w-4 h-4"></i> Generate Draft Credit Note
                 </button>
             </div>
@@ -147,16 +149,16 @@
 
                 <div class="overflow-x-auto min-h-[200px]">
                     <table class="w-full text-left border-collapse">
-                        <thead
-                            class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        <thead class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
-                                <th class="px-5 py-4 w-10 text-center"><i data-lucide="check-square"
-                                        class="w-4 h-4 mx-auto"></i></th>
-                                <th class="px-4 py-4 min-w-[200px]">PRODUCT DETAILS</th>
-                                <th class="px-4 py-4 w-[120px] text-right">ORIGINAL QTY</th>
-                                <th class="px-4 py-4 w-[120px] text-right">PRICE (₹)</th>
-                                <th class="px-4 py-4 w-[150px] text-center">RETURN QTY</th>
-                                <th class="px-5 py-4 w-[160px] text-right">REFUND AMT (₹)</th>
+                                <th class="px-4 py-4 w-12 text-center"><i data-lucide="check-square" class="w-4 h-4 mx-auto"></i></th>
+                                <th class="px-4 py-4 min-w-[250px]">PRODUCT DETAILS</th>
+                                <th class="px-4 py-4 min-w-[100px] text-center">ORIGINAL QTY</th>
+                                <th class="px-4 py-4 min-w-[140px] text-right">RETURN PRICE (₹)</th>
+                                {{-- 🌟 NEW: Editable Tax Column --}}
+                                <th class="px-4 py-4 min-w-[110px] text-right">TAX (%)</th>
+                                <th class="px-4 py-4 min-w-[140px] text-center">RETURN QTY</th>
+                                <th class="px-5 py-4 min-w-[140px] text-right">REFUND AMT (₹)</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -165,52 +167,67 @@
                                     :class="item.is_returning ? 'bg-red-50/30' : 'hover:bg-gray-50/50'">
 
                                     {{-- Checkbox --}}
-                                    <td class="px-5 py-3 text-center align-middle">
-                                        <input type="checkbox" x-model="item.is_returning" @change="calculate()"
-                                            class="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer">
+                                    <td class="px-4 py-3 text-center align-middle">
+                                        {{-- UI Fix: Bigger touch target wrapper --}}
+                                        <div class="flex items-center justify-center w-full h-full min-h-[40px]">
+                                            <input type="checkbox" x-model="item.is_returning" @change="calculate()"
+                                                class="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer shadow-sm">
+                                        </div>
                                     </td>
 
                                     {{-- Product Info --}}
                                     <td class="px-4 py-3 align-middle">
                                         <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="text-[11px] text-gray-500 font-mono"
-                                                x-text="'SKU: ' + item.sku_code"></span>
+                                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                                            <span class="text-[11px] text-gray-500 font-mono" x-text="'SKU: ' + item.sku_code"></span>
                                             <span x-show="item.discount_amount > 0"
-                                                class="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold">
-                                                DISC: <span
-                                                    x-text="item.discount_type === 'percentage' ? item.discount_amount + '%' : '₹' + item.discount_amount"></span>
+                                                class="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded font-bold border border-amber-200">
+                                                DISC: <span x-text="item.discount_type === 'percentage' ? item.discount_amount + '%' : '₹' + item.discount_amount"></span>
                                             </span>
                                         </div>
                                     </td>
 
                                     {{-- Original Qty --}}
-                                    <td class="px-4 py-3 text-right align-middle">
-                                        <span class="text-[13px] font-semibold text-gray-600"
+                                    {{-- UI Fix: Center aligned to match header, better spacing --}}
+                                    <td class="px-4 py-3 text-center align-middle">
+                                        <span class="text-[13px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded"
                                             x-text="item.original_qty"></span>
                                     </td>
 
-                                    {{-- Unit Price --}}
-                                    <td class="px-4 py-3 text-right align-middle">
-                                        <span class="text-[13px] font-semibold text-gray-600"
-                                            x-text="formatCurrency(item.unit_price)"></span>
-                                        <div class="text-[9px] text-gray-400 mt-0.5">+ <span
-                                                x-text="item.tax_percent"></span>% Tax</div>
+                                    {{-- Editable Return Price --}}
+                                    <td class="px-4 py-3 align-middle">
+                                        <div class="relative w-full min-w-[100px]" :class="!item.is_returning ? 'opacity-50 pointer-events-none' : ''">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
+                                            <input type="number" step="0.01" x-model="item.unit_price"
+                                                @input="calculate()" :disabled="!item.is_returning"
+                                                class="w-full h-10 border border-gray-300 rounded px-2 pl-7 text-sm focus:border-red-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all bg-white">
+                                        </div>
+                                        {{-- UI Fix: Removed the static static tax text from here --}}
+                                    </td>
+
+                                    {{-- 🌟 NEW: Editable Tax Percentage --}}
+                                    <td class="px-4 py-3 align-middle text-right">
+                                        <div class="relative inline-block w-20 min-w-[80px]" :class="!item.is_returning ? 'opacity-50 pointer-events-none' : ''">
+                                            <input type="number" step="0.01" x-model="item.tax_percent"
+                                                @input="calculate()" :disabled="!item.is_returning"
+                                                class="w-full h-10 border border-gray-300 rounded px-2 pr-6 text-sm focus:border-red-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all bg-white">
+                                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">%</span>
+                                        </div>
                                     </td>
 
                                     {{-- Return Qty Input --}}
                                     <td class="px-4 py-3 align-middle">
-                                        <div class="flex justify-center"
+                                        <div class="flex justify-center min-w-[100px]"
                                             :class="!item.is_returning ? 'opacity-50 pointer-events-none' : ''">
                                             <input type="number" step="0.0001" x-model="item.return_qty"
                                                 @input="validateQty(item)" :disabled="!item.is_returning"
-                                                class="w-20 border border-gray-300 rounded px-2 py-1.5 text-center text-sm font-bold focus:border-red-500 outline-none text-red-600 bg-white">
+                                                class="w-24 h-10 border border-gray-300 rounded px-2 text-center text-sm font-black focus:border-red-500 outline-none text-red-600 bg-white shadow-inner">
                                         </div>
                                     </td>
 
                                     {{-- Line Total Return --}}
                                     <td class="px-5 py-3 text-right align-middle">
-                                        <span class="font-black text-gray-900 text-[14px]"
+                                        <span class="font-black text-gray-900 text-[15px]"
                                             x-text="item.is_returning ? formatCurrency(item.line_total) : '₹0.00'"></span>
                                     </td>
 
@@ -303,18 +320,18 @@
                         </template>
 
                         {{-- Original Invoice Global Discount Pro-ration (Optional handling) --}}
-                        <div class="flex justify-between items-center pt-2">
+                        <div class="flex flex-wrap sm:flex-nowrap justify-between items-center pt-2 gap-2">
                             <div class="flex items-center gap-2">
                                 <span class="font-semibold text-gray-600">Global Discount Reversal:</span>
                                 <select name="discount_type" x-model="global.discount_type" @change="calculate()"
-                                    class="border border-gray-300 rounded px-2 py-0.5 text-[11px] font-bold text-gray-600 focus:border-red-500 outline-none bg-gray-50">
+                                    class="border border-gray-300 rounded px-2 py-0.5 text-[11px] font-bold text-gray-600 focus:border-red-500 outline-none bg-gray-50 cursor-pointer">
                                     <option value="percentage">Percent (%)</option>
                                     <option value="fixed">Flat (₹)</option>
                                 </select>
                             </div>
                             <input type="number" step="0.01" name="discount_amount" x-model="global.discount_value"
                                 @input="calculate()"
-                                class="w-24 border border-gray-300 rounded px-2 py-1 text-right font-bold text-gray-800 focus:border-red-500 outline-none">
+                                class="w-24 sm:w-32 border border-gray-300 rounded px-2 py-1 text-right font-bold text-gray-800 focus:border-red-500 outline-none ml-auto shadow-sm">
                         </div>
 
                         {{-- Final Totals --}}

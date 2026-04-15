@@ -20,6 +20,7 @@ class RoleController extends Controller
     public function index()
     {
         $roles = $this->roleService->getRoles();
+
         // Pointing to the new folder structure
         return view('admin.roles.index', compact('roles'));
     }
@@ -27,6 +28,7 @@ class RoleController extends Controller
     public function create()
     {
         $permissions = $this->roleService->getGroupedPermissions();
+
         return view('admin.roles.create', compact('permissions'));
     }
 
@@ -35,7 +37,7 @@ class RoleController extends Controller
         $this->roleService->storeRole($request->validated());
 
         return redirect()->route('admin.roles.index')
-                         ->with('success', 'Custom role created successfully.');
+            ->with('success', 'Custom role created successfully.');
     }
 
     public function edit(Role $role)
@@ -46,7 +48,7 @@ class RoleController extends Controller
         }
 
         $permissions = $this->roleService->getGroupedPermissions();
-        
+
         // Extract just the IDs for easy checkbox matching in the frontend
         $rolePermissions = $role->permissions->pluck('id')->toArray();
 
@@ -63,7 +65,7 @@ class RoleController extends Controller
         $this->roleService->updateRole($role, $request->validated());
 
         return redirect()->route('admin.roles.index')
-                         ->with('success', 'Role updated successfully.');
+            ->with('success', 'Role updated successfully.');
     }
 
     public function destroy(Role $role)

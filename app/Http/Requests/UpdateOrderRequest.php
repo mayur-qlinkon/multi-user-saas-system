@@ -15,7 +15,7 @@ class UpdateOrderRequest extends FormRequest
     {
         // Add permission checks here (e.g., only admins or store managers can update orders)
         // return auth()->user()->can('update orders');
-        return true; 
+        return true;
     }
 
     /**
@@ -26,7 +26,7 @@ class UpdateOrderRequest extends FormRequest
         // If empty strings are sent for tracking, convert them to null
         $this->merge([
             'tracking_number' => $this->input('tracking_number') ?: null,
-            'courier_name'    => $this->input('courier_name') ?: null,
+            'courier_name' => $this->input('courier_name') ?: null,
         ]);
     }
 
@@ -42,34 +42,34 @@ class UpdateOrderRequest extends FormRequest
 
         // 1. Define the base rules inside a variable
         $rules = [
-            'status'                 => ['sometimes', 'required', 'string', Rule::in($validStatuses)],
-            'payment_status'         => ['sometimes', 'required', 'string', Rule::in($validPaymentStatuses)],
-            'cancellation_reason'    => ['required_if:status,cancelled', 'nullable', 'string', 'max:500'],
-            'courier_name'           => ['nullable', 'string', 'max:100'],
-            'tracking_number'        => ['nullable', 'string', 'max:100'],
+            'status' => ['sometimes', 'required', 'string', Rule::in($validStatuses)],
+            'payment_status' => ['sometimes', 'required', 'string', Rule::in($validPaymentStatuses)],
+            'cancellation_reason' => ['required_if:status,cancelled', 'nullable', 'string', 'max:500'],
+            'courier_name' => ['nullable', 'string', 'max:100'],
+            'tracking_number' => ['nullable', 'string', 'max:100'],
             'expected_delivery_date' => ['nullable', 'date', 'after_or_equal:today'],
-            'delivery_type'          => ['nullable', 'string', Rule::in(['delivery', 'pickup', 'digital'])],
-            'delivery_address'       => ['nullable', 'string', 'max:500'],
-            'delivery_city'          => ['nullable', 'string', 'max:100'],
-            'delivery_state'         => ['nullable', 'string', 'max:100'],
-            'delivery_pincode'       => ['nullable', 'string', 'max:20'],
-            'delivery_country'       => ['nullable', 'string', 'max:100'],
-            'admin_notes'            => ['nullable', 'string', 'max:1500'],
+            'delivery_type' => ['nullable', 'string', Rule::in(['delivery', 'pickup', 'digital'])],
+            'delivery_address' => ['nullable', 'string', 'max:500'],
+            'delivery_city' => ['nullable', 'string', 'max:100'],
+            'delivery_state' => ['nullable', 'string', 'max:100'],
+            'delivery_pincode' => ['nullable', 'string', 'max:20'],
+            'delivery_country' => ['nullable', 'string', 'max:100'],
+            'admin_notes' => ['nullable', 'string', 'max:1500'],
         ];
 
-        // 2. Append the financial/item rules ONLY if it's an admin order        
+        // 2. Append the financial/item rules ONLY if it's an admin order
         if ($order && $order->source === 'admin') {
-            $rules['discount_amount']      = ['nullable', 'numeric', 'min:0'];
-            $rules['shipping_amount']      = ['nullable', 'numeric', 'min:0'];
-            $rules['items']                = ['sometimes', 'array', 'min:1'];
-            $rules['items.*.product_id']   = ['required_with:items', 'integer']; 
-            $rules['items.*.sku_id']       = ['required_with:items', 'exists:product_skus,id'];
-            $rules['items.*.qty']          = ['required_with:items', 'integer', 'min:1'];
-            $rules['items.*.unit_price']   = ['required_with:items', 'numeric', 'min:0']; 
-            
+            $rules['discount_amount'] = ['nullable', 'numeric', 'min:0'];
+            $rules['shipping_amount'] = ['nullable', 'numeric', 'min:0'];
+            $rules['items'] = ['sometimes', 'array', 'min:1'];
+            $rules['items.*.product_id'] = ['required_with:items', 'integer'];
+            $rules['items.*.sku_id'] = ['required_with:items', 'exists:product_skus,id'];
+            $rules['items.*.qty'] = ['required_with:items', 'integer', 'min:1'];
+            $rules['items.*.unit_price'] = ['required_with:items', 'numeric', 'min:0'];
+
             // 🌟 ADD THESE TWO RULES:
             $rules['items.*.product_name'] = ['required_with:items', 'string'];
-            $rules['items.*.sku_code']     = ['nullable', 'string'];
+            $rules['items.*.sku_code'] = ['nullable', 'string'];
         }
 
         // 3. Return the final, combined rules array
@@ -82,9 +82,9 @@ class UpdateOrderRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'status.in'                      => 'Invalid order status selected.',
-            'payment_status.in'              => 'Invalid payment status selected.',
-            'cancellation_reason.required_if'=> 'You must provide a reason when cancelling an order.',
+            'status.in' => 'Invalid order status selected.',
+            'payment_status.in' => 'Invalid payment status selected.',
+            'cancellation_reason.required_if' => 'You must provide a reason when cancelling an order.',
             'expected_delivery_date.after_or_equal' => 'The expected delivery date cannot be in the past.',
         ];
     }
@@ -92,7 +92,7 @@ class UpdateOrderRequest extends FormRequest
     /**
      * Configure the validator instance to add complex conditional logic.
      */
-   public function withValidator($validator): void
+    public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
             $order = $this->route('order');
@@ -103,7 +103,7 @@ class UpdateOrderRequest extends FormRequest
                     if ($this->filled('delivery_address') && $this->delivery_address !== $order->delivery_address) {
                         $validator->errors()->add('delivery_address', 'Address cannot be changed after the order has been fulfilled.');
                     }
-                    
+
                     // Admin Orders: Items locked if fulfilled
                     if ($order->source === 'admin') {
                         if ($this->has('items') || $this->has('discount_amount') || $this->has('shipping_amount')) {
@@ -121,5 +121,4 @@ class UpdateOrderRequest extends FormRequest
             }
         });
     }
-    
 }

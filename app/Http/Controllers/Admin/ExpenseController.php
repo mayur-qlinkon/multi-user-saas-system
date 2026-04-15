@@ -11,7 +11,6 @@ use App\Services\ExpenseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Throwable;
 
@@ -39,13 +38,13 @@ class ExpenseController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('merchant_name', 'like', "%{$search}%")
-                  ->orWhere('expense_number', 'like', "%{$search}%")
-                  ->orWhere('reference_number', 'like', "%{$search}%");
+                    ->orWhere('expense_number', 'like', "%{$search}%")
+                    ->orWhere('reference_number', 'like', "%{$search}%");
             });
         }
 
         $expenses = $query->paginate(20)->withQueryString();
-        
+
         // Fetch root categories with their children for a clean filter dropdown
         $categories = ExpenseCategory::active()->root()->with('children')->ordered()->get();
 
@@ -89,12 +88,12 @@ class ExpenseController extends Controller
     {
         // Eager load the polymorphic Spatie Activity Log and the unified Payments
         $expense->load([
-            'category', 
-            'user', 
-            'approver', 
+            'category',
+            'user',
+            'approver',
             'media',
             'payments',
-            'activities.causer' // Who did what in the audit trail
+            'activities.causer', // Who did what in the audit trail
         ]);
 
         return view('admin.expenses.show', compact('expense'));
@@ -161,7 +160,7 @@ class ExpenseController extends Controller
     public function updateStatus(Request $request, Expense $expense): JsonResponse
     {
         $request->validate([
-            'status' => 'required|in:draft,pending_approval,approved,rejected,reimbursed'
+            'status' => 'required|in:draft,pending_approval,approved,rejected,reimbursed',
         ]);
 
         try {
@@ -169,14 +168,14 @@ class ExpenseController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Expense status updated to ' . ucfirst(str_replace('_', ' ', $request->status)),
-                'status'  => $request->status
+                'message' => 'Expense status updated to '.ucfirst(str_replace('_', ' ', $request->status)),
+                'status' => $request->status,
             ]);
 
         } catch (Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update status.'
+                'message' => 'Failed to update status.',
             ], 500);
         }
     }

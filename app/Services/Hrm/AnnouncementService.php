@@ -5,10 +5,8 @@ namespace App\Services\Hrm;
 use App\Models\Hrm\Announcement;
 use App\Models\Hrm\AnnouncementAcknowledgement;
 use App\Models\User;
-
-
-
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +21,9 @@ class AnnouncementService
 
     public function create(array $data): Announcement
     {
-        $data['created_by']      = Auth::id();
+        $data['created_by'] = Auth::id();
         $data['last_updated_by'] = Auth::id();
-        $data['status']          = $this->resolveInitialStatus($data);
+        $data['status'] = $this->resolveInitialStatus($data);
 
         return Announcement::create($data);
     }
@@ -40,6 +38,7 @@ class AnnouncementService
         }
 
         $announcement->update($data);
+
         return $announcement->fresh();
     }
 
@@ -59,22 +58,23 @@ class AnnouncementService
     {
         $announcement = Announcement::withTrashed()->findOrFail($id);
         $announcement->restore();
+
         return $announcement;
     }
 
     public function duplicate(Announcement $announcement): Announcement
     {
         $copy = $announcement->replicate();
-        $copy->title          = 'Copy of ' . $announcement->title;
-        $copy->status         = Announcement::STATUS_DRAFT;
-        $copy->publish_at     = null;
-        $copy->expire_at      = null;
-        $copy->published_at   = null;
-        $copy->published_by   = null;
-        $copy->is_pinned      = false;
-        $copy->attachment     = null;
+        $copy->title = 'Copy of '.$announcement->title;
+        $copy->status = Announcement::STATUS_DRAFT;
+        $copy->publish_at = null;
+        $copy->expire_at = null;
+        $copy->published_at = null;
+        $copy->published_by = null;
+        $copy->is_pinned = false;
+        $copy->attachment = null;
         $copy->attachment_name = null;
-        $copy->created_by     = Auth::id();
+        $copy->created_by = Auth::id();
         $copy->last_updated_by = Auth::id();
         $copy->save();
 
@@ -94,13 +94,13 @@ class AnnouncementService
         );
 
         $announcement->update([
-            'status'       => Announcement::STATUS_PUBLISHED,
-            'publish_at'   => $announcement->publish_at ?? now(),
+            'status' => Announcement::STATUS_PUBLISHED,
+            'publish_at' => $announcement->publish_at ?? now(),
             'published_at' => now(),
             'published_by' => Auth::id(),
         ]);
 
-        $this->clearAllPendingCaches($announcement);        
+        $this->clearAllPendingCaches($announcement);
 
         return $announcement->fresh();
     }
@@ -114,7 +114,7 @@ class AnnouncementService
         );
 
         $announcement->update([
-            'status'       => Announcement::STATUS_DRAFT,
+            'status' => Announcement::STATUS_DRAFT,
             'published_at' => null,
             'published_by' => null,
         ]);
@@ -133,7 +133,7 @@ class AnnouncementService
         );
 
         $announcement->update([
-            'status'     => Announcement::STATUS_SCHEDULED,
+            'status' => Announcement::STATUS_SCHEDULED,
             'publish_at' => $publishAt,
         ]);
 
@@ -151,11 +151,11 @@ class AnnouncementService
     ): AnnouncementAcknowledgement {
         $ack = AnnouncementAcknowledgement::firstOrNew([
             'announcement_id' => $announcement->id,
-            'user_id'         => Auth::id(),
+            'user_id' => Auth::id(),
         ]);
 
-        if (!$ack->read_at) {
-            $ack->read_at    = now();
+        if (! $ack->read_at) {
+            $ack->read_at = now();
             $ack->ip_address = $ip;
             $ack->user_agent = $userAgent;
             $ack->save();
@@ -171,14 +171,14 @@ class AnnouncementService
     ): AnnouncementAcknowledgement {
         $ack = AnnouncementAcknowledgement::firstOrNew([
             'announcement_id' => $announcement->id,
-            'user_id'         => Auth::id(),
+            'user_id' => Auth::id(),
         ]);
 
         if (! $ack->acknowledged_at) {
-            $ack->read_at         = $ack->read_at ?? now();
+            $ack->read_at = $ack->read_at ?? now();
             $ack->acknowledged_at = now();
-            $ack->ip_address      = $ip;
-            $ack->user_agent      = $userAgent;
+            $ack->ip_address = $ip;
+            $ack->user_agent = $userAgent;
             $ack->save();
         }
 
@@ -197,14 +197,14 @@ class AnnouncementService
     ): AnnouncementAcknowledgement {
         $ack = AnnouncementAcknowledgement::firstOrNew([
             'announcement_id' => $announcement->id,
-            'user_id'         => Auth::id(),
+            'user_id' => Auth::id(),
         ]);
 
         if (! $ack->dismissed_at) {
-            $ack->read_at      = $ack->read_at ?? now();
+            $ack->read_at = $ack->read_at ?? now();
             $ack->dismissed_at = now();
-            $ack->ip_address   = $ip;
-            $ack->user_agent   = $userAgent;
+            $ack->ip_address = $ip;
+            $ack->user_agent = $userAgent;
             $ack->save();
         }
 
@@ -286,7 +286,7 @@ class AnnouncementService
      * Base query: published, for audience, not acknowledged, not dismissed.
      * Excludes the creator and publisher — they should never see their own popup.
      */
-    private function getPendingQuery(User $user): \Illuminate\Database\Eloquent\Builder
+    private function getPendingQuery(User $user): Builder
     {
         $handledIds = AnnouncementAcknowledgement::where('user_id', $user->id)
             ->where(function ($q) {
@@ -321,26 +321,26 @@ class AnnouncementService
         $query = Announcement::with(['createdByUser', 'publishedByUser'])
             ->withCount([
                 'acknowledgements',
-                'acknowledgements as read_count'         => fn($q) => $q->whereNotNull('read_at'),
-                'acknowledgements as acknowledged_count' => fn($q) => $q->whereNotNull('acknowledged_at'),
+                'acknowledgements as read_count' => fn ($q) => $q->whereNotNull('read_at'),
+                'acknowledgements as acknowledged_count' => fn ($q) => $q->whereNotNull('acknowledged_at'),
             ]);
 
-        if (!empty($filters['search'])) {
-            $query->where(fn($q) => $q
+        if (! empty($filters['search'])) {
+            $query->where(fn ($q) => $q
                 ->where('title', 'like', "%{$filters['search']}%")
                 ->orWhere('content', 'like', "%{$filters['search']}%")
             );
         }
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['priority'])) {
+        if (! empty($filters['priority'])) {
             $query->where('priority', $filters['priority']);
         }
 
@@ -348,9 +348,9 @@ class AnnouncementService
             $query->where('is_pinned', (bool) $filters['is_pinned']);
         }
 
-        $allowed  = ['title', 'created_at', 'publish_at', 'priority', 'status'];
-        $sortBy   = in_array($filters['sort_by'] ?? null, $allowed) ? $filters['sort_by'] : 'created_at';
-        $sortDir  = ($filters['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        $allowed = ['title', 'created_at', 'publish_at', 'priority', 'status'];
+        $sortBy = in_array($filters['sort_by'] ?? null, $allowed) ? $filters['sort_by'] : 'created_at';
+        $sortDir = ($filters['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
         return $query->orderBy($sortBy, $sortDir)
             ->paginate($filters['per_page'] ?? 25)
@@ -366,10 +366,10 @@ class AnnouncementService
             ->forAudience($user)
             ->with('createdByUser')
             ->withCount([
-                'acknowledgements as acknowledged_count' => fn($q) => $q->whereNotNull('acknowledged_at'),
+                'acknowledgements as acknowledged_count' => fn ($q) => $q->whereNotNull('acknowledged_at'),
             ]);
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
@@ -392,7 +392,7 @@ class AnnouncementService
             ->whereNotNull('publish_at')
             ->where('publish_at', '<=', now())
             ->update([
-                'status'       => Announcement::STATUS_PUBLISHED,
+                'status' => Announcement::STATUS_PUBLISHED,
                 'published_at' => now(),
             ]);
     }

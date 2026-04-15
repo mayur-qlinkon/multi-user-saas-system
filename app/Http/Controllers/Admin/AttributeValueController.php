@@ -16,7 +16,7 @@ class AttributeValueController extends Controller
             'value' => [
                 'required', 'string', 'max:100',
                 // Prevent duplicate values inside the SAME attribute (e.g., two "Red"s in "Color")
-                Rule::unique('attribute_values', 'value')->where(fn ($query) => $query->where('attribute_id', $attribute->id))
+                Rule::unique('attribute_values', 'value')->where(fn ($query) => $query->where('attribute_id', $attribute->id)),
             ],
             'color_code' => ['nullable', 'string', 'max:20'],
         ]);
@@ -25,7 +25,7 @@ class AttributeValueController extends Controller
         $attribute->values()->create($validated);
 
         return redirect()->route('admin.attributes.index', ['active_id' => $attribute->id])
-                         ->with('success', 'Option added successfully.');
+            ->with('success', 'Option added successfully.');
     }
 
     public function update(Request $request, AttributeValue $attributeValue)
@@ -35,7 +35,7 @@ class AttributeValueController extends Controller
                 'required', 'string', 'max:100',
                 Rule::unique('attribute_values', 'value')
                     ->where(fn ($query) => $query->where('attribute_id', $attributeValue->attribute_id))
-                    ->ignore($attributeValue->id)
+                    ->ignore($attributeValue->id),
             ],
             'color_code' => ['nullable', 'string', 'max:20'],
         ]);
@@ -43,7 +43,7 @@ class AttributeValueController extends Controller
         $attributeValue->update($validated);
 
         return redirect()->route('admin.attributes.index', ['active_id' => $attributeValue->attribute_id])
-                         ->with('success', 'Option updated successfully.');
+            ->with('success', 'Option updated successfully.');
     }
 
     public function destroy(AttributeValue $attributeValue)
@@ -52,6 +52,6 @@ class AttributeValueController extends Controller
         $attributeValue->delete();
 
         return redirect()->route('admin.attributes.index', ['active_id' => $attributeId])
-                         ->with('success', 'Option removed.');
+            ->with('success', 'Option removed.');
     }
 }

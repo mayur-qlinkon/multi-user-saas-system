@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Traits\Tenantable; // 🛡️ Added the Iron Wall
+use Illuminate\Database\Eloquent\SoftDeletes; // 🛡️ Added the Iron Wall
 
 class ProductSku extends Model
 {
@@ -40,6 +40,7 @@ class ProductSku extends Model
             'category_id' => null,
         ]);
     }
+
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class, 'unit_id');
@@ -60,8 +61,8 @@ class ProductSku extends Model
     public function warehouses()
     {
         return $this->belongsToMany(Warehouse::class, 'product_stocks')
-                    ->withPivot('qty', 'rack_number')
-                    ->withTimestamps();
+            ->withPivot('qty', 'rack_number')
+            ->withTimestamps();
     }
 
     // Helper to get total live stock for this specific SKU across all warehouses
@@ -70,13 +71,15 @@ class ProductSku extends Model
         // Sums up the 'qty' column directly from the product_stocks table
         return $this->stocks()->sum('qty');
     }
+
     /**
      * CORE RULE: If barcode exists -> use barcode. If empty -> use SKU.
      */
     public function getDisplayBarcodeAttribute(): string
     {
-        return !empty($this->barcode) ? $this->barcode : $this->sku;
+        return ! empty($this->barcode) ? $this->barcode : $this->sku;
     }
+
     /**
      * Relationship: A SKU can have many batches.
      */

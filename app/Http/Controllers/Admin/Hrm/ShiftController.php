@@ -41,7 +41,7 @@ class ShiftController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             Shift::where('is_default', true)->update(['is_default' => false]);
         }
 
@@ -69,7 +69,7 @@ class ShiftController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             Shift::where('id', '!=', $shift->id)->where('is_default', true)->update(['is_default' => false]);
         }
 

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseReturnItem extends Model
 {
@@ -19,7 +18,7 @@ class PurchaseReturnItem extends Model
         // Ownership
         'purchase_return_id',
         'purchase_item_id',
-        
+
         // Product References
         'product_id',
         'product_sku_id',
@@ -57,20 +56,20 @@ class PurchaseReturnItem extends Model
      */
     protected $casts = [
         // Percentages (5,2)
-        'tax_percent'    => 'decimal:2',
-        'cgst_percent'   => 'decimal:2',
-        'sgst_percent'   => 'decimal:2',
-        'igst_percent'   => 'decimal:2',
+        'tax_percent' => 'decimal:2',
+        'cgst_percent' => 'decimal:2',
+        'sgst_percent' => 'decimal:2',
+        'igst_percent' => 'decimal:2',
 
         // High Precision Amounts (15,4)
-        'quantity'       => 'decimal:4',
-        'unit_cost'      => 'decimal:4',
+        'quantity' => 'decimal:4',
+        'unit_cost' => 'decimal:4',
         'taxable_amount' => 'decimal:4',
-        'cgst_amount'    => 'decimal:4',
-        'sgst_amount'    => 'decimal:4',
-        'igst_amount'    => 'decimal:4',
-        'tax_amount'     => 'decimal:4',
-        'total_price'    => 'decimal:4',
+        'cgst_amount' => 'decimal:4',
+        'sgst_amount' => 'decimal:4',
+        'igst_amount' => 'decimal:4',
+        'tax_amount' => 'decimal:4',
+        'total_price' => 'decimal:4',
     ];
 
     /*
@@ -79,7 +78,7 @@ class PurchaseReturnItem extends Model
     |--------------------------------------------------------------------------
     */
 
-   // Link back to the parent Purchase Return document
+    // Link back to the parent Purchase Return document
     public function purchaseReturn()
     {
         return $this->belongsTo(PurchaseReturn::class);

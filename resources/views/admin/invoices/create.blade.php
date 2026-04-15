@@ -34,11 +34,12 @@
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Invoice</h1>
             </div>
-            <div class="flex items-center gap-3">
+            {{-- UI Fix: Make buttons full width on mobile, auto width on screens sm+ --}}
+            <div class="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 justify-end">
                 <a href="{{ route('admin.invoices.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2">Cancel</a>
                 <button type="submit" form="mainInvoiceForm"
-                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center gap-2">
+                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2">
                     <i data-lucide="check-circle" class="w-4 h-4"></i> Generate Invoice
                 </button>
             </div>
@@ -76,7 +77,8 @@
                 <input type="hidden" name="challan_id" value="{{ $challanPrefill->id }}">
 
                 {{-- Conversion Banner --}}
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+                {{-- UI Fix: Stack elements on mobile, side-by-side on sm+ --}}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <div class="bg-blue-600 p-2 rounded-lg text-white flex-shrink-0">
                         <i data-lucide="file-check" class="w-5 h-5"></i>
                     </div>
@@ -130,7 +132,7 @@
 
                                     {{-- Floating Dropdown List --}}
                                     <ul x-show="isClientDropdownOpen" x-cloak x-transition
-                                        class="absolute z-[60] w-[calc(100%-2.5rem)] bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto top-full left-0 custom-scrollbar">
+                                        class="absolute z-[60] w-[calc(100%-2.5rem)] bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto overscroll-contain top-full left-0 custom-scrollbar">
                                         
                                         <li x-show="filteredClientList.length === 0" class="px-4 py-4 text-sm text-gray-500 text-center font-medium">
                                             No matching customers found.
@@ -249,7 +251,7 @@
                             class="w-full border border-gray-300 rounded shadow-sm pl-9 pr-4 py-2.5 text-sm focus:border-brand-500 outline-none bg-white">
 
                         <ul x-show="showResults && globalSearch.length > 1" x-cloak
-                            class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto top-full left-0">
+                            class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto overscroll-contain top-full left-0 custom-scrollbar">
 
                             {{-- 🌟 Searching Indicator --}}
                             <li x-show="isSearching"
@@ -300,15 +302,16 @@
 
             <div class="overflow-x-auto min-h-[200px]">
                 <table class="w-full text-left border-collapse">
-                    <thead
-                        class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                         <tr>
                             <th class="px-5 py-4 min-w-[250px]">PRODUCT DETAILS</th>
-                            <th class="px-4 py-4 w-[120px] text-center">HSN/SAC</th>
-                            <th class="px-4 py-4 w-[140px] text-right">UNIT PRICE</th>
-                            <th class="px-4 py-4 w-[140px] text-center">QTY</th>
-                            <th class="px-4 py-4 w-[120px] text-right">TAX %</th>
-                            <th class="px-5 py-4 w-[160px] text-right">LINE TOTAL</th>
+                            <th class="px-4 py-4 min-w-[100px] text-center">HSN/SAC</th>
+                            {{-- Updated: Added min-w-[140px] --}}
+                            <th class="px-4 py-4 min-w-[140px] text-right">UNIT PRICE</th>
+                            {{-- Updated: Added min-w-[140px] --}}
+                            <th class="px-4 py-4 min-w-[140px] text-center">QTY</th>
+                            <th class="px-4 py-4 min-w-[100px] text-right">TAX %</th>
+                            <th class="px-5 py-4 min-w-[120px] text-right">LINE TOTAL</th>
                             <th class="px-4 py-4 w-[60px] text-center"></th>
                         </tr>
                     </thead>
@@ -374,32 +377,32 @@
                                 </td>
 
                                 {{-- 3. Base Unit Price Input --}}
-                                <td class="px-4 py-3">
-                                    <div class="relative">
-                                        <span
-                                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
+                                <td class="px-4 py-3 align-middle">
+                                    <div class="relative w-full min-w-[100px]">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
+                                        {{-- UI Fix: Replaced py-2 with explicit h-10 / md:h-9 to match QTY perfectly --}}
                                         <input type="number" step="0.01" x-model="item.unit_price"
                                             @input="calculate()"
-                                            class="w-full border border-gray-300 rounded px-2 pl-7 py-2 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right">
+                                            class="w-full h-10 md:h-9 border border-gray-300 rounded px-2 pl-7 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all">
                                     </div>
                                 </td>
 
-                                {{-- 4. Quantity Input (locked for challan conversions) --}}
-                                <td class="px-4 py-3">
+                                {{-- 4. Quantity Input --}}
+                                <td class="px-4 py-3 align-middle">
                                     <template x-if="item.challan_item_id">
                                         <div class="text-center font-black text-gray-800 text-[14px]" x-text="item.quantity"></div>
                                     </template>
                                     <template x-if="!item.challan_item_id">
-                                        <div class="flex items-center justify-center">
+                                        <div class="flex items-center justify-center min-w-[120px]">
                                             <button type="button"
                                                 @click="item.quantity = Math.max(1, parseFloat(item.quantity || 0) - 1); calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">-</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">-</button>
                                             <input type="number" step="0.0001" x-model="item.quantity"
                                                 @input="calculate()"
-                                                class="w-16 h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700">
+                                                class="w-16 h-10 md:h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700 shadow-inner">
                                             <button type="button"
                                                 @click="item.quantity = parseFloat(item.quantity || 0) + 1; calculate()"
-                                                class="w-8 h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600">+</button>
+                                                class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">+</button>
                                         </div>
                                     </template>
                                 </td>
@@ -441,9 +444,11 @@
             </div>
     </div>
 
-    {{-- 3. SUMMARY & PAYMENT --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        <div class="lg:col-span-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
+    {{-- 3. SUMMARY & PAYMENT --}}    
+    {{-- UI Fix: 2 columns on iPad (md), 3 columns on Desktop (xl) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
+        {{-- UI Fix: Notes takes full width on iPad, 1 column on Desktop --}}
+        <div class="md:col-span-2 xl:col-span-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
             <h3 class="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-3">Notes & Terms</h3>
             <textarea name="notes" rows="2" placeholder="Internal notes..."
                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-brand-500 outline-none resize-none"></textarea>
@@ -513,7 +518,8 @@
                 </template>
 
                 {{-- Global Discount --}}
-                <div class="flex justify-between items-center pt-2">
+                {{-- UI Fix: Added flex-wrap and responsive input widths --}}
+                <div class="flex flex-wrap xl:flex-nowrap justify-between items-center pt-2 gap-2">
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-gray-600">Discount:</span>
                         <select x-model="global.discount_type" @change="calculate()"
@@ -524,17 +530,17 @@
                     </div>
                     <input type="number" step="0.01" name="global_discount_value" x-model="global.discount_value"
                         @input="calculate()"
-                        class="w-32 border border-gray-300 rounded px-3 py-1 text-right font-bold text-red-500 focus:border-[#108c2a] outline-none"
+                        class="w-24 sm:w-32 border border-gray-300 rounded px-3 py-1 text-right font-bold text-red-500 focus:border-[#108c2a] outline-none ml-auto"
                         placeholder="0.00">
                     <input type="hidden" name="global_discount_type" :value="global.discount_type">
                 </div>
 
                 {{-- Shipping --}}
-                <div class="flex justify-between items-center pt-2 border-b border-gray-100 pb-4">
+                <div class="flex flex-wrap xl:flex-nowrap justify-between items-center pt-2 border-b border-gray-100 pb-4 gap-2">
                     <span class="font-semibold">Shipping Cost (₹):</span>
                     <input type="number" step="0.01" name="shipping_charge" x-model="global.shipping"
                         @input="calculate()"
-                        class="w-32 border border-gray-300 rounded px-3 py-1 text-right font-bold text-gray-800 focus:border-[#108c2a] outline-none">
+                        class="w-24 sm:w-32 border border-gray-300 rounded px-3 py-1 text-right font-bold text-gray-800 focus:border-[#108c2a] outline-none ml-auto">
                 </div>
 
                 {{-- Final Totals --}}

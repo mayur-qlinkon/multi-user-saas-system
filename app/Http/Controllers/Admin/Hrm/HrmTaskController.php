@@ -34,6 +34,7 @@ class HrmTaskController extends Controller
     public function create()
     {
         $employees = Employee::active()->with('user')->get();
+
         return view('admin.hrm.tasks.create', compact('employees'));
     }
 
@@ -65,6 +66,7 @@ class HrmTaskController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
+
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
@@ -117,6 +119,7 @@ class HrmTaskController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
+
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
@@ -124,6 +127,7 @@ class HrmTaskController extends Controller
     public function destroy(HrmTask $task)
     {
         $this->taskService->delete($task);
+
         return response()->json(['success' => true, 'message' => 'Task deleted.']);
     }
 
@@ -139,6 +143,7 @@ class HrmTaskController extends Controller
 
         try {
             $task = $this->taskService->updateStatus($task, $validated['status'], $validated['note'] ?? null);
+
             return response()->json(['success' => true, 'message' => 'Task status updated.', 'data' => $task]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);

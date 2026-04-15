@@ -2,34 +2,34 @@
 
 namespace App\Services;
 
+use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PurchaseReturn;
 use App\Models\Store;
-use App\Models\Order;
-use App\Models\Invoice;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class PaymentService
 {
     /**
      * Primary Entry Point: Record a payment against ANY document (Invoice/Purchase)
+     *
      * * @param mixed $document The Invoice or Purchase model instance
-     * @param array $data ['amount', 'payment_method_id', 'reference', 'payment_date', 'notes']
+     * @param  array  $data  ['amount', 'payment_method_id', 'reference', 'payment_date', 'notes']
      */
     public function recordPayment($document, array $data): Payment
     {
         return DB::transaction(function () use ($document, $data) {
-            
+
             // 1. Identify Party Type and Direction
             $isInvoice = $document instanceof Invoice;
-            $isOrder   = $document instanceof Order;
+            $isOrder = $document instanceof Order;
             // Orders are always customer-received — not supplier-sent
             $partyType = ($isInvoice || $isOrder) ? 'customer' : 'supplier';
-            
-            /** * 🌟 THE CRITICAL FIX: 
+
+            /** * 🌟 THE CRITICAL FIX:
              * For Guest sales, customer_id is null. We fallback to 0.
              * In ERP logic, party_id 0 represents an "Anonymous/Walk-in" party.
              */
@@ -47,48 +47,48 @@ class PaymentService
                 $changeReturned = $amountReceived - $invoiceTotal;
                 $actualPaidAmount = $invoiceTotal; // Cap at invoice total
                 $invoiceTotal = (float) $document->grand_total;
-                    Log::debug('[PaymentService] Amounts', [
-                        'grand_total'     => $document->grand_total,
-                        'invoiceTotal'    => $invoiceTotal,
-                        'amountReceived'  => $amountReceived,
-                        'actualPaid'      => $actualPaidAmount ?? 'not set yet',
-                    ]);
+                Log::debug('[PaymentService] Amounts', [
+                    'grand_total' => $document->grand_total,
+                    'invoiceTotal' => $invoiceTotal,
+                    'amountReceived' => $amountReceived,
+                    'actualPaid' => $actualPaidAmount ?? 'not set yet',
+                ]);
             } else {
                 $changeReturned = 0;
                 $actualPaidAmount = $amountReceived;
             }
 
-           $storeId = $document->store_id
-            ?? Store::where('company_id', $document->company_id)
-                ->where('is_active', true)->value('id')
-            ?? Store::where('company_id', $document->company_id)
-                ->value('id');
+            $storeId = $document->store_id
+             ?? Store::where('company_id', $document->company_id)
+                 ->where('is_active', true)->value('id')
+             ?? Store::where('company_id', $document->company_id)
+                 ->value('id');
 
             // 2. Create the Payment Record
             $payment = Payment::create([
-                'company_id'        => $document->company_id,
-                'store_id'          => $storeId,
-                'created_by'        => Auth::id() ?? $document->created_by,
+                'company_id' => $document->company_id,
+                'store_id' => $storeId,
+                'created_by' => Auth::id() ?? $document->created_by,
                 'payment_method_id' => $data['payment_method_id'],
-                
-                'party_type'        => $partyType,
-                'party_id'          => $partyId,
-                
-                'paymentable_type'  => $document->getMorphClass(),
-                'paymentable_id'    => $document->id,
-                
-                'payment_number'    => $this->generatePaymentNumber($document->company_id),
-                'reference'         => $data['reference'] ?? null,
-                'payment_date'      => $data['payment_date'] ?? now(),
-                'type'              => $type,
-                
+
+                'party_type' => $partyType,
+                'party_id' => $partyId,
+
+                'paymentable_type' => $document->getMorphClass(),
+                'paymentable_id' => $document->id,
+
+                'payment_number' => $this->generatePaymentNumber($document->company_id),
+                'reference' => $data['reference'] ?? null,
+                'payment_date' => $data['payment_date'] ?? now(),
+                'type' => $type,
+
                 // 🌟 The 3 crucial POS values
-                'amount'            => $actualPaidAmount,   // The applied invoice value
-                'amount_received'   => $amountReceived,     // The physical cash given
-                'change_returned'   => $changeReturned,     // The change given back
-                
-                'status'            => $data['status'] ?? 'completed',
-                'notes'             => $data['notes'] ?? null,
+                'amount' => $actualPaidAmount,   // The applied invoice value
+                'amount_received' => $amountReceived,     // The physical cash given
+                'change_returned' => $changeReturned,     // The change given back
+
+                'status' => $data['status'] ?? 'completed',
+                'notes' => $data['notes'] ?? null,
             ]);
 
             // 3. Update the Parent Document (Invoice/Purchase) Balance/Status
@@ -99,8 +99,8 @@ class PaymentService
             return $payment;
         });
     }
-  
-   /**
+
+    /**
      * Syncs the initial payment during an Invoice Update.
      * Prevents duplicate rows from being created in the payments table!
      */
@@ -112,7 +112,7 @@ class PaymentService
         if ($existingPayment) {
             // 2. If it exists and amount > 0, just UPDATE it! No duplication!
             if ($data['amount'] > 0) {
-                
+
                 // 🌟 POS MATH LOGIC FOR EDIT
                 $invoiceTotal = (float) $document->grand_total;
                 $amountReceived = (float) $data['amount'];
@@ -126,14 +126,14 @@ class PaymentService
                 }
 
                 $existingPayment->update([
-                    'amount'            => $actualPaidAmount,
-                    'amount_received'   => $amountReceived,
-                    'change_returned'   => $changeReturned,
+                    'amount' => $actualPaidAmount,
+                    'amount_received' => $amountReceived,
+                    'change_returned' => $changeReturned,
                     'payment_method_id' => $data['payment_method_id'] ?? $existingPayment->payment_method_id,
                 ]);
             } else {
                 // If they changed the paid amount to 0, wipe the payment record
-                $existingPayment->delete(); 
+                $existingPayment->delete();
             }
         } else {
             // 3. If NO payment exists, but they entered an amount, create it
@@ -154,25 +154,24 @@ class PaymentService
     public function syncDocumentPaymentStatus($document): void
     {
         // Calculate total successful payments
-        $totalPaid  = round((float) $document->payments()->where('status', 'completed')->sum('amount'), 2);
+        $totalPaid = round((float) $document->payments()->where('status', 'completed')->sum('amount'), 2);
         $grandTotal = round((float) $document->grand_total, 2);
 
         // ── Each document type has its own zero-payment status ──
-        $zeroStatus = match(true) {
-            $document instanceof Order          => 'pending',
+        $zeroStatus = match (true) {
+            $document instanceof Order => 'pending',
             $document instanceof PurchaseReturn => 'pending',
-            default                                         => 'unpaid', // Invoice, Purchase
+            default => 'unpaid', // Invoice, Purchase
         };
-        
-        
-        $status = match(true) {
+
+        $status = match (true) {
             $totalPaid >= $grandTotal && $grandTotal > 0 => 'paid',
-            $totalPaid > 0                               => 'partial',
-            default                                      => $zeroStatus,
+            $totalPaid > 0 => 'partial',
+            default => $zeroStatus,
         };
 
         $document->update([
-            'payment_status' => $status
+            'payment_status' => $status,
             // Note: If you add a 'paid_amount' column to Invoices, update it here too
         ]);
     }
@@ -184,7 +183,7 @@ class PaymentService
     {
         return DB::transaction(function () use ($payment) {
             $payment->update(['status' => 'cancelled']);
-            
+
             if ($payment->paymentable) {
                 $this->syncDocumentPaymentStatus($payment->paymentable);
             }
@@ -198,11 +197,11 @@ class PaymentService
      */
     protected function generatePaymentNumber(int $companyId): string
     {
-        $prefix = 'PAY-' . date('Ymd');
+        $prefix = 'PAY-'.date('Ymd');
         $count = Payment::where('company_id', $companyId)
-            ->where('payment_number', 'like', $prefix . '%')
+            ->where('payment_number', 'like', $prefix.'%')
             ->count() + 1;
 
-        return $prefix . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+        return $prefix.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
     }
 }

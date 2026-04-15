@@ -6,8 +6,8 @@ use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Page extends Model
 {
@@ -15,13 +15,15 @@ class Page extends Model
 
     // ── Application-Level Enums ──
     // Keeps the DB flexible while keeping the code strict
-    public const TYPE_LEGAL  = 'legal';
-    public const TYPE_ABOUT  = 'about';
+    public const TYPE_LEGAL = 'legal';
+
+    public const TYPE_ABOUT = 'about';
+
     public const TYPE_CUSTOM = 'custom';
 
     public const TYPES = [
-        self::TYPE_LEGAL  => 'Legal & Compliance',
-        self::TYPE_ABOUT  => 'Company Information',
+        self::TYPE_LEGAL => 'Legal & Compliance',
+        self::TYPE_ABOUT => 'Company Information',
         self::TYPE_CUSTOM => 'Custom Page',
     ];
 
