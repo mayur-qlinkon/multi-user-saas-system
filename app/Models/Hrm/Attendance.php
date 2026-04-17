@@ -6,6 +6,7 @@ use App\Models\Store;
 use App\Models\User;
 use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Attendance extends Model
 {
-    use LogsActivity, SoftDeletes, Tenantable;
+    use HasFactory,LogsActivity, SoftDeletes, Tenantable;
 
     // ── Constants ──
 

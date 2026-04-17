@@ -121,7 +121,7 @@ class LabelController extends Controller
         // Base Query targeting SKUs directly (The ERP Way)
         $query = ProductSku::with([
             'product.category',
-            'skuValues.attributeValue',
+            'skuValues.attributeValue.attribute',
             'product.media' => function ($q) {
                 $q->where('is_primary', true)->where('media_type', 'image');
             },
@@ -157,10 +157,13 @@ class LabelController extends Controller
         // Format data to match legacy Javascript expectations
         $formattedData = $paginator->getCollection()->map(function ($sku) {
 
-            // Build the variant string (e.g., "Red / Large")
-            $variantName = $sku->skuValues->map(function ($val) {
-                return $val->attributeValue->value;
-            })->implode(' / ');
+            // Structured attributes: [{ name: "Color", value: "Red" }, ...]
+            $attributes = $sku->skuValues->map(function ($skuValue) {
+                return [
+                    'name' => $skuValue->attributeValue->attribute->name ?? '',
+                    'value' => $skuValue->attributeValue->value ?? '',
+                ];
+            })->values()->toArray();
 
             // Get image
             $imagePath = $sku->product->media->first()?->media_path;
@@ -173,7 +176,7 @@ class LabelController extends Controller
                 'sku' => $sku->sku,
                 'display_price' => $sku->price,
                 'category_name' => $sku->product->category->name ?? 'N/A',
-                'variant_name' => $variantName,
+                'attributes' => $attributes,
                 'label_value' => $sku->display_barcode, // Uses our Model fallback rule
                 'actual_barcode' => $sku->barcode, // Optional: Pass raw barcode to UI if needed
                 'image_url' => $imagePath ? asset('storage/'.$imagePath) : '',
@@ -214,14 +217,20 @@ class LabelController extends Controller
         // Fetch exactly the requested SKUs in the exact order requested using FIELD()
         $idString = implode(',', $skuIds);
 
-        $skus = ProductSku::with(['product.category', 'skuValues.attributeValue', 'product.media'])
+        $skus = ProductSku::with(['product.category', 'skuValues.attributeValue.attribute', 'product.media'])
             ->where('company_id', $companyId)
             ->whereIn('id', $skuIds)
             ->orderByRaw("FIELD(id, {$idString})")
             ->get();
 
         $formattedData = $skus->map(function ($sku) {
-            $variantName = $sku->skuValues->map(fn ($val) => $val->attributeValue->value)->implode(' / ');
+            $attributes = $sku->skuValues->map(function ($skuValue) {
+                return [
+                    'name' => $skuValue->attributeValue->attribute->name ?? '',
+                    'value' => $skuValue->attributeValue->value ?? '',
+                ];
+            })->values()->toArray();
+
             $imagePath = $sku->product->media->where('is_primary', true)->first()?->media_path;
 
             return [
@@ -229,7 +238,7 @@ class LabelController extends Controller
                 'name' => $sku->product->name,
                 'sku' => $sku->sku,
                 'display_price' => $sku->price,
-                'variant_name' => $variantName,
+                'attributes' => $attributes,
                 'label_value' => $sku->display_barcode,
             ];
         });

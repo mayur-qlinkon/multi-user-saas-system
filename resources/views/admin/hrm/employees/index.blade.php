@@ -156,10 +156,10 @@
     <div class="bg-white border border-gray-100 rounded-2xl px-4 py-3 mb-4">
         <form method="GET" action="{{ route('admin.hrm.employees.index') }}" id="filter-form">
 
-            <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex flex-col lg:flex-row lg:items-center gap-3 flex-wrap">
 
                 {{-- Search ── --}}
-                <div class="relative flex-1 min-w-[180px]">
+                <div class="relative w-full lg:flex-1 lg:min-w-[180px]">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     <input type="text" name="q" value="{{ request('q') }}"
@@ -167,35 +167,37 @@
                         class="filter-input search-input pl-8 w-full">
                 </div>
 
-                {{-- Department ── --}}
-                <select name="department_id" class="filter-input" onchange="this.form.submit()">
-                    <option value="">All Departments</option>
-                    @foreach($departments as $dept)
-                        <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
-                            {{ $dept->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="grid grid-cols-2 lg:flex lg:flex-row gap-3 w-full lg:w-auto">
+                    {{-- Department ── --}}
+                    <select name="department_id" class="filter-input w-full" onchange="this.form.submit()">
+                        <option value="">All Departments</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                                {{ $dept->name }}
+                            </option>
+                        @endforeach
+                    </select>
 
-                {{-- Store ── --}}
-                <select name="store_id" class="filter-input" onchange="this.form.submit()">
-                    <option value="">All Stores</option>
-                    @foreach($stores as $store)
-                        <option value="{{ $store->id }}" {{ request('store_id') == $store->id ? 'selected' : '' }}>
-                            {{ $store->name }}
-                        </option>
-                    @endforeach
-                </select>
+                    {{-- Store ── --}}
+                    <select name="store_id" class="filter-input w-full" onchange="this.form.submit()">
+                        <option value="">All Stores</option>
+                        @foreach($stores as $store)
+                            <option value="{{ $store->id }}" {{ request('store_id') == $store->id ? 'selected' : '' }}>
+                                {{ $store->name }}
+                            </option>
+                        @endforeach
+                    </select>
 
-                {{-- Status ── --}}
-                <select name="status" class="filter-input" onchange="this.form.submit()">
-                    <option value="">All Status</option>
-                    @foreach($statusLabels as $key => $label)
-                        <option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
+                    {{-- Status ── --}}
+                    <select name="status" class="filter-input w-full col-span-2 sm:col-span-1 lg:col-span-auto" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        @foreach($statusLabels as $key => $label)
+                            <option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
                 {{-- Clear filters ── --}}
                 @if(request()->hasAny(['q', 'department_id', 'store_id', 'status']))
@@ -216,7 +218,7 @@
                 @if($canAddMore)
                     @if(has_permission('employees.create'))
                     <a href="{{ route('admin.hrm.employees.create') }}"
-                        class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                        class="w-full lg:w-auto lg:ml-auto flex justify-center items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
                         style="background: var(--brand-600)">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Add Employee
@@ -277,7 +279,7 @@
 
             {{-- Table ── --}}
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full min-w-[900px] whitespace-nowrap">
                     <thead>
                         <tr class="border-b border-gray-100">
                             <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>

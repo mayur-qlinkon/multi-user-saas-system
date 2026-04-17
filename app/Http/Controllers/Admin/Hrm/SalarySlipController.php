@@ -130,7 +130,8 @@ class SalarySlipController extends Controller
     {
         $salarySlip->load(['employee.user', 'employee.department', 'employee.designation', 'items']);
 
-        $pdf = Pdf::loadView('admin.hrm.salary-slips.pdf', compact('salarySlip'));
+        $pdf = Pdf::loadView('admin.hrm.salary-slips.pdf', compact('salarySlip'))
+                ->setOption(['defaultFont' => 'DejaVu Sans']); // Ensures ₹ is supported globally
 
         return $pdf->download("salary-slip-{$salarySlip->slip_number}.pdf");
     }

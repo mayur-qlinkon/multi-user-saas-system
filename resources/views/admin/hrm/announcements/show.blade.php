@@ -31,6 +31,7 @@
         padding: 13px 18px;
         border-bottom: 1px solid #f8fafc;
         display: flex;
+        flex-wrap: wrap; /* Allows the right-side badge to drop down if it's too tight */
         align-items: center;
         gap: 10px;
     }
@@ -54,7 +55,8 @@
 
     .info-row {
         display: flex;
-        gap: 8px;
+        flex-wrap: wrap; /* Allows the value to drop down gracefully on iPads */
+        gap: 4px 8px;
         padding: 10px 0;
         border-bottom: 1px solid #f8fafc;
     }
@@ -67,7 +69,7 @@
         color: #9ca3af;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        min-width: 140px;
+        min-width: 110px; /* Reduced from 140px to give the value more room */
         flex-shrink: 0;
     }
 
@@ -146,10 +148,10 @@
     </div>
 
     {{-- Main Layout Grid --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
 
         {{-- 🟢 LEFT PANE (Spans 2 columns on PC) --}}
-        <div class="lg:col-span-2 space-y-6">
+        <div class="md:col-span-1 lg:col-span-2 space-y-6 min-w-0">
             
             {{-- Content Card --}}
             <div class="detail-card">
@@ -175,7 +177,7 @@
                     <span class="detail-card-title">Attached Media</span>
                 </div>
                 <div class="detail-card-body">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl gap-4">
+                    <div class="flex flex-wrap items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl gap-4">
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 rounded-lg bg-white border border-gray-200 text-brand-500 flex items-center justify-center shadow-sm flex-shrink-0">
                                 <i data-lucide="file" class="w-6 h-6"></i>
@@ -202,7 +204,7 @@
         </div>
 
         {{-- 🟢 RIGHT PANE (Spans 1 column on PC) --}}
-        <div class="space-y-6">
+        <div class="space-y-6 min-w-0">
 
             {{-- Info Card --}}
             <div class="detail-card">

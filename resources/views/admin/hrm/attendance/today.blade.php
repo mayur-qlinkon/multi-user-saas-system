@@ -14,8 +14,8 @@
     [x-cloak] { display: none !important; }
     .table-container { background: #fff; border: 1.5px solid #f1f5f9; border-radius: 16px; overflow: hidden; }
     .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th { background: #f8fafc; padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #f1f5f9; }
-    .data-table td { padding: 16px 20px; font-size: 13px; color: #334155; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+    .data-table th { background: #f8fafc; padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+    .data-table td { padding: 16px 20px; font-size: 13px; color: #334155; border-bottom: 1px solid #f8fafc; vertical-align: middle; white-space: nowrap; }
     .data-table tr:hover td { background: #f8fafc; }
     .data-table tr:last-child td { border-bottom: none; }
     
@@ -77,7 +77,7 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="data-table">
+            <table class="data-table w-full min-w-[800px]">
                 <thead>
                     <tr>
                         <th>Employee</th>
@@ -137,8 +137,8 @@
                         </td>
                         <td class="text-right">
                             <button @click="openOverrideModal({{ json_encode($att) }})" 
-                                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-brand-600 transition-colors" title="Override Record">
-                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                    class="w-11 h-11 md:w-8 md:h-8 inline-flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-brand-600 transition-all" title="Override Record">
+                                <i data-lucide="edit-3" class="w-5 h-5 md:w-4 md:h-4"></i>
                             </button>
                         </td>
                     </tr>
@@ -181,7 +181,7 @@
                         </select>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="form-label">Check In Time</label>
                             <input type="datetime-local" x-model="formData.check_in_time" class="form-input">

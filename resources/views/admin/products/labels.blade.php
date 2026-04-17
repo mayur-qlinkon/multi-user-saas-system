@@ -15,17 +15,17 @@
                 <p class="text-sm text-gray-500 mt-1 font-medium">Generate QR & Barcode labels — select products, configure,
                     preview and print</p>
             </div>
-            <div class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm">
+            <div class="flex items-center gap-2 w-full md:w-auto bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm">
                 <button @click="setLabelType('qr')"
                     :class="labelType === 'qr' ? 'bg-gray-100 text-gray-800 border-gray-200' :
                         'bg-transparent text-gray-500 hover:text-gray-700 border-transparent'"
-                    class="px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all border">
+                    class="flex-1 md:flex-none justify-center px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all border">
                     <i data-lucide="qr-code" class="w-4 h-4"></i> QR Code
                 </button>
                 <button @click="setLabelType('barcode')"
                     :class="labelType === 'barcode' ? 'bg-brand-500 text-white border-brand-500 shadow-sm' :
                         'bg-transparent text-gray-500 hover:text-gray-700 border-transparent'"
-                    class="px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all border">
+                    class="flex-1 md:flex-none justify-center px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all border">
                     <i data-lucide="barcode" class="w-4 h-4"></i> Barcode
                 </button>
             </div>
@@ -115,8 +115,7 @@
             </div>
         </div>
 
-        <div
-            class="bg-white rounded-t-xl border border-gray-200 border-b-0 px-5 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div class="bg-white rounded-t-xl border border-gray-200 border-b-0 px-4 sm:px-5 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <button @click="selectAll(true)"
                     class="text-xs font-bold text-[#108c2a] hover:underline flex items-center gap-1.5">
@@ -135,20 +134,20 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
+            <div class="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
+                <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 w-full sm:w-auto justify-center">
                     <span class="text-xs font-bold text-gray-500">Set all copies:</span>
                     <input type="number" x-model="globalCopy" @change="applyGlobalCopy()" min="1" max="99"
                         class="w-14 border border-gray-300 rounded px-1 py-1 text-center text-xs font-bold outline-none focus:border-[#108c2a]">
                 </div>
 
                 <button @click="triggerPrint(true)"
-                    class="bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
+                    class="flex-1 sm:flex-none justify-center bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
                     <i data-lucide="eye" class="w-4 h-4"></i> Preview
                 </button>
                 @if(has_permission('labels.print'))
                 <button @click="triggerPrint(false)"
-                    class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
+                    class="flex-1 sm:flex-none justify-center bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
                     <i data-lucide="printer" class="w-4 h-4"></i> Print
                 </button>
                 @endif
@@ -157,7 +156,7 @@
 
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto min-h-[400px]">
-                <table class="w-full text-left text-sm whitespace-nowrap">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[850px]">
                     <thead
                         class="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
                         <tr>
@@ -204,8 +203,9 @@
                                     x-text="((pagination.current_page - 1) * pagination.per_page) + index + 1"></td>
                                 <td class="px-4 py-3">
                                     <div class="font-bold text-[#212538] text-[13px]" x-text="product.name"></div>
-                                    <div class="text-[11px] text-gray-400 mt-0.5" x-show="product.variant_name"
-                                        x-text="product.variant_name"></div>
+                                    <div class="text-[11px] text-gray-400 mt-0.5"
+                                        x-show="product.attributes && product.attributes.length > 0"
+                                        x-text="formatAttrs(product.attributes)"></div>
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <span x-show="product.sku"
@@ -499,6 +499,17 @@
                         return `${baseUrl}?type=${this.labelType}&value=${encodeURIComponent(value)}&size=${size}`;
                     },
 
+                    /**
+                     * Format structured attributes for display.
+                     * 1 attr  → "Color: Red"
+                     * N attrs → "Size: L, Color: Red"
+                     * none    → "" (falsy — callers use this to skip rendering)
+                     */
+                    formatAttrs(attrs) {
+                        if (!attrs || attrs.length === 0) return '';
+                        return attrs.map(a => `${a.name}: ${a.value}`).join(', ');
+                    },
+
                     async fetchProducts(page) {
                         this.isLoading = true;
 
@@ -556,7 +567,7 @@
                         selected.forEach(p => {
                             const imgUrl = this.getLabelUrl(p.label_value, ps.imgPx);
                             const price = p.display_price ? `₹${parseFloat(p.display_price).toFixed(2)}` : '';
-                            let varText = (p.variant_name && p.variant_name !== '') ? `Var: ${p.variant_name}` : '';
+                            let varText = this.formatAttrs(p.attributes);
 
                            for (let i = 0; i < p._copies; i++) {
                                 // We use p.label_value here. If barcode is empty, the backend already set this to the SKU!

@@ -15,6 +15,7 @@ class Import extends Model
         'user_id',
         'type',
         'file_path',
+        'temp_path',
         'total_rows',
         'processed_rows',
         'success_rows',
@@ -22,6 +23,7 @@ class Import extends Model
         'updated_rows',
         'failed_rows',
         'skipped_rows',
+        'limit_skipped_rows',
         'status',
         'duplicate_mode',
         'duplicate_meta',
@@ -37,6 +39,7 @@ class Import extends Model
         'updated_rows' => 'integer',
         'failed_rows' => 'integer',
         'skipped_rows' => 'integer',
+        'limit_skipped_rows' => 'integer',
         'is_dry_run' => 'boolean',
         'duplicate_meta' => 'array',
     ];

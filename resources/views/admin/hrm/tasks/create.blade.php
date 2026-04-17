@@ -150,6 +150,7 @@
     .assignee-item input[type="checkbox"] { accent-color: var(--brand-600); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
     .assignee-item label { font-size: 12.5px; color: #374151; cursor: pointer; }
     .assignee-item .emp-code { font-size: 10px; color: #9ca3af; font-weight: 600; }
+    [x-cloak] { display: none !important; }
 </style>
 @endpush
 
@@ -264,25 +265,73 @@
         </div>
 
         {{-- ══════════════════════════════════
-             Section 2 — Description
+             Section 2 — Description (Markdown Editor)
         ══════════════════════════════════ --}}
-        <div class="form-section">
+        <div class="form-section" x-data="mdEditor(@js(old('description', '')))">
             <div class="section-head">
                 <div class="section-icon" style="background: #f9fafb">
                     <i data-lucide="file-text" style="width:14px;height:14px;color:#6b7280"></i>
                 </div>
                 <span class="section-title">Description</span>
-            </div>
-            <div class="section-body">
-                <div>
-                    <textarea name="description" rows="5"
-                        placeholder="Describe the task in detail. You can use basic formatting like **bold**, *italic*, or bullet points starting with -"
-                        class="field-input resize-y {{ $errors->has('description') ? 'has-error' : '' }}">{{ old('description') }}</textarea>
-                    @error('description')
-                        <p class="field-error">{{ $message }}</p>
-                    @enderror
-                    <p class="text-[10px] text-gray-400 mt-1.5">Tip: Use **text** for bold, *text* for italic, and - item for bullet points.</p>
+
+                {{-- Write / Preview tabs + toolbar ── --}}
+                <div class="ml-auto flex items-center gap-3">
+                    {{-- Formatting toolbar (visible in Write mode) ── --}}
+                    <div x-show="tab === 'write'" class="flex items-center gap-0.5">
+                        <button type="button" @click="wrap('**','**','bold text')"
+                            title="Bold (Ctrl+B)"
+                            class="w-7 h-7 flex items-center justify-center rounded-md text-[13px] font-black text-gray-600 hover:bg-gray-100 transition-colors">B</button>
+                        <button type="button" @click="wrap('*','*','italic text')"
+                            title="Italic (Ctrl+I)"
+                            class="w-7 h-7 flex items-center justify-center rounded-md text-[13px] font-bold italic text-gray-600 hover:bg-gray-100 transition-colors">I</button>
+                        <div class="w-px h-4 bg-gray-200 mx-1"></div>
+                        <button type="button" @click="insertBullet()"
+                            title="Bullet list"
+                            class="px-2 h-7 flex items-center justify-center rounded-md text-[11px] font-bold text-gray-600 hover:bg-gray-100 transition-colors gap-1">
+                            <span class="text-[15px] leading-none">•</span> List
+                        </button>
+                    </div>
+
+                    {{-- Tab switcher ── --}}
+                    <div class="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
+                        <button type="button" @click="tab='write'"
+                            :class="tab==='write' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'"
+                            class="px-3 py-1 text-[11px] font-bold rounded-md transition-all">Write</button>
+                        <button type="button" @click="tab='preview'"
+                            :class="tab==='preview' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'"
+                            class="px-3 py-1 text-[11px] font-bold rounded-md transition-all">Preview</button>
+                    </div>
                 </div>
+            </div>
+
+            <div class="section-body">
+                {{-- Write Area ── --}}
+                <div x-show="tab === 'write'">
+                    <textarea name="description" x-ref="ta" x-model="content" rows="7"
+                        @keydown.ctrl.b.prevent="wrap('**','**','bold text')"
+                        @keydown.ctrl.i.prevent="wrap('*','*','italic text')"
+                        placeholder="Describe the task..."
+                        class="field-input resize-y font-mono text-[13px] {{ $errors->has('description') ? 'has-error' : '' }}"></textarea>
+                </div>
+
+                {{-- Preview Area ── --}}
+                <div x-show="tab === 'preview'" x-cloak>
+                    <div class="border border-gray-200 rounded-xl px-4 py-3 min-h-[120px] text-[13px] text-gray-700 leading-relaxed">
+                        <template x-if="!content.trim()">
+                            <p class="text-gray-400 italic text-[12px]">Nothing to preview yet. Switch to Write and type something.</p>
+                        </template>
+                        <div x-show="content.trim()" x-html="renderMd(content)"></div>
+                    </div>
+                </div>
+
+                @error('description')
+                    <p class="field-error mt-1">{{ $message }}</p>
+                @enderror
+                <p class="text-[10px] text-gray-400 mt-1.5">
+                    <span class="font-mono">**text**</span> → <strong>bold</strong> &nbsp;·&nbsp;
+                    <span class="font-mono">*text*</span> → <em>italic</em> &nbsp;·&nbsp;
+                    <span class="font-mono">- item</span> → bullet point
+                </p>
             </div>
         </div>
 
@@ -377,6 +426,73 @@ window.taskCreate = function() {
 
         init() {
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        },
+    };
+};
+
+/* ── Markdown Editor Component ───────────────────────────── */
+window.mdEditor = function(initial) {
+    return {
+        tab: 'write',
+        content: initial || '',
+
+        /* Inline markdown → HTML (safe — HTML is escaped first) */
+        inlineToHtml(t) {
+            t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            /* Bold must come before italic to avoid mis-matching inner * */
+            t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+            t = t.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+            return t;
+        },
+
+        renderMd(text) {
+            if (!text || !text.trim()) return '';
+            const lines = text.split('\n');
+            let html = '';
+            let inList = false;
+            lines.forEach(line => {
+                if (/^- /.test(line)) {
+                    if (!inList) { html += '<ul style="list-style:disc;padding-left:1.1rem;margin:4px 0">'; inList = true; }
+                    html += `<li style="margin:2px 0">${this.inlineToHtml(line.slice(2))}</li>`;
+                } else {
+                    if (inList) { html += '</ul>'; inList = false; }
+                    if (line.trim() === '') {
+                        html += '<div style="height:6px"></div>';
+                    } else {
+                        html += `<p style="margin:2px 0">${this.inlineToHtml(line)}</p>`;
+                    }
+                }
+            });
+            if (inList) html += '</ul>';
+            return html;
+        },
+
+        /* Wrap selected text (or placeholder) with before/after markers */
+        wrap(before, after, placeholder) {
+            const ta = this.$refs.ta;
+            const s = ta.selectionStart;
+            const e = ta.selectionEnd;
+            const sel = this.content.slice(s, e) || placeholder;
+            this.content = this.content.slice(0, s) + before + sel + after + this.content.slice(e);
+            this.$nextTick(() => {
+                ta.focus();
+                ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+            });
+        },
+
+        /* Prepend `- ` to the current line (or remove it if already there) */
+        insertBullet() {
+            const ta = this.$refs.ta;
+            const pos = ta.selectionStart;
+            const lineStart = this.content.lastIndexOf('\n', pos - 1) + 1;
+            const lineHasBullet = this.content.slice(lineStart, lineStart + 2) === '- ';
+            if (lineHasBullet) {
+                this.content = this.content.slice(0, lineStart) + this.content.slice(lineStart + 2);
+                this.$nextTick(() => { ta.focus(); ta.setSelectionRange(Math.max(lineStart, pos - 2), Math.max(lineStart, pos - 2)); });
+            } else {
+                this.content = this.content.slice(0, lineStart) + '- ' + this.content.slice(lineStart);
+                this.$nextTick(() => { ta.focus(); ta.setSelectionRange(pos + 2, pos + 2); });
+            }
         },
     };
 };

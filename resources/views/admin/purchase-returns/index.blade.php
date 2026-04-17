@@ -222,7 +222,7 @@
 
                                 <td class="px-6 py-4 text-right">
                                     <div
-                                        class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        class="flex items-center justify-end gap-2 transition-opacity">
 
                                         @if(has_permission('purchase_returns.view'))
                                         <a href="{{ route('admin.purchase-returns.show', $return->id) }}"

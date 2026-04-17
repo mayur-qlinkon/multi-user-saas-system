@@ -28,18 +28,18 @@
         
 {{-- ── TOOLBAR (Search & Actions) ── --}}
         <div class="bg-white rounded-t-xl shadow-sm border border-gray-100 p-4 border-b-0 mb-0">
-            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 
                 {{-- Left Side: Search --}}
-                <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1 max-w-xl">
-                    <div class="relative flex-1">
+                <div class="w-full md:w-auto flex-1 max-w-xl">
+                    <div class="relative w-full">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#108c2a]"></i>
+                        
                         <input type="text" x-model="search" placeholder="Search Name, Phone, or City..."
-                            class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all placeholder-gray-400">
-                    </div>
-                    <div class="flex gap-2 w-full sm:w-auto flex-shrink-0">                       
+                            class="w-full border border-gray-200 rounded-lg pl-10 pr-10 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all placeholder-gray-400">
+
                         <button type="button" x-show="search.length > 0" @click="search = ''" x-cloak
-                            class="bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-center"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 p-1.5 rounded-md transition-colors flex items-center justify-center"
                             title="Clear Filters">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
@@ -47,22 +47,22 @@
                 </div>
 
                 {{-- Right Side: Actions --}}
-                <div class="flex items-center gap-2 w-full lg:w-auto justify-end overflow-x-auto pb-1 lg:pb-0">
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
 
                     @if (has_permission('suppliers.export'))
                         <button type="button" @click="exportCSV()"
-                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
+                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                             <i data-lucide="file-spreadsheet" class="w-4 h-4 text-[#108c2a]"></i> CSV
                         </button>                                        
                         <button type="button" @click="exportPDF()"
-                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
+                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                             <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
                         </button>
                     @endif
 
                     @if (has_permission('suppliers.create'))
                         <button type="button" @click="openCreateModal()"
-                            class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 ml-1 whitespace-nowrap">
+                            class="bg-[#108c2a] hover:bg-green-700 text-white px-4 md:px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                             <i data-lucide="plus" class="w-4 h-4"></i> Add Supplier
                         </button>
                     @endif
@@ -135,7 +135,7 @@
 
                                 <td class="px-6 py-4">
                                     <div
-                                        class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        class="flex items-center justify-end gap-2 transition-opacity">
                                         @if (has_permission('suppliers.update'))
                                             <button @click="openEditModal({{ $supplier->toJson() }})"
                                                 class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors"

@@ -96,8 +96,8 @@
 
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
+            <table class="w-full block md:table">
+                <thead class="hidden md:table-header-group">
                     <tr class="border-b border-gray-100">
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Holiday</th>
@@ -108,38 +108,46 @@
                         <th class="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="block md:table-row-group p-4 md:p-0">
                     @forelse($holidays as $holiday)
                         @php $tc = $typeColors[$holiday->type] ?? ['bg' => '#f3f4f6', 'text' => '#374151', 'border' => '#e5e7eb']; @endphp
-                        <tr class="table-row" x-show="matchesSearch('{{ strtolower($holiday->name) }}')">
-                            <td class="px-5 py-3 text-[12px] font-bold text-gray-400">{{ $holidays->firstItem() + $loop->index }}</td>
-                            <td class="px-5 py-3">
-                                <p class="text-[13px] font-bold text-gray-800">{{ $holiday->name }}</p>
+                        <tr class="block md:table-row bg-white border border-gray-200 md:border-0 md:border-b md:border-gray-100 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 shadow-sm md:shadow-none hover:bg-gray-50 transition-colors" x-show="matchesSearch('{{ strtolower($holiday->name) }}')">
+                            <td class="hidden md:table-cell px-5 py-3 text-[12px] font-bold text-gray-400">{{ $holidays->firstItem() + $loop->index }}</td>
+                            <td class="block md:table-cell md:px-5 md:py-3 mb-3 md:mb-0">
+                                <p class="text-[14px] md:text-[13px] font-bold text-gray-800">{{ $holiday->name }}</p>
                                 @if($holiday->description)
                                     <p class="text-[11px] text-gray-400 mt-0.5 truncate max-w-[250px]">{{ $holiday->description }}</p>
                                 @endif
                             </td>
-                            <td class="px-3 py-3">
-                                <p class="text-[12px] font-bold text-gray-700">{{ $holiday->date->format('d M Y') }}</p>
-                                @if($holiday->end_date)
-                                    <p class="text-[10px] text-gray-400">to {{ $holiday->end_date->format('d M Y') }} ({{ $holiday->total_days }} days)</p>
-                                @endif
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</span>
+                                <div class="text-right md:text-left">
+                                    <p class="text-[12px] font-bold text-gray-700">{{ $holiday->date->format('d M Y') }}</p>
+                                    @if($holiday->end_date)
+                                        <p class="text-[10px] text-gray-400">to {{ $holiday->end_date->format('d M Y') }} ({{ $holiday->total_days }} days)</p>
+                                    @endif
+                                </div>
                             </td>
-                            <td class="px-3 py-3 text-center text-[12px] text-gray-600">{{ $holiday->date->format('l') }}</td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Day</span>
+                                <span class="text-[12px] text-gray-600">{{ $holiday->date->format('l') }}</span>
+                            </td>
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Type</span>
                                 <span class="inline-flex text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md border"
                                     style="background: {{ $tc['bg'] }}; color: {{ $tc['text'] }}; border-color: {{ $tc['border'] }}">
                                     {{ $holiday->type_label }}
                                 </span>
                             </td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-4 md:mb-0 md:text-center">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Paid</span>
                                 @if($holiday->is_paid)
                                     <span class="text-[10px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded">Yes</span>
                                 @else
                                     <span class="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">No</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right">
+                            <td class="flex justify-end items-center md:table-cell pt-3 md:pt-0 border-t border-gray-100 md:border-none md:px-4 md:py-3 md:text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if(has_permission('holidays.update'))
                                     <button @click="openEdit({{ $holiday->toJson() }})"
@@ -183,23 +191,23 @@
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden" @click.away="modalOpen = false"
+        <div class="bg-white w-[95%] sm:w-full max-w-lg max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden m-4" @click.away="modalOpen = false"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
 
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div class="px-5 sm:px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
                 <h3 class="font-black text-gray-800 uppercase tracking-widest text-sm" x-text="isEditing ? 'Edit Holiday' : 'New Holiday'"></h3>
                 <button @click="modalOpen = false" class="text-gray-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
 
-            <form @submit.prevent="submitForm()">
-                <div class="p-6 space-y-4">
+            <form @submit.prevent="submitForm()" class="flex flex-col flex-1 overflow-hidden">
+                <div class="p-5 sm:p-6 space-y-4 overflow-y-auto">
                     <div>
                         <label class="field-label">Holiday Name <span class="text-red-400">*</span></label>
                         <input type="text" x-model="form.name" class="field-input" placeholder="e.g. Republic Day" required>
                         <p class="field-error" x-show="errors.name" x-text="errors.name"></p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="field-label">Start Date <span class="text-red-400">*</span></label>
                             <input type="date" x-model="form.date" class="field-input" required>
@@ -227,7 +235,7 @@
                         <textarea x-model="form.description" class="field-input" rows="2" placeholder="Optional description"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
                             <span class="text-[12px] font-bold text-gray-600">Paid</span>
                             <label class="toggle-switch">
@@ -252,7 +260,7 @@
                     </div>
                 </div>
 
-                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <div class="px-5 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 flex-shrink-0">
                     <button type="button" @click="modalOpen = false" class="px-4 py-2 text-[13px] font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
                     <button type="submit" :disabled="saving" class="px-5 py-2 text-[13px] font-bold text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50" style="background: var(--brand-600)">
                         <span x-show="!saving" x-text="isEditing ? 'Update' : 'Create'"></span>

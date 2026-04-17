@@ -73,10 +73,10 @@
             @csrf
             @method('PUT')
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-6 lg:gap-8">
                 
                 {{-- LEFT COLUMN: Core Details (2/3 width) --}}
-                <div class="lg:col-span-2 space-y-8">
+                <div class="lg:col-span-3 xl:col-span-2 space-y-6 lg:space-y-8">
                     
                     {{-- General Information Card --}}
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -244,7 +244,7 @@
                 </div>
 
                 {{-- RIGHT COLUMN: Financials & Tax (Sticky) --}}
-                <div class="lg:sticky lg:top-6 self-start space-y-6">
+                <div class="lg:col-span-2 xl:col-span-1 lg:sticky lg:top-6 self-start space-y-6">
                     
                     {{-- Financial Summary Card --}}
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -254,7 +254,7 @@
                             </h4>
                         </div>
 
-                        <div class="p-6 space-y-6">
+                        <div class="p-4 sm:p-6 lg:p-4 xl:p-6 space-y-6">
                             {{-- Base Amount --}}
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -270,7 +270,7 @@
                             </div>
 
                             {{-- Tax Type & Rate --}}
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Tax Type</label>
                                     <select name="tax_type" x-model="form.tax_type"
@@ -294,7 +294,7 @@
                             </div>
 
                             {{-- Live Calculation Preview --}}
-                            <div class="bg-gray-50 rounded-xl p-5 border border-gray-100 mt-2 space-y-3">
+                            <div class="bg-gray-50 rounded-xl p-3 sm:p-5 lg:p-3 xl:p-5 border border-gray-100 mt-2 space-y-3">
                                 <div class="flex justify-between items-center text-sm">
                                     <span class="font-semibold text-gray-600">Base Value</span>
                                     <span class="font-bold text-gray-800" x-text="'₹ ' + formatNumber(form.base_amount)"></span>
@@ -332,14 +332,14 @@
                             </div>
 
                             {{-- Action Buttons --}}
-                            <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                            <div class="pt-2 flex flex-col xl:flex-row gap-3">
                                 <input type="hidden" name="status" value="{{ $expense->status }}">
                                 <a href="{{ route('admin.expenses.show', $expense) }}"
                                     class="flex-1 text-center px-4 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-50 transition-colors">
                                     Cancel
                                 </a>
                                 <button type="submit" :disabled="isSubmitting"
-                                    class="flex-1 bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-green-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                                    class="flex-1 bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-4 py-3 rounded-xl text-sm font-bold shadow-lg shadow-green-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap">
                                     <i data-lucide="check-circle" class="w-5 h-5" x-show="!isSubmitting"></i>
                                     <i data-lucide="loader-2" class="w-5 h-5 animate-spin" x-show="isSubmitting" style="display: none;"></i>
                                     <span x-text="isSubmitting ? 'Saving...' : 'Update Expense'"></span>

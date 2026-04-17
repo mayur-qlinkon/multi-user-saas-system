@@ -68,8 +68,8 @@
 
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
+            <table class="w-full block md:table">
+                <thead class="hidden md:table-header-group">
                     <tr class="border-b border-gray-100">
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Designation</th>
@@ -78,27 +78,29 @@
                         <th class="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="block md:table-row-group p-4 md:p-0">
                     @forelse($designations as $desig)
-                        <tr class="table-row" x-show="matchesSearch('{{ strtolower($desig->name) }}')">
-                            <td class="px-5 py-3 text-[12px] font-bold text-gray-400">{{ $designations->firstItem() + $loop->index }}</td>
-                            <td class="px-5 py-3">
+                        <tr class="block md:table-row bg-white border border-gray-200 md:border-0 md:border-b md:border-gray-100 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 shadow-sm md:shadow-none" x-show="matchesSearch('{{ strtolower($desig->name) }}')">
+                            <td class="hidden md:table-cell px-5 py-3 text-[12px] font-bold text-gray-400">{{ $designations->firstItem() + $loop->index }}</td>
+                            <td class="block md:table-cell md:px-5 md:py-3 mb-3 md:mb-0">
                                 <p class="text-[13px] font-bold text-gray-800">{{ $desig->name }}</p>
                                 @if($desig->description)
                                     <p class="text-[11px] text-gray-400 mt-0.5 truncate max-w-[300px]">{{ $desig->description }}</p>
                                 @endif
                             </td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Level</span>
                                 <span class="text-[11px] font-bold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded">Level {{ $desig->level }}</span>
                             </td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-4 md:mb-0 md:text-center">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status</span>
                                 @if($desig->is_active)
                                     <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-md">Active</span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-md">Inactive</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right">
+                            <td class="flex justify-end items-center md:table-cell pt-3 md:pt-0 border-t border-gray-100 md:border-none md:px-4 md:py-3 md:text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if(has_permission('designations.update'))
                                         <button @click="openEdit({{ $desig->toJson() }})"

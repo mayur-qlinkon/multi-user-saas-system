@@ -55,15 +55,36 @@ class AppServiceProvider extends ServiceProvider
             $view->with(compact('company', 'navCategories'));
         });
 
-        // ── 2. ADMIN VIEW LOGIC (New & IDE Friendly) ──
+        // ── 2. ADMIN VIEW LOGIC ──
         View::composer('layouts.admin', function ($view) {
             if (Auth::check()) {
                 /** @var User $user */
-                $user = Auth::user(); // This line tells VS Code to look at your User Model
+                $user = Auth::user();
+
+                // Eager-load the relations that the admin layout accesses repeatedly.
+                //
+                // roles.permissions — consumed by every has_permission() and has_module()
+                //   call in the sidebar (51 + 20 blade calls). Without eager-loading, the
+                //   first has_permission() fires a roles query and N permission queries.
+                //   More critically, is_super_admin() calls hasRole()->exists() on each
+                //   invocation; with roles pre-loaded here, is_super_admin() detects
+                //   relationLoaded('roles') and skips the DB entirely.
+                //
+                // stores — accessed by active_store() in the header and by the store
+                //   switcher dropdown.
+                //
+                // employee — accessed in the HRM sidebar section and by active_store()
+                //   fallback path.
+                $user->loadMissing(['roles.permissions', 'stores', 'employee']);
+
+                // Fetch notifications once and derive the count from the loaded
+                // collection — avoids the second COUNT(*) query that firing
+                // unreadNotifications()->count() would produce.
+                $unreadNotifications = $user->unreadNotificationsLimit()->get();
 
                 $view->with([
-                    'unreadNotifications' => $user->unreadNotificationsLimit()->get(),
-                    'unreadCount' => $user->unreadNotifications()->count(),
+                    'unreadNotifications' => $unreadNotifications,
+                    'unreadCount' => $unreadNotifications->count(),
                 ]);
             }
         });

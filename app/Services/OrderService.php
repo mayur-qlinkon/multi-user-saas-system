@@ -495,7 +495,7 @@ class OrderService
                 'sku_label' => $skuLabel,
                 'sku_code' => $sku->sku ?? null,
                 'product_image' => $item['image'] ?? $product->primary_image_url ?? null,
-                'hsn_code' => $product->hsn_code ?? null,
+                'hsn_code' => $sku->hsn_code ?? $product->hsn_code ?? null,
                 'unit_price' => $unitPrice,
                 'cost_price' => $costPrice,
                 'qty' => $qty,

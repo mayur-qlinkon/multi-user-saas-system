@@ -105,7 +105,7 @@
 <div class="pb-10" x-data="leadsPage()" x-init="init()">
 
     {{-- ════════ STATS BAR ════════ --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
 
         <a href="{{ route('admin.crm.leads.index') }}"
             class="stat-card block">
@@ -154,10 +154,10 @@
     <div class="bg-white border border-gray-100 rounded-2xl px-4 py-3 mb-4">
         <form method="GET" action="{{ route('admin.crm.leads.index') }}" id="filter-form">
 
-            <div class="flex items-center gap-3 flex-wrap">
+            <div class="grid grid-cols-1 sm:flex sm:items-center gap-3">
 
                 {{-- Search ── --}}
-                <div class="relative flex-1 min-w-[180px]">
+                <div class="relative w-full sm:flex-1 sm:min-w-[180px]">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     <input type="text" name="q" value="{{ $filters['q'] ?? '' }}"
@@ -205,7 +205,7 @@
                 </select>
 
                 {{-- Quick filters ── --}}
-                <div class="flex items-center gap-1.5 flex-wrap">
+                <div class="grid grid-cols-2 sm:flex items-center gap-2">
                     <a href="{{ route('admin.crm.leads.index', array_merge($filters, ['mine' => 1])) }}"
                         class="text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-colors
                         {{ !empty($filters['mine']) ? 'border-brand text-white' : 'border-gray-200 text-gray-500 hover:bg-gray-50' }}"
@@ -232,7 +232,7 @@
 
                 {{-- Search submit ── --}}
                 <button type="submit"
-                    class="text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                    class="w-full sm:w-auto text-[12px] font-bold px-4 py-2.5 rounded-lg text-white hover:opacity-90 transition-opacity"
                     style="background: var(--brand-600)">
                     Search
                 </button>
@@ -240,7 +240,7 @@
                 {{-- Add lead ── --}}
                 @if(has_permission('crm_leads.create'))
                 <a href="{{ route('admin.crm.leads.create') }}"
-                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
+                    class="w-full sm:w-auto sm:ml-auto inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg text-white hover:opacity-90 transition-opacity"
                     style="background: var(--brand-600)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Add Lead
@@ -249,7 +249,7 @@
 
                 @if(has_permission('crm_leads.import'))
                 <a href="{{ route('admin.crm.leads.import') }}"
-                    class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     Import
                 </a>
@@ -257,7 +257,7 @@
 
                 @if(has_permission('crm_leads.export'))
                 <a href="{{ route('admin.crm.leads.export', request()->query()) }}" target="_blank"
-                    class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     Export
                 </a>
@@ -271,15 +271,15 @@
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
 
         {{-- Table header ── --}}
-        <div class="px-5 py-3 border-b border-gray-50 flex items-center justify-between flex-wrap gap-2">
-            <p class="text-[12px] font-bold text-gray-500">
-                {{ $leads->total() }} lead{{ $leads->total() !== 1 ? 's' : '' }}
-                @if(array_filter($filters))
-                    <span class="text-gray-400 font-medium">— filtered</span>
-                @endif
-            </p>
-            {{-- Sort ── --}}
-            <div class="flex items-center gap-2">
+        <div class="px-5 py-3 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <p class="text-[12px] font-bold text-gray-500">
+            {{ $leads->total() }} lead{{ $leads->total() !== 1 ? 's' : '' }}
+            @if(array_filter($filters))
+                <span class="text-gray-400 font-medium">— filtered</span>
+            @endif
+        </p>
+        {{-- Sort ── --}}
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2">
                 <span class="text-[11px] text-gray-400 font-medium">Sort:</span>
                 @foreach(['created_at' => 'Newest', 'score' => 'Score', 'lead_value' => 'Value', 'next_followup_at' => 'Follow-up'] as $field => $label)
                     <a href="{{ route('admin.crm.leads.index', array_merge($filters, ['sort' => $field, 'dir' => ($filters['sort'] ?? '') === $field && ($filters['dir'] ?? '') === 'asc' ? 'desc' : 'asc'])) }}"
@@ -318,7 +318,7 @@
 
             {{-- Table ── --}}
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full min-w-[1100px]">
                     <thead>
                         <tr class="border-b border-gray-100">
                             <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
@@ -375,7 +375,7 @@
                                 <td class="px-3 py-3">
                                     {{-- 1. Added max-w-32 (128px) and title attribute for the tooltip --}}
                                     <div x-data="{ currentStageColor: '{{ $lead->stage->color ?? '#9ca3af' }}' }" 
-                                        class="relative inline-block group max-w-[130px]" 
+                                        class="relative inline-block group w-[130px]" 
                                         title="{{ $lead->stage->name ?? '' }}">
                                         
                                         <select @if(has_permission('crm_leads.change_stage'))

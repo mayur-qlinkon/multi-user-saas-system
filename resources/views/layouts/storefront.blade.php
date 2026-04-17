@@ -915,12 +915,12 @@
                             </a>
                         </li>
 
-                        <li>
+                        {{-- <li>
                             <a href="" 
                             class="hover:text-brand-500 transition-colors">
                             Blogs
                             </a>
-                        </li>
+                        </li> --}}
                     </ul>
                 </div>
             </div>

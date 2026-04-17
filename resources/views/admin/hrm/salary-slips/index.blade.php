@@ -49,6 +49,7 @@
     }
 
     .table-row { border-bottom: 1px solid #f8fafc; transition: background 100ms; }
+    .table-row td { white-space: nowrap; vertical-align: middle; }
     .table-row:hover { background: #fafbfc; }
     .table-row:last-child { border-bottom: none; }
 
@@ -95,9 +96,9 @@
     {{-- Filter Bar --}}
     <form method="GET" action="{{ route('admin.hrm.salary-slips.index') }}"
         class="bg-white border border-gray-100 rounded-2xl px-4 py-3 mb-4">
-        <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
 
-            <div class="w-[130px]">
+            <div class="w-full sm:w-[130px]">
                 <select name="month" class="field-input !py-2 !text-[13px]">
                     <option value="">All Months</option>
                     @foreach($months as $num => $name)
@@ -106,7 +107,7 @@
                 </select>
             </div>
 
-            <div class="w-[110px]">
+            <div class="w-full sm:w-[110px]">
                 <select name="year" class="field-input !py-2 !text-[13px]">
                     <option value="">All Years</option>
                     @for($y = $currentYear + 1; $y >= $currentYear - 1; $y--)
@@ -115,7 +116,7 @@
                 </select>
             </div>
 
-            <div class="w-[140px]">
+            <div class="w-full sm:w-[140px]">
                 <select name="status" class="field-input !py-2 !text-[13px]">
                     <option value="">All Statuses</option>
                     @foreach(\App\Models\Hrm\SalarySlip::STATUS_LABELS as $val => $label)
@@ -124,7 +125,7 @@
                 </select>
             </div>
 
-            <div class="flex-1 min-w-[180px]">
+            <div class="w-full sm:flex-1 sm:min-w-[180px]">
                 <select name="employee_id" class="field-input !py-2 !text-[13px]">
                     <option value="">All Employees</option>
                     @foreach($employees as $emp)
@@ -135,34 +136,28 @@
                 </select>
             </div>
 
-            <button type="submit"
-                class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
-                style="background: var(--brand-600)">
-                <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                Search
-            </button>
-
-            <a href="{{ route('admin.hrm.salary-slips.index') }}"
-                class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
-                <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                Clear
-            </a>
-
-            @if(has_permission('salary_slips.generate'))
-                <button type="button" @click="generateModalOpen = true"
-                    class="ml-auto inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity"
-                    style="background: #10b981">
-                    <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
-                    Generate Slips
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <button type="submit" class="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity" style="background: var(--brand-600)">
+                    <i data-lucide="search" class="w-3.5 h-3.5"></i> Search
                 </button>
-            @endif
+
+                <a href="{{ route('admin.hrm.salary-slips.index') }}" class="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear
+                </a>
+
+                @if(has_permission('salary_slips.generate'))
+                    <button type="button" @click="generateModalOpen = true" class="w-full sm:w-auto sm:ml-auto justify-center inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity" style="background: #10b981">
+                        <i data-lucide="file-plus" class="w-3.5 h-3.5"></i> Generate Slips
+                    </button>
+                @endif
+            </div>
         </div>
     </form>
 
     {{-- Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
+        <div class="overflow-x-auto w-full pb-2">
+            <table class="w-full min-w-[1000px]">
                 <thead>
                     <tr class="border-b border-gray-100">
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
@@ -204,7 +199,9 @@
                             ₹{{ number_format($slip->total_deductions, 2) }}
                         </td>
                         <td class="px-3 py-3 text-right">
-                            <span class="text-[13px] font-black text-gray-900">₹{{ number_format($slip->net_salary, 2) }}</span>
+                            <span class="inline-block text-[13px] font-black text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-lg">
+                                ₹{{ number_format($slip->net_salary, 2) }}
+                            </span>
                         </td>
                         <td class="px-3 py-3 text-center">
                             <span class="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
@@ -294,7 +291,7 @@
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden" @click.away="generateModalOpen = false"
+        <div class="bg-white w-full max-w-md mx-4 rounded-xl shadow-2xl overflow-hidden" @click.away="generateModalOpen = false"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
 
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">

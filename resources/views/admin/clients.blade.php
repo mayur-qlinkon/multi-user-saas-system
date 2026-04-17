@@ -138,7 +138,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div
-                                        class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        class="flex items-center justify-end gap-2 transition-opacity">
                                         @if(has_permission('clients.update'))
                                         <button type="button" @click="openEdit({{ $client->id }})"
                                             class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors"

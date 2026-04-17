@@ -277,7 +277,7 @@
             <div x-show="tab === 'overview'" class="space-y-6">
                 <div x-show="task?.description" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</p>
-                    <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap" x-text="task?.description"></p>
+                    <div class="text-sm text-gray-700 leading-relaxed" x-html="renderMd(task?.description || '')"></div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
@@ -559,6 +559,36 @@ function taskPanel() {
                 }
             } catch(e) { BizAlert.toast('Network error.', 'error'); }
             this.uploading = false;
+        },
+
+        /* ── Markdown renderer (bold, italic, bullet lists) ── */
+        inlineToHtml(t) {
+            t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+            t = t.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+            return t;
+        },
+
+        renderMd(text) {
+            if (!text || !text.trim()) return '';
+            const lines = text.split('\n');
+            let html = '';
+            let inList = false;
+            lines.forEach(line => {
+                if (/^- /.test(line)) {
+                    if (!inList) { html += '<ul style="list-style:disc;padding-left:1.1rem;margin:4px 0">'; inList = true; }
+                    html += `<li style="margin:2px 0">${this.inlineToHtml(line.slice(2))}</li>`;
+                } else {
+                    if (inList) { html += '</ul>'; inList = false; }
+                    if (line.trim() === '') {
+                        html += '<div style="height:6px"></div>';
+                    } else {
+                        html += `<p style="margin:2px 0">${this.inlineToHtml(line)}</p>`;
+                    }
+                }
+            });
+            if (inList) html += '</ul>';
+            return html;
         },
 
         formatDate(d) {

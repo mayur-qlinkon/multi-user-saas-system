@@ -147,13 +147,13 @@
 <div class="pb-10">
 
     {{-- ════════ STATS BAR ════════ --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
 
         <a href="{{ route('admin.crm.leads.index') }}" class="stat-card">
             <div class="stat-icon bg-blue-50">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
-            <p class="text-2xl font-black text-gray-900">{{ number_format($stats['total']) }}</p>
+            <p class="text-xl sm:text-2xl font-black text-gray-900 truncate">{{ number_format($stats['total']) }}</p>
             <p class="text-[11px] font-bold text-gray-400 mt-0.5">Total Leads</p>
         </a>
 
@@ -244,10 +244,10 @@
     @endif
 
     {{-- ════════ MAIN GRID ════════ --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-5">
 
         {{-- ══ LEFT — Pipeline Funnel + Source Chart ══ --}}
-        <div class="lg:col-span-2 space-y-5">
+        <div class="lg:col-span-3 xl:col-span-2 space-y-5">
 
             {{-- Pipeline funnel ── --}}
             <div class="widget">
@@ -311,7 +311,7 @@
                         <p class="text-center text-gray-400 text-sm py-6">No source data yet.</p>
                     @else
                         @php $totalLeads = max(1, $sourceStats->sum('count')); @endphp
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
                             @foreach($sourceStats as $src)
                                 @php
                                     $pct    = round(($src['count'] / $totalLeads) * 100);
@@ -363,7 +363,7 @@
                         ];
                         $totalPriority = max(1, array_sum(array_column($priorityData, 'count')));
                     @endphp
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3">
                         @foreach($priorityData as $p)
                             <div class="text-center p-3 rounded-xl"
                                 style="background: {{ $p['color'] }}10">
@@ -382,7 +382,7 @@
         </div>
 
         {{-- ══ RIGHT — Hot Leads + Activity Feed ══ --}}
-        <div class="lg:col-span-1 space-y-5">
+        <div class="lg:col-span-2 xl:col-span-1 space-y-5">
 
             {{-- Hot & Overdue leads ── --}}
             <div class="widget">
@@ -499,7 +499,7 @@
         <div class="widget mt-5">
             <div class="widget-title">Team Performance</div>
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full min-w-[900px]">
                     <thead>
                         <tr class="border-b border-gray-50">
                             <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">User</th>

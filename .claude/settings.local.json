@@ -43,7 +43,17 @@
       "Bash(vendor/bin/pint app/Services/Hrm/AttendanceExportService.php app/Exports/AttendanceExport.php app/Http/Controllers/Admin/Hrm/AttendanceController.php --format agent)",
       "Bash(vendor/bin/pint app/Exports/AttendanceCalendarExport.php app/Services/Hrm/AttendanceExportService.php app/Http/Controllers/Admin/Hrm/AttendanceController.php --format agent)",
       "Bash(vendor/bin/pint database/seeders/HRM/AttendanceSeeder.php --format agent)",
-      "Bash(grep -n \"is_super_admin\\\\|super_admin\" \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlinkonSoftware/database/migrations\"/*)"
+      "Bash(grep -n \"is_super_admin\\\\|super_admin\" \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlinkonSoftware/database/migrations\"/*)",
+      "Bash(php -r 'echo file_get_contents\\(\"resources/views/admin/bulk-import/index.blade.php\"\\) ? \"OK\\\\n\" : \"FAIL\\\\n\";')",
+      "Bash(php -r ':*)",
+      "Bash(grep -r \"Auth::user\\(\\)\" /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware/app/Http/Controllers/Admin/*.php)",
+      "Bash(grep -r \"auth\\(\\)->user\\(\\)\" /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware/app/Http/Controllers/Admin/*.php)",
+      "Bash(grep -E \"\\\\.\\(php|js\\)$\")",
+      "Bash(grep -rn '$user->hasRole\\\\|Auth::user\\(\\)->hasRole' /c/Users/qlinkongraphics/Desktop/MyLab/qlinkonSoftware/app/Http/Controllers/Admin/ '--include=*.php')",
+      "Bash(git checkout:*)",
+      "Bash(php -l app/Services/Import/ClientImporter.php)",
+      "Bash(php -l app/Services/Import/SupplierImporter.php)",
+      "Bash(php -l app/Http/Controllers/Admin/BulkImportController.php)"
     ]
   }
 }

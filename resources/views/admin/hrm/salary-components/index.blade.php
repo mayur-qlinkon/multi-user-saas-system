@@ -120,28 +120,49 @@
             @endif
         </div>
     </div>
-
+    
     {{-- Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
+            <table class="w-full text-left border-collapse">
+                <thead class="hidden md:table-header-group">
                     <tr class="border-b border-gray-100">
-                        <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
-                        <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Component</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider">Component</th>
                         <th class="px-3 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-wider">Type</th>
-                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Calculation</th>
-                        <th class="px-3 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Default Amount</th>
+                        <th class="px-3 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider">Calculation</th>
+                        <th class="px-3 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Amount</th>
                         <th class="px-3 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-wider">Taxable</th>
                         <th class="px-3 py-3 text-center text-[10px] font-black text-gray-400 uppercase tracking-wider">Status</th>
                         <th class="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="block md:table-row-group">
                     @forelse($components as $component)
-                        <tr class="table-row" x-show="matchesSearch('{{ strtolower($component->name) }}', '{{ strtolower($component->code) }}')">
-                            <td class="px-5 py-3 text-[12px] font-bold text-gray-400">{{ $components->firstItem() + $loop->index }}</td>
-                            <td class="px-5 py-3">
+                        <tr class="block md:table-row border-b border-gray-100 mb-4 md:mb-0 p-4 md:p-0" x-show="matchesSearch('{{ strtolower($component->name) }}', '{{ strtolower($component->code) }}')">
+                            
+                            {{-- Mobile: Index & Component Header / Desktop: Index --}}
+                            <td class="block md:table-cell px-2 md:px-5 py-1 md:py-3 text-[12px] font-bold text-gray-400">
+                                <div class="flex items-center justify-between md:hidden mb-2">
+                                    <span>#{{ $components->firstItem() + $loop->index }}</span>
+                                    <div class="flex items-center gap-1.5">
+                                        @if(has_permission('salary_components.update'))
+                                            <button @click="openEdit({{ $component->toJson() }})" class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        @endif
+                                        @if(has_permission('salary_components.delete'))
+                                            <button @click="confirmDelete({{ $component->id }}, '{{ $component->name }}')" class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-red-50 text-red-400">
+                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                                <span class="hidden md:inline">{{ $components->firstItem() + $loop->index }}</span>
+                            </td>
+
+                            {{-- Component Name & Details --}}
+                            <td class="block md:table-cell px-2 md:px-5 py-1 md:py-3">
                                 <div>
                                     <p class="text-[13px] font-bold text-gray-800">
                                         {{ $component->name }}
@@ -152,47 +173,64 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-3 py-3 text-center">
+
+                            {{-- Type --}}
+                            <td class="flex justify-between md:table-cell px-2 md:px-3 py-1.5 md:py-3 md:text-center">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Type</span>
                                 @if($component->type === 'earning')
                                     <span class="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-md">Earning</span>
                                 @else
                                     <span class="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-md">Deduction</span>
                                 @endif
                             </td>
-                            <td class="px-3 py-3">
-                                <p class="text-[12px] text-gray-600 capitalize">{{ $component->calculation_type }}</p>
-                                @if($component->calculation_type === 'percentage' && $component->percentage_of)
-                                    <p class="text-[11px] text-gray-400">of {{ $component->percentage_of }}</p>
-                                @endif
+
+                            {{-- Calculation --}}
+                            <td class="flex justify-between items-center md:table-cell px-2 md:px-3 py-1.5 md:py-3">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Calc Type</span>
+                                <div class="text-right md:text-left">
+                                    <p class="text-[12px] text-gray-600 capitalize">{{ $component->calculation_type }}</p>
+                                    @if($component->calculation_type === 'percentage' && $component->percentage_of)
+                                        <p class="text-[11px] text-gray-400">of {{ $component->percentage_of }}</p>
+                                    @endif
+                                </div>
                             </td>
-                            <td class="px-3 py-3 text-right">
+
+                            {{-- Amount --}}
+                            <td class="flex justify-between md:table-cell px-2 md:px-3 py-1.5 md:py-3 md:text-right">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Amount</span>
                                 <span class="text-[12px] font-bold text-gray-700">{{ number_format($component->default_amount ?? 0, 2) }}</span>
                             </td>
-                            <td class="px-3 py-3 text-center">
+
+                            {{-- Taxable --}}
+                            <td class="flex justify-between md:table-cell px-2 md:px-3 py-1.5 md:py-3 md:text-center">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Taxable</span>
                                 @if($component->is_taxable)
                                     <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">Yes</span>
                                 @else
                                     <span class="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md">No</span>
                                 @endif
                             </td>
-                            <td class="px-3 py-3 text-center">
+
+                            {{-- Status --}}
+                            <td class="flex justify-between md:table-cell px-2 md:px-3 py-1.5 md:py-3 md:text-center">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase">Status</span>
                                 @if($component->is_active)
                                     <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-md">Active</span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-md">Inactive</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right">
+
+                            {{-- Actions (Desktop only, mobile actions are moved to the top of the card) --}}
+                            <td class="hidden md:table-cell px-4 py-3 text-right border-t md:border-t-0 mt-2 md:mt-0 pt-3 md:pt-0">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if(has_permission('salary_components.update'))
-                                        <button @click="openEdit({{ $component->toJson() }})"
-                                            class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                                        <button @click="openEdit({{ $component->toJson() }})" class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors">
                                             <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                         </button>
                                     @endif
                                     @if(has_permission('salary_components.delete'))
-                                        <button @click="confirmDelete({{ $component->id }}, '{{ $component->name }}')"
-                                            class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
+                                        <button @click="confirmDelete({{ $component->id }}, '{{ $component->name }}')" class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors">
                                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                         </button>
                                     @endif
@@ -208,14 +246,13 @@
                                     </div>
                                     <p class="font-semibold text-gray-500 mb-1">No salary components yet</p>
                                     <p class="text-sm text-gray-400 mb-4">Create your first salary component to build payroll structures</p>
-                                    <button @click="openCreate()"
-                                        class="text-sm font-bold px-4 py-2 rounded-xl text-white" style="background: var(--brand-600)">
+                                    <button @click="openCreate()" class="text-sm font-bold px-4 py-2 rounded-xl text-white" style="background: var(--brand-600)">
                                         Add Component
                                     </button>
                                 </div>
                             </td>
                         </tr>
-                    @endforelse
+                    @endempty
                 </tbody>
             </table>
         </div>

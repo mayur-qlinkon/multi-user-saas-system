@@ -29,13 +29,13 @@
 
     {{-- TOOLBAR: Search, Filters & Actions --}}
     <div class="bg-white rounded-t-xl shadow-sm border border-gray-100 p-4 border-b-0 mb-0">
-        <form id="filterForm" method="GET" action="{{ route('admin.hrm.announcements.index') }}" class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <form id="filterForm" method="GET" action="{{ route('admin.hrm.announcements.index') }}" class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             
             {{-- Left Side: Search & Filters --}}
-            <div class="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto flex-1">
+            <div class="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto flex-1">
                 
                 {{-- Search --}}
-                <div class="relative flex-1 min-w-[200px] max-w-sm">
+                <div class="relative w-full sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
                     <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search title or content..."
                         class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition-all placeholder-gray-400">
@@ -43,7 +43,7 @@
 
                 {{-- Status Filter --}}
                 <select name="status" onchange="document.getElementById('filterForm').submit()" 
-                    class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white cursor-pointer min-w-[130px]">
+                    class="w-full sm:w-auto border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white cursor-pointer sm:min-w-[130px]">
                     <option value="">All Statuses</option>
                     @foreach($statusOptions as $val => $label)
                         <option value="{{ $val }}" {{ ($filters['status'] ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
@@ -52,7 +52,7 @@
 
                 {{-- Type Filter --}}
                 <select name="type" onchange="document.getElementById('filterForm').submit()" 
-                    class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white cursor-pointer min-w-[130px]">
+                    class="w-full sm:w-auto border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white cursor-pointer sm:min-w-[130px]">
                     <option value="">All Types</option>
                     @foreach($typeOptions as $val => $label)
                         <option value="{{ $val }}" {{ ($filters['type'] ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
@@ -74,10 +74,10 @@
             </div>
 
             {{-- Right Side: Add Button --}}
-            <div class="flex items-center gap-2 w-full lg:w-auto justify-end shrink-0">
+            <div class="flex items-center gap-2 w-full md:w-auto justify-start md:justify-end shrink-0">
                 @if(has_permission('announcements.create'))
                     <a href="{{ route('admin.hrm.announcements.create') }}"
-                        class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap active:scale-95">
+                        class="w-full justify-center md:w-auto md:justify-start bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap active:scale-95">
                         <i data-lucide="plus" class="w-4 h-4"></i> Create Announcement
                     </a>
                 @endif
@@ -92,9 +92,9 @@
                 <thead class="table-header">
                     <tr>
                         <th class="w-[40%]">Announcement Info</th>
-                        <th class="w-[15%]">Type & Priority</th>
-                        <th class="w-[15%]">Target</th>
-                        <th class="w-[15%]">Publish / Expire</th>
+                        <th class="hidden md:table-cell w-[15%]">Type & Priority</th>
+                        <th class="hidden md:table-cell w-[15%]">Target</th>
+                        <th class="hidden md:table-cell w-[15%]">Publish / Expire</th>
                         <th class="w-[10%] text-center">Status</th>
                         <th class="w-[5%] text-right">Actions</th>
                     </tr>
@@ -123,7 +123,7 @@
                             </td>
 
                             {{-- Type & Priority --}}
-                            <td class="table-cell">
+                            <td class="hidden md:table-cell">
                                 @php
                                     $typeBadge = match($announcement->type) {
                                         'policy' => 'bg-blue-50 text-blue-700',
@@ -149,7 +149,7 @@
                             </td>
 
                             {{-- Target --}}
-                            <td class="table-cell">
+                            <td class="hidden md:table-cell">
                                 <span class="text-[12px] font-bold text-gray-700">
                                     {{ \App\Models\Hrm\Announcement::TARGET_LABELS[$announcement->target_audience] ?? ucfirst($announcement->target_audience) }}
                                 </span>
@@ -161,7 +161,7 @@
                             </td>
 
                             {{-- Dates --}}
-                            <td class="table-cell">
+                            <td class="hidden md:table-cell">
                                 <div class="text-[12px] font-bold text-gray-800">
                                     {{ $announcement->publish_at ? $announcement->publish_at->format('d M Y') : 'Draft' }}
                                 </div>
@@ -187,7 +187,7 @@
 
                             {{-- Actions --}}
                             <td class="table-cell text-right">
-                                <div class="flex items-center justify-end gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div class="flex items-center justify-end gap-2 transition-opacity">
                                     {{-- Quick Publish Button --}}
                                     @if(!$announcement->is_published)
                                         @if(has_permission('announcements.publish'))

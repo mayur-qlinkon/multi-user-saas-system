@@ -4,7 +4,7 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Expenses</h1>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Expenses</h1>
         <p class="text-xs text-gray-400 font-medium mt-0.5">Manage company expenditures and reimbursements</p>
     </div>
 @endsection
@@ -83,19 +83,19 @@
     <div class="pb-10 w-full" x-data="expensesIndex()">
 
         {{-- ════════ HEADER & ACTIONS ════════ --}}
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-5">
 
             {{-- Filters Form ── --}}
             <form method="GET" action="{{ route('admin.expenses.index') }}"
-                class="flex items-center gap-3 flex-wrap flex-1" x-ref="filterForm">
+                class="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1 w-full" x-ref="filterForm">
 
                 <div class="relative">
                     <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
                     <input type="text" name="search" value="{{ request('search') }}" style="padding-left: 30px;"
-                        placeholder="Search merchant, invoice..." class="filter-input pl-9 w-[220px]">
+                        placeholder="Search merchant, invoice..." class="filter-input pl-9 w-full">
                 </div>
 
-                <select name="status" class="filter-input min-w-[140px]" @change="$refs.filterForm.submit()">
+                <select name="status" class="filter-input w-full sm:w-auto sm:min-w-[140px]" @change="$refs.filterForm.submit()">
                     <option value="">All Statuses</option>
                     <option value="pending_approval" {{ request('status') === 'pending_approval' ? 'selected' : '' }}>
                         Pending Approval</option>
@@ -106,7 +106,7 @@
                     <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                 </select>
 
-                <select name="category_id" class="filter-input min-w-[160px]" @change="$refs.filterForm.submit()">
+                <select name="category_id" class="filter-input w-full sm:w-auto sm:min-w-[160px]" @change="$refs.filterForm.submit()">
                     <option value="">All Categories</option>
                     @foreach ($categories as $cat)
                         <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}
@@ -131,10 +131,10 @@
             </form>
 
             {{-- Action Buttons ── --}}
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
                 @if(has_permission('expenses.create'))
                 <a href="{{ route('admin.expenses.create') }}"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-500 rounded-xl text-sm font-bold text-white hover:bg-brand-600 transition-opacity"                    >
+                    class="inline-flex justify-center items-center gap-2 px-4 py-2.5 w-full sm:w-auto bg-brand-500 rounded-xl text-sm font-bold text-white hover:bg-brand-600 transition-opacity">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Log Expense
                 </a>
@@ -183,7 +183,7 @@
                 </div>
             @else
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse min-w-[950px]">
                         <thead>
                             <tr class="border-b border-gray-100 bg-gray-50/50">
                                 <th
@@ -222,7 +222,7 @@
                                     </td>
 
                                     {{-- Details --}}
-                                    <td class="px-4 py-3.5">
+                                    <td class="px-3 py-3 sm:px-4 sm:py-3.5">
                                         <div class="flex items-start gap-3">
                                             <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                                                 style="background: var(--brand-50)">
@@ -230,11 +230,11 @@
                                             </div>
                                             <div class="min-w-0">
                                                 <a href="{{ route('admin.expenses.show', $expense->id) }}"
-                                                    class="text-[13px] font-bold text-gray-900 hover:text-blue-600 hover:underline block truncate">
+                                                    class="text-[13px] font-bold text-gray-900 hover:text-blue-600 hover:underline block break-words sm:truncate">
                                                     {{ $expense->merchant_name }}
                                                 </a>
                                                 <div
-                                                    class="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500 font-medium">
+                                                    class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5 text-[11px] text-gray-500 font-medium">
                                                     <span>{{ $expense->expense_number }}</span>
                                                     <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
                                                     <span>{{ $expense->expense_date->format('d M Y') }}</span>
@@ -248,7 +248,7 @@
                                     </td>
 
                                     {{-- Category --}}
-                                    <td class="px-4 py-3.5">
+                                    <td class="px-3 py-3 sm:px-4 sm:py-3.5">
                                         <span
                                             class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold bg-gray-100 text-gray-600">
                                             {{ $expense->category->name ?? 'Uncategorized' }}
@@ -259,8 +259,8 @@
                                     </td>
 
                                     {{-- Amount --}}
-                                    <td class="px-4 py-3.5 text-right">
-                                        <p class="text-[14px] font-black text-gray-900">
+                                    <td class="px-3 py-3 sm:px-4 sm:py-3.5 text-right">
+                                        <p class="text-[14px] font-black text-gray-900 whitespace-nowrap">
                                             {{ $expense->currency_code }} {{ number_format($expense->total_amount, 2) }}
                                         </p>
                                         @if ($expense->tax_amount > 0)
@@ -274,8 +274,8 @@
                                     </td>
 
                                     {{-- Status --}}
-                                    <td class="px-4 py-3.5 text-center">
-                                        <span class="status-badge"
+                                    <td class="px-3 py-3 sm:px-4 sm:py-3.5 text-center">
+                                        <span class="status-badge whitespace-nowrap"
                                             style="background: {{ $statusConf['bg'] }}; color: {{ $statusConf['text'] }}">
                                             <span class="w-1.5 h-1.5 rounded-full"
                                                 style="background: {{ $statusConf['dot'] }}"></span>
@@ -284,7 +284,7 @@
                                     </td>
 
                                     {{-- Payment Status --}}
-                                    <td class="px-4 py-3.5 text-center">
+                                    <td class="px-3 py-3 sm:px-4 sm:py-3.5 text-center">
                                         <span
                                             class="inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
                                             style="background: {{ $payConf['bg'] }}; color: {{ $payConf['text'] }}">
@@ -293,7 +293,7 @@
                                     </td>
 
                                     {{-- Actions --}}
-                                    <td class="px-4 py-3.5 text-right">
+                                    <td class="px-3 py-3 sm:px-4 sm:py-3.5 text-right">
                                         <div class="flex items-center justify-end gap-1">
 
                                             @if(has_permission('expenses.view'))
@@ -341,7 +341,7 @@
                 {{-- Pagination --}}
                 @if ($expenses->hasPages())
                     <div
-                        class="px-5 py-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3 bg-white">
+                        class="px-5 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-4 bg-white text-center sm:text-left">
                         <p class="text-[12px] text-gray-400 font-medium">
                             Showing <span class="font-bold text-gray-600">{{ $expenses->firstItem() }}</span> to <span
                                 class="font-bold text-gray-600">{{ $expenses->lastItem() }}</span> of <span

@@ -19,6 +19,8 @@ return new class extends Migration
             $table->unsignedInteger('success_rows')->default(0);
             $table->unsignedInteger('created_rows')->default(0);
             $table->unsignedInteger('updated_rows')->default(0);
+            $table->unsignedInteger('skipped_rows')->default(0);
+            $table->unsignedInteger('limit_skipped_rows')->default(0);
             $table->unsignedInteger('failed_rows')->default(0);
             $table->enum('status', ['pending', 'processing', 'completed', 'failed'])->default('pending');
             $table->boolean('is_dry_run')->default(false);
@@ -27,7 +29,6 @@ return new class extends Migration
             $table->enum('duplicate_mode', ['skip', 'update', 'error'])
                 ->default('skip');
             $table->json('duplicate_meta')->nullable();
-            $table->unsignedInteger('skipped_rows')->default(0);
             $table->timestamps();
         });
     }

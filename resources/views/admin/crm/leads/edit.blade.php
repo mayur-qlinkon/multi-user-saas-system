@@ -175,12 +175,12 @@
         </div>
     </template>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-5 items-start">
 
         {{-- ═══════════════════════════════
              LEFT — Core Info (2/3 width)
         ═══════════════════════════════ --}}
-        <div class="lg:col-span-2 space-y-4">
+        <div class="lg:col-span-3 xl:col-span-2 space-y-4">
 
             {{-- ── Basic Info ── --}}
             <div class="form-section">
@@ -191,7 +191,7 @@
                     <span class="section-title">Basic Information</span>
                 </div>
                 <div class="section-body">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
 
                         <div class="sm:col-span-2">
                             <label class="field-label">Full Name <span class="text-red-500">*</span></label>
@@ -433,7 +433,7 @@
         {{-- ═══════════════════════════════
              RIGHT — Priority, Tags, Followup, Submit
         ═══════════════════════════════ --}}
-        <div class="lg:col-span-1 space-y-4 lg:sticky lg:top-5">
+        <div class="lg:col-span-2 xl:col-span-1 space-y-4 lg:sticky lg:top-5">
 
             {{-- ── Lead meta (read-only info) ── --}}
             <div class="form-section">
@@ -477,7 +477,7 @@
                     <span class="section-title">Priority</span>
                 </div>
                 <div class="section-body">
-                    <div class="flex gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2">
                         @foreach(['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'hot' => '🔥 Hot'] as $val => $label)
                             <button type="button"
                                 @click="form.priority = '{{ $val }}'"
@@ -540,12 +540,12 @@
 
             {{-- ── Submit ── --}}
             <div class="form-section">
-                <div class="section-body space-y-3">
+                <div class="section-body flex flex-col gap-3">
 
                     <button type="button"
                         @click="submit()"
                         :disabled="saving || !form.name.trim()"
-                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-bold text-white transition-opacity"
+                        class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-[14px] font-bold text-white transition-opacity"
                         style="background: var(--brand-600)"
                         :class="(saving || !form.name.trim()) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'">
                         <svg x-show="saving" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>

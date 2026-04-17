@@ -147,12 +147,12 @@
         </div>
     </template>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-5">
 
         {{-- ═══════════════════════════════
              LEFT — Core Info (2/3 width)
         ═══════════════════════════════ --}}
-        <div class="lg:col-span-2 space-y-4">
+        <div class="lg:col-span-3 xl:col-span-2 space-y-4">
 
             {{-- ── Basic Info ── --}}
             <div class="form-section">
@@ -163,7 +163,7 @@
                     <span class="section-title">Basic Information</span>
                 </div>
                 <div class="section-body">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
 
                         {{-- Name ── --}}
                         <div class="sm:col-span-2">
@@ -421,7 +421,7 @@
         {{-- ═══════════════════════════════
              RIGHT — Priority, Tags, Followup, Submit
         ═══════════════════════════════ --}}
-        <div class="lg:col-span-1 space-y-4 lg:sticky lg:top-5">
+        <div class="lg:col-span-2 xl:col-span-1 space-y-4 lg:sticky lg:top-5">
 
 
             {{-- ── Priority ── --}}
@@ -433,7 +433,7 @@
                     <span class="section-title">Priority</span>
                 </div>
                 <div class="section-body">
-                    <div class="flex gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2">
                         @foreach(['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'hot' => '🔥 Hot'] as $val => $label)
                             <button type="button"
                                 @click="form.priority = '{{ $val }}'"
@@ -496,12 +496,12 @@
 
             {{-- ── Submit ── --}}
             <div class="form-section">
-                <div class="section-body space-y-3">
+                <div class="section-body flex flex-col gap-3">
 
                     <button type="button"
                         @click="submit()"
                         :disabled="saving || !form.name.trim()"
-                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[14px] font-bold text-white transition-opacity"
+                        class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-[14px] font-bold text-white transition-opacity"
                         style="background: var(--brand-600)"
                         :class="(saving || !form.name.trim()) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'">
                         <svg x-show="saving" class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -515,7 +515,7 @@
                     </a>
 
                     {{-- Field count hint ── --}}
-                    <div class="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+                    <div class="bg-blue-50/50 border border-blue-100 rounded-xl px-4 py-3">
                         <p class="text-[11px] text-blue-700 font-semibold">
                             <svg class="inline w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                             Only Name is required. All other fields are optional and can be filled later.

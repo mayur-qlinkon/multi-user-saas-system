@@ -5,7 +5,25 @@
 @section('header-title')
     <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create / Product</h1>
 @endsection
-
+@push('styles')
+    <style>
+    /* Clean minimal scrollbars for the horizontal wrappers */
+    .overflow-x-auto::-webkit-scrollbar {
+        height: 6px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-track {
+        background: #f1f5f9; 
+        border-radius: 4px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+        background: #cbd5e1; 
+        border-radius: 4px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8; 
+    }
+</style>
+@endpush
 @section('content')
     <div class="space-y-6 pb-10" x-data="productForm()">
 
@@ -128,7 +146,7 @@
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 class="text-lg font-bold text-gray-800 mb-5 border-b border-gray-100 pb-2">2. Units & Measurements</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Product Unit <span
                                 class="text-red-500">*</span></label>
@@ -178,8 +196,8 @@
             {{-- ── Product Type Selector (module-gated) ── --}}
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 class="text-lg font-bold text-gray-800 mb-4">Product Purpose</h2>
-                <div class="flex items-center gap-4">
-                    <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                    <label class="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
                         :class="catalogMode === 'sellable' ? 'border-brand-500 bg-brand-50' : 'border-gray-200 bg-white hover:bg-gray-50'">
                         <input type="radio" name="product_type" value="sellable" x-model="catalogMode" class="hidden">
                         <i data-lucide="shopping-cart" class="w-5 h-5" :class="catalogMode === 'sellable' ? 'text-brand-600' : 'text-gray-400'"></i>
@@ -188,7 +206,7 @@
                             <p class="text-[11px] text-gray-400">Normal product with pricing, stock & POS</p>
                         </div>
                     </label>
-                    <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
+                    <label class="flex-1 flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
                         :class="catalogMode === 'catalog' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white hover:bg-gray-50'">
                         <input type="radio" name="product_type" value="catalog" x-model="catalogMode" class="hidden">
                         <i data-lucide="book-open" class="w-5 h-5" :class="catalogMode === 'catalog' ? 'text-teal-600' : 'text-gray-400'"></i>
@@ -202,28 +220,28 @@
             @endif
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100" x-show="catalogMode !== 'catalog'" x-cloak>
-                <div class="flex items-center justify-between mb-5 border-b border-gray-100 pb-2">
-                    <h2 class="text-lg font-bold text-gray-800">3. Product Pricing & Stock</h2>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 border-b border-gray-100 pb-3">
+                    <h2 class="text-base sm:text-lg font-bold text-gray-800">3. Product Pricing & Stock</h2>
 
-                    <div class="flex items-center bg-gray-100 p-1 rounded-lg">
-                        <label class="cursor-pointer">
+                    <div class="flex items-center bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
+                        <label class="flex-1 sm:flex-none cursor-pointer text-center">
                             <input type="radio" name="type" value="single" x-model="productType" class="peer hidden">
                             <span
-                                class="block px-4 py-1.5 text-sm font-bold rounded-md peer-checked:bg-white peer-checked:text-[#108c2a] peer-checked:shadow-sm text-gray-500 transition-all">Single
+                                class="block px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-md peer-checked:bg-white peer-checked:text-[#108c2a] peer-checked:shadow-sm text-gray-500 transition-all whitespace-nowrap">Single
                                 Item</span>
                         </label>
-                        <label class="cursor-pointer">
+                        <label class="flex-1 sm:flex-none cursor-pointer text-center">
                             <input type="radio" name="type" value="variable" x-model="productType"
                                 class="peer hidden">
                             <span
-                                class="block px-4 py-1.5 text-sm font-bold rounded-md peer-checked:bg-white peer-checked:text-[#108c2a] peer-checked:shadow-sm text-gray-500 transition-all">Variable
+                                class="block px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-bold rounded-md peer-checked:bg-white peer-checked:text-[#108c2a] peer-checked:shadow-sm text-gray-500 transition-all whitespace-nowrap">Variable
                                 Product</span>
                         </label>
                     </div>
                 </div>
 
                 <div x-show="productType === 'single' && catalogMode !== 'catalog'" x-cloak>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">SKU <span
                                     class="text-red-500">*</span></label>
@@ -299,6 +317,13 @@
                             <input type="number" name="single_stock_alert" value="{{ old('single_stock_alert', 0) }}"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
                         </div>
+                        <div>
+                            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">HSN Override <span class="text-gray-400 font-normal text-[11px]">(Optional)</span></label>
+                            <input type="text" name="single_hsn_code" value="{{ old('single_hsn_code') }}"
+                                placeholder="e.g., 61091000"
+                                class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
+                            <p class="text-[11px] text-gray-400 mt-1">Leave empty to use product HSN</p>
+                        </div>
                     </div>
 
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -372,9 +397,10 @@
                                     Variation <span x-text="index + 1"></span>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">SKU</label>
+                                <div class="overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                    <div class="grid grid-cols-4 lg:grid-cols-5 gap-4 mb-4 min-w-[850px] lg:min-w-0">
+                                        <div>
+                                            <label class="block text-[12px] font-bold text-gray-600 mb-1">SKU</label>
 
                                         <div class="flex items-center gap-2">
 
@@ -473,6 +499,13 @@
                                             x-model="variant.alert"
                                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
                                     </div>
+                                    <div>
+                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">HSN Override</label>
+                                        <input type="text" :name="'variations[' + index + '][hsn_code]'"
+                                            x-model="variant.hsn_code"
+                                            placeholder="Leave empty to use product HSN"
+                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none uppercase">
+                                    </div>
                                 </div>
 
                                 <div class="bg-white p-3 rounded border border-gray-200 mb-4">
@@ -506,9 +539,9 @@
                                         </button>
                                     </div>
 
-                                    <div class="space-y-2">
+                                    <div class="space-y-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
                                         <template x-for="(stock, stockIndex) in variant.stocks" :key="stock.id">
-                                            <div class="flex gap-2 items-center">
+                                            <div class="flex gap-2 items-center min-w-[400px] sm:min-w-0">
                                                 <select
                                                     :name="'variations[' + index + '][stock][' + stockIndex + '][warehouse_id]'"
                                                     x-model="stock.warehouse_id" required
@@ -587,13 +620,13 @@
 
                             <div class="flex-1">
                                 <template x-if="media.type === 'image'">
-                                    <div class="flex items-center gap-4">
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full">
                                         <input type="file" :name="'media[' + index + '][file]'" accept="image/*"
                                             required
                                             class="text-sm w-full text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-white file:border-gray-200 file:border cursor-pointer">
 
                                         <label
-                                            class="flex items-center gap-1.5 cursor-pointer flex-shrink-0 text-sm font-bold text-gray-600">
+                                            class="flex items-center gap-1.5 cursor-pointer flex-shrink-0 text-xs sm:text-sm font-bold text-gray-600">
                                             <input type="radio" :value="media.id" x-model="primaryMediaId"
                                                 class="text-[#108c2a] focus:ring-[#108c2a]">
                                             Main Image
@@ -774,15 +807,11 @@
 
             </div>
 
-            <div class="flex justify-end pt-4 border-t border-gray-200">
+            <div class="flex flex-col sm:flex-row justify-end pt-4 border-t border-gray-200">
                 <button type="submit"
-                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 transition-all">
+                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 transition-all">
                     <i data-lucide="save" class="w-4 h-4"></i> Create Product
-                </button>
-                {{-- <a href="{{ route('admin.products.index') }}"
-                    class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
-                    Cancel
-                </a> --}}
+                </button>                
             </div>
 
         </form>

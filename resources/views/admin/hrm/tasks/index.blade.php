@@ -125,7 +125,7 @@
         <div class="flex items-center gap-3 flex-wrap">
 
             {{-- Status filter --}}
-            <div class="min-w-[140px]">
+            <div class="w-full sm:w-auto sm:min-w-[140px]">
                 <select name="status" class="field-input !py-2 !text-[13px]" onchange="this.form.submit()">
                     <option value="">All Statuses</option>
                     @foreach($statusLabels as $val => $label)
@@ -137,7 +137,7 @@
             </div>
 
             {{-- Priority filter --}}
-            <div class="min-w-[130px]">
+            <div class="w-full sm:w-auto sm:min-w-[130px]">
                 <select name="priority" class="field-input !py-2 !text-[13px]" onchange="this.form.submit()">
                     <option value="">All Priorities</option>
                     @foreach($priorityLabels as $val => $label)
@@ -149,7 +149,7 @@
             </div>
 
             {{-- Employee filter --}}
-            <div class="min-w-[160px]">
+            <div class="w-full sm:w-auto sm:min-w-[160px]">
                 <select name="employee_id" class="field-input !py-2 !text-[13px]" onchange="this.form.submit()">
                     <option value="">All Employees</option>
                     @foreach($employees as $emp)
@@ -161,7 +161,7 @@
             </div>
 
             {{-- Search --}}
-            <div class="relative flex-1 min-w-[180px]">
+            <div class="relative w-full sm:flex-1 sm:min-w-[180px]">
                 <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"></i>
                 <input type="text" name="search" value="{{ $filters['search'] ?? '' }}"
                     placeholder="Search tasks..."
@@ -193,15 +193,15 @@
     {{-- Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full">
+            <table class="w-full min-w-[800px]">
                 <thead>
                     <tr class="border-b border-gray-100">
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Task</th>
-                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider hidden sm:table-cell">Assignees</th>
-                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider hidden md:table-cell">Priority</th>
+                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap">Assignees</th>
+                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap">Priority</th>
                         <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Status</th>
-                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider hidden sm:table-cell">Due In</th>
+                        <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap">Due In</th>
                         <th class="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -245,7 +245,7 @@
                             </td>
 
                             {{-- Assignees --}}
-                            <td class="px-3 py-3 hidden sm:table-cell">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 @if($task->assignees->count())
                                     <div class="avatar-stack">
                                         @foreach($visibleAssignees as $emp)
@@ -264,7 +264,7 @@
                             </td>
 
                             {{-- Priority --}}
-                            <td class="px-3 py-3 hidden md:table-cell">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
                                     style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
                                     <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -284,7 +284,7 @@
                             </td>
 
                             {{-- Due In --}}
-                            <td class="px-3 py-3 hidden sm:table-cell">
+                            <td class="px-3 py-3 whitespace-nowrap">
                                 @if($task->due_date)
                                     @if(in_array($task->status, ['completed', 'cancelled']))
                                         <span class="text-[11px] text-gray-400">—</span>

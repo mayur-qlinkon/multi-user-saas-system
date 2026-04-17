@@ -572,8 +572,9 @@
                     @endif
                     
                     
-                    
-                    <div class="nav-section-label">Sales & Finance</div>                                        
+                    @if(has_module('invoicing') && has_permission(['invoices.view', 'quotations.view']))
+                        <div class="nav-section-label">Sales & Finance</div>  
+                    @endif                                      
                     
                     @if (has_module('pos') && has_permission('pos.access'))
                         <a href="{{ url('/admin/pos') }}" class="nav-item" target="_blank" data-no-spa>
@@ -758,7 +759,7 @@
                                         class="sub-item {{ $subCls('admin.crm.leads.*') }}">All Leads</a>
                                     @if(has_permission('crm_pipelines.view'))
                                     <a href="{{ route('admin.crm.pipelines.index') }}"
-                                        class="sub-item {{ $subCls('admin.crm.pipelines.*') }}">Pipelines</a>
+                                        class="sub-item {{ $subCls(['admin.crm.pipelines.*','admin.crm.stages.*']) }}">Pipelines</a>
                                     @endif
                                     <a href="{{ route('admin.crm.sources.index') }}"
                                         class="sub-item {{ $subCls('admin.crm.sources.*') }}">Lead Sources</a>

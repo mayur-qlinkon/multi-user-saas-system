@@ -98,7 +98,22 @@ class SearchController extends Controller
 
         $query = Purchase::with('supplier:id,name')
             ->where('company_id', Auth::user()->company_id)
-            ->whereIn('status', ['received', 'partially_received']); // Only received POs can be returned
+            ->whereIn('status', ['received', 'partially_received']) // Only received POs can be returned
+            // Exclude POs where every item has already been fully returned.
+            // A PO is fully returned when no purchase_item has remaining returnable qty
+            // (original qty − sum of non-cancelled return item qtys > 0).
+            ->whereHas('items', function ($q) {
+                $q->whereRaw(
+                    'quantity > COALESCE((
+                        SELECT SUM(pri.quantity)
+                        FROM purchase_return_items pri
+                        JOIN purchase_returns pr ON pri.purchase_return_id = pr.id
+                        WHERE pri.purchase_item_id = purchase_items.id
+                          AND pr.status != ?
+                    ), 0)',
+                    ['cancelled']
+                );
+            });
 
         // If user typed something, apply the filter
         if ($term) {

@@ -2,7 +2,7 @@
 <div class="mb-4 rounded-lg p-3 border cursor-pointer transition-colors"
     :class="isDryRun ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-100'"
     @click="isDryRun = !isDryRun">
-    <label class="flex items-center gap-3 cursor-pointer">
+    <label class="flex items-center gap-3 cursor-pointer" @click.stop>
         <div class="relative">
             <input type="checkbox" x-model="isDryRun" class="sr-only">
             <div class="w-9 h-5 rounded-full transition-colors"

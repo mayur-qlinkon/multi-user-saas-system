@@ -325,8 +325,11 @@ class LeaveService
     {
         $query = Leave::with(['employee.user', 'leaveType', 'approvedByUser']);
 
-        if (! empty($filters['employee_id'])) {
-            $query->where('employee_id', $filters['employee_id']);
+        if (! empty($filters['employee_name'])) {
+            $searchTerm = $filters['employee_name'];
+            $query->whereHas('employee.user', function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', '%' . $searchTerm . '%');
+            });
         }
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);

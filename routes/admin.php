@@ -356,6 +356,16 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             // Product SKUs
             Route::post('/skus/upload', 'uploadSkus')->name('skus.upload');
             Route::post('/skus/process', 'processSkus')->name('skus.process');
+            // Clients
+            Route::post('/clients/upload', 'uploadClients')->name('clients.upload');
+            Route::post('/clients/process', 'processClients')->name('clients.process');
+            // Suppliers
+            Route::post('/suppliers/upload', 'uploadSuppliers')->name('suppliers.upload');
+            Route::post('/suppliers/process', 'processSuppliers')->name('suppliers.process');
+            // Product Images (ZIP)
+            Route::get('/product-images/guide', 'downloadImageGuide')->name('product-images.guide');
+            Route::post('/product-images/upload', 'uploadProductImages')->name('product-images.upload');
+            Route::post('/product-images/process', 'processProductImages')->name('product-images.process');
         });
 
         // Core Product Resource

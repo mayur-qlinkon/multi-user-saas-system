@@ -1,7 +1,9 @@
 @extends('layouts.admin')
 
 @section('title', 'Create Purchase Return')
-
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CREATE / Purchase Returns</h1>
+@endsection
 @push('styles')
     <style>
         [x-cloak] {
@@ -15,7 +17,7 @@
 
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Purchase Return</h1>
+                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-wides">Create Purchase Return</h1>
                 <p class="text-[13px] text-gray-500 font-medium">Select a completed Purchase Order to process a return</p>
             </div>
             <a href="{{ route('admin.purchase-returns.index') }}"
@@ -141,7 +143,7 @@
                 <div class="overflow-x-auto min-h-[200px]">
                     <table class="w-full text-left border-collapse">
                         <thead
-                            class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            class="hidden md:table-header-group bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-4 py-4 w-[50px] text-center">Inc?</th>
                                 <th class="px-5 py-4 min-w-[250px]">PRODUCT</th>
@@ -154,15 +156,16 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             <template x-for="(item, index) in items" :key="item.purchase_item_id">
-                                <tr class="hover:bg-gray-50/50 transition-colors"
+                                <tr class="hover:bg-gray-50/50 transition-colors flex flex-col md:table-row border-b border-gray-200 md:border-none p-4 md:p-0 relative"
                                     :class="item.is_included ? 'bg-blue-50/20' : 'opacity-60'">
 
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="px-4 md:py-3 py-2 flex items-center justify-between md:table-cell absolute top-4 right-4 md:static">
+                                        <span class="md:hidden text-xs font-bold text-gray-500 uppercase">Include</span>
                                         <input type="checkbox" x-model="item.is_included" @change="calculate()"
-                                            class="w-4 h-4 text-[#108c2a] rounded border-gray-300 focus:ring-[#108c2a]">
+                                            class="w-5 h-5 md:w-4 md:h-4 text-[#108c2a] rounded border-gray-300 focus:ring-[#108c2a]">
                                     </td>
 
-                                    <td class="px-5 py-3">
+                                    <td class="px-5 md:py-3 py-2 flex flex-col md:table-cell pr-16 md:pr-5">
                                         <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
                                         <div class="text-[10px] text-gray-500 mt-0.5 font-mono" x-text="item.sku_code">
                                         </div>
@@ -185,16 +188,19 @@
                                         </template>
                                     </td>
 
-                                    <td class="px-4 py-3 text-right text-[13px] font-semibold text-gray-600">
-                                        ₹<span x-text="formatCurrency(item.unit_cost)"></span>
+                                    <td class="px-4 md:py-3 py-2 flex items-center justify-between md:table-cell text-left md:text-right text-[13px] font-semibold text-gray-600">
+                                        <span class="md:hidden text-xs font-bold text-gray-500 uppercase">Unit Cost</span>
+                                        <div>₹<span x-text="formatCurrency(item.unit_cost)"></span></div>
                                     </td>
 
-                                    <td class="px-4 py-3 text-center text-[13px] font-bold text-gray-800">
+                                    <td class="px-4 md:py-3 py-2 flex items-center justify-between md:table-cell text-left md:text-center text-[13px] font-bold text-gray-800">
+                                        <span class="md:hidden text-xs font-bold text-gray-500 uppercase">Max Qty</span>
                                         <span x-text="item.max_qty"></span>
                                     </td>
 
-                                    <td class="px-4 py-3">
-                                        <div class="flex items-center gap-1.5 w-[130px] justify-center"
+                                    <td class="px-4 md:py-3 py-2 flex items-center justify-between md:table-cell">
+                                        <span class="md:hidden text-xs font-bold text-gray-500 uppercase">Return Qty</span>
+                                        <div class="flex items-center gap-1.5 md:w-[130px] justify-center"
                                             :class="!item.is_included ? 'opacity-50' : ''">
 
                                             <button type="button" tabindex="-1"
@@ -233,7 +239,8 @@
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 md:py-3 py-2 flex flex-col md:table-cell gap-1.5 md:gap-0">
+                                        <span class="md:hidden text-xs font-bold text-gray-500 uppercase">Return Reason</span>
                                         <select x-model="item.return_reason" :disabled="!item.is_included"
                                             :name="item.is_included ? 'items[' + index + '][return_reason]' : ''"
                                             class="w-full border border-gray-300 rounded px-2 py-1.5 text-[12px] focus:border-brand-500 outline-none disabled:bg-gray-100">
@@ -246,7 +253,8 @@
                                         </select>
                                     </td>
 
-                                    <td class="px-5 py-3 text-right">
+                                    <td class="px-5 md:py-3 py-3 flex items-center justify-between md:table-cell text-left md:text-right border-t border-gray-100 md:border-none mt-2 md:mt-0">
+                                        <span class="md:hidden text-[13px] font-extrabold text-gray-700 uppercase">Subtotal</span>
                                         <span class="font-bold text-gray-800 text-[14px]"
                                             x-text="formatCurrency(item.line_total)"></span>
                                     </td>
@@ -309,7 +317,7 @@
                 x-show="items.length > 0" x-cloak>
                 <button type="submit"
                     class="bg-gray-800 text-white px-8 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-900 shadow-md transition-all active:scale-95">
-                    SUBMIT PURCHASE RETURN
+                    SUBMIT
                 </button>
             </div>
 

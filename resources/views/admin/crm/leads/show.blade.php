@@ -232,11 +232,11 @@
     {{-- ════ TOP ACTION BAR ════ --}}
     <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
 
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
 
             {{-- WhatsApp ── --}}
             @if($lead->phone)
-                <a href="{{ $lead->whatsapp_url }}" target="_blank" class="action-btn success">
+                <a href="{{ $lead->whatsapp_url }}" target="_blank" class="action-btn success flex-1 sm:flex-none justify-center">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
                     WhatsApp
                 </a>
@@ -244,7 +244,7 @@
 
             {{-- Edit ── --}}
             @if(has_permission('crm_leads.update'))
-            <a href="{{ route('admin.crm.leads.edit', $lead->id) }}" class="action-btn">
+            <a href="{{ route('admin.crm.leads.edit', $lead->id) }}" class="action-btn flex-1 sm:flex-none justify-center">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 Edit Lead
             </a>
@@ -253,10 +253,10 @@
             {{-- Convert ── --}}
             @if(!$lead->is_converted)
                 @if(has_permission('crm_leads.convert'))
-                <button @click="convertLead()" class="action-btn success" :disabled="converting">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span x-text="converting ? 'Converting...' : 'Convert to Client'"></span>
-                </button>
+                    <button @click="convertLead()" class="action-btn success w-full sm:w-auto justify-center" :disabled="converting">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span x-text="converting ? 'Converting...' : 'Convert to Client'"></span>
+                    </button>
                 @endif
             @else
                 @if(has_permission('clients.view'))
@@ -300,12 +300,12 @@
         </div>
     </template>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-5">
 
         {{-- ════════════════════════════════════
              LEFT COLUMN — Profile + Stage
         ════════════════════════════════════ --}}
-        <div class="lg:col-span-1 space-y-4">
+        <div class="lg:col-span-2 xl:col-span-1 space-y-4">
 
             {{-- Profile card ── --}}
             <div class="detail-card">
@@ -320,7 +320,7 @@
                     @endif
 
                     {{-- Priority selector ── --}}
-                    <div class="flex items-center gap-1.5 mt-2 flex-wrap justify-center">
+                    <div class="grid grid-cols-2 gap-1.5 mt-3 w-full">
                         @foreach(['low','medium','high','hot'] as $p)
                             @php $pc = $priorityColors[$p]; @endphp
                             <button
@@ -702,16 +702,17 @@
                     ];
                 @endphp
 
-                <div id="activity-timeline">
-                    {{-- New activities prepended here by JS ── --}}
-                </div>
-
-                @if($lead->activities->isEmpty())
-                    <div class="px-5 py-8 text-center text-[13px] text-gray-400 font-medium">
-                        No activity yet. Log a call, note, or WhatsApp message.
+                <div class="max-h-[450px] overflow-y-auto custom-scroll">
+                    <div id="activity-timeline">
+                        {{-- New activities prepended here by JS ── --}}
                     </div>
-                @else
-                    @foreach($lead->activities as $act)
+
+                    @if($lead->activities->isEmpty())
+                        <div class="px-5 py-8 text-center text-[13px] text-gray-400 font-medium">
+                            No activity yet. Log a call, note, or WhatsApp message.
+                        </div>
+                    @else
+                        @foreach($lead->activities as $act)
                         @php $tc = $typeColors[$act->type] ?? ['bg' => '#f8fafc', 'text' => '#64748b']; @endphp
                         <div class="timeline-item">
                             <div class="timeline-dot"

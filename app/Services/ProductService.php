@@ -208,6 +208,7 @@ class ProductService
                     'stock_alert' => $data['single_stock_alert'] ?? 0,
                     'order_tax' => $data['single_order_tax'] ?? 0,
                     'tax_type' => $data['single_tax_type'] ?? 'exclusive',
+                    'hsn_code' => ($data['single_hsn_code'] ?? '') !== '' ? $data['single_hsn_code'] : null,
                 ]);
 
                 if (! empty($data['single_stock'])) {
@@ -235,6 +236,7 @@ class ProductService
                         'stock_alert' => $varData['stock_alert'] ?? 0,
                         'order_tax' => $varData['order_tax'] ?? 0,
                         'tax_type' => $varData['tax_type'] ?? 'exclusive',
+                        'hsn_code' => ($varData['hsn_code'] ?? '') !== '' ? $varData['hsn_code'] : null,
                     ]);
 
                     // 🌟 Map the frontend array index to the actual Database ID
@@ -363,6 +365,7 @@ class ProductService
                         'cost' => $data['single_cost'],
                         'mrp' => $data['single_mrp'] ?? 0,
                         'stock_alert' => $data['single_stock_alert'] ?? 0,
+                        'hsn_code' => ($data['single_hsn_code'] ?? '') !== '' ? $data['single_hsn_code'] : null,
                     ]
                 );
             }
@@ -400,6 +403,7 @@ class ProductService
                             'cost' => $varData['cost'],
                             'mrp' => $varData['mrp'] ?? 0,
                             'stock_alert' => $varData['stock_alert'] ?? 0,
+                            'hsn_code' => ($varData['hsn_code'] ?? '') !== '' ? $varData['hsn_code'] : null,
                         ]
                     );
 

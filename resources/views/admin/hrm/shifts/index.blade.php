@@ -71,8 +71,8 @@
 
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
+            <table class="w-full block md:table">
+                <thead class="hidden md:table-header-group">
                     <tr class="border-b border-gray-100">
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
                         <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Shift</th>
@@ -84,11 +84,11 @@
                         <th class="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="block md:table-row-group p-4 md:p-0">
                     @forelse($shifts as $shift)
-                        <tr class="table-row" x-show="matchesSearch('{{ strtolower($shift->name) }}')">
-                            <td class="px-5 py-3 text-[12px] font-bold text-gray-400">{{ $shifts->firstItem() + $loop->index }}</td>
-                            <td class="px-5 py-3">
+                        <tr class="block md:table-row bg-white border border-gray-200 md:border-0 md:border-b md:border-gray-100 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 shadow-sm md:shadow-none hover:bg-gray-50 transition-colors" x-show="matchesSearch('{{ strtolower($shift->name) }}')">
+                            <td class="hidden md:table-cell px-5 py-3 text-[12px] font-bold text-gray-400">{{ $shifts->firstItem() + $loop->index }}</td>
+                            <td class="block md:table-cell md:px-5 md:py-3 mb-3 md:mb-0">
                                 <div class="flex items-center gap-2">
                                     <div>
                                         <p class="text-[13px] font-bold text-gray-800">{{ $shift->name }}</p>
@@ -101,15 +101,25 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-3 py-3">
-                                <p class="text-[12px] font-bold text-gray-700">{{ $shift->formatted_timing }}</p>
-                                @if($shift->late_mark_after)
-                                    <p class="text-[10px] text-gray-400">Late after {{ \Carbon\Carbon::parse($shift->late_mark_after)->format('h:i A') }}</p>
-                                @endif
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Timing</span>
+                                <div class="text-right md:text-left">
+                                    <p class="text-[12px] font-bold text-gray-700">{{ $shift->formatted_timing }}</p>
+                                    @if($shift->late_mark_after)
+                                        <p class="text-[10px] text-gray-400">Late after {{ \Carbon\Carbon::parse($shift->late_mark_after)->format('h:i A') }}</p>
+                                    @endif
+                                </div>
                             </td>
-                            <td class="px-3 py-3 text-center text-[12px] text-gray-600">{{ $shift->break_duration_minutes }} min</td>
-                            <td class="px-3 py-3 text-center"><span class="text-[12px] font-bold text-gray-700">{{ $shift->employees_count }}</span></td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Break</span>
+                                <span class="text-[12px] text-gray-600">{{ $shift->break_duration_minutes }} min</span>
+                            </td>
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Employees</span>
+                                <span class="text-[12px] font-bold text-gray-700">{{ $shift->employees_count }}</span>
+                            </td>
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Type</span>
                                 @if($shift->is_night_shift)
                                     <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-md">
                                         <i data-lucide="moon" class="w-3 h-3"></i> Night
@@ -120,14 +130,15 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-4 md:mb-0 md:text-center">
+                                <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status</span>
                                 @if($shift->is_active)
                                     <span class="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-md">Active</span>
                                 @else
                                     <span class="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-md">Inactive</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right">
+                            <td class="flex justify-end items-center md:table-cell pt-3 md:pt-0 border-t border-gray-100 md:border-none md:px-4 md:py-3 md:text-right">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if(has_permission('shifts.update'))
                                     <button @click="openEdit({{ $shift->toJson() }})"
@@ -181,7 +192,7 @@
 
             <form @submit.prevent="submitForm()">
                 <div class="p-6 space-y-5">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="field-label">Shift Name <span class="text-red-400">*</span></label>
                             <input type="text" x-model="form.name" class="field-input" placeholder="e.g. General Shift" required>
@@ -193,7 +204,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="field-label">Start Time <span class="text-red-400">*</span></label>
                             <input type="time" x-model="form.start_time" class="field-input" required>
@@ -204,7 +215,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="field-label">Late Mark After</label>
                             <input type="time" x-model="form.late_mark_after" class="field-input">
@@ -219,7 +230,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="field-label">Break (minutes)</label>
                             <input type="number" x-model="form.break_duration_minutes" class="field-input" min="0" placeholder="30">
@@ -239,7 +250,7 @@
                         <textarea x-model="form.description" class="field-input" rows="2" placeholder="Optional shift description"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2.5">
                             <span class="text-[12px] font-bold text-gray-600">Night Shift</span>
                             <label class="toggle-switch">

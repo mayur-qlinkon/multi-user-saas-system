@@ -20,10 +20,17 @@
                     ════════════════════════════════════════ */
         .merch-wrap {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 1fr;
             gap: 16px;
-            height: calc(100vh - 140px);
-            min-height: 500px;
+            height: auto;
+        }
+        
+        @media (min-width: 768px) {
+            .merch-wrap {
+                grid-template-columns: 280px 1fr;
+                height: calc(100vh - 140px);
+                min-height: 500px;
+            }
         }
 
         /* ── Panels ── */
@@ -34,6 +41,15 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            min-height: 400px;
+            max-height: 550px;
+        }
+        
+        @media (min-width: 768px) {
+            .panel {
+                min-height: auto;
+                max-height: none;
+            }
         }
 
         .panel-header {
@@ -438,7 +454,7 @@
     <div class="pb-4" x-data="merchandising()">
 
         {{-- ── Page Header ── --}}
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Merchandising</h1>
                 <p class="text-sm text-gray-400 font-medium mt-0.5">
@@ -691,8 +707,8 @@
     </div>
 @endsection
 
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+@push('scripts')    
+    <script src="{{ asset('assets/js/sortable.min.js') }}"></script>
     <script>
         function merchandising() {
             return {

@@ -103,6 +103,7 @@ class UpdateProductRequest extends FormRequest
             $rules['single_order_tax'] = ['nullable', 'numeric', 'min:0'];
             $rules['single_tax_type'] = ['required', 'in:inclusive,exclusive'];
             $rules['single_stock_alert'] = ['nullable', 'integer', 'min:0'];
+            $rules['single_hsn_code'] = ['nullable', 'string', 'max:20'];
             $rules['single_stock'] = ['nullable', 'array'];
             $rules['single_stock.*.warehouse_id'] = ['required_with:single_stock', 'exists:warehouses,id'];
             $rules['single_stock.*.qty'] = ['required_with:single_stock', 'integer', 'min:1'];
@@ -138,6 +139,7 @@ class UpdateProductRequest extends FormRequest
                 $rules["variations.{$index}.order_tax"] = ['nullable', 'numeric', 'min:0'];
                 $rules["variations.{$index}.tax_type"] = ['required', 'in:inclusive,exclusive'];
                 $rules["variations.{$index}.stock_alert"] = ['nullable', 'integer', 'min:0'];
+                $rules["variations.{$index}.hsn_code"] = ['nullable', 'string', 'max:20'];
                 $rules["variations.{$index}.stock"] = ['nullable', 'array'];
                 $rules["variations.{$index}.stock.*.warehouse_id"] = ['required_with:variations.{$index}.stock', 'exists:warehouses,id'];
                 $rules["variations.{$index}.stock.*.qty"] = ['required_with:variations.{$index}.stock', 'integer', 'min:1'];

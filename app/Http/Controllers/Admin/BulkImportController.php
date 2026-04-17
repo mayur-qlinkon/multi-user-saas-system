@@ -2,16 +2,24 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ProductImageGuideExport;
 use App\Http\Controllers\Controller;
 use App\Models\Import;
 use App\Models\ImportLog;
+use App\Models\Product;
 use App\Services\Import\CategoryImporter;
+use App\Services\Import\ClientImporter;
+use App\Services\Import\ProductImageImporter;
 use App\Services\Import\ProductImporter;
 use App\Services\Import\SkuImporter;
+use App\Services\Import\SupplierImporter;
 use App\Services\Import\UnitImporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BulkImportController extends Controller
 {
@@ -24,7 +32,13 @@ class BulkImportController extends Controller
             ->limit(20)
             ->get();
 
-        return view('admin.bulk-import.index', compact('imports'));
+        $companyId = auth()->user()->company_id;
+        $productCount = Product::withoutGlobalScopes()->where('company_id', $companyId)->count();
+        $plan = auth()->user()->company->subscription?->plan;
+        $productLimit = $plan?->product_limit; // null = no plan / unlimited
+        $productLimitReached = $productLimit !== null && $productCount >= $productLimit;
+
+        return view('admin.bulk-import.index', compact('imports', 'productCount', 'productLimit', 'productLimitReached'));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -71,6 +85,166 @@ class BulkImportController extends Controller
         return $this->handleProcess($request, 'skus');
     }
 
+    public function uploadClients(Request $request): JsonResponse
+    {
+        return $this->handleUpload($request, 'clients');
+    }
+
+    public function processClients(Request $request): JsonResponse
+    {
+        return $this->handleProcess($request, 'clients');
+    }
+
+    public function uploadSuppliers(Request $request): JsonResponse
+    {
+        return $this->handleUpload($request, 'suppliers');
+    }
+
+    public function processSuppliers(Request $request): JsonResponse
+    {
+        return $this->handleProcess($request, 'suppliers');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Product Images — ZIP upload flow (non-CSV)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function uploadProductImages(Request $request, ProductImageImporter $importer): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:zip', 'mimetypes:application/zip,application/x-zip-compressed,multipart/x-zip', 'max:20480'],
+            'import_mode' => ['nullable', 'in:create_only,update_only,create_or_update'],
+        ]);
+
+        $importMode = $request->input('import_mode', 'create_or_update');
+
+        $file = $request->file('file');
+        $storedPath = $file->store('imports/product-images', 'local');
+        $absoluteZip = Storage::disk('local')->path($storedPath);
+
+        $result = $importer->extractZip($absoluteZip);
+
+        if (! $result['valid']) {
+            // Cleanup uploaded ZIP on rejection
+            Storage::disk('local')->delete($storedPath);
+
+            return response()->json(['error' => $result['message']], 422);
+        }
+
+        $import = Import::create([
+            'user_id' => $request->user()->id,
+            'type' => 'product_images',
+            'file_path' => $storedPath,
+            'temp_path' => $result['temp_path'],
+            'total_rows' => $result['total'],
+            'status' => 'pending',
+            'duplicate_mode' => 'skip',
+            'import_mode' => $importMode,
+            'is_dry_run' => false,
+        ]);
+
+        return response()->json([
+            'import_id' => $import->id,
+            'total_rows' => $result['total'],
+            'import_mode' => $importMode,
+            'is_dry_run' => false,
+            'message' => "ZIP extracted. {$result['total']} image(s) ready to import.",
+        ]);
+    }
+
+    public function processProductImages(Request $request, ProductImageImporter $importer): JsonResponse
+    {
+        $import = Import::find($request->input('import_id'));
+
+        if (! $import) {
+            return response()->json(['error' => 'Import session not found. Please start a new import.'], 404);
+        }
+
+        if ($import->company_id !== $request->user()->company_id) {
+            return response()->json(['error' => 'Unauthorized.'], 403);
+        }
+
+        if ($import->type !== 'product_images') {
+            return response()->json(['error' => 'Invalid import type for this endpoint.'], 422);
+        }
+
+        $tempDir = $import->temp_path;
+        if (! $tempDir || ! is_dir($tempDir)) {
+            $import->markFailed();
+
+            return response()->json(['error' => 'Temporary extraction directory missing. Please re-upload the ZIP.'], 422);
+        }
+
+        $companyId = $request->user()->company_id;
+        $offset = (int) $request->input('offset', 0);
+
+        if ($offset === 0 && $import->isPending()) {
+            $import->markProcessing();
+        }
+
+        $allFiles = $importer->listFiles($tempDir);
+        $chunk = array_slice($allFiles, $offset, self::CHUNK_SIZE);
+
+        if (empty($chunk)) {
+            $import->markCompleted();
+            $importer->cleanup($tempDir);
+
+            return response()->json([
+                'done' => true,
+                'processed' => $import->processed_rows,
+                'success' => $import->success_rows,
+                'created' => $import->created_rows,
+                'updated' => $import->updated_rows,
+                'failed' => $import->failed_rows,
+                'skipped' => $import->skipped_rows,
+                'total' => $import->total_rows,
+                'is_dry_run' => false,
+            ]);
+        }
+
+        $result = $importer->processChunk($import, $tempDir, $chunk, $companyId);
+
+        $chunkCount = count($chunk);
+        $import->increment('processed_rows', $chunkCount);
+        $import->increment('success_rows', $result['success']);
+        $import->increment('failed_rows', $result['failed']);
+        if (! empty($result['created'])) {
+            $import->increment('created_rows', $result['created']);
+        }
+        if (! empty($result['updated'])) {
+            $import->increment('updated_rows', $result['updated']);
+        }
+        if (! empty($result['skipped'])) {
+            $import->increment('skipped_rows', $result['skipped']);
+        }
+
+        $nextOffset = $offset + self::CHUNK_SIZE;
+        $done = $nextOffset >= $import->total_rows;
+
+        if ($done) {
+            $import->markCompleted();
+            // Cleanup temp dir only after final chunk
+            $importer->cleanup($tempDir);
+            // Also remove the uploaded ZIP — we no longer need it
+            if ($import->file_path && Storage::disk('local')->exists($import->file_path)) {
+                Storage::disk('local')->delete($import->file_path);
+            }
+        }
+
+        return response()->json([
+            'done' => $done,
+            'next_offset' => $done ? null : $nextOffset,
+            'processed' => $import->processed_rows,
+            'success' => $import->success_rows,
+            'created' => $import->created_rows,
+            'updated' => $import->updated_rows,
+            'failed' => $import->failed_rows,
+            'skipped' => $import->skipped_rows,
+            'total' => $import->total_rows,
+            'is_dry_run' => false,
+        ]);
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     //  Shared: Upload + Process + CSV helpers
     // ══════════════════════════════════════════════════════════════════════════
@@ -80,10 +254,14 @@ class BulkImportController extends Controller
      */
     private function handleProcess(Request $request, string $type): JsonResponse
     {
-        $import = Import::findOrFail($request->input('import_id'));
+        $import = Import::find($request->input('import_id'));
+
+        if (! $import) {
+            return response()->json(['error' => 'Import session not found. Please start a new import.'], 404);
+        }
 
         if ($import->company_id !== $request->user()->company_id) {
-            abort(403);
+            return response()->json(['error' => 'Unauthorized.'], 403);
         }
 
         $companyId = $request->user()->company_id;
@@ -152,9 +330,23 @@ class BulkImportController extends Controller
         }
 
         $importer = $this->resolveImporter($type);
-        $result = ['success' => 0, 'failed' => 0, 'skipped' => 0, 'created' => 0, 'updated' => 0];
+        $result = ['success' => 0, 'failed' => 0, 'skipped' => 0, 'created' => 0, 'updated' => 0, 'limit_skipped' => 0];
+
         if (! empty($rowsToProcess)) {
-            $result = $importer->processChunk($import, $rowsToProcess, $rows['start_row'], $companyId);
+            if ($type === 'products') {
+                // Compute how many new product slots remain under the tenant's plan.
+                // For real runs the DB count grows naturally each chunk.
+                // For dry runs nothing is written, so we offset by already-simulated creates.
+                $plan = $request->user()->company->subscription?->plan;
+                $productLimit = $plan?->product_limit ?? PHP_INT_MAX;
+                $existingCount = Product::withoutGlobalScopes()->where('company_id', $companyId)->count();
+                $dryRunOffset = $import->is_dry_run ? ($import->created_rows ?? 0) : 0;
+                $remainingSlots = max(0, $productLimit - $existingCount - $dryRunOffset);
+
+                $result = $importer->processChunk($import, $rowsToProcess, $rows['start_row'], $companyId, $remainingSlots);
+            } else {
+                $result = $importer->processChunk($import, $rowsToProcess, $rows['start_row'], $companyId);
+            }
         }
 
         $chunkCount = count($rows['data']);
@@ -170,6 +362,9 @@ class BulkImportController extends Controller
         }
         if ($totalSkipped > 0) {
             $import->increment('skipped_rows', $totalSkipped);
+        }
+        if (! empty($result['limit_skipped'])) {
+            $import->increment('limit_skipped_rows', $result['limit_skipped']);
         }
 
         $nextOffset = $offset + self::CHUNK_SIZE;
@@ -188,6 +383,7 @@ class BulkImportController extends Controller
             'updated' => $import->updated_rows,
             'failed' => $import->failed_rows,
             'skipped' => $import->skipped_rows,
+            'limit_skipped' => $import->limit_skipped_rows,
             'total' => $import->total_rows,
             'is_dry_run' => (bool) $import->is_dry_run,
         ]);
@@ -259,6 +455,10 @@ class BulkImportController extends Controller
         $keyLastSeen = [];         // unique_key => csv row_number of last occurrence
         $duplicateOccurrences = []; // unique_key => [row_numbers of all occurrences in order]
 
+        // Product-specific: track explicit slugs and name-only rows for limit enforcement.
+        $productExplicitSlugs = []; // [canonicalSlug => true] for rows with an explicit slug column
+        $productNoSlugNames = [];   // [slugifiedName => true] for rows without slug (always a create)
+
         while (($row = fgetcsv($handle)) !== false) {
             if (count(array_filter($row, fn ($v) => trim($v ?? '') !== '')) === 0) {
                 $dataRowIndex++;
@@ -272,6 +472,19 @@ class BulkImportController extends Controller
             $mapped = [];
             foreach ($headers as $i => $header) {
                 $mapped[$header] = $row[$i] ?? '';
+            }
+
+            // Track product slugs for strict plan-limit check
+            if ($type === 'products') {
+                $rowSlug = trim($mapped['slug'] ?? '');
+                if ($rowSlug !== '') {
+                    $productExplicitSlugs[Str::slug($rowSlug)] = true;
+                } else {
+                    $rowName = trim($mapped['name'] ?? '');
+                    if ($rowName !== '') {
+                        $productNoSlugNames[Str::slug($rowName)] = true;
+                    }
+                }
             }
 
             $key = $importer->extractUniqueKey($mapped);
@@ -291,6 +504,43 @@ class BulkImportController extends Controller
             Storage::disk('local')->delete($path);
 
             return response()->json(['error' => 'CSV has no data rows.'], 422);
+        }
+
+        // ── Strict product-limit enforcement (before any record is created) ────────
+        if ($type === 'products' && $importMode !== 'update_only') {
+            $plan = $request->user()->company->subscription?->plan;
+            $productLimit = $plan?->product_limit; // null = unlimited
+
+            if ($productLimit !== null) {
+                $cId = $request->user()->company_id;
+                $existingCount = Product::withoutGlobalScopes()->where('company_id', $cId)->count();
+
+                // Explicit slugs: check which already exist in DB (updates, not creates)
+                $existingExplicitCount = 0;
+                if (! empty($productExplicitSlugs)) {
+                    $existingExplicitCount = Product::withoutGlobalScopes()
+                        ->where('company_id', $cId)
+                        ->whereIn('slug', array_keys($productExplicitSlugs))
+                        ->count();
+                }
+
+                // New = (explicit not in DB) + (no-slug rows → random suffix → always create)
+                $incomingNewCount = (count($productExplicitSlugs) - $existingExplicitCount) + count($productNoSlugNames);
+                $availableSlots = max(0, $productLimit - $existingCount);
+
+                if ($incomingNewCount > $availableSlots) {
+                    Storage::disk('local')->delete($path);
+
+                    return response()->json([
+                        'error' => "Product limit exceeded. Your plan allows {$productLimit} products. You have {$existingCount} existing and only {$availableSlots} slot(s) available, but this file would add {$incomingNewCount} new product(s).",
+                        'limit_exceeded' => true,
+                        'product_limit' => $productLimit,
+                        'existing_count' => $existingCount,
+                        'incoming_new_count' => $incomingNewCount,
+                        'available_slots' => $availableSlots,
+                    ], 422);
+                }
+            }
         }
 
         // Build skip_rows and error_rows from duplicate occurrences per mode.
@@ -373,20 +623,33 @@ class BulkImportController extends Controller
 
         $headers = array_map(fn ($h) => strtolower(trim(preg_replace('/\x{FEFF}/u', '', $h))), $headerRow);
 
-        // Skip to offset
-        $currentRow = 0;
-        while ($currentRow < $offset && fgetcsv($handle) !== false) {
-            $currentRow++;
+        // $fileRow  — every row read after the header (includes empty rows), used for _row_number.
+        // $dataRow  — only non-empty rows, used to honour the data-row offset correctly.
+        // Previously the skip loop advanced $currentRow for every file row (including empties),
+        // which caused the offset to drift when the CSV contained blank lines.
+        $fileRow = 0;
+        $dataRow = 0;
+
+        // Skip exactly $offset DATA rows
+        while ($dataRow < $offset) {
+            $row = fgetcsv($handle);
+            if ($row === false) {
+                break;
+            }
+            $fileRow++;
+            if (count(array_filter($row, fn ($v) => trim($v ?? '') !== '')) > 0) {
+                $dataRow++;
+            }
         }
 
-        // Read chunk
+        // Read up to $limit DATA rows
         $data = [];
         $read = 0;
         while ($read < $limit && ($row = fgetcsv($handle)) !== false) {
-            // Skip completely empty rows
-            if (count(array_filter($row, fn ($v) => trim($v ?? '') !== '')) === 0) {
-                $currentRow++;
+            $fileRow++;
 
+            // Skip completely empty rows (don't count toward the chunk limit)
+            if (count(array_filter($row, fn ($v) => trim($v ?? '') !== '')) === 0) {
                 continue;
             }
 
@@ -396,12 +659,12 @@ class BulkImportController extends Controller
                 $mapped[$header] = $row[$i] ?? '';
             }
 
-            // Attach 1-based CSV row number (header is row 1, first data row is row 2).
-            // $currentRow is 0-based among data rows at the start of this iteration.
-            $mapped['_row_number'] = $currentRow + 2;
+            // 1-based row number: header = 1, so first data row = fileRow + 1.
+            // Using the real file position keeps _row_number consistent with the
+            // duplicate-detection row numbers calculated during handleUpload.
+            $mapped['_row_number'] = $fileRow + 1;
 
             $data[] = $mapped;
-            $currentRow++;
             $read++;
         }
 
@@ -414,13 +677,15 @@ class BulkImportController extends Controller
         ];
     }
 
-    private function resolveImporter(string $type): CategoryImporter|UnitImporter|ProductImporter|SkuImporter
+    private function resolveImporter(string $type): CategoryImporter|UnitImporter|ProductImporter|SkuImporter|ClientImporter|SupplierImporter
     {
         return match ($type) {
             'categories' => new CategoryImporter,
             'units' => new UnitImporter,
             'products' => new ProductImporter,
             'skus' => new SkuImporter,
+            'clients' => new ClientImporter,
+            'suppliers' => new SupplierImporter,
             default => throw new \InvalidArgumentException("Unknown import type: {$type}"),
         };
     }
@@ -509,6 +774,22 @@ class BulkImportController extends Controller
                     ['ceramic-pot-large', 'POT-LG-001', '899', '450', '999', '', '10'],
                 ],
             ],
+            'clients' => [
+                'headers' => ['name', 'company_name', 'phone', 'email', 'gst_number', 'registration_type', 'address', 'city', 'state', 'zip_code', 'country', 'notes'],
+                'rows' => [
+                    ['Rahul Sharma', 'Sharma Nursery', '9876543210', 'rahul@example.com', '', 'unregistered', '12 Park Lane', 'Ahmedabad', 'Gujarat', '380001', 'India', 'Regular customer'],
+                    ['Priya Patel', '', '9123456780', 'priya@example.com', '', 'unregistered', '', 'Surat', 'Gujarat', '', 'India', ''],
+                    ['Green Thumb Pvt Ltd', 'Green Thumb Pvt Ltd', '02212345678', 'sales@greenthumb.in', '27AABCU9603R1ZM', 'regular', 'Plot 45, MIDC', 'Mumbai', 'Maharashtra', '400093', 'India', ''],
+                ],
+            ],
+            'suppliers' => [
+                'headers' => ['name', 'phone', 'email', 'gstin', 'pan', 'registration_type', 'address', 'city', 'state', 'pincode', 'credit_days', 'credit_limit', 'notes'],
+                'rows' => [
+                    ['Kisan Seeds Co.', '9012345678', 'orders@kisanseeds.in', '24AABCK1234N1ZP', 'AABCK1234N', 'regular', 'Shop 7, Market Road', 'Ahmedabad', 'Gujarat', '380004', '30', '50000', 'Seed supplier'],
+                    ['Local Pot Maker', '9876501234', '', '', '', 'unregistered', '', 'Rajkot', 'Gujarat', '360001', '0', '0', 'Cash basis'],
+                    ['Mumbai Fertilizers', '02266778899', 'info@mumfert.in', '27AABCM5678E1ZR', 'AABCM5678E', 'regular', 'Unit 12, Andheri East', 'Mumbai', 'Maharashtra', '400069', '15', '100000', ''],
+                ],
+            ],
         ];
 
         if (! isset($samples[$type])) {
@@ -531,5 +812,28 @@ class BulkImportController extends Controller
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
+    }
+
+    /**
+     * Download a pre-filled Excel guide that lists every product slug with
+     * example image filenames — helps non-technical users rename their photos
+     * correctly before zipping and uploading.
+     */
+    public function downloadImageGuide(): BinaryFileResponse
+    {
+        $companyId = auth()->user()->company_id;
+
+        $products = Product::with('category:id,name')
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->whereNotNull('slug')
+            ->orderBy('category_id')
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'category_id']);
+
+        $export = new ProductImageGuideExport($products);
+        $filename = 'product-image-naming-guide-'.now()->format('Y-m-d').'.xlsx';
+
+        return Excel::download($export, $filename);
     }
 }

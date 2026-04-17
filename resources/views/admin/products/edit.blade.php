@@ -17,7 +17,7 @@
             </div>
             <a href="{{ route('admin.products.index') }}"
                 class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
-                Cancel & Back
+                Back
             </a>
         </div>
 
@@ -190,8 +190,8 @@
             {{-- ── Product Type Selector (module-gated) ── --}}
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 class="text-lg font-bold text-gray-800 mb-4">Product Purpose</h2>
-                <div class="flex items-center gap-4">
-                    <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                    <label class="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
                         :class="catalogMode === 'sellable' ? 'border-brand-500 bg-brand-50' : 'border-gray-200 bg-white hover:bg-gray-50'">
                         <input type="radio" name="product_type" value="sellable" x-model="catalogMode" class="hidden">
                         <i data-lucide="shopping-cart" class="w-5 h-5" :class="catalogMode === 'sellable' ? 'text-brand-600' : 'text-gray-400'"></i>
@@ -200,7 +200,7 @@
                             <p class="text-[11px] text-gray-400">Normal product with pricing, stock & POS</p>
                         </div>
                     </label>
-                    <label class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
+                    <label class="flex-1 flex items-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all"
                         :class="catalogMode === 'catalog' ? 'border-teal-500 bg-teal-50' : 'border-gray-200 bg-white hover:bg-gray-50'">
                         <input type="radio" name="product_type" value="catalog" x-model="catalogMode" class="hidden">
                         <i data-lucide="book-open" class="w-5 h-5" :class="catalogMode === 'catalog' ? 'text-teal-600' : 'text-gray-400'"></i>
@@ -214,10 +214,10 @@
             @endif
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100" x-show="catalogMode !== 'catalog'" x-cloak>
-                <div class="flex items-center justify-between mb-5 border-b border-gray-100 pb-2">
-                    <h2 class="text-lg font-bold text-gray-800">3. Product Pricing & SKUs</h2>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 border-b border-gray-100 pb-3">
+                    <h2 class="text-base sm:text-lg font-bold text-gray-800">3. Product Pricing & SKUs</h2>
 
-                    <div class="flex items-center bg-gray-100 p-1 rounded-lg">
+                    <div class="flex items-center bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
                         <label class="cursor-pointer">
                             <input type="radio" name="type" value="single" x-model="productType" class="peer hidden">
                             <span
@@ -240,7 +240,7 @@
                 @endphp
 
                 <div x-show="productType === 'single' && catalogMode !== 'catalog'" x-cloak>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
                         <div>
                             <label class="block text-[13px] font-bold text-gray-700 mb-1.5">SKU <span
                                     class="text-red-500">*</span></label>
@@ -315,6 +315,14 @@
                             <input type="number" name="single_stock_alert"
                                 value="{{ old('single_stock_alert', $singleSku?->stock_alert ?? 0) }}"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">HSN Override <span class="text-gray-400 font-normal text-[11px]">(Optional)</span></label>
+                            <input type="text" name="single_hsn_code"
+                                value="{{ old('single_hsn_code', $singleSku?->hsn_code ?? '') }}"
+                                placeholder="e.g., 61091000"
+                                class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all uppercase">
+                            <p class="text-[11px] text-gray-400 mt-1">Leave empty to use product HSN</p>
                         </div>
                     </div>
                 </div>
@@ -432,6 +440,13 @@
                                             x-model="variant.alert"
                                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
                                     </div>
+                                    <div>
+                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">HSN Override</label>
+                                        <input type="text" :name="'variations[' + index + '][hsn_code]'"
+                                            x-model="variant.hsn_code"
+                                            placeholder="Leave empty to use product HSN"
+                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none uppercase">
+                                    </div>
                                 </div>
 
                                 <div class="bg-white p-3 rounded border border-gray-200">
@@ -518,7 +533,7 @@
 
                             <div class="flex-1">
                                 <template x-if="media.type === 'image'">
-                                    <div class="flex items-center gap-4">
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full">
 
                                         <template x-if="!media.is_existing">
                                             <input type="file" :name="'media[' + index + '][file]'" accept="image/*"
@@ -715,9 +730,9 @@
 
             </div>
 
-            <div class="flex justify-end pt-4 border-t border-gray-200">
+            <div class="flex flex-col sm:flex-row justify-end pt-4 border-t border-gray-200">
                 <button type="submit"
-                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 transition-all">
+                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 transition-all">
                     <i data-lucide="save" class="w-4 h-4"></i> Update Product
                 </button>
             </div>
@@ -752,6 +767,7 @@
                                         'tax_type' => $sku->tax_type,
                                         'order_tax' => $sku->order_tax,
                                         'alert' => $sku->stock_alert,
+                                        'hsn_code' => $sku->hsn_code ?? '',
                                         'attrs' => (object) $sku->skuValues->pluck('attribute_value_id', 'attribute_id')->toArray(),
                                     ];
                                 })
@@ -769,6 +785,7 @@
                                     'tax_type' => 'exclusive',
                                     'order_tax' => 0,
                                     'alert' => 0,
+                                    'hsn_code' => '',
                                     'attrs' => (object) [],
                                 ],
                             ],

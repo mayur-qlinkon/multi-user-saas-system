@@ -65,27 +65,26 @@
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
 
-            <div
-                class="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-gray-100 gap-4 bg-white">
-                <h2 class="text-[1.1rem] font-bold text-[#212538] tracking-tight">
+            <div class="px-4 sm:px-6 py-4 flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-100 gap-4 bg-white">
+                <h2 class="text-sm font-bold text-gray-500 uppercase tracking-widest">
                     Product Catalog <span class="text-gray-400 font-medium text-sm ml-1">({{ $products->total() }}
                         items)</span>
                 </h2>
 
-                <div class="flex items-center gap-2.5">
+                <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto md:justify-end">
                     <button
                         x-show="selected.length > 0"
                         x-transition.opacity
                         x-cloak
                         @click="confirmBulkDelete()"
-                        class="bg-[#ef4444] hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+                        class="bg-[#ef4444] hover:bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm whitespace-nowrap w-full md:w-auto">
                         <i data-lucide="trash-2" class="w-4 h-4"></i> Bulk Delete (<span x-text="selected.length"></span>)
                     </button>
 
                     @if (check_plan_limit('products'))
                         @if(has_permission('products.create'))
                         <a href="{{ route('admin.products.create') }}"
-                            class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-colors shadow-sm">
+                            class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm whitespace-nowrap w-full md:w-auto">
                             <i data-lucide="plus" class="w-4 h-4"></i> Add Product
                         </a>
                         @endif
@@ -99,7 +98,7 @@
             </div>
 
             <div class="overflow-x-auto min-h-[400px]">
-                <table class="w-full text-left text-sm whitespace-nowrap">
+                <table class="w-full text-left text-sm whitespace-nowrap min-w-[1000px]">
                     <thead
                         class="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-[#f8fafc]">
                         <tr
@@ -251,7 +250,7 @@
             </div>
 
             @if (method_exists($products, 'links') && $products->hasPages())
-                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                <div class="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
                     {{ $products->links() }}
                 </div>
             @endif

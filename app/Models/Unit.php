@@ -32,4 +32,9 @@ class Unit extends Model
     {
         return $this->belongsTo(Unit::class, 'unit_id');
     }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 }

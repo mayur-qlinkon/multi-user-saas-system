@@ -39,10 +39,10 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-6">
 
             {{-- Left Column: General Info & Receipt --}}
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-3 xl:col-span-2 space-y-6">
 
                 {{-- General Information Card --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -183,7 +183,7 @@
             </div>
 
             {{-- Right Column: Financial Summary & Actions --}}
-            <div class="space-y-6">
+            <div class="lg:col-span-2 xl:col-span-1 space-y-6">
 
                 {{-- Financial Summary Card --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -192,7 +192,7 @@
                             <i data-lucide="calculator" class="w-5 h-5 text-brand-500"></i> Financial Summary
                         </h2>
                     </div>
-                    <div class="p-6 space-y-3">
+                    <div class="p-4 sm:p-6 lg:p-4 xl:p-6 space-y-3">
                         <div class="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
                             <span class="font-semibold text-gray-600">Base Amount</span>
                             <span class="font-bold text-gray-800">₹ {{ number_format($expense->base_amount, 2) }}</span>
@@ -244,17 +244,17 @@
                                 <i data-lucide="settings" class="w-5 h-5 text-brand-500"></i> Workflow Actions
                             </h2>
                         </div>
-                        <div class="p-6 space-y-3">
+                        <div class="p-4 sm:p-6 lg:p-4 xl:p-6 space-y-3">
                             @if($expense->status === 'pending_approval' && $canApprove)
-                                <div class="flex gap-3">                                    
+                                <div class="flex flex-col xl:flex-row gap-3">                                 
                                     <button @click="updateStatus('approved')"
-                                        class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                        class="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                                         <i data-lucide="check-circle" class="w-4 h-4"></i> Approve
                                     </button>                                    
 
                                     @if(has_permission('expenses.reject'))
                                     <button @click="updateStatus('rejected')"
-                                        class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                        class="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                                         <i data-lucide="x-circle" class="w-4 h-4"></i> Reject
                                     </button>
                                     @endif

@@ -14,6 +14,7 @@ class ProductSku extends Model
     use HasFactory, SoftDeletes, Tenantable;
 
     protected $fillable = [
+        'company_id',
         'product_id',
         'unit_id',
         'sku',
@@ -49,6 +50,11 @@ class ProductSku extends Model
     public function skuValues(): HasMany
     {
         return $this->hasMany(ProductSkuValue::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     // 🌟 UPDATED: Now points to the correct ProductStock model

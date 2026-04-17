@@ -95,7 +95,7 @@
             {{-- 3. TAB CONTENT: MASTER STOCK --}}
             <div x-show="activeTab === 'master'" x-cloak class="p-0">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse min-w-[900px]">
                         <thead class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-6 py-4 w-12"></th>
@@ -194,7 +194,7 @@
             {{-- 4. TAB CONTENT: LOW STOCK ALERTS --}}
             <div x-show="activeTab === 'alerts'" x-cloak class="p-0">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse min-w-[750px]">
                         <thead class="bg-red-50 border-b border-red-100 text-[11px] font-bold text-red-800 uppercase tracking-wider">
                             <tr>
                                 <th class="px-6 py-4">Product & SKU</th>
@@ -221,14 +221,14 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">
+                                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
                                             -{{ (float) $deficit }} Short
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         {{-- Placeholder for future Purchase Order feature --}}
                                         <a href="{{ route('admin.purchases.create', ['sku_id' => $alert->id, 'qty' => $deficit]) }}" 
-                                        class="inline-block bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm text-center">
+                                            class="inline-block bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded text-xs font-bold transition-colors shadow-sm text-center whitespace-nowrap">
                                             Reorder
                                         </a>
                                     </td>
@@ -266,7 +266,7 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse min-w-[850px]">
                         <thead class="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-4 py-3">Date & Time</th>
@@ -333,7 +333,7 @@
             @if(batch_enabled() && $batchReport)
             <div x-show="activeTab === 'batches'" x-cloak class="p-0">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse min-w-[950px]">
                         <thead class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-6 py-4">Product & SKU</th>

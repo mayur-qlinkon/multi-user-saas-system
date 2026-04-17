@@ -20,7 +20,7 @@ class LeaveController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['employee_id', 'status', 'leave_type_id', 'from_date', 'to_date', 'per_page']);
+        $filters = $request->only(['employee_name', 'status', 'leave_type_id', 'from_date', 'to_date', 'per_page']);
         $leaves = $this->leaveService->getList($filters);
 
         if ($request->wantsJson()) {

@@ -86,7 +86,7 @@ class PermissionSeeder extends Seeder
             // ── Dispatch & Compliance ──
             'challans' => ['view', 'create', 'update', 'delete', 'change_status', 'download_pdf'],
             'challan_returns' => ['view', 'create', 'update', 'download_pdf'],
-            'bulk_import' => ['view', 'categories', 'units', 'products'],
+            'bulk_import' => ['view', 'products', 'images_import'],
         ];
 
         DB::beginTransaction();

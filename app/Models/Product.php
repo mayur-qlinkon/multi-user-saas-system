@@ -19,7 +19,7 @@ class Product extends Model
     use HasFactory, LogsActivity, SoftDeletes,Tenantable;
 
     protected $fillable = [
-        // REMOVED store_id. Products belong to the company globally!
+        'company_id',
         'category_id',
         'supplier_id',
         'name',
@@ -145,6 +145,11 @@ class Product extends Model
     public function skus(): HasMany
     {
         return $this->hasMany(ProductSku::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     // --- Helper Methods ---

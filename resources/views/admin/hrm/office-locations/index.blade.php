@@ -51,21 +51,25 @@
         @forelse($stores as $store)
         <div class="loc-card" x-data="locationCard({{ $store->id }})">
 
-            {{-- Card Header --}}
-            <div class="flex items-center gap-4 px-5 py-4 bg-gray-50/60 border-b border-gray-100">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-white border border-gray-200 flex-shrink-0">
-                    <i data-lucide="building-2" class="w-5 h-5 text-gray-400"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-[14px] font-black text-gray-900">{{ $store->name }}</p>
-                    <p class="text-[11px] text-gray-400 truncate">
-                        ID #{{ $store->id }}
-                        @if($store->city) &nbsp;·&nbsp; {{ $store->city }} @endif
-                    </p>
+            {{-- Card Header --}}            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-5 py-4 bg-gray-50/60 border-b border-gray-100">
+                
+                {{-- Grouped Icon & Title --}}
+                <div class="flex items-center gap-4 flex-1 min-w-0">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-white border border-gray-200 flex-shrink-0">
+                        <i data-lucide="building-2" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[14px] font-black text-gray-900 truncate">{{ $store->name }}</p>
+                        <p class="text-[11px] text-gray-400 truncate">
+                            ID #{{ $store->id }}
+                            @if($store->city)  ·  {{ $store->city }} @endif
+                        </p>
+                    </div>
                 </div>
 
                 {{-- Status badges --}}
-                <div class="flex items-center gap-2 flex-wrap justify-end">
+                <div class="flex items-center gap-2 flex-wrap justify-start md:justify-end">
                     @if($store->office_lat && $store->office_lng)
                         <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
@@ -87,7 +91,7 @@
 
             {{-- Card Body --}}
             <div class="p-5">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:items-end">
 
                     {{-- Latitude --}}
                     <div>
@@ -118,7 +122,7 @@
                     </div>
 
                     {{-- Actions --}}
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2 pt-2 sm:pt-0 w-full">
                         @if(has_permission('office_locations.update'))
                         <button @click="saveLocation({{ $store->id }})" :disabled="saving"
                             class="flex-1 inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg text-white hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -141,7 +145,7 @@
                         @if(has_permission('office_locations.generate_qr'))
                         <button @click="generateQr({{ $store->id }}, '{{ $store->name }}')"
                             :disabled="qrLoading"
-                            class="inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg border-2 border-green-500 text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"
+                            class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-lg border-2 border-green-500 text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"
                             title="Generate QR Code">
                             <template x-if="!qrLoading">
                                 <span class="flex items-center gap-1.5">
@@ -238,7 +242,7 @@
                     This QR is <strong>permanent</strong> — print once and use every day
                 </p>
 
-                <div class="w-full flex gap-2">
+                <div class="w-full flex flex-col sm:flex-row gap-2">
                     <button @click="printPoster()"
                         class="flex-1 inline-flex items-center justify-center gap-2 text-[13px] font-bold py-3 rounded-xl text-white hover:opacity-90 transition-opacity"
                         style="background: #166534">

@@ -291,7 +291,10 @@
                         <span class="card-title">Description</span>
                     </div>
                     <div class="card-body">
-                        <p class="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">{{ $task->description }}</p>
+                        <div x-data="taskDescMd(@js($task->description))"
+                             x-html="rendered"
+                             class="text-[13px] text-gray-700 leading-relaxed">
+                        </div>
                     </div>
                 </div>
             @endif
@@ -772,8 +775,45 @@ function deleteAttachment(id, name) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.lucide) lucide.createIcons();
-});
+/* ── Task description markdown Alpine component ──────────────────
+   Uses Alpine.js instead of DOMContentLoaded so it re-runs correctly
+   on every AJAX navigation (the layout calls Alpine.initTree() on each
+   soft navigation — DOMContentLoaded does NOT fire on those).
+──────────────────────────────────────────────────────────────── */
+window.taskDescMd = function (raw) {
+    return {
+        rendered: '',
+        init() {
+            this.rendered = this._render(raw || '');
+        },
+        _inline(t) {
+            t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+            t = t.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+            return t;
+        },
+        _render(text) {
+            if (!text || !text.trim()) return '';
+            const lines = text.split('\n');
+            let html = '';
+            let inList = false;
+            lines.forEach(line => {
+                if (/^- /.test(line)) {
+                    if (!inList) { html += '<ul style="list-style:disc;padding-left:1.1rem;margin:4px 0">'; inList = true; }
+                    html += `<li style="margin:2px 0">${this._inline(line.slice(2))}</li>`;
+                } else {
+                    if (inList) { html += '</ul>'; inList = false; }
+                    if (line.trim() === '') {
+                        html += '<div style="height:6px"></div>';
+                    } else {
+                        html += `<p style="margin:2px 0">${this._inline(line)}</p>`;
+                    }
+                }
+            });
+            if (inList) html += '</ul>';
+            return html;
+        },
+    };
+};
 </script>
 @endpush

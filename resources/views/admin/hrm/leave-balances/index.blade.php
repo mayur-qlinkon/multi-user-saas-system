@@ -42,6 +42,7 @@
         color: #374151;
         border-bottom: 1px solid #f8fafc;
         vertical-align: middle;
+        white-space: nowrap;
     }
     .balance-table tr:hover td { background: #fafbff; }
 
@@ -108,10 +109,10 @@
         </form>
 
         {{-- Action Buttons --}}
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 w-full sm:w-auto mt-3 sm:mt-0">
             <button
                 @click="confirmCarryForward()"
-                class="inline-flex items-center gap-1.5 bg-white border border-gray-200 hover:border-blue-400 text-gray-600 hover:text-blue-600 text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                class="inline-flex justify-center items-center gap-1.5 bg-white border border-gray-200 hover:border-blue-400 text-gray-600 hover:text-blue-600 text-xs font-semibold px-3 py-2 rounded-lg transition-colors w-full sm:w-auto"
                 title="Carry forward unused days from {{ $year - 1 }} to {{ $year }} (carry-forward leave types only)"
             >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline stroke-linecap="round" stroke-linejoin="round" points="1 4 1 10 7 10"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.51 15a9 9 0 1 0 .49-3.62"/></svg>
@@ -119,7 +120,7 @@
             </button>
             <button
                 @click="initializeBalances()"
-                class="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                class="inline-flex justify-center items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors w-full sm:w-auto"
                 title="Create balance records for all active employees × all active leave types for {{ $year }}"
             >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -172,8 +173,8 @@
 
     {{-- Balance Table --}}
     @if($balances->isNotEmpty())
-    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-        <table class="w-full balance-table">
+    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-x-auto w-full pb-1">
+        <table class="w-full min-w-[800px] balance-table">
             <thead>
                 <tr>
                     <th class="text-left">Employee</th>

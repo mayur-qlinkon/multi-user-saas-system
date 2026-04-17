@@ -23,7 +23,7 @@
 @section('content')
     <div class="pb-10" x-data="purchaseForm(@js($units ?? []), @js($purchase), @js($purchase->items), @js($batchEnabled ?? false))">
         <div class="mb-6">
-            <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Edit Purchase Order</h1>
+            <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Purchase Order</h1>
         </div>
 
         @if ($errors->any())
@@ -210,8 +210,7 @@
 
                 <div class="overflow-x-auto min-h-[200px]">
                     <table class="w-full text-left border-collapse">
-                        <thead
-                            class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                        <thead class="hidden md:table-header-group bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
                                 <th class="px-5 py-4 min-w-[250px]">PRODUCT</th>
                                 <th class="px-4 py-4 w-[160px]">NET UNIT COST</th>
@@ -223,7 +222,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             <template x-for="(item, index) in items" :key="item.key">
-                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                <tr class="flex flex-col md:table-row border-b md:border-b-0 border-gray-200 p-4 md:p-0 hover:bg-gray-50/50 transition-colors relative">
                                     <td class="px-5 py-3">
                                         <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
                                         <div class="flex items-center gap-2 mt-1">
@@ -286,10 +285,10 @@
                                             :value="item.sku_code">
                                     </td>
 
-                                    <td class="px-4 py-3">
+                                    <td class="block md:table-cell px-0 py-2 md:px-4 md:py-3 w-full md:w-auto">
+                                        <div class="md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Net Unit Cost</div>
                                         <div class="relative">
-                                            <span
-                                                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">₹</span>
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">₹</span>
                                             <input type="number" step="0.01"
                                                 :name="'items[' + index + '][unit_cost]'" x-model="item.unit_cost"
                                                 @input="calculate()"
@@ -298,16 +297,18 @@
                                         </div>
                                     </td>
 
-                                    <td class="px-4 py-3">
-                                        <input type="number" step="0.0001" :name="'items[' + index + '][quantity]'"
+                                    <td class="block md:table-cell px-0 py-2 md:px-4 md:py-3 w-full md:w-auto">
+                                            <div class="md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Qty</div>
+                                            <input type="number" step="0.0001" :name="'items[' + index + '][quantity]'"
                                             x-model="item.quantity" @input="calculate()"
                                             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-brand-500 outline-none transition-all font-semibold text-gray-700"
                                             required>
                                     </td>
 
                                       {{-- 🌟 FIX 2 & 3: Use x-show on td, and remove the duplicate hidden input! --}}
-                                    <td class="px-4 py-3 align-top" x-show="batchEnabled" x-cloak>
-                                        <div class="flex flex-col gap-2.5">
+                                    <td class="block md:table-cell px-0 py-2 md:px-4 md:py-3 align-top w-full md:w-auto" x-show="batchEnabled" x-cloak>
+                                            <div class="md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Batch Details</div>
+                                            <div class="flex flex-col gap-2.5">
                                             
                                             {{-- Batch Number --}}
                                             <div>
@@ -340,12 +341,13 @@
                                         </div>
                                     </td>
                                     
-                                    <td class="px-5 py-3 text-right">
+                                    <td class="block flex justify-between items-center md:table-cell px-0 py-2 md:px-5 md:py-3 w-full md:w-auto md:text-right">
+                                        <div class="md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider">Subtotal</div>
                                         <span class="font-bold text-gray-800 text-[14px]"
                                             x-text="formatCurrency(item.line_total)"></span>
                                     </td>
 
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="absolute top-2 right-2 md:relative md:top-auto md:right-auto block md:table-cell px-0 py-0 md:px-4 md:py-3 text-center w-auto">
                                         <button type="button" @click="removeItem(index)"
                                             class="text-red-400 hover:text-red-600 transition-colors p-1.5 rounded hover:bg-red-50">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24"
@@ -459,7 +461,7 @@
                 </a>
                 <button type="submit"
                     class="bg-gray-800 text-white px-8 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-900 shadow-md transition-all active:scale-95">
-                    UPDATE PURCHASE ORDER
+                    UPDATE
                 </button>
             </div>
         </form>

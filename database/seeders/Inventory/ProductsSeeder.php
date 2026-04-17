@@ -2,8 +2,6 @@
 
 namespace Database\Seeders\Inventory;
 
-use App\Models\Attribute;
-use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Product;
@@ -12,142 +10,282 @@ use App\Models\Supplier;
 use App\Models\Unit;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ProductsSeeder extends Seeder
 {
     public function run(): void
     {
-        $companyId = request()->attributes->get('seeder_company_id', 1);
+        $providedCompanyId = request()->attributes->get('seeder_company_id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | 🟢 EASY DATA ENTRY SECTION
+        |--------------------------------------------------------------------------
+        | Just add your products here. The seeder will automatically handle
+        | finding or creating the assigned categories!
+        */
+        $productsData = [
+            [
+                'name' => 'Snake Plant (Sansevieria)',
+                'category' => 'Indoor Plants',
+                'sku' => 'PLANT-SNAKE',
+                'barcode' => 'NR-000001',
+                'cost' => 80.00,
+                'price' => 199.00,
+            ],
+            [
+                'name' => 'Areca Palm (Medium)',
+                'category' => 'Indoor Plants',
+                'sku' => 'PLANT-ARECA',
+                'barcode' => 'NR-000002',
+                'cost' => 120.00,
+                'price' => 299.00,
+            ],
+            [
+                'name' => 'Money Plant (Pothos)',
+                'category' => 'Indoor Plants',
+                'sku' => 'PLANT-MONEY',
+                'barcode' => 'NR-000003',
+                'cost' => 50.00,
+                'price' => 149.00,
+            ],
+            [
+                'name' => 'Tulsi (Holy Basil)',
+                'category' => 'Outdoor Plants',
+                'sku' => 'PLANT-TULSI',
+                'barcode' => 'NR-000004',
+                'cost' => 40.00,
+                'price' => 99.00,
+            ],
+            [
+                'name' => 'Aloe Vera Plant',
+                'category' => 'Medicinal Plants',
+                'sku' => 'PLANT-ALOE',
+                'barcode' => 'NR-000005',
+                'cost' => 60.00,
+                'price' => 150.00,
+            ],
+            [
+                'name' => 'Peace Lily (Spathiphyllum)',
+                'category' => 'Indoor Plants',
+                'sku' => 'PLANT-PEACE',
+                'barcode' => 'NR-000006',
+                'cost' => 110.00,
+                'price' => 249.00,
+            ],
+            [
+                'name' => 'Bougainvillea (Pink/Red)',
+                'category' => 'Outdoor Plants',
+                'sku' => 'PLANT-BOUG',
+                'barcode' => 'NR-000007',
+                'cost' => 150.00,
+                'price' => 350.00,
+            ],
+            [
+                'name' => 'Spider Plant (Chlorophytum)',
+                'category' => 'Indoor Plants',
+                'sku' => 'PLANT-SPIDER',
+                'barcode' => 'NR-000008',
+                'cost' => 65.00,
+                'price' => 179.00,
+            ],
+            [
+                'name' => 'Hibiscus (Gudhal)',
+                'category' => 'Flowering Plants',
+                'sku' => 'PLANT-HIBIS',
+                'barcode' => 'NR-000009',
+                'cost' => 85.00,
+                'price' => 199.00,
+            ],
+            [
+                'name' => 'ZZ Plant (Zamioculcas)',
+                'category' => 'Indoor Plants',
+                'sku' => 'PLANT-ZZ',
+                'barcode' => 'NR-000010',
+                'cost' => 180.00,
+                'price' => 399.00,
+            ],
+            [
+                'name' => 'Neem Tree Sapling',
+                'category' => 'Medicinal Plants',
+                'sku' => 'PLANT-NEEM',
+                'barcode' => 'NR-000011',
+                'cost' => 45.00,
+                'price' => 120.00,
+            ],
+            [
+                'name' => 'Rose (Desi Gulab)',
+                'category' => 'Flowering Plants',
+                'sku' => 'PLANT-ROSE',
+                'barcode' => 'NR-000012',
+                'cost' => 90.00,
+                'price' => 220.00,
+            ],
+            [
+                'name' => 'Rubber Plant (Ficus elastica)',
+                'category' => 'Indoor Plants',
+                'sku' => 'PLANT-RUBBER',
+                'barcode' => 'NR-000013',
+                'cost' => 140.00,
+                'price' => 329.00,
+            ],
+            [
+                'name' => 'Curry Leaf Plant (Kadi Patta)',
+                'category' => 'Outdoor Plants',
+                'sku' => 'PLANT-CURRY',
+                'barcode' => 'NR-000014',
+                'cost' => 55.00,
+                'price' => 135.00,
+            ],
+            [
+                'name' => 'Jade Plant (Crassula)',
+                'category' => 'Succulents',
+                'sku' => 'PLANT-JADE',
+                'barcode' => 'NR-000015',
+                'cost' => 70.00,
+                'price' => 189.00,
+            ],
+        ];
 
         DB::beginTransaction();
 
         try {
-            // 1. Ensure Company Exists
-            $company = Company::firstOrCreate(
-                ['id' => $companyId],
-                ['name' => 'Test Company ' . $companyId, 'email' => 'company'.$companyId.'@test.com']
-            );
+            $company = $this->resolveCompany($providedCompanyId);
+            $companyId = $company->id;
 
-            // 2. Fetch or Create Dependencies (The Fallback Mechanism)
-            $unit = Unit::firstOrCreate(
-                ['name' => 'Pieces'], 
-                ['short_name' => 'pcs', 'is_active' => true]
-            );
+            // Resolve base dependencies
+            $unit = $this->resolveUnit($companyId);
+            $supplier = $this->resolveSupplier($companyId);
 
-            $clothingCategory = Category::firstOrCreate(
-                ['name' => 'Clothing', 'company_id' => $company->id],
-                ['slug' => 'clothing-'.$company->id, 'is_active' => true]
-            );
+            // Loop through our easy data entry array
+            foreach ($productsData as $item) {
 
-            $electronicsCategory = Category::firstOrCreate(
-                ['name' => 'Electronics', 'company_id' => $company->id],
-                ['slug' => 'electronics-'.$company->id, 'is_active' => true]
-            );
+                // 1. Automatically resolve or create the category based on the array
+                $category = $this->resolveCategoryByName($companyId, $item['category']);
 
-            $supplier = Supplier::firstOrCreate(
-                ['name' => 'Global Tech Supplies', 'company_id' => $company->id],
-                ['email' => 'contact@globaltech.com', 'is_active' => true]
-            );
+                // 2. Create the Product (Explicitly passing company_id to fix the 1364 error)
+                $product = Product::updateOrCreate(
+                    [
+                        'company_id' => $companyId,
+                        'slug' => Str::slug($item['name']).'-'.$companyId,
+                    ],
+                    [
+                        'company_id' => $companyId, // 🔥 Fixes the missing default value error
+                        'category_id' => $category->id,
+                        'supplier_id' => $supplier->id,
+                        'name' => $item['name'],
+                        'type' => 'single',
+                        'product_unit_id' => $unit->id,
+                        'sale_unit_id' => $unit->id,
+                        'purchase_unit_id' => $unit->id,
+                    ]
+                );
 
-            /*
-            |--------------------------------------------------------------------------
-            | PRODUCT 1 → VARIABLE PRODUCT (Using Factories)
-            |--------------------------------------------------------------------------
-            */
-            // Ensure Attribute and Values exist for "Size"
-            $sizeAttribute = Attribute::firstOrCreate(['name' => 'Size', 'company_id' => $company->id]);
-            $sizeM = AttributeValue::firstOrCreate(['attribute_id' => $sizeAttribute->id, 'value' => 'M']);
-            $sizeL = AttributeValue::firstOrCreate(['attribute_id' => $sizeAttribute->id, 'value' => 'L']);
-
-            $variableProduct = Product::factory()
-                ->variable()
-                ->for($company)
-                ->create([
-                    'category_id' => $clothingCategory->id,
-                    'supplier_id' => $supplier->id,
-                    'name' => 'Premium Cotton T-Shirt',
-                    'slug' => 'premium-cotton-tshirt-' . $company->id,
-                    'product_unit_id' => $unit->id,
-                    'sale_unit_id' => $unit->id,
-                    'purchase_unit_id' => $unit->id,
-                ]);
-
-            // Create SKU for Size M
-            $skuM = ProductSku::factory()->for($company)->for($variableProduct, 'product')->create([
-                'unit_id' => $unit->id,
-                'sku' => 'TSHIRT-M-' . $company->id,
-                'barcode' => '1111111111' . $company->id,
-            ]);
-            
-            // Create SKU for Size L
-            $skuL = ProductSku::factory()->for($company)->for($variableProduct, 'product')->create([
-                'unit_id' => $unit->id,
-                'sku' => 'TSHIRT-L-' . $company->id,
-                'barcode' => '2222222222' . $company->id,
-            ]);
-
-            // Map Attributes to SKUs
-            DB::table('product_sku_values')->insert([
-                ['product_sku_id' => $skuM->id, 'attribute_id' => $sizeAttribute->id, 'attribute_value_id' => $sizeM->id],
-                ['product_sku_id' => $skuL->id, 'attribute_id' => $sizeAttribute->id, 'attribute_value_id' => $sizeL->id],
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | PRODUCT 2 → SINGLE PRODUCT (Using Factories)
-            |--------------------------------------------------------------------------
-            */
-            $singleProduct = Product::factory()
-                ->for($company)
-                ->create([
-                    'category_id' => $electronicsCategory->id,
-                    'supplier_id' => $supplier->id,
-                    'name' => 'Wireless Mouse Pro',
-                    'slug' => 'wireless-mouse-pro-' . $company->id,
-                    'type' => 'single',
-                    'product_unit_id' => $unit->id,
-                    'sale_unit_id' => $unit->id,
-                    'purchase_unit_id' => $unit->id,
-                ]);
-
-            ProductSku::factory()->for($company)->for($singleProduct, 'product')->create([
-                'unit_id' => $unit->id,
-                'sku' => 'MOUSE-PRO-' . $company->id,
-                'barcode' => '3333333333' . $company->id,
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | BULK FAKE DATA (Optional: Generates 10 random single products)
-            |--------------------------------------------------------------------------
-            */
-            Product::factory()
-                ->count(10)
-                ->for($company)
-                ->create([
-                    'category_id' => $electronicsCategory->id,
-                    'product_unit_id' => $unit->id,
-                    'sale_unit_id' => $unit->id,
-                    'purchase_unit_id' => $unit->id,
-                ])->each(function ($product) use ($company, $unit) {
-                    ProductSku::factory()->for($company)->for($product, 'product')->create([
+                // 3. Create the Product SKU
+                ProductSku::updateOrCreate(
+                    [
+                        'company_id' => $companyId,
+                        'product_id' => $product->id,
+                        'sku' => $item['sku'].'-'.$companyId,
+                    ],
+                    [
+                        'company_id' => $companyId, // 🔥 Fixes the missing default value error here too
                         'unit_id' => $unit->id,
-                    ]);
-                });
+                        'barcode' => $item['barcode'].'-'.$companyId,
+                        'cost' => $item['cost'],
+                        'price' => $item['price'],
+                    ]
+                );
+            }
 
             DB::commit();
 
             if (isset($this->command)) {
-                $this->command->info("✅ Robust Products seeded successfully for Company ID: {$companyId}");
+                $this->command->info('✅ '.count($productsData)." Nursery products seeded successfully for Company ID: {$companyId}");
             }
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
 
+            Log::error('ProductsSeeder Failed: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             if (isset($this->command)) {
-                $this->command->error('❌ Failed to seed products: ' . $e->getMessage());
+                $this->command->error('❌ Failed to seed products: '.$e->getMessage());
             }
+
+            throw $e;
         }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper Methods
+    |--------------------------------------------------------------------------
+    */
+
+    private function resolveCompany(?int $providedCompanyId): Company
+    {
+        if ($providedCompanyId) {
+            return Company::find($providedCompanyId)
+                ?? Company::factory()->create(['id' => $providedCompanyId]);
+        }
+
+        return Company::first() ?? Company::factory()->create();
+    }
+
+    private function resolveUnit(int $companyId): Unit
+    {
+        $unit = Unit::where('company_id', $companyId)
+            ->where('short_name', 'pcs')
+            ->first();
+
+        if ($unit) {
+            return $unit;
+        }
+
+        return Unit::create([
+            'company_id' => $companyId,
+            'name' => 'Pieces',
+            'short_name' => 'pcs',
+        ]);
+    }
+
+    private function resolveSupplier(int $companyId): Supplier
+    {
+        $supplier = Supplier::where('company_id', $companyId)
+            ->where('name', 'GreenGrow Nursery Supplies')
+            ->first();
+
+        if ($supplier) {
+            return $supplier;
+        }
+
+        return Supplier::create([
+            'company_id' => $companyId,
+            'name' => 'GreenGrow Nursery Supplies',
+            'email' => 'contact@greengrow.com',
+            'phone' => '9876543210',
+        ]);
+    }
+
+    // Dynamic Category Resolver! Automatically creates the category if it's missing.
+    private function resolveCategoryByName(int $companyId, string $name): Category
+    {
+        $category = Category::where('company_id', $companyId)
+            ->where('name', $name)
+            ->first();
+
+        if ($category) {
+            return $category;
+        }
+
+        return Category::create([
+            'company_id' => $companyId,
+            'name' => $name,
+            'slug' => Str::slug($name).'-'.$companyId,
+        ]);
     }
 }

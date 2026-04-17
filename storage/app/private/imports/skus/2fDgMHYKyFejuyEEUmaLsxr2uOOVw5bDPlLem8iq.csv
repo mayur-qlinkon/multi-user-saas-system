@@ -1,0 +1,4 @@
+product_slug,sku,price,cost,mrp,barcode,stock_alert
+aloe-vera,ALO-001,299,150,349,8901234567890,5
+aloe-vera,ALO-002,499,250,599,,3
+ceramic-pot-large,POT-LG-001,899,450,999,,10

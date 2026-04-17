@@ -128,9 +128,9 @@
                         class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
                         <tr>
                             <th class="px-6 py-4">PO DETAILS</th>
-                            <th class="px-6 py-4">SUPPLIER</th>
-                            <th class="px-6 py-4">DESTINATION</th>
-                            <th class="px-6 py-4 text-center">STATUS</th>
+                            <th class="px-6 py-4 hidden md:table-cell">SUPPLIER</th>
+                            <th class="px-6 py-4 hidden md:table-cell">DESTINATION</th>
+                            <th class="px-6 py-4 text-center hidden md:table-cell">STATUS</th>
                             <th class="px-6 py-4 text-center">PAYMENT</th>
                             <th class="px-6 py-4 text-right">TOTAL AMOUNT</th>
                             <th class="px-6 py-4 text-right">ACTIONS</th>
@@ -152,7 +152,7 @@
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 hidden md:table-cell">
                                     <div class="flex flex-col">
                                         <span
                                             class="font-bold text-gray-800 text-[13px]">{{ $purchase->supplier->name ?? 'Unknown' }}</span>
@@ -163,7 +163,7 @@
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 hidden md:table-cell">
                                     <div class="flex flex-col">
                                         <span
                                             class="font-semibold text-gray-700 text-[12px]">{{ $purchase->warehouse->name ?? 'N/A' }}</span>
@@ -174,7 +174,7 @@
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center hidden md:table-cell">
                                     @php
                                         $statusColors = [
                                             'draft' => 'bg-gray-100 text-gray-600 border-gray-200',
@@ -219,7 +219,7 @@
 
                                 <td class="px-6 py-4 text-right">
                                     <div
-                                        class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        class="flex items-center justify-end gap-2 transition-opacity">
 
                                         @if(has_permission('purchases.view'))
                                         <a href="{{ route('admin.purchases.show', $purchase->id) }}"

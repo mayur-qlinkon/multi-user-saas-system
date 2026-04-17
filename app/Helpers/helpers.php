@@ -84,6 +84,11 @@ if (! function_exists('batch_enabled')) {
 if (! function_exists('tenant_subscription')) {
     /**
      * Get the current active subscription for the logged-in user's company.
+     *
+     * Two-layer cache:
+     *   1. Static PHP array — zero overhead after first call within a request (eliminates
+     *      the cache driver round-trip on the 20+ has_module() calls per page).
+     *   2. Laravel cache driver — persists across requests so the DB is rarely hit.
      */
     function tenant_subscription()
     {
@@ -91,15 +96,22 @@ if (! function_exists('tenant_subscription')) {
             return null;
         }
 
-        // We cache this in the request so we don't hit the database 50 times per page load
-        return cache()->remember('tenant_sub_'.Auth::user()->company_id, 60, function () {
-            return CompanySubscription::with('plan.modules')
-                ->where('company_id', Auth::user()->company_id)
-                ->where('is_active', true)
-                ->where(function ($q) {
-                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                })->first();
-        });
+        static $memo = [];
+
+        $companyId = Auth::user()->company_id;
+
+        if (! array_key_exists($companyId, $memo)) {
+            $memo[$companyId] = cache()->remember('tenant_sub_'.$companyId, 60, function () use ($companyId) {
+                return CompanySubscription::with('plan.modules')
+                    ->where('company_id', $companyId)
+                    ->where('is_active', true)
+                    ->where(function ($q) {
+                        $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    })->first();
+            });
+        }
+
+        return $memo[$companyId];
     }
 }
 
@@ -168,6 +180,10 @@ if (! function_exists('has_permission')) {
     /**
      * Check if the authenticated user has a specific permission slug.
      * Automatically grants true if the user is the 'owner'.
+     *
+     * Static cache eliminates redundant in-memory lookups across the 54+ sidebar calls
+     * on every page load. The cache key combines user ID + permission(s) so impersonation
+     * or multi-user CLI contexts remain correct.
      */
     function has_permission($permissionSlug)
     {
@@ -176,13 +192,21 @@ if (! function_exists('has_permission')) {
             return false;
         }
 
+        static $memo = [];
+
+        $cacheKey = $user->id.'|'.(is_array($permissionSlug) ? implode(',', $permissionSlug) : $permissionSlug);
+
+        if (array_key_exists($cacheKey, $memo)) {
+            return $memo[$cacheKey];
+        }
+
         if (is_super_admin()) {
-            return true;
+            return $memo[$cacheKey] = true;
         }
 
         // 1. Check if they are the owner (owners can do everything)
         if ($user->roles->contains('slug', 'owner')) {
-            return true;
+            return $memo[$cacheKey] = true;
         }
 
         // If array passed, loop through
@@ -190,22 +214,22 @@ if (! function_exists('has_permission')) {
             foreach ($permissionSlug as $slug) {
                 foreach ($user->roles as $role) {
                     if ($role->permissions->contains('slug', $slug)) {
-                        return true;
+                        return $memo[$cacheKey] = true;
                     }
                 }
             }
 
-            return false;
+            return $memo[$cacheKey] = false;
         }
 
         // 2. Check if their assigned role has the specific permission
         foreach ($user->roles as $role) {
             if ($role->permissions->contains('slug', $permissionSlug)) {
-                return true;
+                return $memo[$cacheKey] = true;
             }
         }
 
-        return false;
+        return $memo[$cacheKey] = false;
     }
 }
 
@@ -272,6 +296,10 @@ if (! function_exists('is_super_admin')) {
      * Check if the current authenticated user is a super admin.
      * Checks BOTH the is_super_admin flag (primary) and the super_admin role (fallback).
      * The flag is the source of truth — it is never removed by company/role deletion.
+     *
+     * Result is cached in a static array for the lifetime of the request so that the
+     * 70+ blade calls to has_module() / has_permission() — each of which invokes this
+     * function — do not each trigger a separate DB query via hasRole()->exists().
      */
     function is_super_admin(): bool
     {
@@ -279,9 +307,27 @@ if (! function_exists('is_super_admin')) {
             return false;
         }
 
-        $user = Auth::user();
+        static $cache = [];
+        $userId = Auth::id();
 
-        return (bool) ($user->is_super_admin || $user->hasRole('super_admin'));
+        if (! array_key_exists($userId, $cache)) {
+            $user = Auth::user();
+
+            // The is_super_admin column is loaded with the user model (no extra query).
+            // Only fall back to the role query when the flag is false — covers legacy
+            // accounts that were promoted via role before the flag column existed.
+            if ($user->is_super_admin) {
+                $cache[$userId] = true;
+            } elseif ($user->relationLoaded('roles')) {
+                // Roles already eager-loaded (by the admin view composer) — no DB hit.
+                $cache[$userId] = $user->roles->contains('slug', 'super_admin');
+            } else {
+                // One-time DB query per request; result is memoised above for all future calls.
+                $cache[$userId] = (bool) $user->hasRole('super_admin');
+            }
+        }
+
+        return $cache[$userId];
     }
 }
 

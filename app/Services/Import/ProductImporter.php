@@ -53,15 +53,17 @@ class ProductImporter
 
     /**
      * @param  array<int, array<string, string>>  $rows
-     * @return array{success: int, failed: int}
+     * @param  int  $remainingSlots  Max new products that may still be created; PHP_INT_MAX = unlimited.
+     * @return array{success: int, failed: int, skipped: int, created: int, updated: int, limit_skipped: int}
      */
-    public function processChunk(Import $import, array $rows, int $startRow, int $companyId): array
+    public function processChunk(Import $import, array $rows, int $startRow, int $companyId, int $remainingSlots = PHP_INT_MAX): array
     {
         $success = 0;
         $failed = 0;
         $skipped = 0;
         $created = 0;
         $updated = 0;
+        $limitSkipped = 0;
         $importMode = $import->import_mode ?? 'create_or_update';
         $isDryRun = (bool) ($import->is_dry_run ?? false);
 
@@ -96,10 +98,11 @@ class ProductImporter
                 }
 
                 $rowSkipped = false;
+                $rowLimitBlocked = false;
                 $rowAction = null;
 
                 try {
-                    DB::transaction(function () use ($row, $companyId, $importMode, $isDryRun, $categorySlugs, $unitShortNames, &$productSlugs, &$rowSkipped, &$rowAction) {
+                    DB::transaction(function () use ($row, $companyId, $importMode, $isDryRun, $categorySlugs, $unitShortNames, &$productSlugs, &$rowSkipped, &$rowLimitBlocked, &$rowAction, &$remainingSlots) {
                         $name = trim($row['name']);
                         $slug = ! empty($row['slug'])
                             ? Str::slug(trim($row['slug']))
@@ -161,6 +164,14 @@ class ProductImporter
 
                                 return;
                             }
+
+                            // Plan product limit — block new creates when limit is exhausted.
+                            if ($remainingSlots <= 0) {
+                                $rowLimitBlocked = true;
+
+                                return;
+                            }
+
                             $product = new Product;
                             $product->company_id = $companyId;
                             $product->name = $name;
@@ -178,6 +189,7 @@ class ProductImporter
                             $product->save();
 
                             $productSlugs[$slug] = $product->id;
+                            $remainingSlots--;
                             $rowAction = 'created';
                         }
 
@@ -189,7 +201,10 @@ class ProductImporter
                     $rowAction = $e->action;
                 }
 
-                if ($rowSkipped) {
+                if ($rowLimitBlocked) {
+                    $this->logError($import, $rowNumber, $row, 'Product limit exceeded. Upgrade your plan to import more products.');
+                    $limitSkipped++;
+                } elseif ($rowSkipped) {
                     $skipped++;
                 } else {
                     $success++;
@@ -205,7 +220,10 @@ class ProductImporter
             }
         }
 
-        return compact('success', 'failed', 'skipped', 'created', 'updated');
+        return [
+            ...compact('success', 'failed', 'skipped', 'created', 'updated'),
+            'limit_skipped' => $limitSkipped,
+        ];
     }
 
     private function validateRow(array $row, array $categorySlugs, array $unitShortNames): array

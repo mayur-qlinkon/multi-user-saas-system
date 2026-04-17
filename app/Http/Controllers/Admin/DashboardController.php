@@ -49,7 +49,13 @@ class DashboardController extends Controller
         ];
 
         try {
-            $isOwner = $user->hasRole('owner') || $user->id === 1;
+            // Pre-load relations consumed by this controller AND the admin layout view composer.
+            // loadMissing is idempotent — the composer's later call on the same $user instance
+            // becomes a complete no-op, eliminating the duplicate roles + permissions queries.
+            $user->loadMissing(['roles.permissions', 'stores', 'employee']);
+
+            // Use the already-loaded collection — no raw DB query (hasRole() always hits DB).
+            $isOwner = $user->roles->contains('slug', 'owner') || $user->id === 1;
             $data['is_owner'] = $isOwner;
 
             // 1. Fetch Sales & Financial Metrics (Owner / Admin Only)
@@ -100,18 +106,18 @@ class DashboardController extends Controller
         }
         $startOfMonth = now()->startOfMonth();
         $today = now()->startOfDay();
+        $todayDate = $today->toDateString();
 
-        // 💳 Total Sales (This Month)
-        $salesThisMonth = Invoice::where('company_id', $companyId)
+        // 💳 Sales this month + today in one query (conditional SUM avoids a second round-trip).
+        $invoiceAgg = Invoice::where('company_id', $companyId)
             ->where('status', '!=', 'cancelled')
             ->where('invoice_date', '>=', $startOfMonth)
-            ->sum('grand_total');
-
-        // 💳 Today Total Sales
-        $salesToday = Invoice::where('company_id', $companyId)
-            ->where('status', '!=', 'cancelled')
-            ->whereDate('invoice_date', $today)
-            ->sum('grand_total');
+            ->selectRaw(
+                'SUM(grand_total) as sales_this_month,
+                 SUM(CASE WHEN DATE(invoice_date) = ? THEN grand_total ELSE 0 END) as sales_today',
+                [$todayDate]
+            )
+            ->first();
 
         // 💳 Sales Returns (This Month)
         $salesReturnsMonth = InvoiceReturn::where('company_id', $companyId)
@@ -127,8 +133,8 @@ class DashboardController extends Controller
             ->sum('amount');
 
         return [
-            'sales_this_month' => (float) $salesThisMonth,
-            'sales_today' => (float) $salesToday,
+            'sales_this_month' => (float) ($invoiceAgg->sales_this_month ?? 0),
+            'sales_today' => (float) ($invoiceAgg->sales_today ?? 0),
             'sales_returns_month' => (float) $salesReturnsMonth,
             'received_today' => (float) $receivedToday,
         ];
@@ -141,18 +147,18 @@ class DashboardController extends Controller
     {
         $startOfMonth = now()->startOfMonth();
         $today = now()->startOfDay();
+        $todayDate = $today->toDateString();
 
-        // 🛒 Total Purchases (This Month)
-        $purchasesThisMonth = Purchase::where('company_id', $companyId)
+        // 🛒 Purchases this month + today in one query.
+        $purchaseAgg = Purchase::where('company_id', $companyId)
             ->where('status', '!=', 'cancelled')
             ->where('purchase_date', '>=', $startOfMonth)
-            ->sum('total_amount');
-
-        // 🛒 Today Total Purchases
-        $purchasesToday = Purchase::where('company_id', $companyId)
-            ->where('status', '!=', 'cancelled')
-            ->whereDate('purchase_date', $today)
-            ->sum('total_amount');
+            ->selectRaw(
+                'SUM(total_amount) as purchases_this_month,
+                 SUM(CASE WHEN DATE(purchase_date) = ? THEN total_amount ELSE 0 END) as purchases_today',
+                [$todayDate]
+            )
+            ->first();
 
         // 🛒 Purchase Returns (This Month)
         $purchaseReturnsMonth = PurchaseReturn::where('company_id', $companyId)
@@ -167,8 +173,8 @@ class DashboardController extends Controller
             ->sum('total_amount');
 
         return [
-            'purchases_this_month' => (float) $purchasesThisMonth,
-            'purchases_today' => (float) $purchasesToday,
+            'purchases_this_month' => (float) ($purchaseAgg->purchases_this_month ?? 0),
+            'purchases_today' => (float) ($purchaseAgg->purchases_today ?? 0),
             'purchase_returns_month' => (float) $purchaseReturnsMonth,
             'expense_today' => (float) $expenseToday,
         ];

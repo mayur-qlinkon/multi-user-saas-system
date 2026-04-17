@@ -84,7 +84,7 @@ class InvoiceService
                     'product_sku_id' => $sku->id,
                     'unit_id' => $item['unit_id'],
                     'product_name' => $sku->product->name,
-                    'hsn_code' => $sku->product->hsn_code,
+                    'hsn_code' => $sku->hsn_code ?? $sku->product->hsn_code,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
 
