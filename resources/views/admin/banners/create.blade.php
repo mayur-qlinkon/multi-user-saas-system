@@ -62,13 +62,18 @@
             min-height: 76px;
         }
 
-        /* ── Section card ── */
+        /* ── Section card ── */        
         .form-section {
             background: #fff;
             border: 1.5px solid #f1f5f9;
             border-radius: 16px;
-            padding: 24px;
+            padding: 16px; /* Mobile-friendly padding */
             margin-bottom: 16px;
+        }
+        @media (min-width: 768px) {
+            .form-section {
+                padding: 24px; /* Restored for iPad/Desktop */
+            }
         }
 
         .section-label {
@@ -284,10 +289,10 @@
 @endpush
 
 @section('content')
-    <div class="pb-10" x-data="bannerCreate()">
+    <div class="pb-10 w-full max-w-[1600px] mx-auto" x-data="bannerCreate()">
 
         {{-- ── Breadcrumb + Header ── --}}
-        <div class="mb-6 flex items-center justify-between">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2 text-sm text-gray-400 font-medium">
                 <a href="{{ route('admin.banners.index') }}" class="hover:text-brand-600 transition-colors">Banners</a>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
@@ -320,7 +325,7 @@
             @submit.prevent="submitForm">
             @csrf
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-7">
 
                 {{-- ════════════════════════════
                  LEFT COLUMN — main fields
@@ -336,7 +341,18 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div class="md:col-span-2">
-                                <label class="field-label">Banner Title</label>
+                                <label class="field-label">Admin Label <span class="text-rose-500">*</span></label>
+                                <input type="text" name="admin_label" value="{{ old('admin_label') }}"
+                                    placeholder="e.g. Home Hero – May Sale" required
+                                    class="field-input {{ $errors->has('admin_label') ? 'error' : '' }}">
+                                @error('admin_label')
+                                    <p class="field-error"><i data-lucide="alert-circle" class="w-3 h-3"></i>
+                                        {{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="field-label">Banner Title <span
+                                        class="text-gray-400 normal-case font-normal">(shown on storefront, optional)</span></label>
                                 <input type="text" name="title" value="{{ old('title') }}"
                                     placeholder="e.g. Summer Sale — 50% Off"
                                     class="field-input {{ $errors->has('title') ? 'error' : '' }}">

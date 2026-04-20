@@ -329,9 +329,9 @@
             </span>
         </td>
         <td style="width: 33%;">
-            <strong style="color:#6b7280; text-transform:uppercase; font-size:9px;">Payment Mode</strong><br>
+            <strong style="color:#6b7280; text-transform:uppercase; font-size:9px;">Payment Method</strong><br>
             <strong style="font-size: 12px; text-transform:capitalize;">
-                {{ $salarySlip->payment_mode ? str_replace('_', ' ', $salarySlip->payment_mode) : '—' }}
+                {{ $salarySlip->payment_label ?? '—' }}
             </strong>
         </td>
         <td style="width: 33%;">

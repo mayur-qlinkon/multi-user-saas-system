@@ -1,7 +1,9 @@
 @extends('layouts.admin')
 
 @section('title', 'Create Role - Qlinkon BIZNESS')
-
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create / Roles</h1>
+@endsection
 @section('content')
     @php
         // 1. Process Permissions into a Grid Matrix safely
@@ -45,7 +47,7 @@
         {{-- HEADER --}}
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-[#212538] tracking-tight">Create New Role</h1>
+                {{-- <h1 class="text-2xl font-bold text-[#212538] tracking-tight">Create New Role</h1> --}}
                 <p class="text-[13px] text-gray-500 font-medium mt-1">Define exact access permissions for a new user group.
                 </p>
             </div>
@@ -82,8 +84,15 @@
                     </div>
                 </div>
 
-                {{-- All Permissions Toggle --}}
-                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                {{-- Search & All Permissions Toggle --}}
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-72">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                        </div>
+                        <input type="text" x-model="searchQuery" placeholder="Search modules..."
+                            class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all">
+                    </div>
                     <label class="flex items-center gap-3 cursor-pointer w-max">
                         <span class="text-[12px] font-bold text-gray-700 uppercase tracking-wider">Permissions <span
                                 class="text-red-500">*</span></span>
@@ -111,8 +120,8 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
                             @foreach ($matrix as $module => $data)
-                                <tr class="hover:bg-gray-50/50 transition-colors">
-
+                                <tr class="hover:bg-gray-50/50 transition-colors" 
+                                    x-show="matchesSearch('{{ str_replace('_', ' ', $module ?: 'General') }}')">
                                     {{-- Module Name --}}
                                     <td class="px-6 py-4 text-[13px] font-medium text-gray-700 capitalize">
                                         {{ str_replace('_', ' ', $module ?: 'General') }}
@@ -209,6 +218,11 @@
             return {
                 selected: oldSelected.map(Number),
                 matrix: matrixData,
+                searchQuery: '',
+                matchesSearch(moduleName) {
+                    if (this.searchQuery.trim() === '') return true;
+                    return moduleName.toLowerCase().includes(this.searchQuery.toLowerCase());
+                },
 
                 // Check if every single ID in the matrix is currently in the selected array
                 get isAllSelected() {

@@ -77,6 +77,11 @@ class ModuleSeeder extends Seeder
                 'slug' => 'plant_education', // Includes: Delivery Challans, Returnable Challans, Job Work
                 'is_active' => 1,
             ],
+            [
+                'name' => 'Bulk Uploaders',
+                'slug' => 'bulk_import', // Includes: Delivery Challans, Returnable Challans, Job Work
+                'is_active' => 1,
+            ],
         ];
 
         DB::beginTransaction();

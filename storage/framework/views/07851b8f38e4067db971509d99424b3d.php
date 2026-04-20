@@ -235,8 +235,8 @@
                 </div>
 
                 <?php
-                    // Helper to pre-load single product data securely
-                    $singleSku = $product->type === 'single' ? $product->skus->first() : null;
+                    // Helper to pre-load single product data securely (loads first SKU regardless of current type to prevent data loss on toggle)
+                    $singleSku = $product->skus->first();
                 ?>
 
                 <div x-show="productType === 'single' && catalogMode !== 'catalog'" x-cloak>
@@ -745,15 +745,15 @@
         function productForm() {
             return {
                 catalogMode: <?php echo json_encode(old('product_type', $product->product_type ?? 'sellable'), 512) ?>,
-                productType: <?php echo json_encode(old('type', $product->type), 512) ?>,
-                singleSku: <?php echo json_encode(old('single_sku', $product->type === 'single' && $singleSku ? $singleSku->sku : ''), 512) ?>,
-                singleMrp: <?php echo json_encode(old('single_mrp', $product->type === 'single' && $singleSku ? $singleSku->mrp : ''), 512) ?>, 
-                singleBarcode: <?php echo json_encode(old('single_barcode', $product->type === 'single' && $singleSku ? $singleSku->barcode : ''), 512) ?>,
+                productType: <?php echo json_encode(old('type', $product->skus->count() > 1 ? 'variable' : $product->type), 512) ?>,
+                singleSku: <?php echo json_encode(old('single_sku', $singleSku ? $singleSku->sku : ''), 512) ?>,
+                singleMrp: <?php echo json_encode(old('single_mrp', $singleSku ? $singleSku->mrp : ''), 512) ?>, 
+                singleBarcode: <?php echo json_encode(old('single_barcode', $singleSku ? $singleSku->barcode : ''), 512) ?>,
                 // 🌟 Pre-load Variations from Database
                 <?php
                     $variations = old(
                         'variations',
-                        $product->type === 'variable' && $product->skus->count() > 0
+                        $product->skus->count() > 0
                             ? $product->skus
                                 ->map(function ($sku) {
                                     return [

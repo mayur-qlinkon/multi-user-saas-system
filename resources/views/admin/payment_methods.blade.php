@@ -2,871 +2,34 @@
 
 @section('title', 'Payment Methods')
 
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">List / Payment Methods</h1>
+@endsection
+
 @push('styles')
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        [x-cloak] { display: none !important; }
 
-        [x-cloak] {
-            display: none !important;
+        /* ── Required Custom Styles ── */
+        .sortable-ghost {
+            opacity: 0.35;
+            background: #f0fdf4 !important; /* Tailwind green-50 equivalent */
         }
 
-        /* ── Root Variables ── */                
-        :root {
-            /* Map the custom CSS to your global Tailwind theme variables */
-            --brand: var(--brand-500);
-            --brand-dark: var(--brand-600);
-            --brand-light: #e6f4ea; /* Keep these static or map them to a lighter global tint if you have one */
-            --brand-mid: #d0edda;
-            
-            --surface: #f7f8fc;
-            --card: #ffffff;
-            --border: #eaecf0;
-            --text-head: #101828;
-            --text-body: #344054;
-            --text-muted: #667085;
-            --text-faint: #98a2b3;
-            --radius: 14px;
-            --shadow-sm: 0 1px 3px rgba(16, 24, 40, .06), 0 1px 2px rgba(16, 24, 40, .04);
-            --shadow-md: 0 4px 16px rgba(16, 24, 40, .10), 0 2px 6px rgba(16, 24, 40, .06);
-            --shadow-xl: 0 20px 60px rgba(16, 24, 40, .18), 0 8px 24px rgba(16, 24, 40, .10);
-            --transition: all .2s cubic-bezier(.4, 0, .2, 1);
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: var(--surface);
-        }
-
-        /* ── Page Header ── */
-        .pm-page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 28px;
-        }
-
-        .pm-page-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--text-head);
-            letter-spacing: -.4px;
-            line-height: 1.2;
-        }
-
-        .pm-page-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 3px;
-            font-weight: 500;
-        }
-
-        /* ── Stats Strip ── */
-        .pm-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        @media (max-width: 900px) {
-            .pm-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .pm-stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-        }
-
-        .pm-stat-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 18px 20px;
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            transition: var(--transition);
-        }
-
-        .pm-stat-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-1px);
-        }
-
-        .pm-stat-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .pm-stat-icon svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .pm-stat-num {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--text-head);
-            line-height: 1;
-        }
-
-        .pm-stat-lbl {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-top: 3px;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
-
-        /* ── Main Card ── */
-        .pm-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            overflow: hidden;
-        }
-
-        .pm-card-header {
-            padding: 18px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            background: #fcfcfd;
-        }
-
-        .pm-card-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text-head);
-        }
-
-        /* ── Search ── */
-        .pm-search-wrap {
-            position: relative;
-        }
-
-        .pm-search-wrap svg {
-            position: absolute;
-            left: 11px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 15px;
-            height: 15px;
-            color: var(--text-faint);
-            pointer-events: none;
-        }
-
-        .pm-search {
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            padding: 8px 12px 8px 34px;
-            font-size: 13px;
-            font-family: inherit;
-            color: var(--text-body);
-            background: #fff;
-            width: 220px;
-            transition: var(--transition);
-            outline: none;
-        }
-
-        .pm-search:focus {
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(16, 140, 42, .12);
-            width: 260px;
-        }
-
-        @media (max-width: 480px) {
-
-            .pm-search,
-            .pm-search:focus {
-                width: 100%;
-            }
-        }
-
-        /* ── Add Button ── */
-        .pm-btn-add {
-            background: var(--brand);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 9px 18px;
-            font-size: 13px;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            transition: var(--transition);
-            box-shadow: 0 1px 4px rgba(16, 140, 42, .25);
-            white-space: nowrap;
-        }
-
-        .pm-btn-add:hover {
-            background: var(--brand-dark);
-            box-shadow: 0 4px 12px rgba(16, 140, 42, .35);
-            transform: translateY(-1px);
-        }
-
-        .pm-btn-add svg {
-            width: 15px;
-            height: 15px;
-        }
-
-        /* ── Table ── */
-        .pm-table-wrap {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .pm-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 720px;
-        }
-
-        .pm-table thead tr {
-            background: #f9fafb;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .pm-table th {
-            padding: 11px 20px;
-            font-size: 10.5px;
-            font-weight: 700;
-            color: var(--text-faint);
-            text-transform: uppercase;
-            letter-spacing: .7px;
-            white-space: nowrap;
-        }
-
-        .pm-table th.center {
-            text-align: center;
-        }
-
-        .pm-table th.right {
-            text-align: right;
-        }
-
-        .pm-table tbody tr {
-            border-bottom: 1px solid var(--border);
-            transition: background .15s;
-        }
-
-        .pm-table tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        .pm-table tbody tr:hover {
-            background: #fafbff;
-        }
-
-        .pm-table td {
-            padding: 14px 20px;
-            vertical-align: middle;
-            font-size: 13.5px;
-            color: var(--text-body);
-        }
-
-        .pm-table td.center {
-            text-align: center;
-        }
-
-        .pm-table td.right {
-            text-align: right;
-        }
-
-        /* ── Drag Handle ── */
         .drag-handle {
             cursor: grab;
-            color: var(--text-faint);
-            transition: color .15s;
-            display: inline-flex;
         }
-
-        .drag-handle:hover {
-            color: var(--brand);
-        }
-
+        
         .drag-handle:active {
             cursor: grabbing;
         }
 
         .drag-disabled {
             cursor: not-allowed;
-            opacity: .3;
-            display: inline-flex;
-        }
-
-        .sortable-ghost {
-            opacity: .35;
-            background: var(--brand-light) !important;
-        }
-
-        .pm-table tbody {
-            display: table-row-group;
-        }
-
-        /* ── Method Name Cell ── */
-        .pm-method-name {
-            font-weight: 700;
-            color: var(--text-head);
-            font-size: 13.5px;
-        }
-
-        .pm-method-slug {
-            font-size: 11px;
-            color: var(--text-faint);
-            margin-top: 2px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .pm-method-slug span {
-            background: #f0f1f3;
-            border-radius: 4px;
-            padding: 1px 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 10.5px;
-        }
-
-        /* ── Gateway Badge ── */
-        .pm-gateway {
-            background: #f0f9ff;
-            color: #0369a1;
-            border: 1px solid #bae6fd;
-            border-radius: 6px;
-            padding: 3px 9px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: .4px;
-            text-transform: uppercase;
-            display: inline-block;
-        }
-
-        .pm-gateway.na {
-            background: #f9fafb;
-            color: var(--text-faint);
-            border-color: var(--border);
-        }
-
-        /* ── Status Badges ── */
-        .pm-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            border-radius: 6px;
-            padding: 4px 10px;
-            font-size: 10.5px;
-            font-weight: 700;
-            letter-spacing: .5px;
-            white-space: nowrap;
-        }
-
-        .pm-badge .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-        }
-
-        .badge-online {
-            background: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
-        }
-
-        .badge-online .dot {
-            background: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, .3);
-        }
-
-        .badge-offline {
-            background: #fffbeb;
-            color: #b45309;
-            border: 1px solid #fde68a;
-        }
-
-        .badge-offline .dot {
-            background: #f59e0b;
-        }
-
-        .badge-active {
-            background: var(--brand-light);
-            color: var(--brand);
-            border: 1px solid var(--brand-mid);
-        }
-
-        .badge-active .dot {
-            background: var(--brand);
-            box-shadow: 0 0 0 2px rgba(16, 140, 42, .25);
-        }
-
-        .badge-inactive {
-            background: #f9fafb;
-            color: #6b7280;
-            border: 1px solid #e5e7eb;
-        }
-
-        .badge-inactive .dot {
-            background: #9ca3af;
-        }
-
-        /* ── Action Buttons ── */
-        .pm-action-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 7px;
-            border: 1.5px solid var(--border);
-            background: #fff;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-            font-family: inherit;
-        }
-
-        .pm-action-btn svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .pm-action-btn.edit {
-            color: var(--brand);
-        }
-
-        .pm-action-btn.edit:hover {
-            background: var(--brand);
-            color: #fff;
-            border-color: var(--brand);
-            box-shadow: 0 2px 8px rgba(16, 140, 42, .3);
-        }
-
-        .pm-action-btn.del {
-            color: #ef4444;
-        }
-
-        .pm-action-btn.del:hover {
-            background: #ef4444;
-            color: #fff;
-            border-color: #ef4444;
-            box-shadow: 0 2px 8px rgba(239, 68, 68, .3);
-        }
-
-        /* ── Empty State ── */
-        .pm-empty {
-            padding: 64px 24px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .pm-empty-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            background: var(--brand-light);
-            border: 1px solid var(--brand-mid);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pm-empty-icon svg {
-            width: 26px;
-            height: 26px;
-            color: var(--brand);
-        }
-
-        .pm-empty-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text-head);
-        }
-
-        .pm-empty-sub {
-            font-size: 13px;
-            color: var(--text-muted);
-            max-width: 320px;
-        }
-
-        /* ── Modal Overlay ── */
-        .pm-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(10, 14, 26, .5);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        /* ── Modal Panel ── */
-        .pm-modal {
-            position: relative;
-            background: var(--card);
-            border-radius: 18px;
-            box-shadow: var(--shadow-xl);
-            width: 100%;
-            max-width: 520px;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: modalIn .22s cubic-bezier(.34, 1.4, .64, 1);
-        }
-
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: translateY(24px) scale(.96);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .pm-modal-header {
-            padding: 20px 24px 16px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            background: #fff;
-            z-index: 2;
-        }
-
-        .pm-modal-title-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .pm-modal-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: var(--brand-light);
-            border: 1px solid var(--brand-mid);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pm-modal-icon svg {
-            width: 18px;
-            height: 18px;
-            color: var(--brand);
-        }
-
-        .pm-modal-title {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--text-head);
-            letter-spacing: -.3px;
-        }
-
-        .pm-modal-sub {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 1px;
-        }
-
-        .pm-modal-close {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: 1.5px solid var(--border);
-            background: #fff;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            transition: var(--transition);
-        }
-
-        .pm-modal-close:hover {
-            background: #fee2e2;
-            color: #ef4444;
-            border-color: #fca5a5;
-        }
-
-        .pm-modal-close svg {
-            width: 15px;
-            height: 15px;
-        }
-
-        .pm-modal-body {
-            padding: 24px;
-        }
-
-        .pm-modal-footer {
-            padding: 16px 24px;
-            border-top: 1px solid var(--border);
-            background: #fcfcfd;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        /* ── Form Elements ── */
-        .pm-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-
-        .pm-form-grid .span2 {
-            grid-column: span 2;
-        }
-
-        @media (max-width: 480px) {
-            .pm-form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pm-form-grid .span2 {
-                grid-column: span 1;
-            }
-        }
-
-        .pm-field label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-body);
-            margin-bottom: 6px;
-            letter-spacing: .2px;
-        }
-
-        .pm-field label .req {
-            color: #ef4444;
-            margin-left: 2px;
-        }
-
-        .pm-field label .opt {
-            color: var(--text-faint);
-            font-weight: 500;
-            font-size: 11px;
-            margin-left: 4px;
-        }
-
-        .pm-input {
-            width: 100%;
-            border: 1.5px solid var(--border);
-            border-radius: 9px;
-            padding: 10px 13px;
-            font-size: 13.5px;
-            font-family: inherit;
-            color: var(--text-body);
-            background: #fff;
-            outline: none;
-            transition: var(--transition);
-            box-sizing: border-box;
-        }
-
-        .pm-input::placeholder {
-            color: var(--text-faint);
-        }
-
-        .pm-input:focus {
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(16, 140, 42, .12);
-        }
-
-        .pm-input.muted {
-            background: #f9fafb;
-        }
-
-        /* ── Toggle ── */
-        .pm-toggle-wrap {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            background: #f9fafb;
-            border: 1.5px solid var(--border);
-            border-radius: 9px;
-            padding: 10px 14px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .pm-toggle-wrap:hover {
-            border-color: var(--brand);
-            background: var(--brand-light);
-        }
-
-        .pm-toggle-sr {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-        }
-
-        .pm-toggle-track {
-            position: relative;
-            width: 40px;
-            height: 22px;
-            border-radius: 100px;
-            background: #d1d5db;
-            transition: background .2s;
-            flex-shrink: 0;
-        }
-
-        .pm-toggle-track.on {
-            background: var(--brand);
-        }
-
-        .pm-toggle-thumb {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
-            transition: transform .2s cubic-bezier(.34, 1.56, .64, 1);
-        }
-
-        .pm-toggle-thumb.on {
-            transform: translateX(18px);
-        }
-
-        .pm-toggle-lbl {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-body);
-            user-select: none;
-        }
-
-        .pm-toggle-hint {
-            font-size: 11px;
-            color: var(--text-faint);
-            margin-top: 1px;
-        }
-
-        /* ── Buttons ── */
-        .pm-btn {
-            border-radius: 9px;
-            padding: 10px 20px;
-            font-size: 13.5px;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            transition: var(--transition);
-            border: none;
-            white-space: nowrap;
-        }
-
-        .pm-btn:disabled {
-            opacity: .6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .pm-btn-ghost {
-            background: #fff;
-            border: 1.5px solid var(--border);
-            color: var(--text-body);
-        }
-
-        .pm-btn-ghost:hover:not(:disabled) {
-            background: #f9fafb;
-        }
-
-        .pm-btn-primary {
-            background: var(--brand);
-            color: #fff;
-            box-shadow: 0 1px 4px rgba(16, 140, 42, .3);
-        }
-
-        .pm-btn-primary:hover:not(:disabled) {
-            background: var(--brand-dark);
-            box-shadow: 0 4px 12px rgba(16, 140, 42, .4);
-            transform: translateY(-1px);
-        }
-
-        .pm-btn svg {
-            width: 15px;
-            height: 15px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .spin {
-            animation: spin .7s linear infinite;
-        }
-
-        /* ── Separator ── */
-        .pm-divider {
-            border: none;
-            border-top: 1px solid var(--border);
-            margin: 6px 0;
-        }
-
-        /* ── Responsive Table ── */
-        @media (max-width: 768px) {
-            .pm-table-wrap {
-                margin: 0 -1px;
-            }
-
-            .pm-table {
-                min-width: 600px;
-            }
-
-            .pm-card-header {
-                padding: 14px 16px;
-            }
-
-            .pm-modal-body {
-                padding: 18px 16px;
-            }
-
-            .pm-modal-footer {
-                padding: 14px 16px;
-            }
+            opacity: 0.3;
         }
     </style>
 @endpush
-
-@section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">List / Payment Methods</h1>
-@endsection
 
 @section('content')
     <div x-data="paymentMethodApp()" x-init="boot()" class="pb-12">
@@ -900,101 +63,94 @@
             </div>
 
             {{-- Table --}}
-            <div class="pm-table-wrap">
-                <table id="sortable-table" class="pm-table">
+            <div class="overflow-x-auto -mx-4 sm:mx-0">
+                <table id="sortable-table" class="w-full text-left border-collapse min-w-[720px]">
                     <thead>
-                        <tr>
-                            <th style="width:52px" class="center">Move</th>
-                            <th>Method Name</th>
-                            <th>Gateway</th>
-                            <th class="center">Type</th>
-                            <th class="center">Status</th>
-                            <th class="right" style="padding-right:24px">Actions</th>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-center w-14">Move</th>
+                            <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Method Name</th>
+                            <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Gateway</th>
+                            <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-center">Type</th>
+                            <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-center">Status</th>
+                            <th class="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right pr-6">Actions</th>
                         </tr>
                     </thead>
 
                     {{-- Alpine loop — each row is its own <tbody> (valid HTML, fixes parser bug) --}}
-                    <template x-for="row in filteredMethods" :key="row.id">
+                   <template x-for="row in filteredMethods" :key="row.id">
                         <tbody class="sortable-row" :data-id="row.id">
-                            <tr>
+                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                 {{-- Drag Handle --}}
-                                <td class="center">
-                                    <span :class="search === '' ? 'drag-handle' : 'drag-disabled'"
+                                <td class="px-5 py-4 text-center">
+                                    <span :class="search === '' ? 'drag-handle text-gray-400 hover:text-brand-500' : 'drag-disabled text-gray-300'"
                                         :title="search === '' ? 'Drag to reorder' : 'Clear search to reorder'">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke-width="1.8" stroke="currentColor" style="width:18px;height:18px">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M3.75 9h16.5M3.75 15h16.5" />
+                                            stroke-width="1.8" stroke="currentColor" class="w-[18px] h-[18px] inline-block">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5M3.75 15h16.5" />
                                         </svg>
                                     </span>
                                 </td>
 
                                 {{-- Name + Slug --}}
-                                <td>
-                                    <div class="pm-method-name" x-text="row.label"></div>
-                                    <div class="pm-method-slug">
-                                        <span x-text="row.slug"></span>
+                                <td class="px-5 py-4">
+                                    <div class="font-bold text-gray-900 text-sm" x-text="row.label"></div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5 font-medium flex items-center gap-1">
+                                        <span class="bg-gray-100 rounded px-1.5 py-0.5 font-mono" x-text="row.slug"></span>
                                     </div>
                                 </td>
 
                                 {{-- Gateway --}}
-                                <td>
+                                <td class="px-5 py-4">
                                     <template x-if="row.gateway">
-                                        <span class="pm-gateway" x-text="row.gateway.toUpperCase()"></span>
+                                        <span class="bg-blue-50 text-blue-700 border border-blue-200 rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase inline-block" x-text="row.gateway.toUpperCase()"></span>
                                     </template>
                                     <template x-if="!row.gateway">
-                                        <span class="pm-gateway na">N/A</span>
+                                        <span class="bg-gray-50 text-gray-400 border border-gray-200 rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase inline-block">N/A</span>
                                     </template>
                                 </td>
 
                                 {{-- Online / Offline --}}
-                                <td class="center">
+                                <td class="px-5 py-4 text-center">
                                     <template x-if="row.is_online">
-                                        <span class="pm-badge badge-online">
-                                            <span class="dot"></span> Online
+                                        <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)]"></span> Online
                                         </span>
                                     </template>
                                     <template x-if="!row.is_online">
-                                        <span class="pm-badge badge-offline">
-                                            <span class="dot"></span> Offline
+                                        <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Offline
                                         </span>
                                     </template>
                                 </td>
 
                                 {{-- Active / Inactive --}}
-                                <td class="center">
+                                <td class="px-5 py-4 text-center">
                                     <template x-if="row.is_active">
-                                        <span class="pm-badge badge-active">
-                                            <span class="dot"></span> Active
+                                        <span class="inline-flex items-center gap-1.5 bg-brand-50 text-brand-600 border border-brand-200 rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-brand-500 shadow-[0_0_0_2px_rgba(16,185,129,0.25)]"></span> Active
                                         </span>
                                     </template>
                                     <template x-if="!row.is_active">
-                                        <span class="pm-badge badge-inactive">
-                                            <span class="dot"></span> Inactive
+                                        <span class="inline-flex items-center gap-1.5 bg-gray-50 text-gray-500 border border-gray-200 rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> Inactive
                                         </span>
                                     </template>
                                 </td>
 
                                 {{-- Actions --}}
-                                <td class="right" style="padding-right:20px">
-                                    <div style="display:inline-flex;align-items:center;gap:7px;">
+                                <td class="px-5 py-4 text-right pr-6">
+                                    <div class="inline-flex items-center gap-2">
                                         @if(has_permission('payment_methods.update'))
-                                            <button class="pm-action-btn edit" @click="openModal(row)" title="Edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                    stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
-                                                </svg>
+                                            <button @click="openModal(row)" title="Edit"
+                                                class="w-8 h-8 rounded-lg border border-gray-200 bg-white text-brand-500 hover:bg-brand-500 hover:text-white hover:border-brand-500 flex items-center justify-center transition-colors">
+                                                <i data-lucide="pencil" class="w-4 h-4"></i>
                                             </button>
                                         @endif
 
                                         @if(has_permission('payment_methods.delete'))
-                                            <button class="pm-action-btn del" @click="deleteMethod(row.id)" title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                    stroke-width="2" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                </svg>
+                                            <button @click="deleteMethod(row.id)" title="Delete"
+                                                class="w-8 h-8 rounded-lg border border-gray-200 bg-white text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 flex items-center justify-center transition-colors">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>
                                         @endif
                                     </div>
@@ -1003,32 +159,20 @@
                         </tbody>
                     </template>
 
-                    {{-- Empty state --}}
+                    {{-- Empty state --}}                   
                     <tbody x-show="filteredMethods.length === 0">
                         <tr>
-                            <td colspan="6">
-                                <div class="pm-empty">
-                                    <div class="pm-empty-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
-                                        </svg>
+                            <td colspan="6" class="px-6 py-16 text-center">
+                                <div class="flex flex-col items-center justify-center gap-3">
+                                    <div class="w-16 h-16 rounded-2xl bg-brand-50 border border-brand-100 flex items-center justify-center mb-2">
+                                        <i data-lucide="credit-card" class="w-8 h-8 text-brand-500"></i>
                                     </div>
                                     <div>
-                                        <div class="pm-empty-title"
-                                            x-text="search ? 'No results found' : 'No payment methods yet'"></div>
-                                        <div class="pm-empty-sub"
-                                            x-text="search ? 'Try a different search term.' : 'Click \'Add Method\' to create your first payment gateway.'">
-                                        </div>
+                                        <h3 class="text-[15px] font-bold text-gray-900" x-text="search ? 'No results found' : 'No payment methods yet'"></h3>
+                                        <p class="text-sm text-gray-500 mt-1 max-w-xs mx-auto" x-text="search ? 'Try a different search term.' : 'Click Add Method to create your first payment gateway.'"></p>
                                     </div>
-                                    <button x-show="!search" class="pm-btn-add" @click="openModal()">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke-width="2.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M12 4.5v15m7.5-7.5h-15" />
-                                        </svg>
-                                        Add First Method
+                                    <button x-show="!search" @click="openModal()" class="mt-2 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-md active:scale-95">
+                                        <i data-lucide="plus" class="w-4 h-4"></i> Add First Method
                                     </button>
                                 </div>
                             </td>
@@ -1041,95 +185,100 @@
         {{-- ══════════════════════════════════════
          MODAL
     ══════════════════════════════════════ --}}
-        <div x-cloak x-show="showModal" class="pm-overlay" @click.self="closeModal()">
-            <div class="pm-modal" @click.stop>
+        <div x-cloak x-show="showModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm" @click.self="closeModal()"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+            
+            <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col" @click.stop
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
 
                 {{-- Header --}}
-                <div class="pm-modal-header">
-                    <div class="pm-modal-title-wrap">
-                        <div class="pm-modal-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
-                            </svg>
+                <div class="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center">
+                            <i data-lucide="credit-card" class="w-5 h-5 text-brand-500"></i>
                         </div>
                         <div>
-                            <div class="pm-modal-title" x-text="isEdit ? 'Edit Payment Method' : 'Add Payment Method'">
-                            </div>
-                            <div class="pm-modal-sub"
-                                x-text="isEdit ? 'Update gateway details and settings' : 'Configure a new payment gateway'">
-                            </div>
+                            <h3 class="text-base font-bold text-gray-900" x-text="isEdit ? 'Edit Payment Method' : 'Add Payment Method'"></h3>
+                            <p class="text-xs text-gray-500 mt-0.5" x-text="isEdit ? 'Update gateway details and settings' : 'Configure a new payment gateway'"></p>
                         </div>
                     </div>
-                    <button class="pm-modal-close" @click="closeModal()" type="button">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        </svg>
+                    <button @click="closeModal()" type="button" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
 
                 {{-- Body --}}
-                <div class="pm-modal-body">
-                    <div class="pm-form-grid">
+                <div class="p-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                         {{-- Display Label --}}
-                        <div class="pm-field span2">
-                            <label>Display Label <span class="req">*</span></label>
-                            <input type="text" x-model="form.label" class="pm-input"
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Display Label <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="form.label" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                                 placeholder="e.g. Credit / Debit Card" required @keydown.enter.prevent="saveMethod()">
                         </div>
 
                         {{-- Slug --}}
-                        <div class="pm-field">
-                            <label>URL Slug <span class="opt">(optional)</span></label>
-                            <input type="text" x-model="form.slug" class="pm-input muted"
-                                placeholder="Auto-generated if empty">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">URL Slug <span class="text-gray-400 font-medium normal-case">(optional)</span></label>
+                            <input type="text" x-model="form.slug" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                                placeholder="Auto-generated">
                         </div>
 
                         {{-- Gateway --}}
-                        <div class="pm-field">
-                            <label>Payment Gateway <span class="opt">(optional)</span></label>
-                            <input type="text" x-model="form.gateway" class="pm-input"
-                                placeholder="e.g. razorpay, stripe">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Gateway <span class="text-gray-400 font-medium normal-case">(optional)</span></label>
+                            <input type="text" x-model="form.gateway" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                                placeholder="e.g. razorpay">
                         </div>
                     </div>
 
-                    <hr class="pm-divider" style="margin:20px 0 18px">
+                    <hr class="my-5 border-gray-100">
 
                     {{-- Toggles --}}
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                         {{-- Online Gateway toggle --}}
-                        <label class="pm-toggle-wrap">
-                            <input type="checkbox" x-model="form.is_online" class="pm-toggle-sr">
-                            <div class="pm-toggle-track" :class="form.is_online ? 'on' : ''">
-                                <div class="pm-toggle-thumb" :class="form.is_online ? 'on' : ''"></div>
+                        <label class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl cursor-pointer hover:border-brand-300 hover:bg-brand-50/50 transition-colors">
+                            <div class="relative">
+                                <input type="checkbox" x-model="form.is_online" class="sr-only">
+                                <div class="block w-10 h-6 bg-gray-200 rounded-full transition-colors" :class="form.is_online ? 'bg-brand-500' : ''"></div>
+                                <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform" :class="form.is_online ? 'translate-x-4' : ''"></div>
                             </div>
                             <div>
-                                <div class="pm-toggle-lbl">Online Gateway</div>
-                                <div class="pm-toggle-hint">Processes via internet</div>
+                                <div class="text-sm font-bold text-gray-800">Online Gateway</div>
+                                <div class="text-[11px] text-gray-500">Processes via internet</div>
                             </div>
                         </label>
 
                         {{-- Active Status toggle --}}
-                        <label class="pm-toggle-wrap">
-                            <input type="checkbox" x-model="form.is_active" class="pm-toggle-sr">
-                            <div class="pm-toggle-track" :class="form.is_active ? 'on' : ''">
-                                <div class="pm-toggle-thumb" :class="form.is_active ? 'on' : ''"></div>
+                        <label class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl cursor-pointer hover:border-brand-300 hover:bg-brand-50/50 transition-colors">
+                            <div class="relative">
+                                <input type="checkbox" x-model="form.is_active" class="sr-only">
+                                <div class="block w-10 h-6 bg-gray-200 rounded-full transition-colors" :class="form.is_active ? 'bg-brand-500' : ''"></div>
+                                <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform" :class="form.is_active ? 'translate-x-4' : ''"></div>
                             </div>
                             <div>
-                                <div class="pm-toggle-lbl">Active Status</div>
-                                <div class="pm-toggle-hint">Visible to customers</div>
+                                <div class="text-sm font-bold text-gray-800">Active Status</div>
+                                <div class="text-[11px] text-gray-500">Visible to customers</div>
                             </div>
                         </label>
                     </div>
                 </div>
 
                {{-- Footer --}}
-                <div class="pm-modal-footer">
-                    <button type="button" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold text-sm rounded-xl hover:bg-gray-50 transition-colors" @click="closeModal()" :disabled="isSaving">
+                <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-2xl">
+                    <button type="button" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold text-sm rounded-xl hover:bg-gray-100 transition-colors" @click="closeModal()" :disabled="isSaving">
                         Cancel
                     </button>
                     <button type="button" class="px-6 py-2.5 bg-brand-500 text-white font-bold text-sm rounded-xl hover:bg-brand-600 transition-all shadow-md active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed" @click="saveMethod()" :disabled="isSaving">
@@ -1144,7 +293,7 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="{{ asset('assets/js/sortable.min.js') }}"></script>
     <script>
         function paymentMethodApp() {
             return {
@@ -1310,6 +459,11 @@
                                     1;
                                 this.methods.push(result.data);
                             }
+                            this.$nextTick(() => {
+                                if (typeof lucide !== 'undefined') {
+                                    lucide.createIcons();
+                                }
+                            });
                             BizAlert.toast(result.message, 'success');
                             this.closeModal();
                         } else {

@@ -356,6 +356,7 @@ class BannerService
     {
         return DB::transaction(function () use ($banner) {
             $newBanner = $banner->replicate(['click_count', 'view_count', 'created_at', 'updated_at']);
+            $newBanner->admin_label = $banner->display_admin_label.' (Copy)';
             $newBanner->title = $banner->title.' (Copy)';
             $newBanner->is_active = false; // start inactive so owner reviews first
             $newBanner->sort_order = $this->nextSortOrder($banner->type);

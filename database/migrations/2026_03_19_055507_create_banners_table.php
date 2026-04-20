@@ -35,6 +35,7 @@ return new class extends Migration
             // 🖼️ CONTENT
             $table->string('title')->nullable();
             $table->string('subtitle')->nullable();
+            $table->string('admin_label', 150)->nullable();
             $table->string('image'); // main banner image
             $table->string('mobile_image')->nullable(); // mobile optimized image
 

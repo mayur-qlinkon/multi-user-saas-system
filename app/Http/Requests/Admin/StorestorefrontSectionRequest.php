@@ -21,6 +21,7 @@ class StoreStorefrontSectionRequest extends FormRequest
 
             // ── Identity ──
             'title' => ['nullable', 'string', 'max:150'],
+            'admin_label' => ['nullable', 'string', 'max:150'],
             'subtitle' => ['nullable', 'string', 'max:255'],
 
             // ── Type ──

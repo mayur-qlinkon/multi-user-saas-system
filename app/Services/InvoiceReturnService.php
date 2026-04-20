@@ -153,7 +153,11 @@ class InvoiceReturnService
                 $return->update(['stock_updated' => true]);
             }
 
-            // 2. Lock the document
+            // 2. Reverse best-seller counters — sales are being undone
+            $items = $return->items()->get(['product_id', 'product_sku_id', 'quantity']);
+            InvoiceService::applySaleCounters($items->toArray(), -1);
+
+            // 3. Lock the document
             $return->update([
                 'status' => 'confirmed',
                 'approved_by' => Auth::id(),

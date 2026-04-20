@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Challan;
 use App\Models\ChallanItem;
 use App\Models\Invoice;
+use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\Store;
 use Illuminate\Support\Facades\Auth;
@@ -173,6 +174,11 @@ class InvoiceService
                 'grand_total' => $roundedTotal,
             ]);
 
+            // Best-seller counters — only for finalized sales
+            if ($invoice->status === 'confirmed') {
+                self::applySaleCounters($invoice->items()->get(['product_id', 'product_sku_id', 'quantity'])->toArray(), 1);
+            }
+
             return $invoice;
         });
     }
@@ -182,6 +188,20 @@ class InvoiceService
      */
     public function updateInvoice(Invoice $invoice, array $data, int $companyId): Invoice
     {
+        // Reverse best-seller counters for old items if the invoice was already counted
+        $wasConfirmed = $invoice->status === 'confirmed';
+        if ($wasConfirmed) {
+            self::applySaleCounters(
+                $invoice->items()->get(['product_id', 'product_sku_id', 'quantity', 'return_quantity'])
+                    ->map(fn ($i) => [
+                        'product_id' => $i->product_id,
+                        'product_sku_id' => $i->product_sku_id,
+                        'quantity' => max(0, (float) $i->quantity - (float) ($i->return_quantity ?? 0)),
+                    ])->toArray(),
+                -1
+            );
+        }
+
         // 1. Reverse old stock (Add it back to the OLD warehouse)
         foreach ($invoice->items as $oldItem) {
             $sku = ProductSku::find($oldItem->product_sku_id);
@@ -304,6 +324,14 @@ class InvoiceService
             'grand_total' => $roundedTotal,
         ]);
 
+        // Re-apply counters for the new item set if the invoice is finalized
+        if ($invoice->fresh()->status === 'confirmed') {
+            self::applySaleCounters(
+                $invoice->items()->get(['product_id', 'product_sku_id', 'quantity'])->toArray(),
+                1
+            );
+        }
+
         return $invoice;
     }
 
@@ -397,6 +425,8 @@ class InvoiceService
      */
     public function cancelInvoice(Invoice $invoice): void
     {
+        $wasConfirmed = $invoice->status === 'confirmed';
+
         // 1. Mark as cancelled
         $invoice->update(['status' => 'cancelled']);
 
@@ -415,9 +445,78 @@ class InvoiceService
             }
         }
 
+        // 3. Reverse best-seller counters, net of already-returned qty to avoid double-count
+        if ($wasConfirmed) {
+            self::applySaleCounters(
+                $invoice->items->map(fn ($i) => [
+                    'product_id' => $i->product_id,
+                    'product_sku_id' => $i->product_sku_id,
+                    'quantity' => max(0, (float) $i->quantity - (float) ($i->return_quantity ?? 0)),
+                ])->toArray(),
+                -1
+            );
+        }
+
         // Optional: If you want to automatically void associated payments
         foreach ($invoice->payments as $payment) {
             $payment->update(['status' => 'cancelled']);
+        }
+    }
+
+    /**
+     * Apply best-seller counters to SKU + Product atomically.
+     *
+     * @param  array<int, array{product_id:int, product_sku_id:int, quantity:float|int}>  $items
+     * @param  int  $sign  +1 to add (sale), -1 to subtract (cancel/return)
+     */
+    public static function applySaleCounters(array $items, int $sign): void
+    {
+        if (empty($items) || ($sign !== 1 && $sign !== -1)) {
+            return;
+        }
+
+        $skuTotals = [];
+        $productTotals = [];
+
+        foreach ($items as $row) {
+            $skuId = (int) ($row['product_sku_id'] ?? 0);
+            $productId = (int) ($row['product_id'] ?? 0);
+            $qty = (int) round((float) ($row['quantity'] ?? 0));
+
+            if ($qty <= 0 || $skuId === 0 || $productId === 0) {
+                continue;
+            }
+
+            $skuTotals[$skuId] = ($skuTotals[$skuId] ?? 0) + $qty;
+            $productTotals[$productId] = ($productTotals[$productId] ?? 0) + $qty;
+        }
+
+        foreach ($skuTotals as $skuId => $qty) {
+            if ($sign === 1) {
+                ProductSku::withoutGlobalScopes()->where('id', $skuId)->increment('total_sold', $qty);
+            } else {
+                self::decrementClamped(ProductSku::withoutGlobalScopes()->where('id', $skuId), $qty);
+            }
+        }
+
+        foreach ($productTotals as $productId => $qty) {
+            if ($sign === 1) {
+                Product::withoutGlobalScopes()->where('id', $productId)->increment('total_sold', $qty);
+            } else {
+                self::decrementClamped(Product::withoutGlobalScopes()->where('id', $productId), $qty);
+            }
+        }
+    }
+
+    /**
+     * Portable decrement that clamps at 0 — avoids GREATEST()/unsigned pitfalls.
+     */
+    private static function decrementClamped($query, int $qty): void
+    {
+        $rows = (clone $query)->get(['id', 'total_sold']);
+        foreach ($rows as $row) {
+            $next = max(0, (int) $row->total_sold - $qty);
+            (clone $query)->where('id', $row->id)->update(['total_sold' => $next]);
         }
     }
 }

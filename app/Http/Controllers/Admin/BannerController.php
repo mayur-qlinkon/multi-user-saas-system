@@ -86,7 +86,7 @@ class BannerController extends Controller
 
             return redirect()
                 ->route('admin.banners.index')
-                ->with('success', "Banner '{$banner->title}' created successfully!");
+                ->with('success', "Banner '{$banner->display_admin_label}' created successfully!");
 
         } catch (\InvalidArgumentException $e) {
             // File validation failure — show to user
@@ -255,7 +255,7 @@ class BannerController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Banner duplicated as '{$newBanner->title}'.",
+                'message' => "Banner duplicated as '{$newBanner->display_admin_label}'.",
                 'banner_id' => $newBanner->id,
                 'edit_url' => route('admin.banners.edit', $newBanner->id),
             ]);
@@ -317,6 +317,7 @@ class BannerController extends Controller
         return $request->validate([
             'type' => 'required|in:hero,promo,ad,category,popup',
             'position' => 'required|string|max:100',
+            'admin_label' => 'required|string|max:150',
             'title' => 'nullable|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'alt_text' => 'nullable|string|max:255',

@@ -38,6 +38,7 @@ class Product extends Model
         'product_guide',
         'is_active',
         'show_in_storefront',
+        'total_sold',
     ];
 
     protected $casts = [
@@ -45,6 +46,7 @@ class Product extends Model
         'product_guide' => 'array',
         'is_active' => 'boolean',
         'show_in_storefront' => 'boolean',
+        'total_sold' => 'integer',
     ];
 
     // In Product model — add this property

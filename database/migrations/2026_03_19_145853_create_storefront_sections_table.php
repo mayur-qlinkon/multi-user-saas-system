@@ -21,6 +21,7 @@ return new class extends Migration
             // Display name shown to admin: "Indoor Plants", "Best Sellers", "New Arrivals"
 
             $table->string('subtitle')->nullable();
+            $table->string('admin_label', 150)->nullable();
             // Optional description shown below section heading on storefront
 
             // ── Section Type ──

@@ -36,6 +36,8 @@ return new class extends Migration
 
             $table->boolean('is_active')->default(true);
             $table->boolean('show_in_storefront')->default(true);
+            $table->unsignedInteger('total_sold')->default(0);
+            $table->index(['company_id', 'total_sold']);
             $table->timestamps();
             $table->softDeletes();
 

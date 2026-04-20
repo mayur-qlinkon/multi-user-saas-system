@@ -12,6 +12,7 @@ class GenerateAttendanceData extends Command
     protected $signature = 'generate:attendance
                             {--company= : Required company ID}
                             {--days=7 : Number of days (default 7)}';
+    // php artisan generate:attendance --company=1 --days=30
 
     protected $description = 'Generate safe, idempotent attendance test data for a company.';
 

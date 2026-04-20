@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('type', 50)->index(); // categories, units, products, skus
             $table->string('file_path');
+            $table->string('temp_path')->nullable();
             $table->unsignedInteger('total_rows')->default(0);
             $table->unsignedInteger('processed_rows')->default(0);
             $table->unsignedInteger('success_rows')->default(0);

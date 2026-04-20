@@ -302,6 +302,8 @@ class SettingController extends Controller
             // Clear company-specific settings cache
             Cache::forget("company_settings_{$companyId}");
 
+            Cache::forget("storefront_nav_categories_{$companyId}");
+
             // Clear Laravel view + config cache if needed
             // \Artisan::call('view:clear');
             // \Artisan::call('config:clear');

@@ -198,6 +198,69 @@ class MerchandisingController extends Controller
     }
 
     // ════════════════════════════════════════════════════
+    //  AVAILABLE PRODUCTS — AJAX (browse + paginated)
+    //  Products not yet assigned to this category
+    // ════════════════════════════════════════════════════
+
+    public function availableProducts(Request $request, int $categoryId): JsonResponse
+    {
+        $companyId = Auth::user()->company_id;
+        $query = trim((string) $request->get('q', ''));
+        $perPage = 20;
+
+        try {
+            Category::where('company_id', $companyId)->findOrFail($categoryId);
+
+            $assignedIds = CategoryProduct::where('category_id', $categoryId)
+                ->pluck('product_id')
+                ->all();
+
+            $paginator = Product::where('company_id', $companyId)
+                ->where('category_id', $categoryId)
+                ->where('is_active', true)
+                ->whereNotIn('id', $assignedIds)
+                ->when($query !== '', fn ($q) => $q->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                        ->orWhere('hsn_code', 'like', "%{$query}%");
+                }))
+                ->with(['media' => fn ($q) => $q->where('is_primary', true)->limit(1)])
+                ->select(['id', 'name', 'hsn_code', 'is_active', 'show_in_storefront'])
+                ->orderBy('name')
+                ->paginate($perPage);
+
+            $products = $paginator->getCollection()->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'hsn_code' => $p->hsn_code,
+                'image_url' => $p->primary_image_url,
+                'in_storefront' => $p->show_in_storefront,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'products' => $products,
+                'count' => $products->count(),
+                'page' => $paginator->currentPage(),
+                'has_more' => $paginator->hasMorePages(),
+                'total' => $paginator->total(),
+                'query' => $query,
+            ]);
+
+        } catch (Throwable $e) {
+            Log::error('[Merchandising] Available products fetch failed', [
+                'category_id' => $categoryId,
+                'query' => $query,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load available products.',
+            ], 500);
+        }
+    }
+
+    // ════════════════════════════════════════════════════
     //  ADD PRODUCT — AJAX
     // ════════════════════════════════════════════════════
 
@@ -257,6 +320,133 @@ class MerchandisingController extends Controller
                 'message' => 'Failed to add product. Please try again.',
             ], 500);
         }
+    }
+
+    // ════════════════════════════════════════════════════
+    //  ADD MULTIPLE PRODUCTS — AJAX (bulk)
+    // ════════════════════════════════════════════════════
+
+    public function addMultipleProducts(Request $request, int $categoryId): JsonResponse
+    {
+        $request->validate([
+            'product_ids' => 'required|array|min:1|max:200',
+            'product_ids.*' => 'integer|distinct',
+        ]);
+
+        $companyId = Auth::user()->company_id;
+
+        try {
+            $category = Category::where('company_id', $companyId)->findOrFail($categoryId);
+
+            // Company-scoped filter — only IDs that actually belong to this company
+            $safeIds = Product::where('company_id', $companyId)
+                ->whereIn('id', $request->input('product_ids'))
+                ->pluck('id')
+                ->all();
+
+            if (empty($safeIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No valid products to add.',
+                ], 422);
+            }
+
+            // Skip already-assigned (unique constraint would handle it, but this lets us return accurate counts)
+            $alreadyAssigned = CategoryProduct::where('category_id', $categoryId)
+                ->whereIn('product_id', $safeIds)
+                ->pluck('product_id')
+                ->all();
+
+            $toAdd = array_values(array_diff($safeIds, $alreadyAssigned));
+            $added = [];
+            $failed = 0;
+
+            foreach ($toAdd as $productId) {
+                try {
+                    CategoryProduct::attachProduct(
+                        categoryId: $categoryId,
+                        productId: $productId,
+                    );
+                    $added[] = $productId;
+                } catch (Throwable $inner) {
+                    $failed++;
+                    Log::warning('[Merchandising] Bulk add — single item failed', [
+                        'category_id' => $categoryId,
+                        'product_id' => $productId,
+                        'error' => $inner->getMessage(),
+                    ]);
+                }
+            }
+
+            // Fetch freshly added pivots with the data the frontend needs
+            $products = CategoryProduct::where('category_id', $categoryId)
+                ->whereIn('product_id', $added)
+                ->with([
+                    'product' => fn ($q) => $q->with([
+                        'media' => fn ($q) => $q->where('is_primary', true)->limit(1),
+                    ]),
+                ])
+                ->get()
+                ->map(fn ($pivot) => [
+                    'product_id' => $pivot->product_id,
+                    'is_active' => $pivot->is_active,
+                    'is_featured' => $pivot->is_featured,
+                    'sort_order' => $pivot->sort_order,
+                    'product' => $pivot->product ? [
+                        'id' => $pivot->product->id,
+                        'name' => $pivot->product->name,
+                        'hsn_code' => $pivot->product->hsn_code,
+                        'show_in_storefront' => $pivot->product->show_in_storefront,
+                        'primary_image_url' => $pivot->product->primary_image_url,
+                    ] : null,
+                ]);
+
+            Log::info('[Merchandising] Bulk add completed', [
+                'category_id' => $categoryId,
+                'requested' => count($request->input('product_ids')),
+                'added' => count($added),
+                'skipped' => count($alreadyAssigned),
+                'failed' => $failed,
+                'by' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'added_count' => count($added),
+                'skipped_count' => count($alreadyAssigned),
+                'failed_count' => $failed,
+                'products' => $products,
+                'message' => $this->buildBulkMessage(count($added), count($alreadyAssigned), $failed, $category->name),
+            ]);
+
+        } catch (Throwable $e) {
+            Log::error('[Merchandising] Bulk add failed', [
+                'category_id' => $categoryId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add selected products.',
+            ], 500);
+        }
+    }
+
+    private function buildBulkMessage(int $added, int $skipped, int $failed, string $categoryName): string
+    {
+        if ($added === 0) {
+            return 'No new products added.';
+        }
+
+        $msg = "{$added} product".($added === 1 ? '' : 's')." added to {$categoryName}.";
+        if ($skipped > 0) {
+            $msg .= " ({$skipped} already assigned.)";
+        }
+        if ($failed > 0) {
+            $msg .= " ({$failed} failed.)";
+        }
+
+        return $msg;
     }
 
     // ════════════════════════════════════════════════════

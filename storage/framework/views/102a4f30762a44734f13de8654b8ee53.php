@@ -498,7 +498,7 @@
                             
                             <div class="mb-2.5">
                                 <p class="text-sm font-bold text-gray-900 truncate leading-tight">
-                                    <?php echo e($banner->title ?? '(No title)'); ?>
+                                    <?php echo e($banner->display_admin_label); ?>
 
                                 </p>
                                 <?php if($banner->subtitle): ?>
@@ -587,7 +587,7 @@
                                     
                                     <?php if(has_permission('banners.delete')): ?>
                                     <button type="button"
-                                        onclick="deleteBanner(<?php echo e($banner->id); ?>, '<?php echo e(addslashes($banner->title ?? 'this banner')); ?>')"
+                                        onclick="deleteBanner(<?php echo e($banner->id); ?>, '<?php echo e(addslashes($banner->display_admin_label)); ?>')"
                                         class="action-btn del" title="Delete">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>

@@ -43,11 +43,7 @@ class PlanController extends Controller
             'product_limit' => ['required', 'integer', 'min:1'],
             'employee_limit' => ['required', 'integer', 'min:1'],
 
-            // UI Customization Fields
-            'is_recommended' => ['nullable', 'boolean'],
-            'button_text' => ['nullable', 'string', 'max:50'],
-            'button_link' => ['nullable', 'string', 'max:255'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
+            // Status
             'is_active' => ['nullable', 'boolean'],
 
             // Relationships
@@ -56,7 +52,6 @@ class PlanController extends Controller
         ]);
 
         // Convert HTML checkbox values ('on' / null) to true/false booleans for the service
-        $validated['is_recommended'] = $request->has('is_recommended');
         $validated['is_active'] = $request->has('is_active');
 
         $this->planService->storePlan($validated);
@@ -81,11 +76,7 @@ class PlanController extends Controller
             'product_limit' => ['required', 'integer', 'min:1'],
             'employee_limit' => ['required', 'integer', 'min:1'],
 
-            // UI Customization Fields
-            'is_recommended' => ['nullable', 'boolean'],
-            'button_text' => ['nullable', 'string', 'max:50'],
-            'button_link' => ['nullable', 'string', 'max:255'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
+            // Status
             'is_active' => ['nullable', 'boolean'],
 
             // Relationships
@@ -94,7 +85,6 @@ class PlanController extends Controller
         ]);
 
         // Convert HTML checkbox values ('on' / null) to true/false booleans for the service
-        $validated['is_recommended'] = $request->has('is_recommended');
         $validated['is_active'] = $request->has('is_active');
 
         $this->planService->updatePlan($plan, $validated);

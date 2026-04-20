@@ -1,0 +1,4 @@
+product_slug,sku,price,cost,mrp,barcode,stock_alert,attribute_1_name,attribute_1_value,attribute_2_name,attribute_2_value
+aloe-vera,,299,150,349,,5,Size,Small,Pot,Plastic
+aloe-vera,,499,250,599,,3,Size,Large,Pot,Ceramic
+aloe-vera,ALO-RED-M,399,200,449,,4,Size,Medium,Pot,Clay

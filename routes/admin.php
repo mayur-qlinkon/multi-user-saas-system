@@ -155,8 +155,14 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 // ── AJAX: search unassigned products ──
                 Route::get('/{categoryId}/search', 'searchProducts')->name('search');
 
+                // ── AJAX: browse available (unassigned) products, paginated ──
+                Route::get('/{categoryId}/available', 'availableProducts')->name('available');
+
                 // ── AJAX: add a product to category ──
                 Route::post('/{categoryId}/add', 'addProduct')->name('add-product');
+
+                // ── AJAX: bulk-add multiple products to category ──
+                Route::post('/{categoryId}/add-multiple', 'addMultipleProducts')->name('add-multiple');
 
                 // ── AJAX: remove a product from category ──
                 Route::delete('/{categoryId}/products/{productId}', 'removeProduct')->name('remove-product');
@@ -606,6 +612,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::get('/', 'index')->name('index');
                 Route::get('/{salarySlip}', 'show')->name('show');
                 Route::post('/generate', 'generate')->name('generate');
+                Route::patch('/{salarySlip}', 'update')->name('update');
                 Route::patch('/{salarySlip}/approve', 'approve')->name('approve');
                 Route::patch('/{salarySlip}/pay', 'markPaid')->name('pay');
                 Route::get('/{salarySlip}/pdf', 'downloadPdf')->name('pdf');

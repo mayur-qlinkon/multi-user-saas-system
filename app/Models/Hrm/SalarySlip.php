@@ -2,6 +2,7 @@
 
 namespace App\Models\Hrm;
 
+use App\Models\PaymentMethod;
 use App\Models\User;
 use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,7 +59,7 @@ class SalarySlip extends Model
         'company_id', 'employee_id', 'slip_number', 'month', 'year',
         'working_days', 'present_days', 'absent_days', 'leave_days', 'overtime_hours',
         'gross_earnings', 'total_deductions', 'net_salary', 'round_off',
-        'payment_mode', 'payment_reference', 'payment_date',
+        'payment_mode', 'payment_method_id', 'payment_method_name', 'payment_reference', 'payment_date',
         'status', 'generated_by', 'approved_by', 'approved_at', 'notes',
     ];
 
@@ -136,6 +137,11 @@ class SalarySlip extends Model
         return $this->hasMany(SalarySlipItem::class)->where('type', SalaryComponent::TYPE_DEDUCTION)->orderBy('sort_order');
     }
 
+    public function paymentMethod(): BelongsTo
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+    }
+
     public function generatedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by');
@@ -168,5 +174,35 @@ class SalarySlip extends Model
     public function getMonthNameAttribute(): string
     {
         return date('F', mktime(0, 0, 0, $this->month, 1));
+    }
+
+    // ── Accessors ──
+
+    /**
+     * Human-readable payment label for display in UI and PDF.
+     * Priority: new payment_method_name → legacy payment_mode → null.
+     */
+    public function getPaymentLabelAttribute(): ?string
+    {
+        if ($this->payment_method_name) {
+            return $this->payment_method_name;
+        }
+
+        if ($this->payment_mode) {
+            return ucfirst(str_replace('_', ' ', $this->payment_mode));
+        }
+
+        return null;
+    }
+
+    // ── Helpers ──
+
+    /**
+     * A slip is editable only in pre-approval states. Once approved or paid
+     * it becomes immutable so downstream reports/PDFs stay consistent.
+     */
+    public function isEditable(): bool
+    {
+        return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_GENERATED], true);
     }
 }

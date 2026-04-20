@@ -45,9 +45,9 @@ class ProductService
 
         // 2. Category Filter — now uses pivot (supports multi-category)
         if (! empty($filters['category_id'])) {
-            $query->whereHas('categoryPivots', function ($q) use ($filters) {
-                $q->where('category_id', $filters['category_id']);
-            });
+            $query->where('category_id', $filters['category_id']);
+            // $query->whereHas('categoryPivots', function ($q) use ($filters) {
+            // });
         }
 
         // 3. Status Filter

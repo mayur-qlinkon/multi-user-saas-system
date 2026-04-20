@@ -4,7 +4,7 @@
 
 <?php $__env->startSection('header-title'); ?>
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Create Section</h1>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Section</h1>
         <p class="text-xs text-gray-400 font-medium mt-0.5">Add a new section to your storefront homepage</p>
     </div>
 <?php $__env->stopSection(); ?>
@@ -497,6 +497,23 @@ unset($__errorArgs, $__bag); ?>
                                     placeholder="e.g. Indoor Plants, New Arrivals, Best Sellers"
                                     class="field-input <?php echo e($errors->has('title') ? 'error' : ''); ?>">
                                 <?php $__errorArgs = ['title'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <p class="field-error mt-1"><?php echo e($message); ?></p>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                            </div>
+                            <div>
+                                <label class="field-label">Admin Label <span
+                                        class="text-gray-400 normal-case font-normal">(optional — internal only)</span></label>
+                                <input type="text" name="admin_label" value="<?php echo e(old('admin_label')); ?>"
+                                    placeholder="e.g. Monsoon Promo Row — shown only in admin"
+                                    class="field-input <?php echo e($errors->has('admin_label') ? 'error' : ''); ?>">
+                                <?php $__errorArgs = ['admin_label'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }

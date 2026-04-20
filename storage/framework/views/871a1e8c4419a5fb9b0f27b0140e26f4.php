@@ -181,7 +181,7 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity transition-opacity">
+                                    <div class="flex items-center justify-end gap-2 transition-opacity transition-opacity">
                                         
                                         
                                         <?php if(has_permission('users.view')): ?>
@@ -232,8 +232,16 @@
                             </tr>
                         <?php endif; ?>
                     </tbody>
-                </table>
+               </table>
             </div>
+            
+            
+            <?php if($users->hasPages()): ?>
+                <div class="p-4 border-t border-gray-100">
+                    <?php echo e($users->appends(request()->query())->links()); ?>
+
+                </div>
+            <?php endif; ?>
         </div>
 
     </div>
@@ -279,7 +287,7 @@
                     .catch(error => console.error('Search failed:', error));
                 }, 300);
             });
-        }
+        }      
     
     
     

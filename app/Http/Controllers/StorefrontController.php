@@ -148,6 +148,7 @@ class StorefrontController extends Controller
             'media',
             'skus.skuValues.attribute',
             'skus.skuValues.attributeValue',
+            'skus.stocks:id,product_sku_id,qty', // needed by ProductSku::getIsInStockAttribute — prevents N+1
             'categories' => fn ($q) => $q->where('company_id', $company->id),
             'productUnit',
             'saleUnit',

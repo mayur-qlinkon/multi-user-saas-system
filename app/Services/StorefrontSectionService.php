@@ -328,6 +328,7 @@ class StorefrontSectionService
         return [
             // ── Identity ──
             'title' => $data['title'],
+            'admin_label' => ! empty($data['admin_label']) ? $data['admin_label'] : null,
             'subtitle' => $data['subtitle'] ?? null,
 
             // ── Type ──

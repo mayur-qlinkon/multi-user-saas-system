@@ -13,51 +13,48 @@
 <style>
     [x-cloak] { display: none !important; }
 
-    .stat-card {
+    /* Minimal App Grid Card (Replaces Stat & Quick Action Cards) */
+    .app-grid-card {
         background: #fff;
-        border: 1.5px solid #f1f5f9;
-        border-radius: 16px;
-        padding: 18px 20px;
-        position: relative;
-        overflow: hidden;
-    }
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        left: 0; top: 0; bottom: 0;
-        width: 4px;
-        border-radius: 4px 0 0 4px;
-    }
-    .stat-card.blue::before  { background: #3b82f6; }
-    .stat-card.green::before { background: #10b981; }
-    .stat-card.amber::before { background: #f59e0b; }
-    .stat-card.purple::before{ background: #8b5cf6; }
-
-    .quick-action-card {
-        background: #fff;
-        border: 1.5px solid #f1f5f9;
-        border-radius: 16px;
-        padding: 28px 20px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 8px;
         text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        transition: border-color 180ms ease, box-shadow 180ms ease, transform 120ms ease;
         text-decoration: none;
-        display: block;
+        aspect-ratio: 1 / 1; /* Makes them perfectly square */
+        position: relative;
+        transition: transform 100ms ease, background 150ms ease;
     }
-    .quick-action-card:hover {
-        border-color: var(--brand-600);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        transform: translateY(-2px);
+    .app-grid-card:active { background: #f9fafb; transform: scale(0.97); }
+    .app-grid-icon {
+        color: #4b5563; /* Slate outline icon color like screenshot */
+        margin-bottom: 12px;
+        stroke-width: 1.5px;
     }
-    .quick-action-card.featured {
-        border-color: var(--brand-600);
-        background: linear-gradient(135deg, color-mix(in srgb, var(--brand-600) 6%, #fff), #fff);
+    /* Horizontal Text Scrolling Animation */
+    .marquee-wrapper {
+        width: 100%;
+        overflow: hidden;
+        padding: 0 4px;
     }
-    .qa-icon {
-        width: 56px; height: 56px;
-        border-radius: 18px;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 14px;
+    .marquee-text {
+        display: inline-block;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+    }
+    .animate-marquee {
+        animation: marquee 4s linear infinite;
+    }
+    @keyframes marquee {
+        0%, 20% { transform: translateX(0); }
+        80%, 100% { transform: translateX(calc(-100% + 70px)); } /* 70px is approx visible text width */
     }
 
     /* QR Scanner Modal */
@@ -127,91 +124,73 @@
         <p class="text-[13px] font-semibold text-gray-400 hidden sm:block">{{ now()->format('l, d M Y') }}</p>
     </div>
 
-    {{-- ── 4 Stat Cards ── --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <div class="stat-card blue">
-            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Today's Status</p>
-            <p class="text-[17px] font-black {{ $statusColor }}">{{ $todayStatus }}</p>
-            @if($todayTime)
-            <p class="text-[12px] text-gray-400 mt-1">at {{ $todayTime }}</p>
-            @endif
-            <div class="absolute right-4 top-4 w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <i data-lucide="clock" class="w-5 h-5 text-blue-400"></i>
-            </div>
-        </div>
-
-        <div class="stat-card green">
-            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Assigned Tasks</p>
-            <p class="text-[26px] font-black text-gray-900 leading-none">{{ $assignedTaskCount }}</p>
-            <p class="text-[12px] text-gray-400 mt-1">tasks assigned</p>
-            <div class="absolute right-4 top-4 w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
-                <i data-lucide="clipboard-list" class="w-5 h-5 text-green-400"></i>
-            </div>
-        </div>
-
-        <div class="stat-card amber">
-            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pending Leaves</p>
-            <p class="text-[26px] font-black text-gray-900 leading-none">{{ $pendingLeaveCount }}</p>
-            <p class="text-[12px] text-gray-400 mt-1">awaiting approval</p>
-            <div class="absolute right-4 top-4 w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                <i data-lucide="hourglass" class="w-5 h-5 text-amber-400"></i>
-            </div>
-        </div>
-
-        <div class="stat-card purple">
-            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Present this Month</p>
-            <p class="text-[26px] font-black text-gray-900 leading-none">{{ $presentThisMonth }}</p>
-            <p class="text-[12px] text-gray-400 mt-1">days in {{ now()->format('M') }}</p>
-            <div class="absolute right-4 top-4 w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                <i data-lucide="trending-up" class="w-5 h-5 text-purple-400"></i>
-            </div>
-        </div>
-
-    </div>
-
-    {{-- ── Quick Actions ── --}}
+    {{-- ── Unified App Grid (Stats & Actions) ── --}}
     <div>
-        <p class="text-[13px] font-black text-gray-800 mb-3">Quick Actions</p>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-            {{-- Mark Attendance --}}
-            <button @click="openScanner()" class="quick-action-card featured text-left w-full">
-                <div class="qa-icon" style="background: color-mix(in srgb, var(--brand-600) 12%, #fff)">
-                    <i data-lucide="qr-code" class="w-7 h-7" style="color: var(--brand-600)"></i>
+        <p class="text-[13px] font-black text-gray-800 mb-3">Dashboard Menu</p>
+        <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {{-- 1. Today's Status --}}
+            <div class="app-grid-card relative">
+                <span class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full {{ $checkedIn && !$checkedOut ? 'bg-green-500' : 'bg-gray-300' }}"></span>
+                <i data-lucide="clock" class="w-7 h-7 app-grid-icon"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text {{ strlen($todayStatus) > 10 ? 'animate-marquee' : '' }}">{{ $todayStatus }}</span>
                 </div>
-                <p class="text-[14px] font-black text-gray-900">Mark Attendance</p>
-                <p class="text-[12px] text-gray-400 mt-1">Scan QR code to check-in/out</p>
-                <p class="text-[12px] font-bold mt-3" style="color: var(--brand-600)">Go →</p>
+            </div>
+            {{-- 2. Assigned Tasks (Stat) --}}
+            <div class="app-grid-card relative">
+                <span class="absolute top-2 right-2 text-[9px] font-black text-white bg-blue-500 px-1.5 py-0.5 rounded-full shadow-sm">{{ $assignedTaskCount }}</span>
+                <i data-lucide="clipboard-list" class="w-7 h-7 app-grid-icon"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text">Tasks</span>
+                </div>
+            </div>
+            {{-- 3. Pending Leaves (Stat) --}}
+            <div class="app-grid-card relative">
+                @if($pendingLeaveCount > 0)
+                <span class="absolute top-2 right-2 text-[9px] font-black text-white bg-amber-500 px-1.5 py-0.5 rounded-full shadow-sm">{{ $pendingLeaveCount }}</span>
+                @endif
+                <i data-lucide="hourglass" class="w-7 h-7 app-grid-icon"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text {{ strlen('Pending Leaves') > 10 ? 'animate-marquee' : '' }}">Pending Leaves</span>
+                </div>
+            </div>
+            {{-- 4. Present This Month (Stat) --}}
+            <div class="app-grid-card relative">
+                <span class="absolute top-2 right-2 text-[9px] font-black text-white bg-purple-500 px-1.5 py-0.5 rounded-full shadow-sm">{{ $presentThisMonth }}</span>
+                <i data-lucide="trending-up" class="w-7 h-7 app-grid-icon"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text {{ strlen('Days Present') > 10 ? 'animate-marquee' : '' }}">Days Present</span>
+                </div>
+            </div>
+            {{-- 5. Mark Attendance (Action) --}}
+            <button @click="openScanner()" class="app-grid-card relative w-full border-brand-200" style="background: color-mix(in srgb, var(--brand-600) 4%, #fff)">
+                <span class="absolute top-2 right-2 w-2 h-2 rounded-full animate-pulse" style="background: var(--brand-600)"></span>
+                <i data-lucide="qr-code" class="w-7 h-7 app-grid-icon" style="color: var(--brand-600)"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text" style="color: var(--brand-700)">Scan QR</span>
+                </div>
             </button>
-
-            {{-- Leave Requests --}}
-            <a href="{{ route('admin.hrm.my-leaves.index') }}" class="quick-action-card">
-                <div class="qa-icon bg-green-50">
-                    <i data-lucide="calendar-off" class="w-7 h-7 text-green-500"></i>
+            {{-- 6. Leave Requests (Action) --}}
+            <a href="{{ route('admin.hrm.my-leaves.index') }}" class="app-grid-card relative">
+                <i data-lucide="calendar-off" class="w-7 h-7 app-grid-icon"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text {{ strlen('Apply Leave') > 10 ? 'animate-marquee' : '' }}">Apply Leave</span>
                 </div>
-                <p class="text-[14px] font-black text-gray-900">Leave Requests</p>
-                <p class="text-[12px] text-gray-400 mt-1">Apply for leave, check status</p>
             </a>
-
-            {{-- Salary Slips --}}
-            <a href="{{ route('admin.hrm.my-salary-slips.index') }}" class="quick-action-card">
-                <div class="qa-icon bg-amber-50">
-                    <i data-lucide="banknote" class="w-7 h-7 text-amber-500"></i>
+            {{-- 7. Salary Slips (Action) --}}
+            <a href="{{ route('admin.hrm.my-salary-slips.index') }}" class="app-grid-card relative">
+                <i data-lucide="banknote" class="w-7 h-7 app-grid-icon"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text">Payslips</span>
                 </div>
-                <p class="text-[14px] font-black text-gray-900">Salary Slips</p>
-                <p class="text-[12px] text-gray-400 mt-1">Download monthly payslips</p>
             </a>
-
-            {{-- My Tasks --}}
-            <a href="{{ route('admin.hrm.my-tasks.index') }}" class="quick-action-card">
-                <div class="qa-icon bg-purple-50">
-                    <i data-lucide="clipboard-list" class="w-7 h-7 text-purple-500"></i>
+            {{-- 8. My Tasks (Action) --}}
+            <a href="{{ route('admin.hrm.my-tasks.index') }}" class="app-grid-card relative">
+                <i data-lucide="check-square" class="w-7 h-7 app-grid-icon"></i>
+                <div class="marquee-wrapper mt-1">
+                    <span class="marquee-text">My Tasks</span>
                 </div>
-                <p class="text-[14px] font-black text-gray-900">My Tasks</p>
-                <p class="text-[12px] text-gray-400 mt-1">View & manage assigned tasks</p>
             </a>
-
         </div>
     </div>
 
@@ -367,7 +346,8 @@
 
 @push('scripts')
 {{-- html5-qrcode — production-grade QR scanner library --}}
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+{{-- <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script> --}}
+<script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
 
 <script>
 function empDashboard() {

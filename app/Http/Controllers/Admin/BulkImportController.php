@@ -16,6 +16,7 @@ use App\Services\Import\SupplierImporter;
 use App\Services\Import\UnitImporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -32,9 +33,9 @@ class BulkImportController extends Controller
             ->limit(20)
             ->get();
 
-        $companyId = auth()->user()->company_id;
+        $companyId = Auth::user()->company_id;
         $productCount = Product::withoutGlobalScopes()->where('company_id', $companyId)->count();
-        $plan = auth()->user()->company->subscription?->plan;
+        $plan = Auth::user()->company->subscription?->plan;
         $productLimit = $plan?->product_limit; // null = no plan / unlimited
         $productLimitReached = $productLimit !== null && $productCount >= $productLimit;
 
@@ -759,19 +760,43 @@ class BulkImportController extends Controller
                 ],
             ],
             'products' => [
-                'headers' => ['name', 'slug', 'category_slug', 'unit', 'product_type', 'description'],
+                'headers' => ['name', 'slug', 'category_slug', 'unit', 'product_type', 'description', 'product_guide'],
                 'rows' => [
-                    ['Aloe Vera Plant', 'aloe-vera', 'indoor-plants', 'pcs', 'sellable', 'Medicinal indoor plant'],
-                    ['Ceramic Pot Large', 'ceramic-pot-large', 'outdoor-plants', 'pcs', 'sellable', ''],
-                    ['Garden Soil 5kg', 'garden-soil-5kg', 'outdoor-plants', 'kg', 'sellable', 'Premium potting mix'],
+                    [
+                        'Aloe Vera Plant',
+                        'aloe-vera',
+                        'indoor-plants',
+                        'pcs',
+                        'sellable',
+                        'Medicinal indoor plant',
+                        'Watering:Once every 2 weeks|Light:Bright, indirect sunlight|Care Level:Easy',
+                    ],
+                    [
+                        'Ceramic Pot Large',
+                        'ceramic-pot-large',
+                        'outdoor-plants',
+                        'pcs',
+                        'sellable',
+                        '',
+                        'Material:Ceramic|Features:Includes drainage hole',
+                    ],
+                    [
+                        'Garden Soil 5kg',
+                        'garden-soil-5kg',
+                        'outdoor-plants',
+                        'kg',
+                        'sellable',
+                        'Premium potting mix',
+                        '',
+                    ],
                 ],
             ],
             'skus' => [
-                'headers' => ['product_slug', 'sku', 'price', 'cost', 'mrp', 'barcode', 'stock_alert'],
+                'headers' => ['product_slug', 'sku', 'price', 'cost', 'mrp', 'barcode', 'stock_alert', 'attribute_1_name', 'attribute_1_value', 'attribute_2_name', 'attribute_2_value'],
                 'rows' => [
-                    ['aloe-vera', 'ALO-001', '299', '150', '349', '8901234567890', '5'],
-                    ['aloe-vera', 'ALO-002', '499', '250', '599', '', '3'],
-                    ['ceramic-pot-large', 'POT-LG-001', '899', '450', '999', '', '10'],
+                    ['aloe-vera', '', '299', '150', '349', '', '5', 'Size', 'Small', 'Pot', 'Plastic'],
+                    ['aloe-vera', '', '499', '250', '599', '', '3', 'Size', 'Large', 'Pot', 'Ceramic'],
+                    ['aloe-vera', 'ALO-RED-M', '399', '200', '449', '', '4', 'Size', 'Medium', 'Pot', 'Clay'],
                 ],
             ],
             'clients' => [
@@ -821,7 +846,7 @@ class BulkImportController extends Controller
      */
     public function downloadImageGuide(): BinaryFileResponse
     {
-        $companyId = auth()->user()->company_id;
+        $companyId = Auth::user()->company_id;
 
         $products = Product::with('category:id,name')
             ->where('company_id', $companyId)

@@ -156,7 +156,8 @@
             </div>
 
             
-            <div class="flex-1 overflow-y-auto p-5 no-scrollbar relative">
+            <div class="flex-1 overflow-y-auto p-5 no-scrollbar relative"
+                @scroll="if ($event.target.scrollHeight - $event.target.scrollTop - $event.target.clientHeight < 300) loadMore()">
 
                 
                 <div x-show="!isLoading && products.length === 0" x-cloak
@@ -208,7 +209,6 @@
                 </div>
 
                 
-                <div x-intersect.margin.200px="loadMore()" class="h-10 w-full"></div>
 
             </div>
         </div>
@@ -599,7 +599,8 @@
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="<?php echo e(asset('assets/js/sweetalert2.js')); ?>"></script>
     <script src="<?php echo e(asset('assets/js/swal.js')); ?>"></script>
     <script>
         document.addEventListener('alpine:init', () => {
@@ -962,7 +963,7 @@
                     }
 
                     try {
-                        const url = `/admin/api/products?page=${this.page}&search=${encodeURIComponent(this.searchQuery)}&category_id=${this.activeCategory}&warehouse_id=${this.warehouse_id}&per_page=15`;
+                        const url = `/admin/api/products?page=${this.page}&search=${encodeURIComponent(this.searchQuery)}&category_id=${this.activeCategory}&warehouse_id=${this.warehouse_id}&per_page=50`;
                         const response = await fetch(url);
                         const res = await response.json();
 

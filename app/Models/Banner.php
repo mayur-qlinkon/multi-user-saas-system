@@ -16,6 +16,7 @@ class Banner extends Model
         'company_id',
         'type',
         'position',
+        'admin_label',
         'title',
         'subtitle',
         'image',
@@ -118,6 +119,12 @@ class Banner extends Model
     | Accessors
     |--------------------------------------------------------------------------
     */
+
+    public function getDisplayAdminLabelAttribute(): string
+    {
+        return $this->admin_label
+            ?: ($this->title ?: 'Untitled Banner');
+    }
 
     public function getImageUrlAttribute(): string
     {

@@ -8,7 +8,7 @@
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
         <div>
-            <h1 class="text-[17px] font-bold text-gray-800 leading-none">{{ isset($page) ? 'Edit Page' : 'Create Page' }}</h1>
+            <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">{{ isset($page) ? 'Edit Page' : 'Create Page' }}</h1>
             <p class="text-xs text-gray-400 font-medium mt-1">{{ isset($page) ? $page->title : 'Add new content to your storefront' }}</p>
         </div>
     </div>
@@ -34,6 +34,19 @@
 
 @section('content')
 <div class="pb-10 w-full max-w-[1600px] mx-auto">
+        {{-- Header & Actions --}}
+        <div class="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-center justify-between gap-4">
+            <div>
+                {{-- <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create New Page</h3> --}}
+                {{-- <p class="text-sm text-gray-500 mt-1">{{ isset($page) ? $page->title : 'Add new content to your storefront' }}</p> --}}
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('admin.pages.index') }}"
+                    class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Pages
+                </a>
+            </div>
+        </div>
     <form method="POST" action="{{ isset($page) ? route('admin.pages.update', $page->id) : route('admin.pages.store') }}" class="w-full">
         @csrf
         @if(isset($page)) @method('PUT') @endif

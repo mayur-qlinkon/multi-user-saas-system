@@ -155,7 +155,8 @@
             </div>
 
             {{-- 3. Product Grid & Infinite Scroll --}}
-            <div class="flex-1 overflow-y-auto p-5 no-scrollbar relative">
+            <div class="flex-1 overflow-y-auto p-5 no-scrollbar relative"
+                @scroll="if ($event.target.scrollHeight - $event.target.scrollTop - $event.target.clientHeight < 300) loadMore()">
 
                 {{-- Empty State (No Products Found) --}}
                 <div x-show="!isLoading && products.length === 0" x-cloak
@@ -206,8 +207,7 @@
                     </template>
                 </div>
 
-                {{-- 🌟 The Infinite Scroll Trigger (Invisible element at the bottom) --}}
-                <div x-intersect.margin.200px="loadMore()" class="h-10 w-full"></div>
+                {{-- Infinite scroll is handled by @scroll on the container above --}}
 
             </div>
         </div>
@@ -522,7 +522,8 @@
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="{{ asset('assets/js/sweetalert2.js') }}"></script>
     <script src="{{ asset('assets/js/swal.js') }}"></script>
     <script>
         document.addEventListener('alpine:init', () => {
@@ -885,7 +886,7 @@
                     }
 
                     try {
-                        const url = `/admin/api/products?page=${this.page}&search=${encodeURIComponent(this.searchQuery)}&category_id=${this.activeCategory}&warehouse_id=${this.warehouse_id}&per_page=15`;
+                        const url = `/admin/api/products?page=${this.page}&search=${encodeURIComponent(this.searchQuery)}&category_id=${this.activeCategory}&warehouse_id=${this.warehouse_id}&per_page=50`;
                         const response = await fetch(url);
                         const res = await response.json();
 

@@ -56,7 +56,7 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <?php $__empty_1 = true; $__currentLoopData = $plans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $plan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                <div class="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col hover:shadow-md transition-shadow relative <?php echo e($plan->is_recommended ? 'border-brand-500 ring-1 ring-brand-500' : 'border-gray-200'); ?>">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow relative">
 
                     
                     <div class="absolute top-4 right-4 flex flex-col gap-2 items-end">
@@ -65,12 +65,7 @@
                         <?php else: ?>
                             <span class="bg-gray-100 text-gray-500 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Inactive</span>
                         <?php endif; ?>
-                        
-                        <?php if($plan->is_recommended): ?>
-                            <span class="bg-brand-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase flex items-center gap-1 shadow-sm">
-                                <i data-lucide="star" class="w-3 h-3 fill-white"></i> Recommended
-                            </span>
-                        <?php endif; ?>
+                                               
                     </div>
 
                     
@@ -128,14 +123,7 @@
                                 <?php endif; ?>
                             </ul>
                         </div>
-                        
-                        <div class="mt-auto pt-4 border-t border-gray-100">
-                            <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Button Preview:</p>
-                            <div class="w-full text-center py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded-lg border border-gray-200">
-                                <?php echo e($plan->button_text ?: 'Get Started'); ?>
-
-                            </div>
-                        </div>
+                                               
                     </div>
 
                     
@@ -168,7 +156,7 @@
         <div x-cloak x-show="showFormModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeAll()" x-show="showFormModal" x-transition.opacity></div>
 
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh]"
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]"
                 x-show="showFormModal" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
 
@@ -219,33 +207,8 @@
                                     <label class="form-label">Free Trial Days</label>
                                     <input type="number" name="trial_days" x-model="form.trial_days" min="0" placeholder="0 for no trial" class="form-input">
                                 </div>
-                            </div>
-                        </div>
-
-                        
-                        <div>
-                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">2. Frontend UI Customization</h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="form-label">Button Text</label>
-                                    <input type="text" name="button_text" x-model="form.button_text" placeholder="e.g. Get Started, Start Trial" class="form-input">
-                                </div>
-                                <div>
-                                    <label class="form-label">Button Link (Optional URL)</label>
-                                    <input type="text" name="button_link" x-model="form.button_link" placeholder="Leave empty for default checkout" class="form-input">
-                                </div>
-                                <div>
-                                    <label class="form-label">Sort Order</label>
-                                    <input type="number" name="sort_order" x-model="form.sort_order" placeholder="0" class="form-input">
-                                    <p class="text-[10px] text-gray-400 mt-1">Lower numbers appear first.</p>
-                                </div>
-                                
-                                <div class="flex flex-col gap-3 justify-center sm:pl-4">
-                                    <label class="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" name="is_recommended" value="1" x-model="form.is_recommended" class="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500">
-                                        <span class="text-sm font-bold text-gray-700">Highlight as "Recommended"</span>
-                                    </label>
-                                    <label class="flex items-center gap-2 cursor-pointer">
+                                <div class="sm:col-span-2 mt-2">
+                                    <label class="flex items-center gap-2 cursor-pointer w-max">
                                         <input type="checkbox" name="is_active" value="1" x-model="form.is_active" class="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500">
                                         <span class="text-sm font-bold text-gray-700">Plan is Active</span>
                                     </label>
@@ -255,8 +218,8 @@
 
                         
                         <div>
-                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">3. Limits & Features</h4>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">2. Limits & Features</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                                 <div>
                                     <label class="form-label">User Limit <span class="text-red-500">*</span></label>
                                     <input type="number" name="user_limit" x-model="form.user_limit" required min="1" class="form-input">
@@ -346,8 +309,8 @@
 
                 form: {
                     id: '', name: '', description: '', price: '', billing_cycle: 'monthly', trial_days: 0,
-                    user_limit: 1, store_limit: 1, product_limit: 50, employee_limit: 50, is_recommended: false, is_active: true,
-                    button_text: 'Get Started', button_link: '', sort_order: 0, modules: []
+                    user_limit: 1, store_limit: 1, product_limit: 50, employee_limit: 50, is_active: true,
+                    modules: []
                 },
 
                 deleteForm: { id: '', name: '' },
@@ -381,11 +344,7 @@
                         store_limit: plan.store_limit,
                         product_limit: plan.product_limit,
                         employee_limit: plan.employee_limit,
-                        is_recommended: !!plan.is_recommended,
                         is_active: !!plan.is_active,
-                        button_text: plan.button_text || 'Get Started',
-                        button_link: plan.button_link || '',
-                        sort_order: plan.sort_order || 0,
                         modules: plan.modules ? plan.modules.map(m => m.id) : []
                     };
                     this.showFormModal = true;

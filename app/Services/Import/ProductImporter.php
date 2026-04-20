@@ -87,6 +87,8 @@ class ProductImporter
         foreach ($rows as $index => $row) {
             $rowNumber = (int) ($row['_row_number'] ?? ($startRow + $index));
 
+            $row = $this->sanitizeRowToUtf8($row);
+
             try {
                 $errors = $this->validateRow($row, $categorySlugs, $unitShortNames);
 
@@ -261,6 +263,28 @@ class ProductImporter
         }
 
         return $errors;
+    }
+
+    /**
+     * Sanitize array to strict UTF-8 to prevent JsonEncodingExceptions in logs.
+     */
+    private function sanitizeRowToUtf8(array $data): array
+    {
+        $clean = [];
+        foreach ($data as $key => $value) {
+            // Convert strings to UTF-8, guessing from common Excel encodings
+            $safeKey = is_string($key)
+                ? mb_convert_encoding($key, 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252')
+                : $key;
+
+            $safeValue = is_string($value)
+                ? mb_convert_encoding($value, 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252')
+                : $value;
+
+            $clean[$safeKey] = $safeValue;
+        }
+
+        return $clean;
     }
 
     private function logError(Import $import, int $rowNumber, array $rowData, string $message): void

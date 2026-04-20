@@ -235,8 +235,8 @@
                 </div>
 
                 @php
-                    // Helper to pre-load single product data securely
-                    $singleSku = $product->type === 'single' ? $product->skus->first() : null;
+                    // Helper to pre-load single product data securely (loads first SKU regardless of current type to prevent data loss on toggle)
+                    $singleSku = $product->skus->first();
                 @endphp
 
                 <div x-show="productType === 'single' && catalogMode !== 'catalog'" x-cloak>
@@ -745,15 +745,15 @@
         function productForm() {
             return {
                 catalogMode: @json(old('product_type', $product->product_type ?? 'sellable')),
-                productType: @json(old('type', $product->type)),
-                singleSku: @json(old('single_sku', $product->type === 'single' && $singleSku ? $singleSku->sku : '')),
-                singleMrp: @json(old('single_mrp', $product->type === 'single' && $singleSku ? $singleSku->mrp : '')), 
-                singleBarcode: @json(old('single_barcode', $product->type === 'single' && $singleSku ? $singleSku->barcode : '')),
+                productType: @json(old('type', $product->skus->count() > 1 ? 'variable' : $product->type)),
+                singleSku: @json(old('single_sku', $singleSku ? $singleSku->sku : '')),
+                singleMrp: @json(old('single_mrp', $singleSku ? $singleSku->mrp : '')), 
+                singleBarcode: @json(old('single_barcode', $singleSku ? $singleSku->barcode : '')),
                 // 🌟 Pre-load Variations from Database
                 @php
                     $variations = old(
                         'variations',
-                        $product->type === 'variable' && $product->skus->count() > 0
+                        $product->skus->count() > 0
                             ? $product->skus
                                 ->map(function ($sku) {
                                     return [
@@ -960,11 +960,7 @@
                 },
 
                 removeVariation(index) {
-                    if (this.variations.length > 1) {
-                        this.variations.splice(index, 1);
-                    } else {
-                        BizAlert.toast('You must have at least one variation.', 'error');
-                    }
+                    this.variations.splice(index, 1);
                 }
             }
         }

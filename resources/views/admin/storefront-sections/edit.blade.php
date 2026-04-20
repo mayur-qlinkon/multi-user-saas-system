@@ -543,6 +543,16 @@
                                 @enderror
                             </div>
                             <div>
+                                <label class="field-label">Admin Label <span
+                                        class="text-gray-400 normal-case font-normal">(optional — internal only)</span></label>
+                                <input type="text" name="admin_label" value="{{ old('admin_label', $section->admin_label) }}"
+                                    placeholder="e.g. Monsoon Promo Row — shown only in admin"
+                                    class="field-input {{ $errors->has('admin_label') ? 'error' : '' }}">
+                                @error('admin_label')
+                                    <p class="field-error mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
                                 <label class="field-label">Subtitle <span
                                         class="text-gray-400 normal-case font-normal">(optional)</span></label>
                                 <input type="text" name="subtitle" value="{{ old('subtitle', $section->subtitle) }}"

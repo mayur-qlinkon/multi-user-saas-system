@@ -175,7 +175,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity transition-opacity">
+                                    <div class="flex items-center justify-end gap-2 transition-opacity transition-opacity">
                                         
                                         {{-- Show Button --}}
                                         @if(has_permission('users.view'))
@@ -226,8 +226,15 @@
                             </tr>
                         @endforelse
                     </tbody>
-                </table>
+               </table>
             </div>
+            
+            {{-- Pagination --}}
+            @if($users->hasPages())
+                <div class="p-4 border-t border-gray-100">
+                    {{ $users->appends(request()->query())->links() }}
+                </div>
+            @endif
         </div>
 
     </div>
@@ -273,7 +280,7 @@
                     .catch(error => console.error('Search failed:', error));
                 }, 300);
             });
-        }
+        }      
     
     
     

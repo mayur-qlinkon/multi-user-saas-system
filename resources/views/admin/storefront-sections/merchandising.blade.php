@@ -27,10 +27,83 @@
         
         @media (min-width: 768px) {
             .merch-wrap {
-                grid-template-columns: 280px 1fr;
+                grid-template-columns: 240px 1fr;
                 height: calc(100vh - 140px);
                 min-height: 500px;
             }
+        }
+
+        @media (min-width: 1200px) {
+            .merch-wrap {
+                grid-template-columns: 240px 1fr 1fr;
+            }
+        }
+
+        /* ── Available products panel ── */
+        .avail-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border-bottom: 1px solid #f8fafc;
+            cursor: pointer;
+            transition: background 120ms ease;
+        }
+
+        .avail-row:hover {
+            background: #f8fafc;
+        }
+
+        .avail-row.selected {
+            background: #ecfeff;
+        }
+
+        .avail-row.selected:hover {
+            background: #cffafe;
+        }
+
+        .avail-thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            flex-shrink: 0;
+        }
+
+        .avail-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-bottom: 1.5px solid #f3f4f6;
+            background: #fafafa;
+            flex-wrap: wrap;
+        }
+
+        .btn-load-more {
+            width: calc(100% - 28px);
+            margin: 10px 14px 14px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            background: #f8fafc;
+            border: 1.5px dashed #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 120ms ease, border-color 120ms ease;
+        }
+
+        .btn-load-more:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .btn-load-more:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* ── Panels ── */
@@ -383,6 +456,92 @@
             pointer-events: none;
         }
 
+        .search-result-item.selected {
+            background: #ecfeff;
+        }
+
+        .search-result-item.selected:hover {
+            background: #cffafe;
+        }
+
+        /* ── Bulk-select header inside search dropdown ── */
+        .search-results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 14px;
+            border-bottom: 1.5px solid #f1f5f9;
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .search-results-header .left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .selected-count-chip {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #cffafe;
+            color: #0e7490;
+        }
+
+        .btn-add-selected {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: var(--brand-600);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 120ms ease, opacity 120ms ease;
+        }
+
+        .btn-add-selected:hover:not(:disabled) {
+            background: var(--brand-700, #0f766e);
+        }
+
+        .btn-add-selected:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pick-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 4px;
+            background: #fff;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            cursor: pointer;
+            transition: background 120ms ease, border-color 120ms ease;
+        }
+
+        .pick-checkbox.checked {
+            background: var(--brand-600);
+            border-color: var(--brand-600);
+        }
+
         /* ════════════════════════════════════════
                        EMPTY + LOADING STATES
                     ════════════════════════════════════════ */
@@ -523,15 +682,125 @@
             </div>
 
             {{-- ════════════════════════════
-             RIGHT PANEL — Products
+             MIDDLE PANEL — Available Products (browse + bulk select)
+        ════════════════════════════ --}}
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <p class="text-[11px] font-black text-gray-400 uppercase tracking-widest">Available
+                                Products</p>
+                            <p class="text-[11px] text-gray-400 font-medium mt-0.5" x-show="activeCategoryId" x-cloak
+                                x-text="availableTotal + ' unassigned'"></p>
+                        </div>
+                        <button type="button" class="btn-add-selected"
+                            :disabled="selectedCount === 0 || isBulkAdding" @click="addSelected()"
+                            x-show="activeCategoryId" x-cloak>
+                            <template x-if="isBulkAdding">
+                                <div class="spinner" style="width:12px;height:12px;border-width:2px;"></div>
+                            </template>
+                            <template x-if="!isBulkAdding">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                            </template>
+                            <span
+                                x-text="isBulkAdding ? 'Adding...' : ('Add Selected' + (selectedCount > 0 ? ' (' + selectedCount + ')' : ''))"></span>
+                        </button>
+                    </div>
+
+                    {{-- Filter bar ── --}}
+                    <div class="search-wrap" x-show="activeCategoryId" x-cloak>
+                        <i data-lucide="search" class="w-4 h-4 search-icon"></i>
+                        <input type="text" x-model="productSearch"
+                            @input.debounce.350ms="loadAvailable(true)"
+                            placeholder="Filter products..." class="search-input">
+                    </div>
+                </div>
+
+                {{-- Select-all row ── --}}
+                <div class="avail-filter-bar" x-show="activeCategoryId && availableProducts.length > 0" x-cloak>
+                    <div class="flex items-center gap-2 cursor-pointer select-none"
+                        @click="toggleSelectAll()">
+                        <span class="pick-checkbox" :class="{ 'checked': allSelected }">
+                            <template x-if="allSelected">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </template>
+                        </span>
+                        <span class="text-xs font-bold text-gray-600"
+                            x-text="allSelected ? 'Clear All' : 'Select All'"></span>
+                    </div>
+                    <span class="selected-count-chip" x-show="selectedCount > 0"
+                        x-text="selectedCount + ' selected'"></span>
+                </div>
+
+                {{-- Available list body ── --}}
+                <div class="panel-body">
+                    {{-- No category chosen ── --}}
+                    <template x-if="!activeCategoryId">
+                        <div class="empty-state">
+                            <i data-lucide="mouse-pointer-click" class="w-8 h-8 mb-2 text-gray-200"></i>
+                            <p class="text-xs text-gray-400">Pick a category to browse products</p>
+                        </div>
+                    </template>
+
+                    {{-- Loading ── --}}
+                    <template x-if="activeCategoryId && availableLoading && availableProducts.length === 0">
+                        <div class="empty-state">
+                            <div class="spinner mb-3"></div>
+                            <p class="text-xs text-gray-400 font-medium">Loading products...</p>
+                        </div>
+                    </template>
+
+                    {{-- Empty ── --}}
+                    <template x-if="activeCategoryId && !availableLoading && availableProducts.length === 0">
+                        <div class="empty-state">
+                            <i data-lucide="package-check" class="w-8 h-8 mb-2 text-gray-200"></i>
+                            <p class="text-sm font-bold text-gray-500"
+                                x-text="productSearch ? 'No matches' : 'All products already assigned'"></p>
+                            <p class="text-xs text-gray-400 mt-1"
+                                x-text="productSearch ? 'Try a different filter' : ''"></p>
+                        </div>
+                    </template>
+
+                    <template x-for="prod in availableProducts" :key="prod.id">
+                        <div class="avail-row" :class="{ 'selected': selectedIds.includes(prod.id) }"
+                            @click="toggleSelect(prod.id)">
+                            <span class="pick-checkbox" :class="{ 'checked': selectedIds.includes(prod.id) }">
+                                <template x-if="selectedIds.includes(prod.id)">
+                                    <i data-lucide="check" class="w-3 h-3"></i>
+                                </template>
+                            </span>
+                            <img :src="prod.image_url" class="avail-thumb"
+                                onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 truncate" x-text="prod.name"></p>
+                                <p class="text-[10px] text-gray-400"
+                                    x-text="prod.hsn_code ? 'HSN: ' + prod.hsn_code : ''"></p>
+                            </div>
+                            <template x-if="!prod.in_storefront">
+                                <span class="hidden-badge">Hidden</span>
+                            </template>
+                        </div>
+                    </template>
+
+                    {{-- Load more ── --}}
+                    <button type="button" class="btn-load-more"
+                        x-show="activeCategoryId && availableHasMore && availableProducts.length > 0"
+                        x-cloak :disabled="availableLoading" @click="loadAvailable(false)"
+                        x-text="availableLoading ? 'Loading...' : 'Load more'"></button>
+                </div>
+            </div>
+
+            {{-- ════════════════════════════
+             RIGHT PANEL — Assigned Products
         ════════════════════════════ --}}
             <div class="panel">
 
                 {{-- Right panel header ── --}}
                 <div class="panel-header">
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-bold text-gray-800" x-text="activeCategoryName || 'Select a category'">
+                            <p class="text-sm font-bold text-gray-800"
+                                x-text="activeCategoryName || 'Select a category'">
                             </p>
                             <p class="text-[11px] text-gray-400 font-medium mt-0.5" x-show="activeCategoryId"
                                 x-text="`${productCount} product${productCount !== 1 ? 's' : ''} assigned`">
@@ -542,51 +811,6 @@
                             class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium bg-gray-50 px-3 py-1.5 rounded-lg">
                             <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
                             Drag to reorder
-                        </div>
-                    </div>
-
-                    {{-- Product search / add ── --}}
-                    <div class="search-wrap" x-show="activeCategoryId" x-cloak>
-                        <i data-lucide="search" class="w-4 h-4 search-icon"></i>
-                        <input type="text" x-model="productSearch" @input.debounce.350ms="searchProducts()"
-                            @focus="showResults = productSearch.length > 0 || searchResults.length > 0"
-                            @click.away="showResults = false" placeholder="Search to add products..." class="search-input">
-
-                        {{-- Search results dropdown ── --}}
-                        <div class="search-results" x-show="showResults && searchResults.length > 0" x-cloak>
-                            <template x-for="prod in searchResults" :key="prod.id">
-                                <div class="search-result-item" :class="{ 'adding': addingIds.includes(prod.id) }"
-                                    @click="addProduct(prod)">
-                                    <img :src="prod.image_url" class="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-                                        onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-semibold text-gray-800 truncate" x-text="prod.name"></p>
-                                        <p class="text-[10px] text-gray-400"
-                                            x-text="prod.hsn_code ? 'HSN: ' + prod.hsn_code : ''"></p>
-                                    </div>
-                                    <div class="flex items-center gap-1 flex-shrink-0">
-                                        <template x-if="!prod.in_storefront">
-                                            <span class="no-storefront-badge">Not in storefront</span>
-                                        </template>
-                                        <template x-if="addingIds.includes(prod.id)">
-                                            <div class="spinner" style="width:16px;height:16px;"></div>
-                                        </template>
-                                        <template x-if="!addingIds.includes(prod.id)">
-                                            <i data-lucide="plus-circle" class="w-4 h-4 text-brand-600"></i>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-
-                        {{-- No results state ── --}}
-                        <div class="search-results"
-                            x-show="showResults && searchResults.length === 0 && productSearch.length > 1 && !isSearching"
-                            x-cloak>
-                            <div class="p-4 text-center text-sm text-gray-400">
-                                <i data-lucide="search-x" class="w-5 h-5 mx-auto mb-1 text-gray-300"></i>
-                                No unassigned products found for "<span x-text="productSearch"></span>"
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -621,8 +845,8 @@
                                     <div class="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
                                         <i data-lucide="package-plus" class="w-6 h-6 text-gray-300"></i>
                                     </div>
-                                    <p class="text-sm font-bold text-gray-500">No products yet</p>
-                                    <p class="text-xs text-gray-400 mt-1">Search above to add products to this category</p>
+                                    <p class="text-sm font-bold text-gray-500">No products in this category</p>
+                                    <p class="text-xs text-gray-400 mt-1">Add products using search panel above</p>
                                 </div>
                             </template>
 
@@ -720,15 +944,32 @@
                 isLoading: false,
                 catSearch: '',
 
-                // Search state
+                // Search / filter state
                 productSearch: '',
-                searchResults: [],
-                showResults: false,
-                isSearching: false,
+
+                // Available products browse state
+                availableProducts: [],
+                availableLoading: false,
+                availablePage: 1,
+                availableHasMore: false,
+                availableTotal: 0,
 
                 // Optimistic UI tracking
                 addingIds: [],
                 removingIds: [],
+
+                // Bulk-select state
+                selectedIds: [],
+                isBulkAdding: false,
+
+                // ── Computed getters ──
+                get selectedCount() {
+                    return this.selectedIds.length;
+                },
+                get allSelected() {
+                    return this.availableProducts.length > 0 &&
+                        this.availableProducts.every(p => this.selectedIds.includes(p.id));
+                },
 
                 // Sortable instance
                 sortableInstance: null,
@@ -751,11 +992,12 @@
                                 );
                             });
                         });
+                        this.loadAvailable(true);
                     }
 
-                    // Close search on escape
+                    // Clear selection on escape
                     document.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape') this.showResults = false;
+                        if (e.key === 'Escape') this.selectedIds = [];
                     });
                 },
 
@@ -770,8 +1012,11 @@
                     this.isLoading = true;
                     this.products = [];
                     this.productSearch = '';
-                    this.searchResults = [];
-                    this.showResults = false;
+                    this.availableProducts = [];
+                    this.availablePage = 1;
+                    this.availableHasMore = false;
+                    this.availableTotal = 0;
+                    this.selectedIds = [];
 
                     // Update URL without full reload
                     const url = new URL(window.location.href);
@@ -804,6 +1049,9 @@
                                     );
                                 });
                             });
+
+                            // Load the available-products list for this category
+                            this.loadAvailable(true);
                         } else {
                             BizAlert.toast('Failed to load category products.', 'error');
                         }
@@ -817,37 +1065,58 @@
                 },
 
                 // ════════════════════════════════════════
-                //  SEARCH PRODUCTS TO ADD
+                //  LOAD AVAILABLE PRODUCTS (browse + paginate)
                 // ════════════════════════════════════════
-                async searchProducts() {
-                    const q = this.productSearch.trim();
-                    if (q.length < 1) {
-                        this.searchResults = [];
-                        this.showResults = false;
-                        return;
+                async loadAvailable(reset = false) {
+                    if (!this.activeCategoryId) return;
+
+                    if (reset) {
+                        this.availablePage = 1;
+                        this.availableProducts = [];
+                        this.availableHasMore = false;
+                        this.selectedIds = [];
                     }
 
-                    this.isSearching = true;
-                    this.showResults = true;
+                    this.availableLoading = true;
+                    const q = this.productSearch.trim();
+                    const page = this.availablePage;
 
                     try {
-                        const res = await fetch(
-                            `/admin/merchandising/${this.activeCategoryId}/search?q=${encodeURIComponent(q)}`, {
-                                headers: {
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                    'Accept': 'application/json'
-                                },
-                            });
+                        const url =
+                            `/admin/merchandising/${this.activeCategoryId}/available?page=${page}` +
+                            (q ? `&q=${encodeURIComponent(q)}` : '');
+                        const res = await fetch(url, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                        });
                         const data = await res.json();
 
                         if (data.success) {
-                            this.searchResults = data.products;
-                            console.log('[Merchandising] Search results:', data.count, 'for query:', q);
+                            if (reset) {
+                                this.availableProducts = data.products;
+                            } else {
+                                // Dedup by id to prevent inflate from shifting pages
+                                const existingIds = new Set(this.availableProducts.map(p => p.id));
+                                const fresh = data.products.filter(p => !existingIds.has(p.id));
+                                this.availableProducts = this.availableProducts.concat(fresh);
+                            }
+                            this.availableHasMore = !!data.has_more;
+                            this.availableTotal = data.total ?? this.availableProducts.length;
+                            if (data.has_more) this.availablePage = page + 1;
+
+                            this.$nextTick(() => {
+                                window.initIcons && window.initIcons();
+                            });
+                        } else {
+                            BizAlert.toast(data.message || 'Failed to load products.', 'error');
                         }
                     } catch (err) {
-                        console.error('[Merchandising] Search error:', err);
+                        console.error('[Merchandising] Available load error:', err);
+                        BizAlert.toast('Network error loading products.', 'error');
                     } finally {
-                        this.isSearching = false;
+                        this.availableLoading = false;
                     }
                 },
 
@@ -892,12 +1161,8 @@
 
                             this.productCount++;
 
-                            // Remove from search results
-                            this.searchResults = this.searchResults.filter(p => p.id !== prod.id);
-                            if (this.searchResults.length === 0) {
-                                this.showResults = false;
-                                this.productSearch = '';
-                            }
+                            // Remove from available list (if present)
+                            this.availableProducts = this.availableProducts.filter(p => p.id !== prod.id);
 
                             // Update category badge count
                             this.updateCategoryBadge(this.activeCategoryId, this.productCount);
@@ -919,6 +1184,85 @@
                         BizAlert.toast('Network error. Please try again.', 'error');
                     } finally {
                         this.addingIds = this.addingIds.filter(id => id !== prod.id);
+                    }
+                },
+
+                // ════════════════════════════════════════
+                //  BULK SELECT
+                // ════════════════════════════════════════
+                toggleSelect(id) {
+                    if (this.selectedIds.includes(id)) {
+                        this.selectedIds = this.selectedIds.filter(x => x !== id);
+                    } else {
+                        this.selectedIds.push(id);
+                    }
+                },
+
+                toggleSelectAll() {
+                    if (this.allSelected) {
+                        this.selectedIds = [];
+                    } else {
+                        this.selectedIds = [...new Set(this.availableProducts.map(p => p.id))];
+                    }
+                },
+
+                async addSelected() {
+                    if (this.selectedIds.length === 0 || this.isBulkAdding) return;
+
+                    this.isBulkAdding = true;
+                    const ids = [...this.selectedIds];
+                    console.log('[Merchandising] Bulk adding', ids.length, 'products');
+
+                    try {
+                        const res = await fetch(`/admin/merchandising/${this.activeCategoryId}/add-multiple`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                product_ids: ids
+                            }),
+                        });
+                        const data = await res.json();
+
+                        if (data.success) {
+                            // Append newly added products, guarded against duplicates
+                            const assignedIds = new Set(this.products.map(p => p.product_id ?? p.product?.id));
+                            (data.products || []).forEach(p => {
+                                if (!assignedIds.has(p.product_id)) {
+                                    this.products.push(p);
+                                    assignedIds.add(p.product_id);
+                                }
+                            });
+
+                            this.productCount += (data.added_count || 0);
+                            this.updateCategoryBadge(this.activeCategoryId, this.productCount);
+
+                            // Clear selection; refresh available list so added items disappear
+                            this.selectedIds = [];
+                            this.loadAvailable(true);
+
+                            BizAlert.toast(data.message, data.added_count > 0 ? 'success' : 'warning');
+
+                            this.$nextTick(() => {
+                                this.initSortable();
+                                window.initIcons && window.initIcons(document.getElementById(
+                                    'sortable-product-list'));
+                            });
+
+                            console.log('[Merchandising] Bulk add complete:', data);
+                        } else {
+                            BizAlert.toast(data.message || 'Bulk add failed.', 'error');
+                        }
+
+                    } catch (err) {
+                        console.error('[Merchandising] Bulk add error:', err);
+                        BizAlert.toast('Network error during bulk add.', 'error');
+                    } finally {
+                        this.isBulkAdding = false;
                     }
                 },
 

@@ -396,7 +396,7 @@
         
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Storefront Sections</h1>
+                
                 <p class="text-sm text-gray-400 font-medium mt-0.5">
                     Drag to reorder · Toggle visibility · Build your homepage layout
                 </p>
@@ -532,8 +532,10 @@
 
                             
                             <div class="mb-1">
-                                <p class="text-sm font-bold text-gray-900 truncate leading-tight"><?php echo e($section->title); ?></p>
-                                <?php if($section->subtitle): ?>
+                                <p class="text-sm font-bold text-gray-900 truncate leading-tight"><?php echo e($section->display_admin_label); ?></p>
+                                <?php if($section->admin_label && $section->title && $section->admin_label !== $section->title): ?>
+                                    <p class="text-[10px] text-gray-400 truncate mt-0.5">Storefront: <?php echo e($section->title); ?></p>
+                                <?php elseif($section->subtitle): ?>
                                     <p class="text-[11px] text-gray-400 truncate mt-0.5"><?php echo e($section->subtitle); ?></p>
                                 <?php endif; ?>
                             </div>

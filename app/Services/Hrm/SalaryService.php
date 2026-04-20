@@ -8,6 +8,7 @@ use App\Models\Hrm\EmployeeSalaryStructure;
 use App\Models\Hrm\SalaryComponent;
 use App\Models\Hrm\SalarySlip;
 use App\Models\Hrm\SalarySlipItem;
+use App\Models\PaymentMethod;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -139,12 +140,28 @@ class SalaryService
             throw new InvalidArgumentException('Only approved slips can be marked as paid.');
         }
 
-        $slip->update([
+        $updates = [
             'status' => SalarySlip::STATUS_PAID,
-            'payment_mode' => $paymentData['payment_mode'] ?? null,
             'payment_reference' => $paymentData['payment_reference'] ?? null,
             'payment_date' => $paymentData['payment_date'] ?? now()->toDateString(),
-        ]);
+        ];
+
+        // New path: resolve via PaymentMethod model and snapshot the label.
+        if (! empty($paymentData['payment_method_id'])) {
+            $method = PaymentMethod::find($paymentData['payment_method_id']);
+            if ($method) {
+                $updates['payment_method_id'] = $method->id;
+                $updates['payment_method_name'] = $method->label;
+            }
+        }
+
+        // Legacy fallback: if old payment_mode was provided (e.g. direct API calls),
+        // keep storing it so existing slips and reports are not affected.
+        if (! empty($paymentData['payment_mode'])) {
+            $updates['payment_mode'] = $paymentData['payment_mode'];
+        }
+
+        $slip->update($updates);
 
         return $slip->fresh();
     }

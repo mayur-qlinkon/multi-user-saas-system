@@ -38,13 +38,24 @@
 
         // Group SKU attributes for variant selector
         $attributes = collect();
+
         foreach ($product->skus as $sku) {
             foreach ($sku->skuValues as $sv) {
-                $attrName = $sv->attribute->name ?? 'Variant';
-                if (!$attributes->has($attrName)) {
+                
+                // 1. Guard clause: Skip this loop if the related attributeValue is missing
+                if (! $sv->attributeValue) {
+                    continue; 
+                }
+
+                // 2. Use null-safe operator (?->) in case the parent attribute is missing
+                $attrName = $sv->attribute?->name ?? 'Variant';
+
+                if (! $attributes->has($attrName)) {
                     $attributes[$attrName] = collect();
                 }
-                if (!$attributes[$attrName]->contains('id', $sv->attributeValue->id)) {
+
+                // 3. We now know $sv->attributeValue is safe to access
+                if (! $attributes[$attrName]->contains('id', $sv->attributeValue->id)) {
                     $attributes[$attrName]->push([
                         'id' => $sv->attributeValue->id,
                         'value' => $sv->attributeValue->value,
@@ -53,18 +64,32 @@
             }
         }
 
-        // Build SKU map for JS price switching
-        // skuMap[attrValueId_attrValueId] = { price, cost, sku_id, in_stock }
-        $skuMap = [];
+        // Build a flat SKU list the frontend can filter against.
+        // Each entry: { id, price, mrp, in_stock, values: { [attrName]: attrValueId } }
+        // This lets the Alpine selector compute "which options are still valid?"
+        // purely client-side by attribute-map equality — Shopify-style.
+        $skuList = [];
         foreach ($product->skus as $sku) {
-            $key = $sku->skuValues->pluck('attribute_value_id')->sort()->implode('_');
-            $skuMap[$key ?: $sku->id] = [
+            $values = [];
+            foreach ($sku->skuValues as $sv) {
+                if (! $sv->attributeValue || ! $sv->attribute) {
+                    continue;
+                }
+                $values[$sv->attribute->name] = $sv->attributeValue->id;
+            }
+
+            $skuList[] = [
                 'id' => $sku->id,
-                'price' => $sku->price,
-                'mrp' => $sku->mrp,
-                'in_stock' => $sku->stocks->sum('qty') > 0,
+                'price' => (float) $sku->price,
+                'mrp' => $sku->mrp !== null ? (float) $sku->mrp : 0,
+                'in_stock' => (bool) $sku->is_in_stock,
+                'values' => $values,
             ];
         }
+
+        // Pick the initial SKU — prefer first in-stock, fall back to first.
+        $initialSku = collect($skuList)->firstWhere('in_stock', true)
+            ?? ($skuList[0] ?? null);
     ?>
 
     <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10" x-data="productPage()" x-init="init()">
@@ -157,7 +182,17 @@
             <div class="lg:col-span-6 xl:col-span-7 flex flex-col pt-2 lg:pl-4">
 
                 <div class="flex items-center justify-between mb-4">
-                    <?php if($inStock): ?>
+                    <?php if($product->type === 'variable'): ?>
+                        
+                        <span x-show="currentInStock" x-cloak
+                            class="bg-[#e6fcf5] text-[#108c2a] px-3 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider">
+                            In Stock
+                        </span>
+                        <span x-show="!currentInStock" x-cloak
+                            class="bg-red-50 text-red-600 px-3 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider">
+                            Out of Stock
+                        </span>
+                    <?php elseif($inStock): ?>
                         <span
                             class="bg-[#e6fcf5] text-[#108c2a] px-3 py-1.5 rounded-md text-[11px] font-black uppercase tracking-wider">
                             In Stock
@@ -221,11 +256,20 @@
                                 <div class="flex flex-wrap gap-2.5">
                                     <?php $__currentLoopData = $values; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <button
+                                            type="button"
+                                            data-attr="<?php echo e($attrName); ?>"
+                                            data-value-id="<?php echo e($val['id']); ?>"
+                                            data-value-label="<?php echo e($val['value']); ?>"
                                             @click="selectAttr('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>, '<?php echo e(addslashes($val['value'])); ?>')"
-                                            class="px-5 py-2.5 rounded-xl border-2 text-[13px] font-bold transition-all"
-                                            :class="selectedAttrs['<?php echo e($attrName); ?>']?.id === <?php echo e($val['id']); ?> ?
-                                                'border-gray-900 bg-gray-900 text-white' :
-                                                'border-gray-200 bg-white text-gray-700 hover:border-gray-400'">
+                                            :disabled="!isOptionValid('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>)"
+                                            :aria-disabled="!isOptionValid('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>)"
+                                            class="relative px-5 py-2.5 rounded-xl border-2 text-[13px] font-bold transition-all disabled:cursor-not-allowed"
+                                            :class="{
+                                                'border-gray-900 bg-gray-900 text-white': selectedAttrs['<?php echo e($attrName); ?>']?.id === <?php echo e($val['id']); ?>,
+                                                'border-gray-200 bg-white text-gray-700 hover:border-gray-400': isOptionValid('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>) && selectedAttrs['<?php echo e($attrName); ?>']?.id !== <?php echo e($val['id']); ?> && !isOptionOutOfStock('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>),
+                                                'border-gray-200 bg-gray-50 text-gray-400 line-through': isOptionValid('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>) && isOptionOutOfStock('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>) && selectedAttrs['<?php echo e($attrName); ?>']?.id !== <?php echo e($val['id']); ?>,
+                                                'border-gray-100 bg-gray-50 text-gray-300 line-through opacity-60': !isOptionValid('<?php echo e($attrName); ?>', <?php echo e($val['id']); ?>),
+                                            }">
                                             <?php echo e($val['value']); ?>
 
                                         </button>
@@ -289,13 +333,17 @@
                 <?php else: ?>
                     
                     <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-auto">
-                        <button @click="addToCart()"
-                            class="flex-1 bg-white border-2 border-[#111827] text-[#111827] hover:bg-gray-50 py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-sm">
-                            <i data-lucide="shopping-cart" class="w-5 h-5"></i> Add to Cart
+                        <button type="button" @click="addToCart()"
+                            :disabled="!currentInStock"
+                            class="flex-1 bg-white border-2 border-[#111827] text-[#111827] hover:bg-gray-50 py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white">
+                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                            <span x-text="currentInStock ? 'Add to Cart' : 'Out of Stock'"></span>
                         </button>
-                        <button @click="buyNow()"
-                            class="flex-1 bg-[#111827] hover:bg-black text-white py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-gray-300">
-                            <i data-lucide="zap" class="w-5 h-5 fill-current"></i> Buy Now
+                        <button type="button" @click="buyNow()"
+                            :disabled="!currentInStock"
+                            class="flex-1 bg-[#111827] hover:bg-black text-white py-4 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all shadow-xl shadow-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#111827]">
+                            <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+                            <span x-text="currentInStock ? 'Buy Now' : 'Unavailable'"></span>
                         </button>
                     </div>
                 <?php endif; ?>
@@ -643,59 +691,223 @@
                 // ── Inquiry state ──
                 showInquiry: false,
 
-                // ── SKU state ──
+                // ── Variant state ──
+                // selectedAttrs[attrName] = { id: attrValueId, value: 'Red' }
                 selectedAttrs: {},
-                currentPrice: <?php echo e($minPrice); ?>,
-                currentMrp: <?php echo e($firstSku?->mrp ?? 0); ?>,
-                currentSkuId: <?php echo e($firstSku?->id ?? 'null'); ?>,
+                currentPrice: <?php echo e($initialSku['price'] ?? $minPrice); ?>,
+                currentMrp: <?php echo e($initialSku['mrp'] ?? ($firstSku?->mrp ?? 0)); ?>,
+                currentSkuId: <?php echo e($initialSku['id'] ?? ($firstSku?->id ?? 'null')); ?>,
+                currentInStock: <?php echo e(isset($initialSku) ? ($initialSku['in_stock'] ? 'true' : 'false') : ($inStock ? 'true' : 'false')); ?>,
                 qty: 1,
 
-                // ── SKU map from PHP ──
-                skuMap: <?php echo json_encode($skuMap, 15, 512) ?>,
+                // ── Full SKU list from server (see @php block at top) ──
+                // Shape: [{ id, price, mrp, in_stock, values: { attrName: attrValueId } }, ...]
+                skus: <?php echo json_encode($skuList, 15, 512) ?>,
+
+                // Attribute display order — we always want the same order in the combinator
+                // regardless of JS object key insertion quirks.
+                attrOrder: <?php echo json_encode($attributes->keys()->values(), 15, 512) ?>,
 
                 init() {
-                    // Pre-select first value per attribute group
-                    <?php $__currentLoopData = $attributes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $attrName => $values): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <?php if($values->isNotEmpty()): ?>
-                            this.selectAttr(
-                                '<?php echo e($attrName); ?>',
-                                <?php echo e($values->first()['id']); ?>,
-                                '<?php echo e(addslashes($values->first()['value'])); ?>'
-                            );
-                        <?php endif; ?>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    // Seed selectedAttrs from the initial SKU (first in-stock, else first).
+                    // Falls back to per-attribute first value if the product has no SKU
+                    // linkage at all (legacy/edge data).
+                    const initial = <?php echo json_encode($initialSku, 15, 512) ?>;
+
+                    if (initial && initial.values) {
+                        for (const [attrName, attrValueId] of Object.entries(initial.values)) {
+                            const display = this.lookupValueName(attrName, attrValueId);
+                            this.selectedAttrs[attrName] = { id: attrValueId, value: display };
+                        }
+                    } else {
+                        <?php $__currentLoopData = $attributes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $attrName => $values): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if($values->isNotEmpty()): ?>
+                                this.selectedAttrs['<?php echo e($attrName); ?>'] = {
+                                    id: <?php echo e($values->first()['id']); ?>,
+                                    value: '<?php echo e(addslashes($values->first()['value'])); ?>',
+                                };
+                            <?php endif; ?>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    }
+
+                    this.updateMatch();
 
                     console.log('[Product] Initialized', {
                         product: '<?php echo e($product->slug); ?>',
-                        skus: <?php echo e($product->skus->count()); ?>,
                         type: '<?php echo e($product->type); ?>',
-                        skuMap: this.skuMap,
+                        skus: this.skus.length,
+                        initial: this.currentSkuId,
+                        inStock: this.currentInStock,
                     });
                 },
 
-                selectAttr(attrName, id, value) {
-                    this.selectedAttrs[attrName] = {
-                        id,
-                        value
-                    };
-                    this.updatePrice();
-                    console.log('[Product] Attr selected:', attrName, value);
+                /**
+                 * Resolve a human-readable value name for a given (attr, valueId) pair.
+                 * Walks the SKU list because that's the source of truth we have on the client.
+                 */
+                lookupValueName(attrName, attrValueId) {
+                    for (const sku of this.skus) {
+                        if (sku.values[attrName] === attrValueId) {
+                            // We don't ship the value labels in the JSON payload (keeps it slim);
+                            // instead we read the label from the DOM button on first render.
+                            const btn = document.querySelector(
+                                `[data-attr="${attrName}"][data-value-id="${attrValueId}"]`
+                            );
+                            if (btn) return btn.dataset.valueLabel || btn.innerText.trim();
+                        }
+                    }
+                    return '';
                 },
 
-                updatePrice() {
-                    // Build lookup key from selected attribute value IDs sorted
-                    const ids = Object.values(this.selectedAttrs)
-                        .map(a => a.id)
-                        .sort((a, b) => a - b)
-                        .join('_');
-
-                    const sku = this.skuMap[ids];
-                    if (sku) {
-                        this.currentPrice = sku.price;
-                        this.currentMrp = sku.mrp;
-                        this.currentSkuId = sku.id;
-                        console.log('[Product] SKU matched:', ids, sku);
+                /**
+                 * Handle a click on an attribute option.
+                 * — Ignore clicks on options that aren't a valid combination with the current state.
+                 * — After setting the clicked attr, auto-heal OTHER attrs if needed so the
+                 *   final combination resolves to a real SKU (prefer in-stock).
+                 */
+                selectAttr(attrName, id, value) {
+                    if (!this.isOptionValid(attrName, id)) {
+                        console.warn('[Product] Ignored click on invalid option:', attrName, id);
+                        return;
                     }
+
+                    this.selectedAttrs[attrName] = { id, value };
+
+                    // If the new combination doesn't fully match a SKU, fix up the other attrs.
+                    if (!this.findMatchingSku(this.selectedAttrs)) {
+                        this.healOtherAttrs(attrName);
+                    }
+
+                    this.updateMatch();
+                    console.log('[Product] Attr selected:', attrName, value, '→ sku:', this.currentSkuId);
+                },
+
+                /**
+                 * Recompute the matched SKU (price/mrp/id/stock) from selectedAttrs.
+                 * If nothing matches (shouldn't happen after heal), fall back gracefully.
+                 */
+                updateMatch() {
+                    const match = this.findMatchingSku(this.selectedAttrs);
+
+                    if (match) {
+                        this.currentPrice = match.price;
+                        this.currentMrp = match.mrp;
+                        this.currentSkuId = match.id;
+                        this.currentInStock = !!match.in_stock;
+                        return;
+                    }
+
+                    // No full match — keep previous price but mark out of stock to be safe.
+                    // Disables cart actions so we never sell a non-existent variant.
+                    console.warn('[Product] No SKU matched selectedAttrs — buttons disabled.', this.selectedAttrs);
+                    this.currentSkuId = null;
+                    this.currentInStock = false;
+                },
+
+                /**
+                 * Find a SKU whose `values` map equals the given attribute selection.
+                 * All selected attrs must match; unmatched attrs mean no full match.
+                 */
+                findMatchingSku(attrs) {
+                    const names = this.attrOrder.length ? this.attrOrder : Object.keys(attrs);
+                    const preferInStock = this.skus.filter(s => s.in_stock);
+                    const pools = [preferInStock, this.skus]; // prefer in-stock, fall back to any
+
+                    for (const pool of pools) {
+                        for (const sku of pool) {
+                            let ok = true;
+                            for (const n of names) {
+                                if (!(n in attrs)) { ok = false; break; }
+                                if (sku.values[n] !== attrs[n].id) { ok = false; break; }
+                            }
+                            if (ok) return sku;
+                        }
+                    }
+                    return null;
+                },
+
+                /**
+                 * After the user picks (attrName → id), adjust OTHER attribute selections
+                 * so the combination resolves to a real SKU. Prefers in-stock matches.
+                 */
+                healOtherAttrs(lockedAttr) {
+                    // Candidate SKUs that satisfy the locked attribute.
+                    const lockedId = this.selectedAttrs[lockedAttr]?.id;
+                    const candidates = this.skus.filter(s => s.values[lockedAttr] === lockedId);
+                    if (candidates.length === 0) return;
+
+                    // Sort: in-stock first.
+                    candidates.sort((a, b) => (b.in_stock === true) - (a.in_stock === true));
+
+                    // Pick the candidate whose values differ LEAST from current selection.
+                    const current = this.selectedAttrs;
+                    let best = candidates[0];
+                    let bestDiff = Infinity;
+                    for (const sku of candidates) {
+                        let diff = 0;
+                        for (const n of this.attrOrder) {
+                            if (n === lockedAttr) continue;
+                            if (current[n] && sku.values[n] !== current[n].id) diff++;
+                        }
+                        if (diff < bestDiff) {
+                            best = sku;
+                            bestDiff = diff;
+                            if (diff === 0) break;
+                        }
+                    }
+
+                    for (const [n, vid] of Object.entries(best.values)) {
+                        if (n === lockedAttr) continue;
+                        const label = this.lookupValueName(n, vid);
+                        this.selectedAttrs[n] = { id: vid, value: label };
+                    }
+                },
+
+                /**
+                 * Partial-match validity check.
+                 *
+                 * An option (attrName=valueId) is VALID if it appears in at least one SKU
+                 * in the product's SKU list.  We intentionally do NOT filter by the other
+                 * currently-selected attributes here because that causes "diagonal" combos
+                 * (e.g. Small+Plastic / Large+Ceramic) to disable perfectly reachable
+                 * options.  `healOtherAttrs()` already reconciles the other attrs after
+                 * the user makes a selection, so the only thing we need to confirm at
+                 * click-guard time is that the value actually exists somewhere.
+                 *
+                 * An option is DISABLED (returns false) only when it does not exist in
+                 * any SKU at all — i.e. it was probably removed from the catalogue after
+                 * the page was last rebuilt.
+                 */
+                isOptionValid(attrName, valueId) {
+                    return this.skus.some(sku => sku.values[attrName] === valueId);
+                },
+
+                /**
+                 * True when the option exists but every SKU that has it is out of stock.
+                 * Used for the "line-through" / strikethrough visual — the button remains
+                 * clickable (healOtherAttrs will still resolve to the best available match)
+                 * but the user can see upfront that stock is limited.
+                 *
+                 * We also narrow by the OTHER currently-selected attrs so the OOS indicator
+                 * reflects the actual combination the user is building towards, not the
+                 * aggregate across all size/color combinations in the catalogue.
+                 * If no narrowed match exists we fall back to the full-SKU aggregate.
+                 */
+                isOptionOutOfStock(attrName, valueId) {
+                    // Narrow: SKUs with this value that also satisfy other selected attrs
+                    const others = Object.entries(this.selectedAttrs).filter(([n]) => n !== attrName);
+                    let pool = this.skus.filter(sku => {
+                        if (sku.values[attrName] !== valueId) return false;
+                        return others.length === 0
+                            || others.some(([n, sel]) => sku.values[n] === sel.id);
+                    });
+
+                    // Fallback: no narrowed match → check across all SKUs with this value
+                    if (!pool.length) {
+                        pool = this.skus.filter(sku => sku.values[attrName] === valueId);
+                    }
+
+                    return pool.length > 0 && pool.every(sku => !sku.in_stock);
                 },
 
                 playYoutube(ytId) {
@@ -707,6 +919,10 @@
                 addToCart() {
                     if (!this.currentSkuId) {
                         BizAlert?.toast('Please select a variant', 'error') || alert('Please select a variant');
+                        return;
+                    }
+                    if (!this.currentInStock) {
+                        BizAlert?.toast('This variant is out of stock', 'error') || alert('This variant is out of stock');
                         return;
                     }
 
@@ -733,6 +949,10 @@
                 buyNow() {
                     if (!this.currentSkuId) {
                         alert('Please select a variant');
+                        return;
+                    }
+                    if (!this.currentInStock) {
+                        alert('This variant is out of stock');
                         return;
                     }
 

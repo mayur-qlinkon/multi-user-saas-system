@@ -29,6 +29,14 @@ return new class extends Migration
             $table->decimal('round_off', 8, 2)->default(0);
 
             $table->enum('payment_mode', ['bank_transfer', 'cash', 'cheque', 'upi'])->nullable();
+            $table->foreignId('payment_method_id')
+                ->nullable()
+                ->constrained('payment_methods')
+                ->nullOnDelete();
+
+            $table->string('payment_method_name', 100)
+                ->nullable()                
+                ->comment('Snapshot of PaymentMethod->label at the time of payment');
             $table->string('payment_reference', 100)->nullable();
             $table->date('payment_date')->nullable();
 

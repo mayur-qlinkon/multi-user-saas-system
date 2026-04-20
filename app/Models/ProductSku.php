@@ -27,11 +27,13 @@ class ProductSku extends Model
         'tax_type',
         'stock_alert',
         'is_active',
+        'total_sold',
         // Removed expiry_date (it belongs in product_batches now)
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'total_sold' => 'integer',
     ];
 
     public function product(): BelongsTo
@@ -84,6 +86,27 @@ class ProductSku extends Model
     public function getDisplayBarcodeAttribute(): string
     {
         return ! empty($this->barcode) ? $this->barcode : $this->sku;
+    }
+
+    /**
+     * Quick "is this variant purchasable right now" flag for the storefront.
+     *
+     * Uses the loaded `stocks` relation when present (preferred — avoids N+1
+     * on variant grids) and falls back to a single SUM query otherwise.
+     * Returns false for soft-inactive SKUs regardless of stock qty so we
+     * never surface a disabled variant as "in stock".
+     */
+    public function getIsInStockAttribute(): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        $qty = $this->relationLoaded('stocks')
+            ? (int) $this->stocks->sum('qty')
+            : (int) $this->stocks()->sum('qty');
+
+        return $qty > 0;
     }
 
     /**

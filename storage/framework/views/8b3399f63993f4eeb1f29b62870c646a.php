@@ -85,7 +85,14 @@
                 </div>
 
                 
-                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-72">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                        </div>
+                        <input type="text" x-model="searchQuery" placeholder="Search modules..."
+                            class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all">
+                    </div>
                     <label class="flex items-center gap-3 cursor-pointer w-max">
                         <span class="text-[12px] font-bold text-gray-700 uppercase tracking-wider">Permissions <span
                                 class="text-red-500">*</span></span>
@@ -113,8 +120,8 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
                             <?php $__currentLoopData = $matrix; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $module => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <tr class="hover:bg-gray-50/50 transition-colors">
-
+                                <tr class="hover:bg-gray-50/50 transition-colors" 
+                                    x-show="matchesSearch('<?php echo e(str_replace('_', ' ', $module ?: 'General')); ?>')">
                                     
                                     <td class="px-6 py-4 text-[13px] font-medium text-gray-700 capitalize">
                                         <?php echo e(str_replace('_', ' ', $module ?: 'General')); ?>
@@ -212,6 +219,11 @@
             return {
                 selected: oldSelected.map(Number),
                 matrix: matrixData,
+                searchQuery: '',
+                matchesSearch(moduleName) {
+                    if (this.searchQuery.trim() === '') return true;
+                    return moduleName.toLowerCase().includes(this.searchQuery.toLowerCase());
+                },
 
                 get isAllSelected() {
                     let allIds = Object.values(this.matrix).flatMap(m => m.all_ids);

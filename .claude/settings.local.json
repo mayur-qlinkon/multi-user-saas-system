@@ -53,7 +53,11 @@
       "Bash(git checkout:*)",
       "Bash(php -l app/Services/Import/ClientImporter.php)",
       "Bash(php -l app/Services/Import/SupplierImporter.php)",
-      "Bash(php -l app/Http/Controllers/Admin/BulkImportController.php)"
+      "Bash(php -l app/Http/Controllers/Admin/BulkImportController.php)",
+      "Bash(php -l app/Services/InvoiceService.php)",
+      "Bash(php -l app/Services/InvoiceReturnService.php)",
+      "Bash(php -l app/Models/StorefrontSection.php)",
+      "Bash(php -l app/Http/Controllers/Admin/PosController.php)"
     ]
   }
 }

@@ -571,8 +571,8 @@
             <div class="p-6" x-show="!importId">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 class="text-[15px] font-black text-gray-800">Import Product SKUs</h2>
-                        <p class="text-xs text-gray-500 mt-0.5">Upload a CSV with columns: <code class="bg-gray-100 px-1 py-0.5 rounded text-[11px]">product_slug, sku, price, cost, mrp, barcode, stock_alert</code></p>
+                        <h2 class="text-[15px] font-black text-gray-800">Import Product Variants (SKUs)</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Required: <code class="bg-gray-100 px-1 py-0.5 rounded text-[11px]">product_slug, price, cost</code> + at least one <code class="bg-gray-100 px-1 py-0.5 rounded text-[11px]">attribute_1_name, attribute_1_value</code> pair. Optional: <code class="bg-gray-100 px-1 py-0.5 rounded text-[11px]">sku, barcode, mrp, stock_alert</code> and up to 5 attribute pairs.</p>
                     </div>
                     <a href="{{ route('admin.bulk-import.sample', 'skus') }}"
                         target="_blank"
@@ -583,7 +583,7 @@
 
                 <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-[12px] text-amber-800 mb-4 flex items-center gap-2">
                     <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
-                    <span><strong>Important:</strong> Products must exist before importing SKUs. Each SKU is linked via <code class="font-mono">product_slug</code>.</span>
+                    <span><strong>Important:</strong> The product (linked by <code class="font-mono">product_slug</code>) must already exist and be of type <strong>Variable</strong>. Attributes + values will be auto-created if missing. Duplicate variant combinations are rejected. Max 100 variants per product.</span>
                 </div>
 
                 @include('admin.bulk-import._import-mode-selector')

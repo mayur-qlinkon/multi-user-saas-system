@@ -16,6 +16,7 @@ use App\Models\State;
 use App\Models\Unit;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
+use App\Services\InvoiceService;
 use App\Services\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
@@ -130,8 +131,7 @@ class PosController extends Controller
      */
     public function fetchProducts(Request $request)
     {
-        $companyId = Auth::user()->company_id;
-        $perPage = min(50, max(1, (int) $request->query('per_page', 15)));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 50)));
         $search = trim($request->query('search', ''));
         $categoryId = (int) $request->query('category_id', 0);
         $warehouseId = (int) $request->query('warehouse_id', 1);
@@ -146,8 +146,7 @@ class PosController extends Controller
                 $q->where('is_primary', true)->where('media_type', 'image');
             },
         ])
-            ->where('company_id', $companyId)
-            ->where('is_active', true)
+            ->where('product_skus.is_active', true)
             ->whereHas('product', function ($q) {
                 $q->where('is_active', true);
             });
@@ -170,7 +169,13 @@ class PosController extends Controller
             });
         }
 
-        $paginator = $query->latest('id')->paginate($perPage);
+        // Join products table for alphabetical ordering only (no scope interference)
+        $paginator = $query
+            ->join('products as _pos_p', '_pos_p.id', '=', 'product_skus.product_id')
+            ->select('product_skus.*')
+            ->orderBy('_pos_p.name', 'asc')
+            ->orderBy('product_skus.sku', 'asc')
+            ->paginate($perPage);
 
         $formattedData = $paginator->getCollection()->map(function ($sku) use ($warehouseId) {
             $variantName = $sku->skuValues->map(fn ($val) => $val->attributeValue->value)->implode(' / ');
@@ -501,6 +506,12 @@ class PosController extends Controller
                     'round_off' => $roundOff,
                     'grand_total' => $grandTotal,
                 ]);
+
+                // Best-seller counters — POS sales are always finalized on creation
+                InvoiceService::applySaleCounters(
+                    $invoice->items()->get(['product_id', 'product_sku_id', 'quantity'])->toArray(),
+                    1
+                );
 
                 // F. Record the Payment
                 $amountReceived = (float) $request->amount_received;

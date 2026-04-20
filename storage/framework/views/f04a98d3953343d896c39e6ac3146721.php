@@ -64,8 +64,8 @@
             
             
             <a href="<?php echo e(route('storefront.index', $company->slug)); ?>"
-                class="snap-start flex-shrink-0 px-5 py-2 rounded-xl text-[13px] font-bold transition-all border-2
-                <?php echo e(!request('category') 
+                class="snap-start flex-shrink-0 whitespace-nowrap px-5 py-2 rounded-xl text-[13px] font-bold transition-all border-2
+                <?php echo e(!request()->route('categorySlug') 
                     ? 'bg-slate-900 border-slate-900 text-white shadow-md' 
                     : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'); ?>">
                 All
@@ -77,7 +77,7 @@
                     $isActive = request()->route('categorySlug') === $cat->slug; 
                 ?>
                 <a href="<?php echo e(route('storefront.category', ['slug' => $company->slug, 'categorySlug' => $cat->slug])); ?>"
-                    class="snap-start flex-shrink-0 px-5 py-2 rounded-xl text-[13px] font-bold transition-all border-2
+                    class="snap-start flex-shrink-0 whitespace-nowrap px-5 py-2 rounded-xl text-[13px] font-bold transition-all border-2
                     <?php echo e($isActive 
                         ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
                         : 'bg-white border-gray-100 text-gray-600 hover:border-gray-200'); ?>">
@@ -97,14 +97,17 @@
                 <nav class="grid gap-2">
                     
                     <a href="<?php echo e(route('storefront.index', $company->slug)); ?>"
-                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-semibold transition-colors <?php echo e(!request('category') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-brand-100'); ?>">
+                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-semibold transition-colors <?php echo e(!request()->route('categorySlug') ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-brand-100'); ?>">
                         All Categories
                     </a>
 
                     
                     <?php $__currentLoopData = $navCategories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php 
+                            $isActive = request()->route('categorySlug') === $cat->slug; 
+                        ?>
                         <a href="<?php echo e(route('storefront.category', ['slug' => $company->slug, 'categorySlug' => $cat->slug])); ?>"
-                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-transparent text-[13px] transition-colors text-gray-700 hover:bg-gray-100 hover:text-gray-900 border-gray-100">
+                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-[13px] transition-colors <?php echo e($isActive ? 'bg-gray-100 text-gray-900 border-gray-200' : 'border-transparent text-gray-700 hover:bg-gray-50'); ?>">
                             <?php echo e($cat->name); ?>
 
                         </a>

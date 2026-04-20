@@ -69,7 +69,7 @@ class PermissionSeeder extends Seeder
             'office_locations' => ['view', 'update', 'generate_qr'],
             'leaves' => ['view', 'create', 'approve', 'reject', 'cancel'],
             'salary_components' => ['view', 'create', 'update', 'delete'],
-            'salary_slips' => ['view', 'generate', 'approve', 'mark_paid', 'download_pdf', 'delete'],
+            'salary_slips' => ['view', 'generate', 'edit', 'approve', 'mark_paid', 'download_pdf', 'delete'],
             'hrm_tasks' => ['view', 'create', 'update', 'delete', 'change_status', 'add_comment', 'add_attachment', 'download_attachment', 'delete_attachment'],
             'announcements' => ['view', 'create', 'update', 'delete', 'publish', 'duplicate'],
             'work_logs' => ['view', 'approve'],

@@ -29,7 +29,7 @@ class UserController extends Controller
         // Added 'store_id' to pass both the search text and the store dropdown to your service
         $filters = $request->only(['search', 'status', 'store_id']);
 
-        $users = $this->userService->getPaginatedUsers($companyId, $filters);
+        $users = $this->userService->getPaginatedUsers($companyId, $filters, 25);
         $roles = Role::where('company_id', $companyId)->orWhereNull('company_id')->get();
         $stores = Store::get();
 
@@ -48,7 +48,12 @@ class UserController extends Controller
 
         $companyId = Auth::user()->company_id;
 
-        $roles = Role::where('company_id', $companyId)->orWhereNull('company_id')->get();
+        $roles = Role::where(function ($query) use ($companyId) {
+            $query->where('company_id', $companyId)
+                ->orWhereNull('company_id');
+        })
+            ->where('slug', '!=', 'owner')
+            ->get();
         $stores = Store::where('company_id', $companyId)->get();
         $states = State::orderBy('name')->get();
 
@@ -116,7 +121,12 @@ class UserController extends Controller
         // Load existing relationships so the form can auto-select them
         $user->load(['roles', 'stores']);
 
-        $roles = Role::where('company_id', $companyId)->orWhereNull('company_id')->get();
+        $roles = Role::where(function ($query) use ($companyId) {
+            $query->where('company_id', $companyId)
+                ->orWhereNull('company_id');
+        })
+            ->where('slug', '!=', 'owner')
+            ->get();
         $stores = Store::where('company_id', $companyId)->get();
         $states = State::orderBy('name')->get();
 

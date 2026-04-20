@@ -188,6 +188,9 @@ class ProductController extends Controller
 
     public function duplicate(Product $product)
     {
+        if (! check_plan_limit('products')) {
+            return back()->with('error', 'You have reached your plan\'s Product limit. Please upgrade your subscription to add more products.');
+        }
         $newProduct = $this->productService->duplicateProduct($product);
 
         return redirect()

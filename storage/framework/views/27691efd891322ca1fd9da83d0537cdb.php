@@ -45,11 +45,24 @@
     $avatarColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
     $avatarBg = $avatarColors[abs(crc32($empName)) % 6];
     $months = [1=>'January',2=>'February',3=>'March',4=>'April',5=>'May',6=>'June',7=>'July',8=>'August',9=>'September',10=>'October',11=>'November',12=>'December'];
-    $earnings   = $salarySlip->items->where('type', 'earning');
-    $deductions = $salarySlip->items->where('type', 'deduction');
+    $isEditable = $salarySlip->isEditable();
+    $canEdit = $isEditable && has_permission('salary_slips.edit');
+
+    // Flat JSON payload for Alpine — kept in sort_order so UI mirrors DB row order.
+    $itemsJson = $salarySlip->items->map(fn ($i) => [
+        'id' => $i->id,
+        'type' => $i->type,
+        'component_name' => $i->component_name,
+        'amount' => (float) $i->amount,
+    ])->values();
 ?>
 
-<div class="pb-10 w-full" x-data="salarySlipShow()">
+<div class="pb-10 w-full"
+    x-data="salarySlipShow({
+        canEdit: <?php echo e($canEdit ? 'true' : 'false'); ?>,
+        items: <?php echo e($itemsJson->toJson()); ?>,
+        roundOff: <?php echo e((float) ($salarySlip->round_off ?? 0)); ?>,
+    })">
 
     
     <div class="detail-card">
@@ -130,6 +143,16 @@
     </div>
 
     
+    <div x-show="editing" x-cloak
+        class="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50">
+        <i data-lucide="pencil" class="w-4 h-4 text-amber-600"></i>
+        <p class="text-[12px] font-bold text-amber-800">
+            You are editing this slip. Changes apply only while it is still
+            <span class="font-extrabold">Draft</span> or <span class="font-extrabold">Generated</span>.
+        </p>
+    </div>
+
+    
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 
         
@@ -144,19 +167,44 @@
                         <tr>
                             <th>Component</th>
                             <th>Amount</th>
+                            <th x-show="editing" x-cloak style="width:40px"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php $__empty_1 = true; $__currentLoopData = $earnings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <tr>
-                            <td><?php echo e($item->component_name); ?></td>
-                            <td>₹<?php echo e(number_format($item->amount, 2)); ?></td>
-                        </tr>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <tr>
+                        <template x-for="(row, idx) in items" :key="row._uid">
+                            <tr x-show="row.type === 'earning'">
+                                <td>
+                                    <span x-show="!editing" x-text="row.component_name"></span>
+                                    <input x-show="editing" x-cloak type="text"
+                                        x-model="row.component_name"
+                                        class="w-full border border-gray-200 rounded-md px-2 py-1 text-[13px] focus:border-green-500 focus:outline-none"
+                                        placeholder="Component name">
+                                </td>
+                                <td>
+                                    <span x-show="!editing">₹<span x-text="formatAmount(row.amount)"></span></span>
+                                    <input x-show="editing" x-cloak type="number" min="0" step="0.01"
+                                        x-model.number="row.amount"
+                                        class="w-32 border border-gray-200 rounded-md px-2 py-1 text-[13px] text-right focus:border-green-500 focus:outline-none">
+                                </td>
+                                <td x-show="editing" x-cloak>
+                                    <button type="button" @click="removeItem(idx)"
+                                        class="text-gray-400 hover:text-red-500 transition-colors">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="!editing && earningsCount() === 0">
                             <td colspan="2" class="text-center text-gray-400 py-6 text-[12px]">No earnings components</td>
                         </tr>
-                        <?php endif; ?>
+                        <tr x-show="editing" x-cloak>
+                            <td colspan="3" class="!text-left">
+                                <button type="button" @click="addRow('earning')"
+                                    class="inline-flex items-center gap-1.5 text-[12px] font-bold text-green-600 hover:text-green-700">
+                                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Earning
+                                </button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -174,19 +222,44 @@
                         <tr>
                             <th>Component</th>
                             <th>Amount</th>
+                            <th x-show="editing" x-cloak style="width:40px"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php $__empty_1 = true; $__currentLoopData = $deductions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <tr>
-                            <td><?php echo e($item->component_name); ?></td>
-                            <td class="!text-red-600">₹<?php echo e(number_format($item->amount, 2)); ?></td>
-                        </tr>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <tr>
+                        <template x-for="(row, idx) in items" :key="row._uid">
+                            <tr x-show="row.type === 'deduction'">
+                                <td>
+                                    <span x-show="!editing" x-text="row.component_name"></span>
+                                    <input x-show="editing" x-cloak type="text"
+                                        x-model="row.component_name"
+                                        class="w-full border border-gray-200 rounded-md px-2 py-1 text-[13px] focus:border-red-500 focus:outline-none"
+                                        placeholder="Component name">
+                                </td>
+                                <td class="!text-red-600">
+                                    <span x-show="!editing">₹<span x-text="formatAmount(row.amount)"></span></span>
+                                    <input x-show="editing" x-cloak type="number" min="0" step="0.01"
+                                        x-model.number="row.amount"
+                                        class="w-32 border border-gray-200 rounded-md px-2 py-1 text-[13px] text-right focus:border-red-500 focus:outline-none">
+                                </td>
+                                <td x-show="editing" x-cloak>
+                                    <button type="button" @click="removeItem(idx)"
+                                        class="text-gray-400 hover:text-red-500 transition-colors">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                        <tr x-show="!editing && deductionsCount() === 0">
                             <td colspan="2" class="text-center text-gray-400 py-6 text-[12px]">No deductions</td>
                         </tr>
-                        <?php endif; ?>
+                        <tr x-show="editing" x-cloak>
+                            <td colspan="3" class="!text-left">
+                                <button type="button" @click="addRow('deduction')"
+                                    class="inline-flex items-center gap-1.5 text-[12px] font-bold text-red-600 hover:text-red-700">
+                                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Deduction
+                                </button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -207,19 +280,23 @@
                 <div class="card-body">
                     <div class="info-row">
                         <span class="info-label">Gross Earnings</span>
-                        <span class="info-value">₹<?php echo e(number_format($salarySlip->gross_salary, 2)); ?></span>
+                        <span class="info-value">₹<span x-text="formatAmount(grossEarnings())"></span></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Total Deductions</span>
-                        <span class="info-value text-red-600">— ₹<?php echo e(number_format($salarySlip->total_deductions, 2)); ?></span>
+                        <span class="info-value text-red-600">— ₹<span x-text="formatAmount(totalDeductions())"></span></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Round Off</span>
-                        <span class="info-value text-gray-500"><?php echo e($salarySlip->round_off >= 0 ? '+' : ''); ?>₹<?php echo e(number_format($salarySlip->round_off ?? 0, 2)); ?></span>
+                        <span x-show="!editing" class="info-value text-gray-500">
+                            <span x-text="roundOff >= 0 ? '+' : ''"></span>₹<span x-text="formatAmount(roundOff)"></span>
+                        </span>
+                        <input x-show="editing" x-cloak type="number" step="0.01" x-model.number="roundOff"
+                            class="w-32 border border-gray-200 rounded-md px-2 py-1 text-[13px] text-right focus:border-purple-500 focus:outline-none">
                     </div>
                     <div class="mt-4 bg-gray-50 rounded-xl px-5 py-4 flex items-center justify-between">
                         <p class="text-[12px] font-bold text-gray-500 uppercase tracking-widest">Net Salary</p>
-                        <p class="text-[26px] font-black text-gray-900">₹<?php echo e(number_format($salarySlip->net_salary, 2)); ?></p>
+                        <p class="text-[26px] font-black text-gray-900">₹<span x-text="formatAmount(netSalary())"></span></p>
                     </div>
                 </div>
             </div>
@@ -263,10 +340,10 @@
                         <span class="info-value"><?php echo e($salarySlip->approved_at->format('d M Y, h:i A')); ?></span>
                     </div>
                     <?php endif; ?>
-                    <?php if($salarySlip->payment_mode): ?>
+                    <?php if($salarySlip->payment_label): ?>
                     <div class="info-row">
-                        <span class="info-label">Payment Mode</span>
-                        <span class="info-value capitalize"><?php echo e(str_replace('_', ' ', $salarySlip->payment_mode)); ?></span>
+                        <span class="info-label">Payment Method</span>
+                        <span class="info-value capitalize"><?php echo e($salarySlip->payment_label); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if($salarySlip->payment_reference): ?>
@@ -285,7 +362,7 @@
             </div>
 
             
-            <?php if(in_array($salarySlip->status, ['generated', 'approved'])): ?>
+            <?php if(in_array($salarySlip->status, ['draft', 'generated', 'approved'])): ?>
             <div class="detail-card">
                 <div class="card-header">
                     <div class="card-icon bg-green-50"><i data-lucide="zap" class="w-4 h-4 text-green-500"></i></div>
@@ -294,8 +371,29 @@
                 <div class="card-body">
                     <div class="flex flex-wrap gap-3">
 
+                        <?php if($canEdit): ?>
+                        <button x-show="!editing" @click="startEdit()" :disabled="saving"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                            style="background: #6366f1">
+                            <i data-lucide="pencil" class="w-4 h-4"></i> Edit Slip
+                        </button>
+
+                        <button x-show="editing" x-cloak @click="saveEdit()" :disabled="saving"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                            style="background: #10b981">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span x-show="!saving">Save Changes</span>
+                            <span x-show="saving">Saving...</span>
+                        </button>
+
+                        <button x-show="editing" x-cloak @click="cancelEdit()" :disabled="saving" type="button"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50">
+                            <i data-lucide="x" class="w-4 h-4"></i> Cancel
+                        </button>
+                        <?php endif; ?>
+
                         <?php if($salarySlip->status === 'generated' && has_permission('salary_slips.approve')): ?>
-                        <button @click="approveSlip()" :disabled="saving"
+                        <button x-show="!editing" @click="approveSlip()" :disabled="saving"
                             class="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
                             style="background: #f59e0b">
                             <i data-lucide="check-circle" class="w-4 h-4"></i> Approve Slip
@@ -303,7 +401,7 @@
                         <?php endif; ?>
 
                         <?php if($salarySlip->status === 'approved'&& has_permission('salary_slips.mark_paid')): ?>
-                        <button @click="payModalOpen = true" :disabled="saving"
+                        <button x-show="!editing" @click="payModalOpen = true" :disabled="saving"
                             class="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-bold text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
                             style="background: #10b981">
                             <i data-lucide="banknote" class="w-4 h-4"></i> Mark as Paid
@@ -385,15 +483,27 @@
             <form @submit.prevent="submitPay()">
                 <div class="p-6 space-y-4">
                     <div>
-                        <label class="field-label">Payment Mode <span class="text-red-400">*</span></label>
-                        <select x-model="payForm.payment_mode" class="field-input" required>
-                            <option value="">Select Mode</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="cash">Cash</option>
-                            <option value="cheque">Cheque</option>
-                            <option value="upi">UPI</option>
-                        </select>
-                        <p class="field-error" x-show="payErrors.payment_mode" x-text="payErrors.payment_mode"></p>
+                        <?php if (isset($component)) { $__componentOriginal6074b4137b8006ef4d1b8340d0976388 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal6074b4137b8006ef4d1b8340d0976388 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.payment-method-select','data' => ['name' => 'payment_method_id','selected' => null,'label' => 'Payment Method','required' => true,'xModel' => 'payForm.payment_method_id']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('payment-method-select'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'payment_method_id','selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(null),'label' => 'Payment Method','required' => true,'xModel' => 'payForm.payment_method_id']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal6074b4137b8006ef4d1b8340d0976388)): ?>
+<?php $attributes = $__attributesOriginal6074b4137b8006ef4d1b8340d0976388; ?>
+<?php unset($__attributesOriginal6074b4137b8006ef4d1b8340d0976388); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal6074b4137b8006ef4d1b8340d0976388)): ?>
+<?php $component = $__componentOriginal6074b4137b8006ef4d1b8340d0976388; ?>
+<?php unset($__componentOriginal6074b4137b8006ef4d1b8340d0976388); ?>
+<?php endif; ?>
+                        <p class="text-xs text-red-500 mt-1" x-show="payErrors.payment_method_id" x-text="payErrors.payment_method_id"></p>
                     </div>
                     <div>
                         <label class="field-label">Payment Reference</label>
@@ -433,14 +543,118 @@
 
 <?php $__env->startPush('scripts'); ?>
 <script>
-window.salarySlipShow = function() {
+window.salarySlipShow = function(opts = {}) {
+    // Tag every row with a stable _uid so Alpine's x-for key survives edits/reorders.
+    let _uidSeq = 0;
+    const seed = (opts.items || []).map(r => ({ ...r, _uid: ++_uidSeq }));
+
     return {
         saving: false,
         payModalOpen: false,
         payErrors: {},
-        payForm: { payment_mode: '', payment_reference: '', payment_date: '' },
+        payForm: { payment_method_id: '', payment_reference: '', payment_date: '' },
 
-        init() { this.$nextTick(() => { if (window.lucide) lucide.createIcons(); }); },
+        // ── Edit mode state ──
+        canEdit: !!opts.canEdit,
+        editing: false,
+        items: seed,
+        roundOff: Number(opts.roundOff ?? 0),
+        _originalSnapshot: null,
+
+        init() {
+            this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            // Re-render icons whenever edit mode toggles (trash, pencil, etc.)
+            this.$watch('editing', () => {
+                this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            });
+        },
+
+        // ── Computed ──
+        formatAmount(n) {
+            const v = Number(n || 0);
+            return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+        earningsCount() { return this.items.filter(r => r.type === 'earning').length; },
+        deductionsCount() { return this.items.filter(r => r.type === 'deduction').length; },
+        grossEarnings() {
+            return this.items.filter(r => r.type === 'earning').reduce((s, r) => s + Number(r.amount || 0), 0);
+        },
+        totalDeductions() {
+            return this.items.filter(r => r.type === 'deduction').reduce((s, r) => s + Number(r.amount || 0), 0);
+        },
+        netSalary() {
+            return this.grossEarnings() - this.totalDeductions() + Number(this.roundOff || 0);
+        },
+
+        // ── Edit actions ──
+        startEdit() {
+            if (!this.canEdit) return;
+            this._originalSnapshot = JSON.stringify({ items: this.items, roundOff: this.roundOff });
+            this.editing = true;
+        },
+        cancelEdit() {
+            if (this._originalSnapshot) {
+                const s = JSON.parse(this._originalSnapshot);
+                this.items = s.items;
+                this.roundOff = s.roundOff;
+            }
+            this.editing = false;
+        },
+        addRow(type) {
+            this.items.push({
+                id: null,
+                type: type,
+                component_name: '',
+                amount: 0,
+                _uid: ++_uidSeq,
+            });
+        },
+        removeItem(idx) {
+            this.items.splice(idx, 1);
+        },
+        async saveEdit() {
+            // Client-side guard: names must be non-empty, amounts non-negative.
+            for (const r of this.items) {
+                if (!r.component_name || !r.component_name.trim()) {
+                    BizAlert.toast('Every row needs a component name.', 'error');
+                    return;
+                }
+                if (Number(r.amount) < 0 || isNaN(Number(r.amount))) {
+                    BizAlert.toast('Amounts must be zero or positive.', 'error');
+                    return;
+                }
+            }
+            if (this.items.length === 0) {
+                BizAlert.toast('A salary slip must have at least one row.', 'error');
+                return;
+            }
+
+            this.saving = true;
+            try {
+                const payload = {
+                    items: this.items.map(r => ({
+                        id: r.id,
+                        component_name: r.component_name,
+                        type: r.type,
+                        amount: Number(r.amount || 0),
+                    })),
+                    round_off: Number(this.roundOff || 0),
+                };
+                const resp = await fetch('<?php echo e(route("admin.hrm.salary-slips.update", $salarySlip)); ?>', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const data = await resp.json();
+                if (!resp.ok) { BizAlert.toast(data.message || 'Error', 'error'); return; }
+                BizAlert.toast(data.message, 'success');
+                setTimeout(() => window.location.reload(), 600);
+            } catch(e) { BizAlert.toast('Network error', 'error'); } finally { this.saving = false; }
+        },
 
         async approveSlip() {
             const result = await BizAlert.confirm('Approve Salary Slip', 'Are you sure you want to approve this salary slip?', 'Approve');

@@ -27,6 +27,8 @@ return new class extends Migration
             $table->decimal('order_tax', 5, 2)->default(0);
             $table->enum('tax_type', ['inclusive', 'exclusive'])->default('exclusive');
             $table->integer('stock_alert')->default(0);
+            $table->unsignedInteger('total_sold')->default(0);
+            $table->index(['product_id', 'total_sold']);
 
             $table->boolean('is_active')->default(true);
             $table->timestamps();

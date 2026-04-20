@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
- // The Iron Wall
+// The Iron Wall
 
 class StorefrontSection extends Model
 {
@@ -22,6 +22,7 @@ class StorefrontSection extends Model
     protected $fillable = [
         'company_id',
         'title',
+        'admin_label',
         'subtitle',
         'type',
         'category_id',
@@ -284,30 +285,41 @@ class StorefrontSection extends Model
 
     /**
      * Resolved "View All" URL.
-     * Falls back to category URL if type is category and URL not set.
+     * Intentionally restricted to category sections only.
+     * Featured / new_arrivals / best_sellers / manual / banner / custom_html
+     * have no destination page and should hide the button.
      */
     public function getResolvedViewAllUrlAttribute(): ?string
     {
+        if ($this->type !== 'category' || ! $this->category) {
+            return null;
+        }
+
         if ($this->view_all_url) {
             return $this->view_all_url;
         }
 
-        if ($this->type === 'category' && $this->category) {
-            return route('storefront.category', [
-                'slug' => $this->company->slug ?? '',
-                'categorySlug' => $this->category->slug,
-            ]);
+        return route('storefront.category', [
+            'slug' => $this->company->slug ?? '',
+            'categorySlug' => $this->category->slug,
+        ]);
+    }
+
+    /**
+     * Admin-facing label used in listings.
+     * Falls back to storefront title, then a friendly type-based label.
+     */
+    public function getDisplayAdminLabelAttribute(): string
+    {
+        if (! empty($this->admin_label)) {
+            return $this->admin_label;
         }
 
-        if ($this->type === 'new_arrivals') {
-            return route('storefront.index', ['slug' => $this->company->slug ?? '']);
+        if (! empty($this->title)) {
+            return $this->title;
         }
 
-        if ($this->type === 'featured') {
-            return route('storefront.index', ['slug' => $this->company->slug ?? '']);
-        }
-
-        return null;
+        return 'Untitled '.(self::TYPE_LABELS[$this->type] ?? ucfirst((string) $this->type)).' Section';
     }
 
     // ════════════════════════════════════════════════════
@@ -355,6 +367,8 @@ class StorefrontSection extends Model
                 ->where('products.is_active', true)
                 ->whereNull('products.deleted_at')
                 ->with(['media', 'skus'])
+                ->orderBy('products.total_sold', 'desc')
+                ->orderBy('products.created_at', 'desc')
                 ->limit($limit)
                 ->get(),
             'manual' => $this->resolveManual($limit),

@@ -396,7 +396,7 @@
         {{-- ── Page Header ── --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Storefront Sections</h1>
+                {{-- <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Storefront Sections</h1> --}}
                 <p class="text-sm text-gray-400 font-medium mt-0.5">
                     Drag to reorder · Toggle visibility · Build your homepage layout
                 </p>
@@ -528,10 +528,12 @@
                                 </div>
                             </div>
 
-                            {{-- Title ── --}}
+                            {{-- Title (admin-only label, falls back to storefront title) ── --}}
                             <div class="mb-1">
-                                <p class="text-sm font-bold text-gray-900 truncate leading-tight">{{ $section->title }}</p>
-                                @if ($section->subtitle)
+                                <p class="text-sm font-bold text-gray-900 truncate leading-tight">{{ $section->display_admin_label }}</p>
+                                @if ($section->admin_label && $section->title && $section->admin_label !== $section->title)
+                                    <p class="text-[10px] text-gray-400 truncate mt-0.5">Storefront: {{ $section->title }}</p>
+                                @elseif ($section->subtitle)
                                     <p class="text-[11px] text-gray-400 truncate mt-0.5">{{ $section->subtitle }}</p>
                                 @endif
                             </div>

@@ -489,10 +489,10 @@
                         {{-- Card Body ── --}}
                         <div class="p-3.5">
 
-                            {{-- Title & Subtitle ── --}}
+                            {{-- Admin label + subtitle ── --}}
                             <div class="mb-2.5">
                                 <p class="text-sm font-bold text-gray-900 truncate leading-tight">
-                                    {{ $banner->title ?? '(No title)' }}
+                                    {{ $banner->display_admin_label }}
                                 </p>
                                 @if ($banner->subtitle)
                                     <p class="text-[11px] text-gray-400 truncate mt-0.5">{{ $banner->subtitle }}</p>
@@ -574,7 +574,7 @@
                                     {{-- Delete ── --}}
                                     @if(has_permission('banners.delete'))
                                     <button type="button"
-                                        onclick="deleteBanner({{ $banner->id }}, '{{ addslashes($banner->title ?? 'this banner') }}')"
+                                        onclick="deleteBanner({{ $banner->id }}, '{{ addslashes($banner->display_admin_label) }}')"
                                         class="action-btn del" title="Delete">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>
