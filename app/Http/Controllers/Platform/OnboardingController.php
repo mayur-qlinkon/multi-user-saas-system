@@ -5,12 +5,19 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class OnboardingController extends Controller
 {
     public function index()
     {
+
+        $user = Auth::user();
+        if ($user->hasRole('super_admin')) {
+            return redirect()->route('platform.dashboard');
+        }
+
         return view('admin.onboarding.index');
     }
 

@@ -15,35 +15,11 @@
 @endpush
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Clients / List</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Clients</h1>
 @endsection
 
 @section('content')
     <div class="pb-10" x-data="clientManager(@js($clients->items()))">
-
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Clients Management</h1>
-            </div>
-            <div class="flex items-center gap-2">
-                @if(has_permission('clients.export'))
-                    <button type="button" @click="exportCSV()"
-                        class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-green-600"></i> CSV
-                    </button>
-                    <button type="button" @click="exportPDF()"
-                    class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                        <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
-                    </button>
-                @endif
-                @if(has_permission('clients.create'))
-                <button type="button" @click="openCreate()"
-                    class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2 ml-2">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Add Client
-                </button>
-                @endif
-            </div>
-        </div>
 
         @if (session('success'))
             <div
@@ -64,25 +40,78 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-t-xl shadow-sm border border-gray-100 p-4 border-b-0">
-            <form action="{{ route('admin.clients.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
-                <div class="relative flex-1 max-w-md">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-500"></i>
-                    <input type="text" name="search" value="{{ request('search') }}"
-                        placeholder="Search Name, Phone, or City..."
-                        class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-700 focus:border-brand-500 outline-none transition-all placeholder-gray-400">
+        {{-- ── TOOLBAR (Search, Filters & Actions) ── --}}
+        <div class="bg-white rounded-t-xl shadow-sm border border-gray-100 p-4 border-b-0 mb-0">
+            <form method="GET" action="{{ route('admin.clients.index') }}"
+                class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+
+                {{-- Left Side: Search + Filters --}}
+                <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full xl:flex-1 xl:max-w-3xl">
+                    <div class="relative w-full sm:flex-1">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#108c2a]"></i>
+                        <input type="text" name="search" value="{{ $search ?? '' }}"
+                            placeholder="Search Name, Phone, Email, City or GSTIN..."
+                            class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all placeholder-gray-400">
+                    </div>
+
+                    <select name="status"
+                        class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none bg-white">
+                        <option value="">All Status</option>
+                        <option value="active" @selected(($status ?? '') === 'active')>Active</option>
+                        <option value="inactive" @selected(($status ?? '') === 'inactive')>Inactive</option>
+                    </select>
+
+                    <select name="registration_type"
+                        class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none bg-white">
+                        <option value="">All GST Types</option>
+                        <option value="registered" @selected(($registrationType ?? '') === 'registered')>Regular</option>
+                        <option value="composition" @selected(($registrationType ?? '') === 'composition')>Composition</option>
+                        <option value="unregistered" @selected(($registrationType ?? '') === 'unregistered')>Unregistered</option>
+                        <option value="sez" @selected(($registrationType ?? '') === 'sez')>SEZ</option>
+                        <option value="overseas" @selected(($registrationType ?? '') === 'overseas')>Overseas</option>
+                    </select>
+
+                    <div class="flex gap-2">
+                        <button type="submit"
+                            class="bg-[#108c2a] hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="filter" class="w-4 h-4"></i> Apply
+                        </button>
+                        @if (!empty($search) || !empty($status) || !empty($registrationType))
+                            <a href="{{ route('admin.clients.index') }}"
+                                class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap"
+                                title="Clear filters">
+                                <i data-lucide="x" class="w-4 h-4"></i> Clear
+                            </a>
+                        @endif
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <button type="submit"
-                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-bold transition-colors">
-                        Search
-                    </button>
-                    @if (request()->has('search'))
-                        <a href="{{ route('admin.clients.index') }}"
-                            class="bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-center"
-                            title="Clear Filters">
-                            <i data-lucide="x" class="w-4 h-4"></i>
+
+                {{-- Right Side: Actions --}}
+                <div class="flex flex-row flex-wrap items-center gap-2 w-full xl:w-auto justify-start xl:justify-end mt-2 xl:mt-0">
+
+                    @if (has_permission('clients.export'))
+                        <button type="button" @click="exportCSV()"
+                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-[#108c2a]"></i> CSV
+                        </button>
+                        <button type="button" @click="exportPDF()"
+                            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
+                        </button>
+                    @endif
+
+                    @if (has_module('bulk_import') && has_permission('clients.create'))
+                        <a href="{{ route('admin.bulk-import.index') }}"
+                            class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="upload-cloud" class="w-4 h-4 text-[#108c2a]"></i> Bulk Import
                         </a>
+                    @endif
+
+                    @if (has_permission('clients.create'))
+                        <button type="button" @click="openCreate()"
+                            class="bg-[#108c2a] hover:bg-green-700 text-white px-4 md:px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Client
+                        </button>
                     @endif
                 </div>
             </form>
@@ -90,7 +119,7 @@
 
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-50/80 border-b border-gray-100">
                             <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider">Client
@@ -99,6 +128,7 @@
                             </th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider">City
                             </th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider text-center">Status</th>
                             <th
                                 class="px-6 py-4 text-[11px] font-extrabold text-gray-500 uppercase tracking-wider text-right">
                                 Actions</th>
@@ -136,6 +166,13 @@
                                         <span class="text-xs text-gray-400 italic font-medium">-</span>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if ($client->is_active)
+                                        <span class="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-md font-bold text-[10px] uppercase tracking-wider">Active</span>
+                                    @else
+                                        <span class="bg-gray-200 text-gray-500 px-3 py-1 rounded-md font-bold text-[10px] uppercase tracking-wider">Inactive</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-right">
                                     <div
                                         class="flex items-center justify-end gap-2 transition-opacity">
@@ -160,7 +197,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-12 text-center">
+                                <td colspan="5" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center justify-center text-gray-400">
                                         <i data-lucide="users" class="w-12 h-12 mb-3 text-gray-300"></i>
                                         <p class="text-sm font-medium">No clients found matching your criteria.</p>
@@ -238,7 +275,7 @@
                                     class="text-red-500">*</span></label>
                             <select name="registration_type"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none transition-all bg-white">
-                                <option value="regular">Regular</option>
+                                <option value="registered">Regular</option>
                                 <option value="composition">Composition</option>
                                 <option value="unregistered">Unregistered</option>
                                 <option value="sez">SEZ</option>
@@ -274,6 +311,14 @@
                             <label class="block text-[12px] font-bold text-gray-700 mb-1.5">Notes</label>
                             <textarea name="notes" rows="2" placeholder="Any client specifics..."
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none transition-all resize-none"></textarea>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="relative inline-flex items-center cursor-pointer bg-gray-50 p-3 rounded-xl border border-gray-100 pr-5 w-fit">
+                                <input type="checkbox" name="is_active" value="1" x-model="clientForm.is_active" class="sr-only peer">
+                                <div class="relative w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#108c2a]"></div>
+                                <span class="ms-3 text-sm font-bold text-gray-700">Active Client Account</span>
+                            </label>
                         </div>
                     </div>
 
@@ -347,7 +392,7 @@
                                     class="text-red-500">*</span></label>
                             <select name="registration_type" x-model="clientForm.registration_type"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none transition-all bg-white">
-                                <option value="regular">Regular</option>
+                                <option value="registered">Regular</option>
                                 <option value="composition">Composition</option>
                                 <option value="unregistered">Unregistered</option>
                                 <option value="sez">SEZ</option>
@@ -382,6 +427,14 @@
                             <label class="block text-[12px] font-bold text-gray-700 mb-1.5">Notes</label>
                             <textarea name="notes" x-model="clientForm.notes" rows="2"
                                 class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none transition-all resize-none"></textarea>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label class="relative inline-flex items-center cursor-pointer bg-gray-50 p-3 rounded-xl border border-gray-100 pr-5 w-fit">
+                                <input type="checkbox" name="is_active" value="1" x-model="clientForm.is_active" class="sr-only peer">
+                                <div class="relative w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#108c2a]"></div>
+                                <span class="ms-3 text-sm font-bold text-gray-700">Active Client Account</span>
+                            </label>
                         </div>
                     </div>
 
@@ -449,13 +502,14 @@
                     email: '',
                     company_name: '',
                     gst_number: '',
-                    registration_type: 'regular',
+                    registration_type: 'registered',
                     address: '',
                     city: '',
                     state_id: '',
                     zip_code: '',
                     country: '',
-                    notes: ''
+                    notes: '',
+                    is_active: true
                 },
                 deleteForm: {
                     id: '',
@@ -473,13 +527,14 @@
                         email: '',
                         company_name: '',
                         gst_number: '',
-                        registration_type: 'regular',
+                        registration_type: 'registered',
                         address: '',
                         city: '',
                         state_id: '',
                         zip_code: '',
                         country: 'India',
-                        notes: ''
+                        notes: '',
+                        is_active: true
                     };
                     this.showCreateModal = true;
                 },
@@ -495,13 +550,14 @@
                         email: client.email || '',
                         company_name: client.company_name || '',
                         gst_number: client.gst_number || '',
-                        registration_type: client.registration_type || 'regular',
+                        registration_type: client.registration_type || 'registered',
                         address: client.address || '',
                         city: client.city || '',
                         state_id: client.state_id || '',
                         zip_code: client.zip_code || '',
                         country: client.country || 'India',
-                        notes: client.notes || ''
+                        notes: client.notes || '',
+                        is_active: client.is_active === true || client.is_active === 1
                     };
                     this.showEditModal = true;
                 },

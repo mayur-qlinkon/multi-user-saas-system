@@ -28,14 +28,7 @@ class PaymentMethodSeeder extends Seeder
                 'gateway' => null,
                 'is_online' => false,
                 'sort_order' => 2,
-            ],
-            [
-                'slug' => 'card',
-                'label' => 'Credit / Debit Card (POS)',
-                'gateway' => null,
-                'is_online' => false,
-                'sort_order' => 3,
-            ],
+            ],            
             [
                 'slug' => 'bank_transfer',
                 'label' => 'Bank Transfer (NEFT/IMPS)',

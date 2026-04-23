@@ -44,7 +44,7 @@ class UpdateClientRequest extends FormRequest
             ],
 
             'gst_number' => ['nullable', 'string', 'max:30'],
-            'registration_type' => ['required', 'string', 'max:255'],
+            'registration_type' => ['required', Rule::in(['registered', 'unregistered', 'composition', 'overseas', 'sez'])],
             'address' => ['nullable', 'string'],
             'city' => ['nullable', 'string', 'max:100'],
             'state_id' => ['nullable', 'exists:states,id'],
@@ -53,6 +53,15 @@ class UpdateClientRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'is_active' => ['boolean'],
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        // Removing the 'true' default ensures that when the checkbox
+        // is missing (unchecked), Laravel correctly evaluates it as false.
+        $this->merge([
+            'is_active' => $this->boolean('is_active'),
+        ]);
     }
 
     public function messages(): array

@@ -128,9 +128,9 @@
                                 Draft</option>
                             <option value="ordered" {{ old('status', $purchase->status) == 'ordered' ? 'selected' : '' }}>
                                 Ordered / Sent</option>
-                            <option value="partially_received"
+                            {{-- <option value="partially_received"
                                 {{ old('status', $purchase->status) == 'partially_received' ? 'selected' : '' }}>Partially
-                                Received</option>
+                                Received</option> --}}
                             <option value="received"
                                 {{ old('status', $purchase->status) == 'received' ? 'selected' : '' }}>Received (Updates
                                 Stock)</option>
@@ -257,9 +257,9 @@
                                                     class="text-[9px] uppercase tracking-wider text-gray-500"></span>
                                             </span>
 
-                                            <span x-show="item.discount_percent > 0"
+                                            <span x-show="item.discount_value > 0"
                                                 class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded border border-amber-200">
-                                                Disc: <span x-text="item.discount_percent + '%'" class="font-bold"></span>
+                                                Disc: <span x-text="item.discount_type === 'percent' ? item.discount_value + '%' : '₹' + item.discount_value" class="font-bold"></span>
                                             </span>
                                         </div>
                                         <template x-if="item.id">
@@ -273,8 +273,10 @@
                                             :value="item.product_sku_id">
                                         <input type="hidden" :name="'items[' + index + '][unit_id]'"
                                             :value="item.unit_id">
-                                        <input type="hidden" :name="'items[' + index + '][discount_percent]'"
-                                            :value="item.discount_percent">
+                                        <input type="hidden" :name="'items[' + index + '][discount_type]'"
+                                            :value="item.discount_type">
+                                        <input type="hidden" :name="'items[' + index + '][discount_value]'"
+                                            :value="item.discount_value">
                                         <input type="hidden" :name="'items[' + index + '][tax_percent]'"
                                             :value="item.tax_percent">
                                         <input type="hidden" :name="'items[' + index + '][tax_type]'"
@@ -377,8 +379,8 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Internal
                             Notes</label>
@@ -393,7 +395,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="lg:col-span-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6 self-start">
                     <h3
                         class="text-sm font-bold text-gray-800 uppercase tracking-wider border-b border-gray-200 pb-3 mb-4">
                         Financial Summary</h3>
@@ -410,13 +412,21 @@
                         </div>
 
                         <div class="flex justify-between items-center pt-2">
-                            <span class="font-semibold">Global Discount Amount:</span>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
-                                <input type="number" step="0.01" name="discount_amount" x-model="global.discount"
-                                    @input="calculate()"
-                                    class="w-32 border border-gray-300 rounded px-2 pl-6 py-1 text-right text-sm focus:border-brand-500 outline-none font-bold">
+                            <span class="font-semibold">Global Discount:</span>
+                            <div class="flex items-center gap-2">
+                                <select name="discount_type" x-model="global.discount_type" @change="calculate()"
+                                    class="w-24 border border-gray-300 rounded px-2 py-1 text-sm focus:border-brand-500 outline-none bg-white">
+                                    <option value="percent">%</option>
+                                    <option value="fixed">Fixed</option>
+                                </select>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium" x-text="global.discount_type === 'percent' ? '%' : '₹'"></span>
+                                    <input type="number" step="0.01" name="discount_value" x-model="global.discount_value" @input="calculate()"
+                                        class="w-24 border border-gray-300 rounded px-2 pl-6 py-1 text-right text-sm focus:border-brand-500 outline-none font-bold">
+                                </div>
                             </div>
+                            {{-- Keeps backend logic intact --}}
+                            <input type="hidden" name="discount_amount" :value="global.discount_amount">
                         </div>
 
                         <div class="flex justify-between items-center pt-2">
@@ -507,14 +517,22 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
-                            (%)</label>
-                        <div class="relative">
-                            <input type="number" step="0.01" x-model="activeEditData.discount_percent"
-                                class="w-full border border-gray-300 rounded px-3 pr-8 py-2.5 text-sm focus:border-brand-500 outline-none">
-                            <span
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">%</span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount Type</label>
+                            <select x-model="activeEditData.discount_type"
+                                class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white">
+                                <option value="percent">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount (₹)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount Value</label>
+                            <div class="relative">
+                                <input type="number" step="0.01" x-model="activeEditData.discount_value"
+                                    class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs" x-text="activeEditData.discount_type === 'percent' ? '%' : '₹'"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -591,7 +609,8 @@
                     sku_code: item.sku_code || '',
                     quantity: parseFloat(item.quantity) || 1,
                     unit_cost: parseFloat(item.unit_cost) || 0,
-                    discount_percent: parseFloat(item.discount_percent) || 0,
+                    discount_type: item.discount_type || 'percent',
+                    discount_value: parseFloat(item.discount_value) || 0,
                     tax_percent: parseFloat(item.tax_percent) || 0,
                     tax_type: item.tax_type || 'exclusive',
                     line_total: 0
@@ -613,7 +632,12 @@
                     sku_code: item.product_sku?.sku || 'Unknown SKU',
                     quantity: parseFloat(item.quantity) || 1,
                     unit_cost: parseFloat(item.unit_cost) || 0,
-                    discount_percent: parseFloat(item.discount_percent) || 0,
+                    
+                    // 🌟 FIX: Force type to 'percent' or 'fixed' to match dropdown
+                    discount_type: (item.discount_type === 'fixed') ? 'fixed' : 'percent',
+                    
+                    discount_value: parseFloat(item.discount_value) || 0,
+                                        
                     tax_percent: parseFloat(item.tax_percent) || 0,
                     tax_type: item.tax_type || 'exclusive',
                     line_total: 0
@@ -638,8 +662,9 @@
                 activeEditData: {},
 
                 global: {
-                    discount: parseFloat("{{ old('discount_amount') }}" !== "" ? "{{ old('discount_amount') }}" :
-                        purchaseData.discount_amount) || 0,
+                    discount_type: "{{ old('discount_type') }}" !== "" ? "{{ old('discount_type') }}" : (purchaseData.discount_type === 'fixed' ? 'fixed' : 'percent'),
+                    discount_value: parseFloat("{{ old('discount_value') }}" !== "" ? "{{ old('discount_value') }}" : purchaseData.discount_value) || 0,
+                    discount_amount: 0,
                     shipping: parseFloat("{{ old('shipping_cost') }}" !== "" ? "{{ old('shipping_cost') }}" : purchaseData
                         .shipping_cost) || 0,
                     other: parseFloat("{{ old('other_charges') }}" !== "" ? "{{ old('other_charges') }}" : purchaseData
@@ -696,7 +721,8 @@
                         sku_code: result.sku_code,
                         quantity: 1,
                         unit_cost: parseFloat(result.cost) || 0,
-                        discount_percent: 0,
+                        discount_type: 'percent',
+                        discount_value: 0,
                         tax_percent: parseFloat(result.tax_percent) || 0,
                         tax_type: result.tax_type || 'exclusive',
                         line_total: 0
@@ -731,8 +757,8 @@
                     if (this.activeEditIndex !== null) {
                         this.items[this.activeEditIndex].tax_type = this.activeEditData.tax_type;
                         this.items[this.activeEditIndex].tax_percent = parseFloat(this.activeEditData.tax_percent) || 0;
-                        this.items[this.activeEditIndex].discount_percent = parseFloat(this.activeEditData
-                            .discount_percent) || 0;
+                        this.items[this.activeEditIndex].discount_type = this.activeEditData.discount_type;
+                        this.items[this.activeEditIndex].discount_value = parseFloat(this.activeEditData.discount_value) || 0;
                         this.items[this.activeEditIndex].unit_id = this.activeEditData.unit_id;
                         this.calculate();
                     }
@@ -747,13 +773,20 @@
                     this.items.forEach(item => {
                         let qty = parseFloat(item.quantity) || 0;
                         let cost = parseFloat(item.unit_cost) || 0;
-                        let discountPct = parseFloat(item.discount_percent) || 0;
+                        let discountValInput = parseFloat(item.discount_value) || 0;
                         let taxPct = parseFloat(item.tax_percent) || 0;
                         let isInclusive = item.tax_type === 'inclusive';
 
                         let baseVal = qty * cost;
-                        let discountVal = baseVal * (discountPct / 100);
-                        let afterDiscount = baseVal - discountVal;
+
+                        let discountVal = 0;
+                        if (item.discount_type === 'percent') {
+                            discountVal = baseVal * (discountValInput / 100);
+                        } else {
+                            discountVal = discountValInput;
+                        }
+
+                        let afterDiscount = Math.max(0, baseVal - discountVal); // Prevent negative totals
 
                         let taxable = 0;
                         let tax = 0;
@@ -774,7 +807,13 @@
                     this.totals.subtotal = subtotalAcc;
                     this.totals.tax = taxAcc;
 
-                    let gDiscount = parseFloat(this.global.discount) || 0;
+                    let globalDiscountVal = parseFloat(this.global.discount_value) || 0;
+                    if (this.global.discount_type === 'percent') {
+                        this.global.discount_amount = subtotalAcc * (globalDiscountVal / 100);
+                    } else {
+                        this.global.discount_amount = globalDiscountVal;
+                    }
+                    let gDiscount = this.global.discount_amount;
                     let shipping = parseFloat(this.global.shipping) || 0;
                     let other = parseFloat(this.global.other) || 0;
 

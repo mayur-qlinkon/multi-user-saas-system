@@ -97,6 +97,11 @@ class ChallanService
         return DB::transaction(function () use ($challan, $data) {
 
             $isEditingItems = isset($data['items']);
+            
+            // Extract items safely FIRST so we can validate them
+            $itemsData = $data['items'] ?? [];
+            unset($data['items']);
+
             // 🛡️ FIX: Validate stock before updating if items are being changed
             if (! empty($itemsData)) {
                 // Use the new direction/warehouse if provided in request, otherwise use existing challan values
@@ -110,10 +115,6 @@ class ChallanService
             if (! $challan->is_editable && $isEditingItems) {
                 throw new LogicException("Cannot modify items on a challan that is already {$challan->status}.");
             }
-
-            // Extract items safely
-            $itemsData = $data['items'] ?? [];
-            unset($data['items']);
 
             // 1. Update Header (status transitions should ideally be handled via transitionTo(),
             // but we allow basic updates here if it's still a draft).

@@ -4,20 +4,26 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\Company;
-use Database\Seeders\ClientsSeeder;
+
+use Database\Seeders\CRM\ClientsSeeder;
+use Database\Seeders\CRM\SuppliersSeeder;
+use Database\Seeders\CRM\CrmDefaultSeeder;
+
 use Database\Seeders\HRM\DepartmentSeeder;
 use Database\Seeders\HRM\DesignationSeeder;
 use Database\Seeders\HRM\LeaveTypeSeeder;
+
 use Database\Seeders\Inventory\AttributesSeeder;
 use Database\Seeders\Inventory\CategoriesSeeder;
 use Database\Seeders\Inventory\ProductsSeeder;
 use Database\Seeders\Inventory\UnitsSeeder;
 use Database\Seeders\Inventory\WarehousesSeeder;
-use Database\Seeders\ModuleSeeder;
-use Database\Seeders\PaymentMethodSeeder;
-use Database\Seeders\PermissionSeeder;
-use Database\Seeders\StateSeeder;
-use Database\Seeders\SuppliersSeeder;
+
+use Database\Seeders\Platform\ModuleSeeder;
+use Database\Seeders\Platform\PaymentMethodSeeder;
+use Database\Seeders\Platform\PermissionSeeder;
+use Database\Seeders\Platform\StateSeeder;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +37,40 @@ class PlatformSeederController extends Controller
      * Only seeders explicitly listed here can be executed via the UI.
      */
     private array $seeders = [
+        
+        'states' => [
+            'name' => 'Indian States',
+            'description' => 'Seeds the global list of Indian States and Union Territories.',
+            'class' => StateSeeder::class,
+            'requires_company' => false, // 🌟 False because this is global data
+            'icon' => 'map',
+            'color' => 'emerald',
+        ],
+        'saas_modules' => [
+            'name' => 'SaaS Modules',
+            'description' => 'Seeds the master list of billable platform modules.',
+            'class' => ModuleSeeder::class,
+            'requires_company' => false, // 🌟 False because this is global data
+            'icon' => 'boxes',
+            'color' => 'emerald',
+        ],
+        'permissions' => [
+            'name' => 'System Permissions',
+            'description' => 'Seeds the global enterprise permission matrix for access control.',
+            'class' => PermissionSeeder::class,
+            'requires_company' => false,
+            'icon' => 'shield-check',
+            'color' => 'emerald',
+        ],
+        'payment_methods' => [
+            'name' => 'Payment Methods',
+            'description' => 'Generates default offline and online payment gateways (Cash, UPI, Razorpay).',
+            'class' => PaymentMethodSeeder::class,
+            'requires_company' => true,
+            'icon' => 'credit-card',
+            'color' => 'blue',
+        ],
+
         'units' => [
             'name' => 'Units',
             'description' => 'Basic measurement units like pcs, kg, ltr.',
@@ -57,6 +97,14 @@ class PlatformSeederController extends Controller
             'icon' => 'archive',
             'color' => 'emerald',
         ],
+        'products' => [
+            'name' => 'Products',
+            'description' => 'Dummy products with SKUs and variants.',
+            'class' => ProductsSeeder::class,
+            'requires_company' => true,
+            'icon' => 'archive',
+            'color' => 'purple',
+        ],        
 
         'warehouses' => [
             'name' => 'Warehouses',
@@ -65,16 +113,7 @@ class PlatformSeederController extends Controller
             'requires_company' => true,
             'icon' => 'warehouse',
             'color' => 'blue',
-        ],
-
-        'products' => [
-            'name' => 'Products',
-            'description' => 'Dummy products with SKUs and variants.',
-            'class' => ProductsSeeder::class,
-            'requires_company' => true,
-            'icon' => 'archive',
-            'color' => 'purple',
-        ],
+        ],      
         'clients' => [
             'name' => 'Customers',
             'description' => 'Dummy Clients.',
@@ -91,38 +130,13 @@ class PlatformSeederController extends Controller
             'icon' => 'briefcase',
             'color' => 'purple',
         ],
-        'payment_methods' => [
-            'name' => 'Payment Methods',
-            'description' => 'Generates default offline and online payment gateways (Cash, UPI, Razorpay).',
-            'class' => PaymentMethodSeeder::class,
-            'requires_company' => true,
-            'icon' => 'credit-card',
-            'color' => 'blue',
-        ],
-        'states' => [
-            'name' => 'Indian States',
-            'description' => 'Seeds the global list of Indian States and Union Territories.',
-            'class' => StateSeeder::class,
-            'requires_company' => false, // 🌟 False because this is global data
-            'icon' => 'map',
-            'color' => 'emerald',
-        ],
-
-        'saas_modules' => [
-            'name' => 'SaaS Modules',
-            'description' => 'Seeds the master list of billable platform modules.',
-            'class' => ModuleSeeder::class,
-            'requires_company' => false, // 🌟 False because this is global data
-            'icon' => 'boxes',
-            'color' => 'emerald',
-        ],
-        'permissions' => [
-            'name' => 'System Permissions',
-            'description' => 'Seeds the global enterprise permission matrix for access control.',
-            'class' => PermissionSeeder::class,
+        'crm_defaults' => [
+            'name' => 'Crm default',
+            'description' => 'Raw Useful Data',
+            'class' => CrmDefaultSeeder::class,
             'requires_company' => false,
-            'icon' => 'shield-check',
-            'color' => 'emerald',
+            'icon' => 'award',
+            'color' => 'purple',
         ],
         'hrm_departments' => [
             'name' => 'HRM Departments',

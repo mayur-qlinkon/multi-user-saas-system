@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
+use App\Exceptions\InsufficientStockException;
+
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -15,6 +16,7 @@ use App\Models\ProductSku;
 use App\Models\State;
 use App\Models\Unit;
 use App\Models\Warehouse;
+
 use App\Services\InventoryService;
 use App\Services\InvoiceService;
 use App\Services\PaymentService;
@@ -22,6 +24,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PosController extends Controller
@@ -397,7 +400,7 @@ class PosController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_sku_id' => 'required|exists:product_skus,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
-            'discount_type' => 'nullable|in:fixed,percent',
+            'discount_type' => 'nullable|in:fixed,percent,percentage',
             'discount_value' => 'nullable|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
         ]);
@@ -429,7 +432,7 @@ class PosController extends Controller
                     'source' => 'pos',
                     'invoice_date' => now()->toDateString(),
                     'supply_state' => $supplyState,
-                    'gst_treatment' => $client ? $client->registration_type : 'unregistered',
+                    'gst_treatment' => $this->mapGstTreatment($client->registration_type ?? null),
                     'status' => 'confirmed',
 
                     'subtotal' => 0,
@@ -494,7 +497,7 @@ class PosController extends Controller
                     'subtotal' => $totalSubtotal,
 
                     // 🌟 SAVE THE DISCOUNT TO THE DB
-                    'discount_type' => $request->input('discount_type', 'fixed'),
+                    'discount_type' => $request->input('discount_type') === 'percent' ? 'percentage' : $request->input('discount_type', 'fixed'),
                     'discount_value' => $request->input('discount_value', 0),
                     'discount_amount' => $discountAmount,
 
@@ -535,6 +538,21 @@ class PosController extends Controller
             ]);
 
         } catch (Exception $e) {
+            Log::error('POS Checkout Failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+
+                'company_id' => $companyId ?? null,
+                'store_id' => $storeId ?? null,
+                'warehouse_id' => $request->warehouse_id ?? null,
+                'customer_id' => $request->customer_id ?? null,
+
+                'items_count' => count($request->items ?? []),
+
+                'payload' => $request->all(), // 🔥 very useful for debugging
+            ]);
+
             if ($e instanceof InsufficientStockException) {
                 return response()->json([
                     'status' => 'error',
@@ -547,5 +565,18 @@ class PosController extends Controller
                 'message' => 'Checkout failed. '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    private function mapGstTreatment(?string $type): string
+    {
+        $map = [
+            'registered' => 'registered',
+            'unregistered' => 'unregistered',
+            'composition' => 'composition',
+            'overseas' => 'overseas',
+            'sez' => 'sez',
+        ];
+
+        return $map[strtolower($type ?? '')] ?? 'unregistered';
     }
 }

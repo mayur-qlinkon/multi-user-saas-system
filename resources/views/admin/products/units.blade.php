@@ -3,7 +3,7 @@
 @section('title', 'Units Management - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Units / Products</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Units</h1>
 @endsection
 
 @section('content')
@@ -17,10 +17,17 @@
                     <i data-lucide="check-circle" class="w-4 h-4"></i> {{ session('success') }}
                 </div>
             @endif
-            @if ($errors->any())
-                <div
-                    class="bg-[#fee2e2] text-[#ef4444] px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2">
-                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Check form for errors.
+           @if ($errors->any())
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm shadow-sm flex flex-col gap-2 w-full sm:w-auto">
+                    <div class="flex items-center gap-2 font-bold">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        <span>Please fix the following errors:</span>
+                    </div>
+                    <ul class="list-disc list-inside font-medium text-xs text-red-600">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
         </div>

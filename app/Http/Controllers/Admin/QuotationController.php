@@ -113,6 +113,12 @@ class QuotationController extends Controller
             // 🌟 3. CALCULATE EVERYTHING IN MEMORY FIRST (Fixes Double-Logging)
             $mathEngine = $this->calculateQuotationMath($request->validated(), $supplyState, $company->state->name ?? '');
 
+            // Accept status from the request (Save as Draft vs Save & Mark as Sent).
+            $status = in_array($request->input('status'), ['draft', 'sent'], true)
+                ? $request->input('status')
+                : 'draft';
+            $isSent = $status === 'sent';
+
             // 🌟 4. CREATE QUOTATION ONCE (Combines form data + calculated totals)
             $quotation = Quotation::create(array_merge([
                 'company_id' => $companyId,
@@ -135,7 +141,10 @@ class QuotationController extends Controller
                 'exchange_rate' => $request->exchange_rate ?? 1.0000,
                 'notes' => $request->notes,
                 'terms_conditions' => $request->terms_conditions,
-                'status' => 'draft',
+                'status' => $status,
+                'is_sent' => $isSent,
+                'sent_at' => $isSent ? now() : null,
+                'sent_by' => $isSent ? Auth::id() : null,
             ], $mathEngine['header_totals']));
 
             // 5. INSERT LINE ITEMS
@@ -185,8 +194,15 @@ class QuotationController extends Controller
             // 🌟 1. CALCULATE EVERYTHING IN MEMORY FIRST
             $mathEngine = $this->calculateQuotationMath($request->validated(), $supplyState, $company->state->name ?? '');
 
-            // 🌟 2. UPDATE QUOTATION ONCE (Fixes double-logging on updates)
-            $quotation->update(array_merge([
+            // Decide the status for this update:
+            //  - If the form explicitly posts 'draft' or 'sent', use it.
+            //  - Otherwise keep the existing status untouched.
+            $submittedStatus = $request->input('status');
+            $status = in_array($submittedStatus, ['draft', 'sent'], true)
+                ? $submittedStatus
+                : $quotation->status;
+
+            $headerUpdate = array_merge([
                 'store_id' => $request->store_id,
                 'customer_id' => $client->id ?? null,
                 'customer_name' => $customerName,
@@ -204,7 +220,17 @@ class QuotationController extends Controller
                 'exchange_rate' => $request->exchange_rate ?? 1.0000,
                 'notes' => $request->notes,
                 'terms_conditions' => $request->terms_conditions,
-            ], $mathEngine['header_totals']));
+                'status' => $status,
+            ], $mathEngine['header_totals']);
+
+            // Mark-as-sent stamps: only set on the draft → sent transition.
+            if ($status === 'sent' && $quotation->status !== 'sent') {
+                $headerUpdate['is_sent'] = true;
+                $headerUpdate['sent_at'] = now();
+                $headerUpdate['sent_by'] = Auth::id();
+            }
+
+            $quotation->update($headerUpdate);
 
             // 3. WIPE OLD ITEMS AND INSERT NEW ONES
             $quotation->items()->delete();
@@ -215,7 +241,8 @@ class QuotationController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.quotations.show')->with('success', 'Quotation updated successfully.');
+            // 🌟 FIX: Added $quotation->id to the route parameters!
+            return redirect()->route('admin.quotations.show', $quotation->id)->with('success', 'Quotation updated successfully.');
 
         } catch (Exception $e) {
             DB::rollBack();
@@ -319,6 +346,7 @@ class QuotationController extends Controller
                 'exchange_rate' => $quotation->exchange_rate,
                 'subtotal' => $quotation->subtotal,
                 'discount_type' => $quotation->discount_type,
+                'discount_value' => $quotation->discount_value,
                 'discount_amount' => $quotation->discount_amount,
                 'taxable_amount' => $quotation->taxable_amount,
                 'cgst_amount' => $quotation->cgst_amount,
@@ -348,6 +376,7 @@ class QuotationController extends Controller
                     'unit_price' => $qItem->unit_price,
                     'tax_type' => $qItem->tax_type,
                     'discount_type' => $qItem->discount_type,
+                    'discount_value' => $qItem->discount_value,
                     'discount_amount' => $qItem->discount_amount,
                     'taxable_value' => $qItem->taxable_value,
                     'tax_percent' => $qItem->tax_percent,
@@ -398,11 +427,14 @@ class QuotationController extends Controller
             $baseAmount = $qty * $price;
 
             // Discount
+            $lineDiscountType = (isset($item['discount_type']) && $item['discount_type'] === 'fixed') ? 'fixed' : 'percentage';
+            $lineDiscountValue = (float) ($item['discount_value'] ?? 0);
+            
             $lineDiscountAmt = 0;
-            if ($item['discount_type'] === 'percentage' || $item['discount_type'] === 'percent') {
-                $lineDiscountAmt = $baseAmount * ((float) $item['discount_amount'] / 100);
+            if ($lineDiscountType === 'percentage') {
+                $lineDiscountAmt = $baseAmount * ($lineDiscountValue / 100);
             } else {
-                $lineDiscountAmt = (float) $item['discount_amount'];
+                $lineDiscountAmt = $lineDiscountValue;
             }
             $afterDiscount = max(0, $baseAmount - $lineDiscountAmt);
 
@@ -433,8 +465,9 @@ class QuotationController extends Controller
                 'quantity' => $qty,
                 'unit_price' => $price,
                 'tax_type' => $item['tax_type'],
-                'discount_type' => $item['discount_type'],
-                'discount_amount' => $lineDiscountAmt,
+                'discount_type' => $lineDiscountType,
+                'discount_value' => $lineDiscountValue,
+                'discount_amount' => round($lineDiscountAmt, 4),
                 'taxable_value' => $taxableValue,
                 'tax_percent' => $taxPct,
                 'igst_amount' => $isInterState ? $taxAmount : 0,
@@ -446,11 +479,14 @@ class QuotationController extends Controller
         }
 
         // Global Financials
+        $globalDiscountType = (isset($data['discount_type']) && $data['discount_type'] === 'fixed') ? 'fixed' : 'percentage';
+        $globalDiscountValue = (float) ($data['discount_value'] ?? 0);
+
         $globalDiscountAmt = 0;
-        if ($data['discount_type'] === 'percentage' || $data['discount_type'] === 'percent') {
-            $globalDiscountAmt = $totalSubtotal * ((float) ($data['discount_amount'] ?? 0) / 100);
+        if ($globalDiscountType === 'percentage') {
+            $globalDiscountAmt = $totalSubtotal * ($globalDiscountValue / 100);
         } else {
-            $globalDiscountAmt = (float) ($data['discount_amount'] ?? 0);
+            $globalDiscountAmt = $globalDiscountValue;
         }
 
         $shipping = (float) ($data['shipping_charge'] ?? 0);
@@ -463,8 +499,9 @@ class QuotationController extends Controller
         return [
             'header_totals' => [
                 'subtotal' => $totalSubtotal,
-                'discount_type' => $data['discount_type'],
-                'discount_amount' => $globalDiscountAmt,
+                'discount_type' => $globalDiscountType,
+                'discount_value' => $globalDiscountValue,
+                'discount_amount' => round($globalDiscountAmt, 4),
                 'taxable_amount' => $totalSubtotal - $globalDiscountAmt,
                 'tax_amount' => $totalTax,
                 'igst_amount' => $isInterState ? $totalTax : 0,

@@ -3,7 +3,7 @@
 <?php $__env->startSection('title', 'Dashboard - Qlinkon BIZNESS'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Overview / Dashboard</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Dashboard</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('styles'); ?>
@@ -25,20 +25,7 @@
     <?php
         $formatAmt = fn($amount) => number_format((float) $amount, 2, '.', ',');
         
-        $hour = now()->format('H');
-        if ($hour < 12) {
-            $greeting = 'Good Morning';
-            $greetingIcon = 'sun';
-            $iconColor = 'text-yellow-500';
-        } elseif ($hour < 17) {
-            $greeting = 'Good Afternoon';
-            $greetingIcon = 'sun-medium';
-            $iconColor = 'text-orange-500';
-        } else {
-            $greeting = 'Good Evening';
-            $greetingIcon = 'moon';
-            $iconColor = 'text-indigo-500';
-        }
+        $hour = now()->format('H');      
         // Prepare continuous 7-day data for the chart
         $chartDates = [];
         $salesData = [];
@@ -79,43 +66,41 @@
         <?php endif; ?>
 
         
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 overflow-hidden">
-            
-            
-            <div class="flex items-center gap-2 shrink-0">
-                
-                <h1 class="text-xl font-bold text-gray-800 tracking-tight whitespace-nowrap"><?php echo e($greeting); ?>, <span class="text-brand-600"><?php echo e(auth()->user()->name); ?></span></h1>
-            </div>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 overflow-hidden">                                
             
             
             <div class="flex overflow-x-auto pb-1 hide-scrollbar gap-2 w-full lg:w-auto">
-                <?php if(has_module('pos')): ?>
-                <a href="<?php echo e(route('admin.pos.index')); ?>" target="_blank" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600"></i> POS
-                </a>
+                <?php if(has_module('pos') && has_permission('pos.access')): ?>
+                    <a href="<?php echo e(route('admin.pos.index')); ?>" target="_blank" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600"></i> POS
+                    </a>
                 <?php endif; ?>
                 <?php if(has_module('invoicing')): ?>
-                <a href="<?php echo e(route('admin.invoices.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Create Invoice
-                </a>
-                <a href="<?php echo e(route('admin.quotations.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Create Quotation
-                </a>
+                    <?php if(has_permission('invoices.create')): ?>
+                        <a href="<?php echo e(route('admin.invoices.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                            <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Invoice
+                        </a>
+                    <?php endif; ?>
+                    <?php if(has_permission('quotations.create')): ?>
+                        <a href="<?php echo e(route('admin.quotations.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                            <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Quotation
+                        </a>
+                    <?php endif; ?>
                 <?php endif; ?>
-                <?php if(has_module('challan')): ?>
-                <a href="<?php echo e(route('admin.challans.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Create Challan
-                </a>
+                <?php if(has_module('challan') && has_permission('challans.create')): ?>
+                    <a href="<?php echo e(route('admin.challans.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Challan
+                    </a>
                 <?php endif; ?>
-                <?php if(has_module('purchases')): ?>
-                <a href="<?php echo e(route('admin.purchases.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="shopping-bag" class="w-4 h-4 text-purple-600"></i> Add Purchase
-                </a>
+                <?php if(has_module('purchases') && has_permission('purchases.create')): ?>
+                    <a href="<?php echo e(route('admin.purchases.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-purple-600"></i> Purchase
+                    </a>
                 <?php endif; ?>
-                <?php if(has_module('crm')): ?>
-                <a href="<?php echo e(route('admin.crm.leads.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="user-plus" class="w-4 h-4 text-orange-500"></i> Create Lead
-                </a>
+                <?php if(has_module('crm') && has_permission('crm_leads.create')): ?>
+                    <a href="<?php echo e(route('admin.crm.leads.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="user-plus" class="w-4 h-4 text-orange-500"></i> Lead
+                    </a>
                 <?php endif; ?>
             </div>
         </div>

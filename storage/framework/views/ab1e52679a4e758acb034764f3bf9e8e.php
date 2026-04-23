@@ -1,9 +1,7 @@
-
-
 <?php $__env->startSection('title', 'Inventory Report - Qlinkon BIZNESS'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">REPORTS / Inventory</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Inventory Report</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>

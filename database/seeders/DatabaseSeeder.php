@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
             Platform\SuperAdminSeeder::class,
             Platform\ModuleSeeder::class,
             Platform\StateSeeder::class,
-            Platform\PermissionSeeder::class,
+            Platform\PermissionSeeder::class,                        
         ]);
     }
 }

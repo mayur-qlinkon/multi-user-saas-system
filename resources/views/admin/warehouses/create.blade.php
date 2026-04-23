@@ -72,9 +72,9 @@
                             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Phone Number</label>
+                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Phone Number  <span class="text-red-500">*</span></label>
                         <input type="tel" name="phone" x-model="phone" maxlength="10" placeholder="0000000000" inputmode="numeric"
-                            @input="phone = phone.replace(/\D/g, '').slice(0,10)"
+                            @input="phone = phone.replace(/\D/g, '').slice(0,10)" required
                             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all">
                     </div>
                     <div>

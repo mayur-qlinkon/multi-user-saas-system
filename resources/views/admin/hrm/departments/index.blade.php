@@ -5,7 +5,7 @@
 @section('header-title')
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Departments</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage company departments and team structure</p>    
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Manage company departments and team structure</p>     --}}
     </div>
 @endsection
 

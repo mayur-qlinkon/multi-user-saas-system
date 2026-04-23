@@ -53,6 +53,7 @@ class Quotation extends Model
         // Financials
         'subtotal',
         'discount_type',
+        'discount_value',
         'discount_amount',
         'taxable_amount',
         'cgst_amount',
@@ -91,6 +92,7 @@ class Quotation extends Model
         // Ensure financials are cast as floats for accurate math/display
         'subtotal' => 'float',
         'discount_amount' => 'float',
+        'discount_value' => 'float',
         'taxable_amount' => 'float',
         'cgst_amount' => 'float',
         'sgst_amount' => 'float',

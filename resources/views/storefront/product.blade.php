@@ -121,10 +121,10 @@
                     </button> --}}
                     {{-- Product image — shown when no YouTube active ── --}}
                     <template x-if="!youtubeActive">
-                        <img :src="activeImage || '{{ asset('assets/images/no-product.png') }}'" alt="{{ $product->name }}"
+                        <img :src="activeImage || '{{ $product->primary_image_url }}'" alt="{{ $product->name }}"
                             class="w-full h-full object-cover mix-blend-multiply transition-all duration-300"
                             style="position: absolute; inset: 0; width: 100%; height: 100%;"
-                            onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                            onerror="this.src='{{ asset('assets/images/no-product.webp') }}'">
                     </template>
 
                     {{-- YouTube embed — shown when video thumbnail clicked ── --}}
@@ -538,7 +538,7 @@
                                         <img src="{{ $rel->primary_image_url }}" alt="{{ $rel->name }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             loading="lazy"
-                                            onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                            onerror="this.src='{{ asset('assets/images/no-product.webp') }}'">
                                     </div>
                                     <div class="p-3">
                                         <p
@@ -671,7 +671,7 @@
         function productPage() {
             return {
                 // ── Image state ──
-                activeImage: '{{ $firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.png') }}',
+                activeImage: '{{ $product->primary_image_url }}',
                 youtubeActive: null,
                 // ── Speak state ──
                 speakingKey: null,
@@ -924,7 +924,7 @@
                         '{{ addslashes($product->name) }}',
                         variantLabel,
                         this.currentPrice,
-                        '{{ $firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.png') }}',
+                        '{{ $firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.webp') }}',
                         this.qty,
                     );
 
@@ -955,7 +955,7 @@
                         '{{ addslashes($product->name) }}',
                         variantLabel,
                         this.currentPrice,
-                        '{{ $firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.png') }}',
+                        '{{ $firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.webp') }}',
                         1, // always 1 for buy now
                     );
 

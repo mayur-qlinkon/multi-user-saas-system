@@ -4,8 +4,8 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Attendance Management</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Live Report for {{ \Carbon\Carbon::parse($todayDate)->format('l, d M Y') }}</p>
+        {{-- <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Attendance Report</h1> --}}
+        <p class="text-xs text-gray-400 font-medium mt-0.5">Attendance Live Report for {{ \Carbon\Carbon::parse($todayDate)->format('l, d M Y') }}</p>
     </div>
 @endsection
 

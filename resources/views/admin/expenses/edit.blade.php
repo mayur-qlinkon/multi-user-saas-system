@@ -140,9 +140,9 @@
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                                         Notes / Description
                                     </label>
-                                    <textarea name="description" rows="4" x-model="form.description"
+                                    <textarea name="notes" rows="4" x-model="form.notes"
                                         placeholder="Brief reason for this expense..."
-                                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all resize-y shadow-sm">{{ old('description', $expense->description) }}</textarea>
+                                        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all resize-y shadow-sm">{{ old('notes', $expense->notes) }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -406,7 +406,7 @@
                     })(),
                     reference_number: mergeValue('reference_number', ''),
                     expense_category_id: mergeValue('expense_category_id', ''),
-                    description: mergeValue('description', ''),
+                    notes: mergeValue('notes', ''),
                     base_amount: parseFloat(mergeValue('base_amount', 0)),
                     tax_type: mergeValue('tax_type', 'none'),
                     tax_percent: parseFloat(mergeValue('tax_percent', 0)),

@@ -5,7 +5,7 @@
 @section('header-title')
     <div>        
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Office Locations</h1>        
-        <p class="text-xs text-gray-400 mt-1">Manage geofence zones & generate QR codes for employee attendance</p>        
+        {{-- <p class="text-xs text-gray-400 mt-1">Manage geofence zones & generate QR codes for employee attendance</p> --}}
     </div>
 @endsection
 
@@ -213,8 +213,7 @@
 
             {{-- Header --}}
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between" style="background:#166534;">
-                <div>
-                    <p class="text-[13px] font-black text-white uppercase tracking-widest">Office QR Code</p>
+                <div>                    
                     <p class="text-[11px] text-green-200 mt-0.5" x-text="qrStoreName"></p>
                 </div>
                 <button @click="closeQrModal()" class="text-green-300 hover:text-white transition-colors">
@@ -227,7 +226,7 @@
 
                 {{-- Store name --}}
                 <p class="text-[16px] font-black text-gray-900 mb-1" x-text="qrStoreName"></p>
-                <p class="text-[12px] text-gray-400 mb-5">Employees scan this to mark attendance</p>
+                <p class="text-[12px] text-gray-400 mb-5">Scan QR & Mark Your Attendance</p>
 
                 {{-- QR Image --}}
                 <div class="qr-modal-img mb-5 p-4 bg-white border-2 border-green-100 rounded-xl shadow-sm"

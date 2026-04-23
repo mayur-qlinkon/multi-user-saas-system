@@ -3,7 +3,7 @@
 @section('title', 'Reports & Analytics')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Analytics / Overview</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Analytics</h1>
 @endsection
 
 @push('styles')

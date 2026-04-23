@@ -160,7 +160,7 @@
                                     :class="item.is_included ? 'bg-blue-50/20' : 'opacity-60'">
 
                                     <td class="px-4 md:py-3 py-2 flex items-center justify-between md:table-cell absolute top-4 right-4 md:static">
-                                        <span class="md:hidden text-xs font-bold text-gray-500 uppercase">Include</span>
+                                        <span class="md:hidden text-xs font-bold text-gray-500 uppercase mr-2">Include</span>
                                         <input type="checkbox" x-model="item.is_included" @change="calculate()"
                                             class="w-5 h-5 md:w-4 md:h-4 text-[#108c2a] rounded border-gray-300 focus:ring-[#108c2a]">
                                     </td>

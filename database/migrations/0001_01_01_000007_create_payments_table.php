@@ -33,7 +33,8 @@ return new class extends Migration
             $table->unsignedBigInteger('paymentable_id')->nullable();
             $table->index(['paymentable_type', 'paymentable_id']);
 
-            $table->string('payment_number')->unique();              // PAY-2024-0001
+            $table->string('payment_number');              // PAY-2024-0001
+            $table->unique(['company_id', 'payment_number']);
             $table->string('reference')->nullable();                 // cheque no / UTR / UPI ref
             $table->date('payment_date');
 

@@ -3,7 +3,7 @@
 @section('title', 'Create Offline Order - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Orders / Create Offline</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Order</h1>
 @endsection
 
 @push('styles')
@@ -16,12 +16,12 @@
 
 @section('content')
     {{-- 🌟 1. Pass the store-to-warehouse mapping to Alpine --}}
-    <div class="pb-20" x-data="orderForm(@js($warehouses->where('is_default', 1)->pluck('id', 'store_id')))">
+    <div class="pb-20" x-data="orderForm(@js($warehouses->where('is_default', 1)->pluck('id', 'store_id')), @js($clients ?? []))">
         
         {{-- ── HEADER ── --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Offline Order</h1>
+                <h1 class="text-xl font-bold text-gray-500 uppercase tracking-widest">Create Offline Order</h1>
                 <p class="text-sm text-gray-500">Manually generate a confirmed order or inquiry.</p>
             </div>
             <div class="flex items-center gap-3">

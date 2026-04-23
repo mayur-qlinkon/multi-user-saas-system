@@ -234,7 +234,16 @@
                     <td class="text-center font-bold">{{ (float) $item->quantity }}</td>
                     <td class="text-right">{{ $formatAmt($item->unit_price) }}</td>
                     <td class="text-center">
-                        {{ $item->discount_amount > 0 ? $formatAmt($item->discount_amount) : '-' }}
+                        @if ($item->discount_amount > 0)
+                            @if ($item->discount_type === 'percentage')
+                                <div class="font-bold">{{ (float) $item->discount_value }}%</div>
+                                <div style="font-size: 9px; color: #666; margin-top: 2px;">(-{{ $formatAmt($item->discount_amount) }})</div>
+                            @else
+                                <div class="font-bold">{{ $formatAmt($item->discount_amount) }}</div>
+                            @endif
+                        @else
+                            -
+                        @endif
                     </td>
                     <td class="text-center">{{ (float) $item->tax_percent }}%</td>
                     <td class="text-right font-bold">{{ $formatAmt($item->total_amount) }}</td>
@@ -276,10 +285,15 @@
 
             @if ($quotation->discount_amount > 0)
                 <tr>
-                    <td class="text-left">Discount</td>
+                    <td class="text-left">
+                        Discount
+                        @if($quotation->discount_type === 'percentage')
+                            <span style="font-size: 10px; color: #555;">({{ (float) $quotation->discount_value }}%)</span>
+                        @endif
+                    </td>
                     <td class="text-right font-bold">(-) {{ $formatAmt($quotation->discount_amount) }}</td>
                 </tr>
-            @endif
+            @endif  
 
             <tr>
                 <td class="text-left grand-total text-uppercase">Grand Total</td>

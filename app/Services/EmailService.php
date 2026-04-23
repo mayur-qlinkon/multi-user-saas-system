@@ -174,9 +174,41 @@ class EmailService
             return $global;
         }
 
-        throw new RuntimeException(
-            "Email template '{$key}' not found (company_id: ".($companyId ?? 'null').').'
-        );
+        // Step 3 — Fallback to hardcoded defaults so the system never crashes
+        Log::warning("[EmailService] Using hardcoded fallback for template: {$key}");
+        
+        return $this->getHardcodedFallbackTemplate($key);
+    }
+
+    /**
+     * Provide an in-memory fallback template if neither tenant nor global templates are seeded.
+     */
+    private function getHardcodedFallbackTemplate(string $key): EmailTemplate
+    {
+        $defaults = [
+            'order_inquiry_customer' => [
+                'subject' => 'We received your inquiry, {{customer_name}}!',
+                'body'    => '<p>Hi {{customer_name}},</p><p>Thank you for inquiring about <strong>{{product_name}}</strong>. Our team at {{store_name}} will get back to you shortly.</p><p>Reference: {{order_number}}</p>',
+            ],
+            'order_inquiry_owner' => [
+                'subject' => 'New Inquiry from {{customer_name}} - {{order_number}}',
+                'body'    => '<p><strong>New Inquiry Received</strong></p><p>Customer: {{customer_name}}<br>Phone: {{customer_phone}}<br>Email: {{customer_email}}</p><p>Product: {{product_name}}</p><p>Message:<br>{{message}}</p>',
+            ],
+            'leave_request_owner' => [
+                'subject' => 'New Leave Request: {{employee_name}}',
+                'body'    => '<p><strong>{{employee_name}}</strong> has requested {{leave_type}} leave from {{from_date}} to {{to_date}} ({{total_days}} days).</p><p>Reason: {{reason}}</p><p><a href="{{action_url}}">View Request</a></p>',
+            ]
+        ];
+
+        // If the key is totally unknown, provide a generic safe default
+        $subject = $defaults[$key]['subject'] ?? 'Notification: ' . ucwords(str_replace('_', ' ', $key));
+        $body    = $defaults[$key]['body'] ?? '<p>You have a new system notification.</p>';
+
+        return new EmailTemplate([
+            'key'     => $key,
+            'subject' => $subject,
+            'body'    => $body,
+        ]);
     }
 
     // ════════════════════════════════════════════════════
@@ -211,14 +243,14 @@ class EmailService
     private function loadMailConfig(): array
     {
         return [
-            'driver' => get_system_setting('mail_driver', 'smtp'),
-            'host' => get_system_setting('mail_host'),
-            'port' => (int) (get_system_setting('mail_port') ?: 587),
-            'username' => get_system_setting('mail_username'),
-            'password' => get_system_setting('mail_password'),
-            'encryption' => get_system_setting('mail_encryption', 'tls'),
-            'from_email' => get_system_setting('mail_from_email'),
-            'from_name' => get_system_setting('mail_from_name') ?: config('app.name'),
+            'driver'     => get_system_setting('mail_driver', config('mail.default', env('MAIL_MAILER', 'smtp'))),
+            'host'       => get_system_setting('mail_host', config('mail.mailers.smtp.host', env('MAIL_HOST'))),
+            'port'       => (int) (get_system_setting('mail_port') ?: config('mail.mailers.smtp.port', env('MAIL_PORT', 587))),
+            'username'   => get_system_setting('mail_username', config('mail.mailers.smtp.username', env('MAIL_USERNAME'))),
+            'password'   => get_system_setting('mail_password', config('mail.mailers.smtp.password', env('MAIL_PASSWORD'))),
+            'encryption' => get_system_setting('mail_encryption', config('mail.mailers.smtp.encryption', env('MAIL_ENCRYPTION', 'tls'))),
+            'from_email' => get_system_setting('mail_from_email', config('mail.from.address', env('MAIL_FROM_ADDRESS'))),
+            'from_name'  => get_system_setting('mail_from_name') ?: config('mail.from.name', env('MAIL_FROM_NAME', config('app.name'))),
         ];
     }
 

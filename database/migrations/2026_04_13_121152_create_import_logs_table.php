@@ -16,6 +16,7 @@ return new class extends Migration
             $table->text('error_message');
             $table->timestamps();
         });
+        // Remember New GitUpload
     }
 
     public function down(): void

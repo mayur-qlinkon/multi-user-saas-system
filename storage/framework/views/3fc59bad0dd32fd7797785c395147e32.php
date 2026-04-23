@@ -1,9 +1,7 @@
-
-
 <?php $__env->startSection('title', 'Create Sales Invoice'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Create Invoice</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Invoice</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('styles'); ?>
@@ -32,15 +30,19 @@
     <div class="pb-20" x-data="invoiceForm(<?php echo \Illuminate\Support\Js::from($units ?? [])->toHtml() ?>, <?php echo \Illuminate\Support\Js::from($companyState)->toHtml() ?>, <?php echo \Illuminate\Support\Js::from($clients ?? [])->toHtml() ?>, <?php echo \Illuminate\Support\Js::from($challanPrefillJs ?? null)->toHtml() ?>)">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Invoice</h1>
+                <h1 class="text-[1.5rem] font-bold text-gray-500 uppercase tracking-widest">Create Invoice</h1>
             </div>
             
-            <div class="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 justify-end">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 sm:justify-end">
                 <a href="<?php echo e(route('admin.invoices.index')); ?>"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2">Cancel</a>
-                <button type="submit" form="mainInvoiceForm"
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2 self-center sm:self-auto">Cancel</a>
+                <button type="submit" form="mainInvoiceForm" name="status" value="draft"
+                    class="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
+                </button>
+                <button type="submit" form="mainInvoiceForm" name="status" value="confirmed"
                     class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i> Generate Invoice
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Save &amp; Confirm
                 </button>
             </div>
         </div>
@@ -358,7 +360,7 @@
                                         <span x-show="item.discount_value > 0"
                                             class="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
                                             Disc: <span
-                                                x-text="item.discount_type === 'percent' ? item.discount_value + '%' : '₹' + item.discount_value"></span>
+                                                x-text="item.discount_type === 'percentage' ? item.discount_value + '%' : '₹' + item.discount_value"></span>
                                         </span>
                                     </div>
 
@@ -558,17 +560,16 @@
                 <div class="flex flex-wrap xl:flex-nowrap justify-between items-center pt-2 gap-2">
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-gray-600">Discount:</span>
-                        <select x-model="global.discount_type" @change="calculate()"
+                        <select name="discount_type" x-model="global.discount_type" @change="calculate()"
                             class="border border-gray-300 rounded px-2 py-0.5 text-[11px] font-bold text-gray-600 focus:border-[#108c2a] outline-none bg-gray-50 cursor-pointer">
                             <option value="fixed">Flat (₹)</option>
-                            <option value="percent">Percent (%)</option>
+                            <option value="percentage">Percent (%)</option>
                         </select>
                     </div>
-                    <input type="number" step="0.01" name="global_discount_value" x-model="global.discount_value"
+                    <input type="number" step="0.01" name="discount_value" x-model="global.discount_value"
                         @input="calculate()"
                         class="w-24 sm:w-32 border border-gray-300 rounded px-3 py-1 text-right font-bold text-red-500 focus:border-[#108c2a] outline-none ml-auto"
                         placeholder="0.00">
-                    <input type="hidden" name="global_discount_type" :value="global.discount_type">
                 </div>
 
                 
@@ -616,24 +617,24 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
-                        Type</label>
-                    <select x-model="activeEditData.discount_type"
-                        class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none bg-white">
-                        <option value="percent">Percentage (%)</option>
-                        <option value="fixed">Fixed Amount (₹)</option>
-                    </select>
+                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">GST
+                        (%)</label>
+                    <input type="number" step="0.01" x-model="activeEditData.tax_percent"
+                        class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
                 </div>
+                <div>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
+                            Type</label>
+                        <select x-model="activeEditData.discount_type"
+                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none bg-white">
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="fixed">Fixed Amount (₹)</option>
+                        </select>
+                    </div>
                 <div>
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
                         Value</label>
                     <input type="number" step="0.01" x-model="activeEditData.discount_value"
-                        class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">GST
-                        (%)</label>
-                    <input type="number" step="0.01" x-model="activeEditData.tax_percent"
                         class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
                 </div>
                 <div>
@@ -989,7 +990,7 @@
                         unit_price:      parseFloat(result.price) || 0,
                         tax_percent:     parseFloat(result.tax_percent) || 18,
                         tax_type:        result.tax_type || 'exclusive',
-                        discount_type:   'percent',
+                        discount_type:   'fixed',
                         discount_value:  0,
                         line_total:      0
                     });
@@ -1036,7 +1037,7 @@
 
                         // 🌟 1. Apply Line Discount First
                         let discountAmount = 0;
-                        if (item.discount_type === 'percent') {
+                        if (item.discount_type === 'percentage' || item.discount_type === 'percent') {
                             discountAmount = baseVal * (discVal / 100);
                         } else {
                             discountAmount = discVal; // Flat amount deduction
@@ -1102,7 +1103,7 @@
 
                     // 🌟 Calculate Global Discount
                     let globalDiscountAmount = 0;
-                    if (this.global.discount_type === 'percent') {
+                    if (this.global.discount_type === 'percent' || this.global.discount_type === 'percentage') {
                         globalDiscountAmount = itemsSum * (globalDiscVal / 100);
                     } else {
                         globalDiscountAmount = globalDiscVal;

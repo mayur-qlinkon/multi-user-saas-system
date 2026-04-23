@@ -4,8 +4,7 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Expenses</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage company expenditures and reimbursements</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Expenses</h1>        
     </div>
 @endsection
 
@@ -95,6 +94,10 @@
                         placeholder="Search merchant, invoice..." class="filter-input pl-9 w-full">
                 </div>
 
+                <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm shrink-0">
+                        Search
+                    </button>
+
                 <select name="status" class="filter-input w-full sm:w-auto sm:min-w-[140px]" @change="$refs.filterForm.submit()">
                     <option value="">All Statuses</option>
                     <option value="pending_approval" {{ request('status') === 'pending_approval' ? 'selected' : '' }}>
@@ -122,12 +125,13 @@
                     @endforeach
                 </select>
 
-                @if (request()->hasAny(['search', 'status', 'category_id']))
-                    <a href="{{ route('admin.expenses.index') }}"
-                        class="text-[12px] font-bold text-red-500 hover:text-red-700 px-2">
-                        Clear Filters
-                    </a>
-                @endif
+                @if (request()->hasAny(['search', 'status', 'payment_status', 'source']))
+                        <a href="{{ route('admin.expenses.index') }}" 
+                            class="bg-red-50 hover:bg-red-100 text-red-500 w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors" 
+                            title="Clear Filters">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </a>
+                    @endif
             </form>
 
             {{-- Action Buttons ── --}}

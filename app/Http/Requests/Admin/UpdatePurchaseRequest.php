@@ -56,6 +56,8 @@ class UpdatePurchaseRequest extends FormRequest
             'status' => ['required', 'string', 'in:draft,ordered,partially_received,received,cancelled'],
 
             // --- Global Amounts ---
+            'discount_type' => ['nullable', 'string', 'in:percent,fixed'],
+            'discount_value' => ['nullable', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'other_charges' => ['nullable', 'numeric', 'min:0'],
@@ -79,7 +81,8 @@ class UpdatePurchaseRequest extends FormRequest
             // --- Item Values ---
             'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
-            'items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.discount_type' => ['required', 'string', 'in:percent,fixed'],
+            'items.*.discount_value' => ['nullable', 'numeric', 'min:0'],
             'items.*.tax_percent' => ['nullable', 'numeric', 'min:0'],
             'items.*.tax_type' => ['required', 'string', 'in:inclusive,exclusive'],
         ];

@@ -3,7 +3,7 @@
 @section('title', 'Add New Product - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create / Product</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Product</h1>
 @endsection
 @push('styles')
     <style>
@@ -680,9 +680,9 @@
 
                     {{-- ── Plant Education: 2 fixed care fields ── --}}
                     <div class="flex items-center gap-2.5 mb-5 border-b border-gray-100 pb-3">
-                        <i data-lucide="leaf" class="w-5 h-5 text-green-600 shrink-0"></i>
+                        <i data-lucide="tag" class="w-5 h-5 text-blue-600 shrink-0"></i>
                         <div>
-                            <h2 class="text-lg font-bold text-gray-800">5. Plant Education <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
+                            <h2 class="text-lg font-bold text-gray-800">5. Product Information <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
                             <p class="text-xs text-gray-500 mt-0.5">Provide sunlight and watering care info for this plant.</p>
                         </div>
                     </div>
@@ -761,7 +761,7 @@
                     {{-- ── Generic Product Guidance: dynamic add/remove ── --}}
                     <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-2">
                         <div>
-                            <h2 class="text-lg font-bold text-gray-800">5. Product Guidance <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
+                            <h2 class="text-lg font-bold text-gray-800">5. Product Information <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
                             <p class="text-xs text-gray-500 mt-1">Add care instructions, setup guides, or educational info for your customers.</p>
                         </div>
                         <button type="button" @click="addGuide()"

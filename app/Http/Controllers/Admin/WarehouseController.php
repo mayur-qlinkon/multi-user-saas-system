@@ -55,7 +55,7 @@ class WarehouseController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:50'],
             'contact_person' => ['nullable', 'string', 'max:100'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:100'],
             'address' => ['nullable', 'string'],
             'city' => ['nullable', 'string', 'max:100'],

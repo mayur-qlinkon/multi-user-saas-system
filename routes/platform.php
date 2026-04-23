@@ -7,6 +7,7 @@ use App\Http\Controllers\Platform\EmailTemplateController;
 use App\Http\Controllers\Platform\ModuleController;
 use App\Http\Controllers\Platform\PermissionController;
 use App\Http\Controllers\Platform\PlanController;
+use App\Http\Controllers\Platform\PlatformDashboardController;
 use App\Http\Controllers\Platform\PlatformSeederController;
 use App\Http\Controllers\Platform\SystemSettingController;
 use Illuminate\Support\Facades\Route;
@@ -16,8 +17,8 @@ Route::middleware(['auth', 'role:super_admin'])
     ->name('platform.')
     ->group(function () {
 
-        Route::view('dashboard', 'platform.dashboard')->name('dashboard');
-        Route::get('/', [ModuleController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [PlatformDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/', [PlatformDashboardController::class, 'index']); // Fallback so /platform goes to dashboard
 
         Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
         Route::resource('modules', ModuleController::class)->except(['create', 'show', 'edit']);

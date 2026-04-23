@@ -174,7 +174,7 @@
 
                             {{-- Image Section with Overlays --}}
                             <div class="aspect-[4/3] sm:aspect-[3/2] w-full bg-gray-50 relative overflow-hidden shrink-0">
-                                <img :src="product.image_url || '/assets/images/placeholder.png'" :alt="product.product_name"
+                                <img :src="product.image_url || '/assets/images/placeholder.webp'" :alt="product.product_name"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
 
                                 {{-- Top Left Overlay: Price (Matches your reference image) --}}
@@ -316,7 +316,7 @@
                                 <div class="flex justify-between items-start mb-2 gap-3">
                                     {{-- Product Thumbnail --}}
                                     <div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
-                                        <img :src="item.image_url || '/assets/images/placeholder.png'" class="w-full h-full object-cover">
+                                        <img :src="item.image_url || '/assets/images/placeholder.webp'" class="w-full h-full object-cover">
                                     </div>
                                     
                                     <div class="flex-1 pr-2">

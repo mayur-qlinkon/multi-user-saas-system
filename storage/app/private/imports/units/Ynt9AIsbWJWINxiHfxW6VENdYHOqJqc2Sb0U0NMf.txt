@@ -1,6 +1,0 @@
-name,short_name
-Kilogram,kg
-Piece,pcs
-Litre,ltr
-Meter,m
-Box,box

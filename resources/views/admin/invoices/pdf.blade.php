@@ -6,7 +6,7 @@
     <title>Invoice #{{ $invoice->invoice_number }}</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'DejaVu Sans', sans-serif;
             color: #333;
             font-size: 12px;
             margin: 0;
@@ -112,9 +112,21 @@
         $billingAccName      = $invoice->account_name   ?? $store->account_name;
         $billingAccNo        = $invoice->account_number ?? $store->account_number;
         $billingIfsc         = $invoice->ifsc_code      ?? $store->ifsc_code;
-        $billingSignatureUrl = $invoice->signature
-            ? asset('storage/' . $invoice->signature)
-            : $store->signature_url;
+        $signaturePath = null;
+
+        if ($invoice->signature) {
+            $signaturePath = storage_path('app/public/' . $invoice->signature);
+        } elseif (!empty($store->signature)) {
+            $signaturePath = storage_path('app/public/' . $store->signature);
+        }
+
+        $billingSignatureUrl = null;
+
+        if ($signaturePath && file_exists($signaturePath)) {
+            $type = pathinfo($signaturePath, PATHINFO_EXTENSION);
+            $data = file_get_contents($signaturePath);
+            $billingSignatureUrl = 'data:image/' . $type . ';base64,' . base64_encode($data);
+        }
         $billingFooterNote   = $invoice->invoice_footer_note ?? $store->invoice_footer_note;
         $billingTerms        = $invoice->terms_conditions    ?? $store->invoice_terms;
 
@@ -232,7 +244,19 @@
                     <td>
                         <div class="font-bold">{{ $item->product_name }}</div>
                         <div style="font-size: 10px; color: #777;">SKU:
-                            {{ $item->sku->sku_code ?? ($item->sku->sku ?? 'N/A') }}</div>
+    {{ $item->sku->sku_code ?? ($item->sku->sku ?? 'N/A') }}</div>
+
+@if ($item->discount_amount > 0)
+    <div style="font-size: 10px; margin-top: 2px; color: #c2410c;">
+        Disc:
+        @if ($item->discount_type === 'percentage' && (float) $item->discount_value > 0)
+            {{ (float) $item->discount_value }}%
+            <span style="color:#999;">(-₹{{ $formatAmt($item->discount_amount) }})</span>
+        @else
+            ₹{{ $formatAmt($item->discount_amount) }}
+        @endif
+    </div>
+@endif
                     </td>
                     <td class="text-center text-gray">{{ $item->hsn_code ?? '-' }}</td>
                     <td class="text-right text-gray">{{ $formatAmt($item->unit_price) }}</td>
@@ -269,19 +293,25 @@
                     </div>
                 @endif
 
-                @if ($balanceDue > 0 && $billingUpiId)
+                {{-- @if ($balanceDue > 0 && $billingUpiId)
                     <div style="margin-top: 15px;">
                         <div style="font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 5px;">
-                            Pay via UPI</div>
+                            Pay via UPI
+                        </div>
                         @php
                             $upiString = 'upi://pay?pa=' . $billingUpiId . '&pn=' . urlencode($billingAccName ?: $company->name) . '&am=' . $balanceDue . '&cu=INR';
-                            $qrSvg     = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(80)->generate($upiString);
-                            $qrBase64  = base64_encode($qrSvg);
+
+                            $qrSvg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                                ->size(160)
+                                ->margin(0)
+                                ->generate($upiString);
                         @endphp
-                        <img src="data:image/svg+xml;base64,{{ $qrBase64 }}" alt="UPI QR Code"
-                            style="width: 80px; height: 80px;">
+
+                        <div style="width: 80px; height: 80px;">
+                            {!! $qrSvg !!}
+                        </div>
                     </div>
-                @endif
+                @endif --}}
             </td>
 
             {{-- Right Side: Totals --}}
@@ -289,44 +319,54 @@
                 <table class="totals-table">
                     <tr>
                         <td class="text-gray font-bold text-right" style="width: 60%;">Taxable Amount</td>
-                        <td class="font-bold text-right">Rs. {{ $formatAmt($invoice->taxable_amount) }}</td>
+                        <td class="font-bold text-right">₹ {{ $formatAmt($invoice->taxable_amount) }}</td>
                     </tr>
 
                     @if ($invoice->igst_amount > 0)
                         <tr>
                             <td class="text-gray font-bold text-right">IGST</td>
-                            <td class="font-bold text-right">Rs. {{ $formatAmt($invoice->igst_amount) }}</td>
+                            <td class="font-bold text-right">₹ {{ $formatAmt($invoice->igst_amount) }}</td>
                         </tr>
                     @else
                         <tr>
                             <td class="text-gray font-bold text-right">CGST</td>
-                            <td class="font-bold text-right">Rs. {{ $formatAmt($invoice->cgst_amount) }}</td>
+                            <td class="font-bold text-right">₹ {{ $formatAmt($invoice->cgst_amount) }}</td>
                         </tr>
                         <tr>
                             <td class="text-gray font-bold text-right">SGST</td>
-                            <td class="font-bold text-right">Rs. {{ $formatAmt($invoice->sgst_amount) }}</td>
+                            <td class="font-bold text-right">₹ {{ $formatAmt($invoice->sgst_amount) }}</td>
                         </tr>
                     @endif
 
                     @if ($invoice->discount_amount > 0)
                         <tr>
-                            <td class="text-gray font-bold text-right">Discount</td>
-                            <td class="font-bold text-right" style="color: red;">(-) Rs.
-                                {{ $formatAmt($invoice->discount_amount) }}</td>
+                            <td class="text-gray font-bold text-right">
+                                Discount
+                                @if ($invoice->discount_type === 'percentage' && (float) $invoice->discount_value > 0)
+                                    ({{ (float) $invoice->discount_value }}%)
+                                @endif
+                            </td>
+                            <td class="font-bold text-right" style="color: red;">
+                                @if ($invoice->discount_type === 'percentage' && (float) $invoice->discount_value > 0)
+                                    (-₹{{ $formatAmt($invoice->discount_amount) }})
+                                @else
+                                    (-) ₹{{ $formatAmt($invoice->discount_amount) }}
+                                @endif
+                            </td>
                         </tr>
                     @endif
 
                     @if ($invoice->shipping_charge > 0)
                         <tr>
                             <td class="text-gray font-bold text-right">Shipping</td>
-                            <td class="font-bold text-right">Rs. {{ $formatAmt($invoice->shipping_charge) }}</td>
+                            <td class="font-bold text-right">₹ {{ $formatAmt($invoice->shipping_charge) }}</td>
                         </tr>
                     @endif
 
                     @if ($invoice->round_off != 0)
                         <tr>
                             <td class="text-gray font-bold text-right">Round Off</td>
-                            <td class="font-bold text-right">Rs. {{ $formatAmt($invoice->round_off) }}</td>
+                            <td class="font-bold text-right">₹ {{ $formatAmt($invoice->round_off) }}</td>
                         </tr>
                     @endif
 
@@ -334,29 +374,29 @@
                         <td class="font-bold text-right border-top border-bottom"
                             style="font-size: 14px; padding: 10px;">Grand Total</td>
                         <td class="font-bold text-right border-top border-bottom"
-                            style="font-size: 14px; padding: 10px;">Rs. {{ $formatAmt($invoice->grand_total) }}</td>
+                            style="font-size: 14px; padding: 10px;">₹ {{ $formatAmt($invoice->grand_total) }}</td>
                     </tr>
 
                     {{-- POS Payment Tracking --}}
                     @if ($totalReceived > 0)
                         <tr class="bg-light">
                             <td class="font-bold text-right">Amount Received</td>
-                            <td class="font-bold text-right">Rs. {{ $formatAmt($totalReceived) }}</td>
+                            <td class="font-bold text-right">₹ {{ $formatAmt($totalReceived) }}</td>
                         </tr>
                         @if ($totalChange > 0)
                             <tr class="bg-light">
                                 <td class="font-bold text-right">Change Returned</td>
-                                <td class="font-bold text-right">Rs. {{ $formatAmt($totalChange) }}</td>
+                                <td class="font-bold text-right">₹ {{ $formatAmt($totalChange) }}</td>
                             </tr>
                         @endif
                         <tr class="bg-light">
                             <td class="font-bold text-right border-bottom">Paid Against Bill</td>
-                            <td class="font-bold text-right border-bottom">Rs. {{ $formatAmt($paidAmt) }}</td>
+                            <td class="font-bold text-right border-bottom">₹ {{ $formatAmt($paidAmt) }}</td>
                         </tr>
                         @if ($balanceDue > 0)
                             <tr>
                                 <td class="font-bold text-right">Balance Due</td>
-                                <td class="font-bold text-right">Rs.
+                                <td class="font-bold text-right">₹
                                     {{ $formatAmt($balanceDue) }}</td>
                             </tr>
                         @endif

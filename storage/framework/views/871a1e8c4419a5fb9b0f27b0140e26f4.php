@@ -1,9 +1,7 @@
-
-
 <?php $__env->startSection('title', 'Staff Management - Qlinkon BIZNESS'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">LIST / USERS</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">USERS</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>

@@ -5,7 +5,7 @@
 @section('header-title')
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Tasks</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage and track team tasks</p>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Manage and track team tasks</p> --}}
     </div>
 @endsection
 

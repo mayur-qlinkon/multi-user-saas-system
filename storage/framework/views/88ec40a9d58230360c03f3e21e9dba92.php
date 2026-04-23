@@ -315,15 +315,22 @@
 
                                     </td>
 
-                                    <td class="py-3 px-2 text-center text-gray-600">
-                                        ₹
-                                        <?php echo e($formatAmt($item->quantity * $item->unit_cost * ($item->discount_percent / 100))); ?>
+                                    <td class="py-3 px-2 text-center text-gray-600 leading-tight">
+                                        <?php if($item->discount_amount > 0): ?>
+                                            <?php if($item->discount_type === 'percentage' && (float) $item->discount_value > 0): ?>
+                                                <?php echo e((float) $item->discount_value); ?>%
+                                                <span class="text-[10px] text-gray-400 block">(-₹<?php echo e($formatAmt($item->discount_amount)); ?>)</span>
+                                            <?php else: ?>
+                                                ₹ <?php echo e($formatAmt($item->discount_amount)); ?>
 
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
                                     </td>
 
                                     <?php
-                                        $baseAfterDisc =
-                                            $item->quantity * $item->unit_cost * (1 - $item->discount_percent / 100);
+                                        $baseAfterDisc = ($item->quantity * $item->unit_cost) - $item->discount_amount;
                                         $taxAmt =
                                             $item->tax_type === 'inclusive'
                                                 ? $baseAfterDisc - $baseAfterDisc / (1 + $item->tax_percent / 100)
@@ -342,8 +349,8 @@
                 </div>
             </div>
 
-            <div class="px-6 py-6 print:py-2 flex justify-end page-break-avoid">
-                <div class="w-full md:w-[380px] border border-gray-200 rounded p-4">
+            <div class="px-6 py-6 print:py-2 flex justify-end print:block page-break-avoid">
+                <div class="w-full md:w-[380px] print:w-[380px] print:ml-auto border border-gray-200 rounded p-4">
                     <table class="w-full text-[13px] text-gray-600">
                         <tbody>
                             <tr>
@@ -351,11 +358,18 @@
                                 <td class="py-2 text-right border-b border-gray-100">₹
                                     <?php echo e($formatAmt($purchase->tax_amount)); ?></td>
                             </tr>
-                            <tr>
-                                <td class="py-2 border-b border-gray-100">Discount</td>
-                                <td class="py-2 text-right border-b border-gray-100">₹
-                                    <?php echo e($formatAmt($purchase->discount_amount)); ?></td>
-                            </tr>
+                            <?php if($purchase->discount_amount > 0): ?>
+                                <tr>
+                                    <td class="py-2 border-b border-gray-100">
+                                        Discount 
+                                        <?php if($purchase->discount_type === 'percentage' && (float) $purchase->discount_value > 0): ?>
+                                            <span class="text-xs text-gray-400 font-medium">(<?php echo e((float) $purchase->discount_value); ?>%)</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-2 text-right border-b border-gray-100">(-) ₹
+                                        <?php echo e($formatAmt($purchase->discount_amount)); ?></td>
+                                </tr>
+                            <?php endif; ?>
                             <tr>
                                 <td class="py-2 border-b border-gray-100">Shipping</td>
                                 <td class="py-2 text-right border-b border-gray-100">₹

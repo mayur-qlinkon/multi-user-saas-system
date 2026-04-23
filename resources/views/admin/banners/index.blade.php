@@ -4,8 +4,8 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Banners</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage homepage, promo and popup banners</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Storefront Banners</h1>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Manage homepage, promo and popup banners</p> --}}
     </div>
 @endsection
 

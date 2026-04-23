@@ -469,21 +469,21 @@
 
                         <div class="space-y-4">
                             <div>
-                                <label class="field-label">Section Title <span class="text-red-500">*</span></label>
-                                <input type="text" name="title" value="{{ old('title') }}"
-                                    placeholder="e.g. Indoor Plants, New Arrivals, Best Sellers"
-                                    class="field-input {{ $errors->has('title') ? 'error' : '' }}">
-                                @error('title')
-                                    <p class="field-error mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-                            <div>
-                                <label class="field-label">Admin Label <span
-                                        class="text-gray-400 normal-case font-normal">(optional — internal only)</span></label>
+                                <label class="field-label">Admin Label <span class="text-red-500">*</span><span
+                                        class="text-gray-400 normal-case font-normal"> (internal only)</span></label>
                                 <input type="text" name="admin_label" value="{{ old('admin_label') }}"
                                     placeholder="e.g. Monsoon Promo Row — shown only in admin"
                                     class="field-input {{ $errors->has('admin_label') ? 'error' : '' }}">
                                 @error('admin_label')
+                                    <p class="field-error mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="field-label">Section Title</label>
+                                <input type="text" name="title" value="{{ old('title') }}"
+                                    placeholder="e.g. Indoor Plants, New Arrivals, Best Sellers"
+                                    class="field-input {{ $errors->has('title') ? 'error' : '' }}">
+                                @error('title')
                                     <p class="field-error mt-1">{{ $message }}</p>
                                 @enderror
                             </div>

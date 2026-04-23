@@ -40,7 +40,8 @@ class PurchaseItem extends Model
 
         // Pricing
         'unit_cost',
-        'discount_percent',
+        'discount_type',
+        'discount_value',
         'discount_amount',
         'subtotal',
         'taxable_amount',
@@ -74,12 +75,12 @@ class PurchaseItem extends Model
         'cgst_percent' => 'decimal:2',
         'sgst_percent' => 'decimal:2',
         'igst_percent' => 'decimal:2',
-        'discount_percent' => 'decimal:2',
 
         // Quantities and Amounts (15,4 in DB for high precision in ERPs)
         'quantity' => 'decimal:4',
         'quantity_received' => 'decimal:4',
         'unit_cost' => 'decimal:4',
+        'discount_value' => 'decimal:4',
         'discount_amount' => 'decimal:4',
         'subtotal' => 'decimal:4',
         'taxable_amount' => 'decimal:4',

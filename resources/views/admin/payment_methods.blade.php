@@ -3,7 +3,7 @@
 @section('title', 'Payment Methods')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">List / Payment Methods</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Payment Methods</h1>
 @endsection
 
 @push('styles')

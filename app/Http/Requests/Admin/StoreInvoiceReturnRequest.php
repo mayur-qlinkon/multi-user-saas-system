@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,7 +23,8 @@ class StoreInvoiceReturnRequest extends FormRequest
     {
         // Convert checkbox/toggle values to strict booleans
         $this->merge([
-            'restock' => $this->has('restock') ? filter_var($this->restock, FILTER_VALIDATE_BOOLEAN) : true,
+            // Unchecked checkboxes are absent from POST; default to false (don't restock unless toggled on).
+            'restock' => $this->has('restock') ? filter_var($this->restock, FILTER_VALIDATE_BOOLEAN) : false,
         ]);
     }
 
@@ -79,6 +81,25 @@ class StoreInvoiceReturnRequest extends FormRequest
             'items.*.discount_type' => ['required', 'in:fixed,percentage,percent'],
             'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
         ];
+    }
+
+    /**
+     * After the structural rules pass, cross-check each line against remaining returnable capacity.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $items = $this->input('items', []);
+            if (! is_array($items) || empty($items)) {
+                return;
+            }
+
+            InvoiceReturnQuantityValidator::validate(
+                validator: $validator,
+                items: $items,
+                invoiceId: (int) $this->input('invoice_id'),
+            );
+        });
     }
 
     public function messages(): array

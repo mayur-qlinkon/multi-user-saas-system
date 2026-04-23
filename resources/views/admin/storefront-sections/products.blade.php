@@ -4,482 +4,901 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Manage Products</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">{{ $section->title }}</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Manage Products</h1>
     </div>
 @endsection
 
 @push('styles')
-<style>
-    [x-cloak] { display: none !important; }
+    <style>
+        [x-cloak] { display: none !important; }
 
-    .product-row {
-        display: flex; align-items: center; gap: 10px;
-        padding: 10px 12px; background: #fff;
-        border: 1.5px solid #f1f5f9; border-radius: 12px;
-        transition: border-color 140ms ease, box-shadow 140ms ease;
-    }
-    .product-row:hover { border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .product-row.dragging { opacity: 0.5; border-color: var(--brand-600); }
+        /* ════════════════════════════════════════
+           LAYOUT — Two-panel merchandising-style
+        ════════════════════════════════════════ */
+        .merch-wrap {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            height: auto;
+        }
 
-    .drag-handle {
-        cursor: grab; color: #d1d5db;
-        padding: 2px 4px; border-radius: 4px;
-        transition: color 140ms ease;
-        flex-shrink: 0;
-    }
-    .drag-handle:hover { color: #9ca3af; }
-    .drag-handle:active { cursor: grabbing; }
+        @media (min-width: 1024px) {
+            .merch-wrap {
+                grid-template-columns: 1fr 1fr;
+                height: calc(100vh - 200px);
+                min-height: 520px;
+            }
+        }
 
-    .search-result-row {
-        display: flex; align-items: center; gap: 10px;
-        padding: 8px 12px; border-radius: 10px;
-        cursor: pointer; transition: background 120ms ease;
-    }
-    .search-result-row:hover { background: #f0f7f4; }
+        /* ── Panels ── */
+        .panel {
+            background: #fff;
+            border: 1.5px solid #f1f5f9;
+            border-radius: 18px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 420px;
+            max-height: 620px;
+        }
 
-    .empty-state {
-        display: flex; flex-direction: column; align-items: center;
-        justify-content: center; padding: 40px 20px; text-align: center;
-        border: 1.5px dashed #e2e8f0; border-radius: 14px;
-        color: #9ca3af;
-    }
+        @media (min-width: 1024px) {
+            .panel {
+                min-height: auto;
+                max-height: none;
+            }
+        }
 
-    .panel {
-        background: #fff; border: 1.5px solid #f1f5f9;
-        border-radius: 16px; padding: 20px;
-    }
-    .panel-title {
-        font-size: 11px; font-weight: 800; color: #374151;
-        text-transform: uppercase; letter-spacing: 0.08em;
-        margin-bottom: 14px; display: flex;
-        align-items: center; gap: 6px;
-    }
-    .panel-title i { color: var(--brand-600); }
+        .panel-header {
+            padding: 16px 18px;
+            border-bottom: 1.5px solid #f3f4f6;
+            background: #fafafa;
+            flex-shrink: 0;
+        }
 
-    .search-input {
-        width: 100%; border: 1.5px solid #e5e7eb;
-        border-radius: 10px; padding: 9px 12px 9px 36px;
-        font-size: 13px; outline: none;
-        transition: border-color 150ms ease;
-    }
-    .search-input:focus { border-color: var(--brand-600); }
-</style>
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .panel-body::-webkit-scrollbar { width: 3px; }
+        .panel-body::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+
+        /* ════════════════════════════════════════
+           LEFT — Assigned product rows
+        ════════════════════════════════════════ */
+        .product-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            border-bottom: 1px solid #f8fafc;
+            transition: background 120ms ease;
+            position: relative;
+        }
+
+        .product-row:hover { background: #fafafa; }
+
+        .product-row.is-dragging {
+            background: color-mix(in srgb, var(--brand-600) 5%, white);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .sortable-ghost-row {
+            opacity: 0.3;
+            background: color-mix(in srgb, var(--brand-600) 8%, white) !important;
+        }
+
+        .drag-handle {
+            color: #d1d5db;
+            cursor: grab;
+            flex-shrink: 0;
+            padding: 4px;
+            border-radius: 6px;
+            transition: color 120ms ease;
+        }
+        .drag-handle:hover { color: var(--brand-600); }
+        .drag-handle:active { cursor: grabbing; }
+
+        .prod-thumb {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            flex-shrink: 0;
+        }
+
+        .prod-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 280px;
+        }
+
+        .prod-meta {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        .order-chip {
+            font-size: 10px;
+            font-weight: 800;
+            color: #9ca3af;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 6px;
+            padding: 2px 6px;
+            min-width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .row-action {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: background 120ms ease, color 120ms ease, transform 80ms ease;
+            flex-shrink: 0;
+        }
+        .row-action:active { transform: scale(0.88); }
+        .btn-remove { background: #fff1f2; color: #f43f5e; }
+        .btn-remove:hover { background: #ffe4e6; color: #e11d48; }
+
+        /* ════════════════════════════════════════
+           RIGHT — Available product rows (multi-select)
+        ════════════════════════════════════════ */
+        .avail-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border-bottom: 1px solid #f8fafc;
+            cursor: pointer;
+            transition: background 120ms ease, opacity 120ms ease;
+        }
+
+        .avail-row:hover { background: #f8fafc; }
+        .avail-row.selected { background: #ecfeff; }
+        .avail-row.selected:hover { background: #cffafe; }
+        .avail-row.disabled { opacity: 0.4; cursor: not-allowed; }
+        .avail-row.disabled:hover { background: transparent; }
+
+        .avail-thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            flex-shrink: 0;
+        }
+
+        .avail-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-bottom: 1.5px solid #f3f4f6;
+            background: #fafafa;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .pick-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 4px;
+            background: #fff;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            cursor: pointer;
+            transition: background 120ms ease, border-color 120ms ease;
+        }
+        .pick-checkbox.checked {
+            background: var(--brand-600);
+            border-color: var(--brand-600);
+        }
+
+        .selected-count-chip {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #cffafe;
+            color: #0e7490;
+        }
+
+        .btn-add-selected {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: var(--brand-600);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 120ms ease, opacity 120ms ease;
+        }
+        .btn-add-selected:hover:not(:disabled) { background: var(--brand-700, #0f766e); }
+        .btn-add-selected:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ════════════════════════════════════════
+           SEARCH INPUT
+        ════════════════════════════════════════ */
+        .search-wrap { position: relative; }
+
+        .search-input {
+            width: 100%;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 9px 14px 9px 36px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 150ms ease;
+            background: #fff;
+        }
+        .search-input:focus { border-color: var(--brand-600); }
+
+        .search-icon {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        /* ════════════════════════════════════════
+           EMPTY + LOADING
+        ════════════════════════════════════════ */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 220px;
+            color: #9ca3af;
+            text-align: center;
+            padding: 32px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e5e7eb;
+            border-top-color: var(--brand-600);
+            border-radius: 50%;
+            animation: spin 600ms linear infinite;
+        }
+
+        .hidden-badge {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: #f3f4f6;
+            color: #9ca3af;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .limit-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: #fffbeb;
+            border-bottom: 1.5px solid #fde68a;
+            color: #b45309;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
 @endpush
 
 @section('content')
-<div class="pb-10" x-data="sectionProducts()" x-init="init()">
+    <div class="pb-4" x-data="sectionProducts()" x-init="init()" x-cloak>
 
-    {{-- ── Breadcrumb ── --}}
-    <div class="mb-6 flex items-center justify-between">
-        <div class="flex items-center gap-2 text-sm text-gray-400 font-medium">
-            <a href="{{ route('admin.storefront-sections.index') }}" class="hover:text-brand-600 transition-colors">
-                Storefront Sections
-            </a>
-            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        {{-- ── Breadcrumb ── --}}
+        <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-sm text-gray-400 font-medium">
+                <a href="{{ route('admin.storefront-sections.index') }}" class="hover:text-brand-600 transition-colors">
+                    Storefront Sections
+                </a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <a href="{{ route('admin.storefront-sections.edit', $section->id) }}"
+                    class="hover:text-brand-600 transition-colors truncate max-w-[200px]">
+                    {{ $section->title }}
+                </a>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                <span class="text-gray-700 font-semibold">Manage Products</span>
+            </div>
             <a href="{{ route('admin.storefront-sections.edit', $section->id) }}"
-                class="hover:text-brand-600 transition-colors truncate max-w-[160px]">
-                {{ $section->title }}
+                class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Section
             </a>
-            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            <span class="text-gray-700 font-semibold">Manage Products</span>
         </div>
-        <a href="{{ route('admin.storefront-sections.edit', $section->id) }}"
-            class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Section
-        </a>
-    </div>
 
-    {{-- ── Stats bar ── --}}
-    <div class="flex items-center gap-3 mb-5 text-sm text-gray-500 font-medium">
-        <span class="flex items-center gap-1.5">
-            <i data-lucide="list-checks" class="w-4 h-4 text-brand-600"></i>
-            <span x-text="assignedProducts.length + ' products in section'"></span>
-        </span>
-        <span class="text-gray-300">·</span>
-        <span>Max {{ $section->products_limit }} shown on storefront</span>
-        <template x-if="assignedProducts.length > {{ $section->products_limit }}">
-            <span class="text-amber-600 font-semibold flex items-center gap-1">
-                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
-                Only first {{ $section->products_limit }} will display
+        {{-- ── Stats strip ── --}}
+        <div class="mb-5 flex flex-wrap items-center gap-3 text-sm text-gray-500 font-medium">
+            <span class="flex items-center gap-1.5">
+                <i data-lucide="list-checks" class="w-4 h-4 text-brand-600"></i>
+                <span x-text="assignedProducts.length + ' products in section'"></span>
             </span>
-        </template>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        {{-- ════════ LEFT — Assigned Products ════════ --}}
-        <div class="panel">
-            <p class="panel-title">
-                <i data-lucide="list-checks" class="w-4 h-4"></i>
-                Products in Section
-                <span class="text-gray-400 font-normal normal-case ml-1">(drag to reorder)</span>
-            </p>
-
-            {{-- Loading ── --}}
-            <template x-if="loadingAssigned">
-                <div class="flex items-center justify-center py-10 text-gray-400 text-sm gap-2">
-                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Loading...
-                </div>
+            <span class="text-gray-300">·</span>
+            <span>Max <span class="font-bold text-gray-700">{{ $section->products_limit }}</span> allowed</span>
+            <template x-if="atLimit">
+                <span class="text-amber-600 font-semibold flex items-center gap-1">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                    Limit reached — remove items before adding more
+                </span>
             </template>
-
-            {{-- Empty ── --}}
-            <template x-if="!loadingAssigned && assignedProducts.length === 0">
-                <div class="empty-state">
-                    <i data-lucide="package-x" class="w-10 h-10 mb-3 text-gray-200"></i>
-                    <p class="font-semibold text-gray-400 mb-1">No products yet</p>
-                    <p class="text-xs text-gray-400">Search and add products from the right panel</p>
-                </div>
+            <template x-if="!atLimit && remainingSlots < productsLimit">
+                <span class="text-gray-400">
+                    · <span x-text="remainingSlots"></span> slot(s) remaining
+                </span>
             </template>
+        </div>
 
-            {{-- Product list ── --}}
-            <template x-if="!loadingAssigned && assignedProducts.length > 0">
-                <div id="assigned-list" class="space-y-2">
-                    <template x-for="(product, index) in assignedProducts" :key="product.product_id">
-                        <div class="product-row"
-                            :data-product-id="product.product_id"
-                            :class="{ 'opacity-40': removingId === product.product_id }">
+        {{-- ── Two-panel layout ── --}}
+        <div class="merch-wrap">
 
-                            {{-- Drag handle ── --}}
-                            <div class="drag-handle">
-                                <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+            {{-- ════════════════════════════
+                 LEFT — Assigned products
+            ════════════════════════════ --}}
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Products in Section</p>
+                            <p class="text-[11px] text-gray-400 font-medium mt-0.5"
+                                x-text="`${assignedProducts.length} product${assignedProducts.length !== 1 ? 's' : ''} assigned`">
+                            </p>
+                        </div>
+                        <div x-show="assignedProducts.length > 1" x-cloak
+                            class="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium bg-gray-50 px-3 py-1.5 rounded-lg">
+                            <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+                            Drag to reorder
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    {{-- Loading ── --}}
+                    <template x-if="loadingAssigned">
+                        <div class="empty-state">
+                            <div class="spinner mb-3"></div>
+                            <p class="text-sm text-gray-400 font-medium">Loading products...</p>
+                        </div>
+                    </template>
+
+                    {{-- Empty ── --}}
+                    <template x-if="!loadingAssigned && assignedProducts.length === 0">
+                        <div class="empty-state">
+                            <div class="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
+                                <i data-lucide="package-plus" class="w-6 h-6 text-gray-300"></i>
                             </div>
+                            <p class="text-sm font-bold text-gray-500">No products yet</p>
+                            <p class="text-xs text-gray-400 mt-1">Search and add from the right panel</p>
+                        </div>
+                    </template>
 
-                            {{-- Position number ── --}}
-                            <span class="text-[11px] font-black text-gray-300 w-5 text-center flex-shrink-0"
-                                x-text="index + 1"></span>
+                    {{-- List ── --}}
+                    <template x-if="!loadingAssigned && assignedProducts.length > 0">
+                        <div id="section-assigned-list">
+                            <template x-for="(prod, index) in assignedProducts" :key="prod.product_id">
+                                <div class="product-row"
+                                    :data-product-id="prod.product_id"
+                                    :class="{ 'opacity-60': removingIds.includes(prod.product_id) }">
 
-                            {{-- Image ── --}}
-                            <img :src="product.image"
-                                class="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-gray-100 border border-gray-100"
-                                onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                    <div class="drag-handle sortable-handle">
+                                        <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+                                    </div>
 
-                            {{-- Info ── --}}
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[13px] font-semibold text-gray-800 truncate" x-text="product.name"></p>
-                                <p class="text-[11px] text-gray-400 font-medium mt-0.5">
-                                    ₹<span x-text="parseFloat(product.price).toFixed(2)"></span>
-                                    <template x-if="product.sku">
-                                        <span class="ml-1 opacity-60" x-text="'· ' + product.sku"></span>
-                                    </template>
-                                </p>
-                            </div>
+                                    <span class="order-chip" x-text="index + 1"></span>
 
-                            {{-- Remove ── --}}
-                            <button @click="removeProduct(product.product_id)"
-                                class="w-7 h-7 flex items-center justify-center rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0">
-                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                            </button>
+                                    <img :src="prod.image"
+                                        class="prod-thumb"
+                                        onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+
+                                    <div class="flex-1 min-w-0">
+                                        <p class="prod-name" x-text="prod.name"></p>
+                                        <p class="prod-meta">
+                                            ₹<span x-text="parseFloat(prod.price || 0).toFixed(2)"></span>
+                                            <template x-if="prod.sku">
+                                                <span class="ml-1 opacity-60" x-text="'· ' + prod.sku"></span>
+                                            </template>
+                                        </p>
+                                    </div>
+
+                                    <button type="button" class="row-action btn-remove"
+                                        title="Remove from section"
+                                        @click="removeProduct(prod)"
+                                        :disabled="removingIds.includes(prod.product_id)">
+                                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>
-            </template>
-
-            {{-- Save order button ── --}}
-            <template x-if="orderChanged">
-                <div class="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
-                    <button @click="saveOrder()" :disabled="savingOrder"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
-                        style="background: var(--brand-600);"
-                        :class="savingOrder ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-90'">
-                        <i data-lucide="loader-2" x-show="savingOrder" class="w-3.5 h-3.5 animate-spin"></i>
-                        <i data-lucide="save" x-show="!savingOrder" class="w-3.5 h-3.5"></i>
-                        <span x-text="savingOrder ? 'Saving...' : 'Save Order'"></span>
-                    </button>
-                    <button @click="loadAssigned()" class="text-sm font-semibold text-gray-400 hover:text-gray-600 transition-colors">
-                        Cancel
-                    </button>
-                </div>
-            </template>
-        </div>
-
-        {{-- ════════ RIGHT — Search & Add ════════ --}}
-        <div class="panel">
-            <p class="panel-title">
-                <i data-lucide="search" class="w-4 h-4"></i>
-                Search & Add Products
-            </p>
-
-            {{-- Search input ── --}}
-            <div class="relative mb-4">
-                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none"></i>
-                <input type="text"
-                    x-model="searchQuery"
-                    @input.debounce.350ms="searchProducts()"
-                    placeholder="Search by name or SKU..."
-                    class="search-input">
-                <template x-if="searchQuery.length > 0">
-                    <button @click="searchQuery = ''; searchResults = []"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                    </button>
-                </template>
             </div>
 
-            {{-- Search results ── --}}
-            <div class="space-y-1 max-h-[420px] overflow-y-auto no-scrollbar">
+            {{-- ════════════════════════════
+                 RIGHT — Search & multi-select
+            ════════════════════════════ --}}
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Available Products</p>
+                            <p class="text-[11px] text-gray-400 font-medium mt-0.5">
+                                Search and select products to add
+                            </p>
+                        </div>
+                        <button type="button" class="btn-add-selected"
+                            :disabled="selectedCount === 0 || isBulkAdding || atLimit"
+                            @click="addSelected()">
+                            <template x-if="isBulkAdding">
+                                <div class="spinner" style="width:12px;height:12px;border-width:2px;"></div>
+                            </template>
+                            <template x-if="!isBulkAdding">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                            </template>
+                            <span
+                                x-text="isBulkAdding ? 'Adding...' : ('Add Selected' + (selectedCount > 0 ? ' (' + selectedCount + ')' : ''))"></span>
+                        </button>
+                    </div>
 
-                {{-- Searching ── --}}
-                <template x-if="searching">
-                    <div class="flex items-center justify-center py-6 text-gray-400 text-sm gap-2">
-                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Searching...
+                    <div class="search-wrap">
+                        <i data-lucide="search" class="w-4 h-4 search-icon"></i>
+                        <input type="text"
+                            x-model="searchQuery"
+                            @input.debounce.350ms="searchProducts()"
+                            placeholder="Search by name or SKU..."
+                            class="search-input">
+                    </div>
+                </div>
+
+                {{-- Limit banner ── --}}
+                <template x-if="atLimit">
+                    <div class="limit-banner">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        Section is full. Remove items on the left to free slots.
                     </div>
                 </template>
 
-                {{-- Results ── --}}
-                <template x-if="!searching && searchResults.length > 0">
-                    <div>
-                        <template x-for="product in searchResults" :key="product.product_id">
-                            <div class="search-result-row" @click="addProduct(product)">
-                                <img :src="product.image"
-                                    class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100 border border-gray-100"
-                                    onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-[13px] font-semibold text-gray-800 truncate" x-text="product.name"></p>
-                                    <p class="text-[11px] text-gray-400">
-                                        ₹<span x-text="parseFloat(product.price).toFixed(2)"></span>
-                                    </p>
+                {{-- Select-all bar ── --}}
+                <div class="avail-filter-bar" x-show="searchResults.length > 0" x-cloak>
+                    <div class="flex items-center gap-2 cursor-pointer select-none"
+                        @click="toggleSelectAll()">
+                        <span class="pick-checkbox" :class="{ 'checked': allSelected }">
+                            <template x-if="allSelected">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </template>
+                        </span>
+                        <span class="text-xs font-bold text-gray-600"
+                            x-text="allSelected ? 'Clear All' : 'Select All'"></span>
+                    </div>
+                    <span class="selected-count-chip" x-show="selectedCount > 0" x-cloak
+                        x-text="selectedCount + ' selected'"></span>
+                </div>
+
+                <div class="panel-body">
+                    {{-- Loading ── --}}
+                    <template x-if="searching">
+                        <div class="empty-state">
+                            <div class="spinner mb-3"></div>
+                            <p class="text-xs text-gray-400 font-medium">Searching...</p>
+                        </div>
+                    </template>
+
+                    {{-- Results ── --}}
+                    <template x-if="!searching && searchResults.length > 0">
+                        <div>
+                            <template x-for="prod in searchResults" :key="prod.product_id">
+                                <div class="avail-row"
+                                    :class="{
+                                        'selected': selectedIds.includes(prod.product_id),
+                                        'disabled': atLimit && !selectedIds.includes(prod.product_id)
+                                    }"
+                                    @click="atLimit && !selectedIds.includes(prod.product_id) ? null : toggleSelect(prod.product_id)">
+                                    <span class="pick-checkbox"
+                                        :class="{ 'checked': selectedIds.includes(prod.product_id) }">
+                                        <template x-if="selectedIds.includes(prod.product_id)">
+                                            <i data-lucide="check" class="w-3 h-3"></i>
+                                        </template>
+                                    </span>
+                                    <img :src="prod.image" class="avail-thumb"
+                                        onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-semibold text-gray-800 truncate" x-text="prod.name"></p>
+                                        <p class="text-[11px] text-gray-400">
+                                            ₹<span x-text="parseFloat(prod.price || 0).toFixed(2)"></span>
+                                            <template x-if="prod.sku">
+                                                <span class="ml-1 opacity-60" x-text="'· ' + prod.sku"></span>
+                                            </template>
+                                        </p>
+                                    </div>
                                 </div>
-                                <button class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-bold transition-colors"
-                                    style="background: var(--brand-600); color: white;"
-                                    :class="addingId === product.product_id ? 'opacity-60' : 'hover:opacity-90'">
-                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
-                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
-                                    </svg>
-                                </button>
+                            </template>
+                        </div>
+                    </template>
+
+                    {{-- No results ── --}}
+                    <template x-if="!searching && searchQuery.length > 0 && searchResults.length === 0">
+                        <div class="empty-state">
+                            <i data-lucide="search-x" class="w-8 h-8 mb-2 text-gray-200"></i>
+                            <p class="text-sm font-bold text-gray-500">No products found</p>
+                            <p class="text-xs text-gray-400 mt-1">Try a different search term</p>
+                        </div>
+                    </template>
+
+                    {{-- Default prompt ── --}}
+                    <template x-if="!searching && searchQuery.length === 0 && searchResults.length === 0">
+                        <div class="empty-state">
+                            <div class="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
+                                <i data-lucide="search" class="w-6 h-6 text-gray-300"></i>
                             </div>
-                        </template>
-                    </div>
-                </template>
-
-                {{-- No results ── --}}
-                <template x-if="!searching && searchQuery.length > 0 && searchResults.length === 0">
-                    <div class="text-center py-8 text-gray-400 text-sm">
-                        <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
-                        <p class="font-semibold">No products found</p>
-                        <p class="text-xs mt-1">Try a different search term</p>
-                    </div>
-                </template>
-
-                {{-- Default prompt ── --}}
-                <template x-if="!searching && searchQuery.length === 0">
-                    <div class="text-center py-10 text-gray-400 text-sm">
-                        <i data-lucide="search" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
-                        <p>Type to search products</p>
-                    </div>
-                </template>
+                            <p class="text-sm font-bold text-gray-500">Search products</p>
+                            <p class="text-xs text-gray-400 mt-1">Type a name or SKU to find products</p>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
-</div>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
-<script>
-function sectionProducts() {
-    return {
-        sectionId:        {{ $section->id }},
-        assignedProducts: [],
-        searchResults:    [],
-        searchQuery:      '',
-        loadingAssigned:  false,
-        searching:        false,
-        orderChanged:     false,
-        savingOrder:      false,
-        removingId:       null,
-        addingId:         null,
-        sortable:         null,
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+    <script>
+        function sectionProducts() {
+            return {
+                // ── Config ──
+                sectionId:         {{ $section->id }},
+                productsLimit:     {{ (int) $section->products_limit }},
 
-        init() {
-            this.loadAssigned();
+                // ── Left panel state ──
+                assignedProducts:  [],
+                loadingAssigned:   false,
+                removingIds:       [],
+                sortableInstance:  null,
 
-            // Re-run Lucide whenever search results or assigned products change
-            this.$watch('searchResults', () => {
-                this.$nextTick(() => lucide.createIcons());
-            });
-            this.$watch('assignedProducts', () => {
-                this.$nextTick(() => lucide.createIcons());
-            });
+                // ── Right panel state ──
+                searchQuery:       '',
+                searchResults:     [],
+                searching:         false,
+                selectedIds:       [],
+                isBulkAdding:      false,
 
-            console.log('[SectionProducts] Init section #{{ $section->id }}');
-        },
+                // ── Computed ──
+                get selectedCount() { return this.selectedIds.length; },
+                get allSelected() {
+                    return this.searchResults.length > 0
+                        && this.searchResults.every(p => this.selectedIds.includes(p.product_id));
+                },
+                get atLimit() {
+                    return this.assignedProducts.length >= this.productsLimit;
+                },
+                get remainingSlots() {
+                    return Math.max(0, this.productsLimit - this.assignedProducts.length);
+                },
 
-        // ── Load assigned products ──
-        async loadAssigned() {
-            this.loadingAssigned = true;
-            this.orderChanged    = false;
+                // ════════════════════════════════════════
+                //  INIT
+                // ════════════════════════════════════════
+                init() {
+                    this.loadAssigned();
 
-            try {
-                const res  = await fetch('{{ route('admin.storefront-sections.products.load', $section->id) }}', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const data = await res.json();
-                if (data.success) {
-                    this.assignedProducts = data.products;
-                    this.$nextTick(() => {
-                        this.initSortable();
-                        lucide.createIcons();
+                    this.$watch('searchResults', () => this.$nextTick(() => window.lucide && lucide.createIcons()));
+                    this.$watch('assignedProducts', () => this.$nextTick(() => window.lucide && lucide.createIcons()));
+
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') this.selectedIds = [];
                     });
-                }
-            } catch (e) {
-                console.error('[SectionProducts] Load error:', e);
-            } finally {
-                this.loadingAssigned = false;
-            }
-        },
 
-        // ── Init SortableJS ──
-        initSortable() {
-            const el = document.getElementById('assigned-list');
-            if (!el) return;
+                    console.log('[SectionProducts] Init section #' + this.sectionId + ', limit=' + this.productsLimit);
+                },
 
-            if (this.sortable) this.sortable.destroy();
+                // ════════════════════════════════════════
+                //  LOAD ASSIGNED
+                // ════════════════════════════════════════
+                async loadAssigned() {
+                    this.loadingAssigned = true;
 
-            this.sortable = Sortable.create(el, {
-                animation:  150,
-                handle:     '.drag-handle',
-                ghostClass: 'dragging',
-                onEnd: () => {
-                    // Sync Alpine array with DOM order after drag
-                    const newOrder = [...el.querySelectorAll('[data-product-id]')]
-                        .map(el => parseInt(el.dataset.productId));
+                    try {
+                        const res = await fetch('{{ route('admin.storefront-sections.products.load', $section->id) }}', {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        });
+                        const data = await res.json();
 
-                    this.assignedProducts = newOrder.map(id =>
-                        this.assignedProducts.find(p => p.product_id === id)
-                    ).filter(Boolean);
-
-                    this.orderChanged = true;
-                    console.log('[SectionProducts] Order changed:', newOrder);
-                }
-            });
-        },
-
-        // ── Save order ──
-        async saveOrder() {
-            this.savingOrder = true;
-            const productIds = this.assignedProducts.map(p => p.product_id);
-
-            try {
-                const res  = await fetch('{{ route('admin.storefront-sections.products.reorder', $section->id) }}', {
-                    method:  'POST',
-                    headers: {
-                        'Content-Type':     'application/json',
-                        'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({ product_ids: productIds }),
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    this.orderChanged = false;
-                    BizAlert.toast('Order saved!', 'success');
-                }
-            } catch (e) {
-                console.error('[SectionProducts] Save order error:', e);
-                BizAlert.toast('Failed to save order', 'error');
-            } finally {
-                this.savingOrder = false;
-            }
-        },
-
-        // ── Search products ──
-        async searchProducts() {
-            if (this.searchQuery.length === 0) {
-                this.searchResults = [];
-                return;
-            }
-
-            this.searching = true;
-            try {
-                const url  = '{{ route('admin.storefront-sections.products.search', $section->id) }}?q=' + encodeURIComponent(this.searchQuery);
-                const res  = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                const data = await res.json();
-                if (data.success) this.searchResults = data.products;
-            } catch (e) {
-                console.error('[SectionProducts] Search error:', e);
-            } finally {
-                this.searching = false;
-            }
-        },
-
-        // ── Add product ──
-        async addProduct(product) {
-            if (this.addingId === product.product_id) return;
-            this.addingId = product.product_id;
-
-            try {
-                const res  = await fetch('{{ route('admin.storefront-sections.products.add', $section->id) }}', {
-                    method:  'POST',
-                    headers: {
-                        'Content-Type':     'application/json',
-                        'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({ product_id: product.product_id }),
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    // Add to assigned list
-                    this.assignedProducts.push({
-                        product_id: data.product_id,
-                        name:       data.name,
-                        image:      data.image,
-                        price:      data.price,
-                    });
-                    // Remove from search results
-                    this.searchResults = this.searchResults.filter(
-                        p => p.product_id !== product.product_id
-                    );
-                    BizAlert.toast(data.message, 'success');
-                    this.$nextTick(() => {
-                        this.initSortable();
-                        lucide.createIcons();
-                    });
-                }
-            } catch (e) {
-                console.error('[SectionProducts] Add error:', e);
-                BizAlert.toast('Failed to add product', 'error');
-            } finally {
-                this.addingId = null;
-            }
-        },
-
-        // ── Remove product ──
-        async removeProduct(productId) {
-            this.removingId = productId;
-
-            try {
-                const res  = await fetch(
-                    `{{ url('admin/storefront-sections/' . $section->id . '/products') }}/${productId}`,
-                    {
-                        method:  'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
+                        if (data.success) {
+                            this.assignedProducts = data.products;
+                            this.$nextTick(() => {
+                                this.$nextTick(() => {
+                                    this.initSortable();
+                                    window.lucide && lucide.createIcons();
+                                });
+                            });
+                        } else {
+                            BizAlert.toast('Failed to load products.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('[SectionProducts] Load error:', err);
+                        BizAlert.toast('Network error loading products.', 'error');
+                    } finally {
+                        this.loadingAssigned = false;
                     }
-                );
-                const data = await res.json();
+                },
 
-                if (data.success) {
-                    this.assignedProducts = this.assignedProducts.filter(
-                        p => p.product_id !== productId
+                // ════════════════════════════════════════
+                //  SEARCH
+                // ════════════════════════════════════════
+                async searchProducts() {
+                    const q = this.searchQuery.trim();
+
+                    if (q.length === 0) {
+                        this.searchResults = [];
+                        this.selectedIds   = [];
+                        return;
+                    }
+
+                    this.searching = true;
+
+                    try {
+                        const url = '{{ route('admin.storefront-sections.products.search', $section->id) }}?q=' + encodeURIComponent(q);
+                        const res = await fetch(url, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        });
+                        const data = await res.json();
+
+                        if (data.success) {
+                            this.searchResults = data.products;
+                            // Drop any stale selections no longer in results
+                            const resultIds = new Set(data.products.map(p => p.product_id));
+                            this.selectedIds = this.selectedIds.filter(id => resultIds.has(id));
+                        }
+                    } catch (err) {
+                        console.error('[SectionProducts] Search error:', err);
+                        BizAlert.toast('Search failed.', 'error');
+                    } finally {
+                        this.searching = false;
+                    }
+                },
+
+                // ════════════════════════════════════════
+                //  BULK SELECTION
+                // ════════════════════════════════════════
+                toggleSelect(pid) {
+                    this.selectedIds = this.selectedIds.includes(pid)
+                        ? this.selectedIds.filter(x => x !== pid)
+                        : [...this.selectedIds, pid];
+                },
+
+                toggleSelectAll() {
+                    if (this.allSelected) {
+                        this.selectedIds = [];
+                    } else {
+                        // Only auto-select up to remaining slots, to avoid confusion
+                        const cap = this.remainingSlots;
+                        const ids = this.searchResults.map(p => p.product_id).slice(0, cap);
+                        this.selectedIds = [...new Set(ids)];
+                    }
+                },
+
+                // ════════════════════════════════════════
+                //  ADD SELECTED (sequential — no bulk endpoint exists)
+                // ════════════════════════════════════════
+                async addSelected() {
+                    if (this.selectedCount === 0 || this.isBulkAdding) return;
+
+                    if (this.atLimit) {
+                        BizAlert.toast('Section is full. Remove items first.', 'warning');
+                        return;
+                    }
+
+                    if (this.selectedCount > this.remainingSlots) {
+                        BizAlert.toast(
+                            `Only ${this.remainingSlots} slot(s) remaining. Deselect ${this.selectedCount - this.remainingSlots} to continue.`,
+                            'warning'
+                        );
+                        return;
+                    }
+
+                    this.isBulkAdding = true;
+                    const ids = [...this.selectedIds];
+                    const addUrl = '{{ route('admin.storefront-sections.products.add', $section->id) }}';
+                    const csrf   = document.querySelector('meta[name="csrf-token"]').content;
+
+                    let added = 0;
+                    const failed = [];
+
+                    for (const pid of ids) {
+                        try {
+                            const res = await fetch(addUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type':     'application/json',
+                                    'X-CSRF-TOKEN':     csrf,
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept':           'application/json',
+                                },
+                                body: JSON.stringify({ product_id: pid }),
+                            });
+                            const data = await res.json();
+
+                            if (data.success) {
+                                this.assignedProducts.push({
+                                    product_id: data.product_id,
+                                    name:       data.name,
+                                    image:      data.image,
+                                    price:      data.price,
+                                    sku:        data.sku ?? null,
+                                });
+                                added++;
+                            } else {
+                                failed.push(pid);
+                            }
+                        } catch (err) {
+                            console.error('[SectionProducts] Add failed for', pid, err);
+                            failed.push(pid);
+                        }
+                    }
+
+                    // Remove successfully added from search results
+                    const failedSet = new Set(failed);
+                    this.searchResults = this.searchResults.filter(p =>
+                        !ids.includes(p.product_id) || failedSet.has(p.product_id)
                     );
-                    // Re-add to search results if query matches
-                    BizAlert.toast('Product removed.', 'success');
-                    if (this.searchQuery.length > 0) this.searchProducts();
-                }
-            } catch (e) {
-                console.error('[SectionProducts] Remove error:', e);
-                BizAlert.toast('Failed to remove product', 'error');
-            } finally {
-                this.removingId = null;
-            }
-        },
-    }
-}
-</script>
+                    this.selectedIds = [];
+
+                    this.$nextTick(() => {
+                        this.initSortable();
+                        window.lucide && lucide.createIcons();
+                    });
+
+                    if (added > 0) {
+                        BizAlert.toast(
+                            `${added} product${added !== 1 ? 's' : ''} added to section${failed.length ? ` (${failed.length} failed)` : ''}.`,
+                            failed.length ? 'warning' : 'success'
+                        );
+                    } else {
+                        BizAlert.toast('Failed to add products.', 'error');
+                    }
+
+                    this.isBulkAdding = false;
+                },
+
+                // ════════════════════════════════════════
+                //  REMOVE
+                // ════════════════════════════════════════
+                async removeProduct(prod) {
+                    const productId = prod.product_id;
+                    const name      = prod.name || 'this product';
+
+                    const result = await BizAlert.confirm(
+                        `Remove "${name}"?`,
+                        'It will be removed from this section. The product itself remains in your catalog.',
+                        'Yes, Remove'
+                    );
+                    if (!result.isConfirmed) return;
+
+                    this.removingIds.push(productId);
+
+                    try {
+                        const res = await fetch(
+                            `{{ url('admin/storefront-sections/' . $section->id . '/products') }}/${productId}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept':           'application/json',
+                                },
+                            }
+                        );
+                        const data = await res.json();
+
+                        if (data.success) {
+                            this.assignedProducts = this.assignedProducts.filter(p => p.product_id !== productId);
+                            BizAlert.toast('Product removed.', 'success');
+
+                            // Refresh search so the removed item becomes re-addable
+                            if (this.searchQuery.trim().length > 0) {
+                                this.searchProducts();
+                            }
+                        } else {
+                            BizAlert.toast(data.message || 'Failed to remove.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('[SectionProducts] Remove error:', err);
+                        BizAlert.toast('Network error.', 'error');
+                    } finally {
+                        this.removingIds = this.removingIds.filter(id => id !== productId);
+                    }
+                },
+
+                // ════════════════════════════════════════
+                //  SORTABLE — auto-save on drop
+                // ════════════════════════════════════════
+                initSortable() {
+                    const el = document.getElementById('section-assigned-list');
+                    if (!el) return;
+
+                    if (this.sortableInstance) {
+                        this.sortableInstance.destroy();
+                        this.sortableInstance = null;
+                    }
+
+                    this.sortableInstance = Sortable.create(el, {
+                        animation:  200,
+                        handle:     '.sortable-handle',
+                        ghostClass: 'sortable-ghost-row',
+                        dragClass:  'is-dragging',
+
+                        onEnd: async (evt) => {
+                            if (evt.oldIndex === evt.newIndex) return;
+
+                            const moved = this.assignedProducts.splice(evt.oldIndex, 1)[0];
+                            this.assignedProducts.splice(evt.newIndex, 0, moved);
+
+                            const productIds = this.assignedProducts.map(p => p.product_id);
+
+                            try {
+                                const res = await fetch(
+                                    '{{ route('admin.storefront-sections.products.reorder', $section->id) }}',
+                                    {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type':     'application/json',
+                                            'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                                            'X-Requested-With': 'XMLHttpRequest',
+                                            'Accept':           'application/json',
+                                        },
+                                        body: JSON.stringify({ product_ids: productIds }),
+                                    }
+                                );
+                                const data = await res.json();
+                                if (data.success) {
+                                    BizAlert.toast('Order saved!', 'success');
+                                } else {
+                                    BizAlert.toast('Failed to save order.', 'error');
+                                }
+                            } catch (err) {
+                                console.error('[SectionProducts] Reorder error:', err);
+                                BizAlert.toast('Network error saving order.', 'error');
+                            }
+                        },
+                    });
+                },
+            };
+        }
+    </script>
 @endpush

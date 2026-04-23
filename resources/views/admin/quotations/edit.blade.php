@@ -40,15 +40,29 @@
             {{-- UI Fix: Stack on mobile, side-by-side on md+ --}}
             <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
                 <a href="{{ route('admin.quotations.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-2 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-3 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
                     Cancel
                 </a>
-                <button type="submit" form="mainQuotationForm"
-                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-2">
-                    <i data-lucide="save" class="w-4 h-4"></i> Save Changes
+                <button type="submit" form="mainQuotationForm" name="status" value="draft"
+                    class="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 order-2 sm:order-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
+                </button>
+                <button type="submit" form="mainQuotationForm" name="status" value="sent"
+                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-3">
+                    <i data-lucide="send" class="w-4 h-4"></i> Save &amp; Mark as Sent
                 </button>
             </div>
         </div>
+
+        @if ($quotation->status === 'draft')
+            <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 mb-6 flex items-start gap-3">
+                <i data-lucide="file-edit" class="w-5 h-5 mt-0.5 flex-shrink-0"></i>
+                <div class="text-sm">
+                    <div class="font-bold">This quotation is a draft</div>
+                    <div class="text-xs">Keep editing, or use <strong>Save &amp; Mark as Sent</strong> to record that it was shared with the customer.</div>
+                </div>
+            </div>
+        @endif
 
         {{-- Validation Error Display --}}
         @if ($errors->any())
@@ -85,24 +99,48 @@
                                 class="text-red-500">*</span></label>
                         <div class="flex gap-2 items-start">
                             <div class="relative flex-1">
-                                <div class="flex gap-1 w-full">
-                                    <select name="customer_id" x-model="formData.customer_id" id="customerSelect"
-                                        @change="updateCustomerData($event)"
-                                        class="w-full border border-gray-300 rounded-l px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white font-bold text-gray-700">
-                                        <option value="">-- Select Customer --</option>
-                                        <template x-for="client in clientsList" :key="client.id">
-                                            <option :value="client.id"
-                                                :data-state="client.state_name_only || client.state?.name"
-                                                :data-name="client.name" :data-gstin="client.gst_number || ''"
-                                                x-text="client.name + ' (' + client.phone + ')'">
-                                            </option>
-                                        </template>
-                                    </select>
+                                {{-- Searchable Input & Button Row --}}
+                                <div class="flex gap-1 w-full relative" @click.away="isClientDropdownOpen = false">
+                                    
+                                    {{-- Visible Search Input --}}
+                                    <div class="relative flex-1">
+                                        <input type="text" x-model="clientSearchTerm" 
+                                            @focus="isClientDropdownOpen = true"
+                                            @input="isClientDropdownOpen = true; formData.customer_id = ''"
+                                            placeholder="Search customer by name or phone..."
+                                            class="w-full border border-gray-300 rounded-l px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white font-bold text-gray-700">
+                                        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                                    </div>
+
+                                    {{-- Hidden Input for Laravel Form Submission --}}
+                                    <input type="hidden" name="customer_id" x-model="formData.customer_id" id="customerSelect">
+
+                                    {{-- Quick Add Button --}}
                                     <button type="button" @click="isClientModalOpen = true"
                                         class="bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 px-3 rounded-r transition-colors flex items-center justify-center shrink-0"
                                         title="Quick Add Client">
                                         <i data-lucide="plus" class="w-4 h-4"></i>
                                     </button>
+
+                                    {{-- Floating Dropdown List --}}
+                                    <ul x-show="isClientDropdownOpen" x-cloak x-transition
+                                        class="absolute z-[60] w-[calc(100%-2.5rem)] bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto top-full left-0 custom-scrollbar">
+                                        
+                                        <li x-show="filteredClientList.length === 0" class="px-4 py-4 text-sm text-gray-500 text-center font-medium">
+                                            No matching customers found.
+                                        </li>
+
+                                        <template x-for="client in filteredClientList" :key="client.id">
+                                            <li @click="selectCustomer(client)"
+                                                class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
+                                                <div class="font-bold text-[13px] text-gray-800" x-text="client.name"></div>
+                                                <div class="text-[11px] text-gray-500 mt-0.5 flex flex-wrap items-center gap-2">
+                                                    <span x-show="client.phone" x-text="'📞 ' + client.phone"></span>
+                                                    <span x-show="client.gst_number || client.gstin" class="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 text-[9px] font-bold text-gray-600" x-text="'GST: ' + (client.gst_number || client.gstin)"></span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
                                 </div>
                                 <div x-show="formData.customer_gstin" x-cloak
                                     class="mt-1.5 pl-1 text-[11px] font-bold text-gray-500">
@@ -152,7 +190,7 @@
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Store
                             Branch</label>
-                        <select name="store_id" required x-model="formData.store_id" @change="updateStoreData($event)"
+                        <select name="store_id" required x-model="formData.store_id" @change="updateStoreData($event); autoSelectWarehouse()"
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white">
                             @foreach ($stores ?? [] as $store)
                                 <option value="{{ $store->id }}" data-state="{{ $store->state->name ?? $companyState }}">
@@ -278,7 +316,7 @@
                                         <input type="hidden" :name="'items[' + index + '][tax_type]'" :value="item.tax_type">
                                         <input type="hidden" :name="'items[' + index + '][tax_percent]'" :value="item.tax_percent">
                                         <input type="hidden" :name="'items[' + index + '][discount_type]'" :value="item.discount_type">
-                                        <input type="hidden" :name="'items[' + index + '][discount_amount]'" :value="item.discount_value">
+                                        <input type="hidden" :name="'items[' + index + '][discount_value]'" :value="item.discount_value">
                                         <input type="hidden" :name="'items[' + index + '][product_id]'" :value="item.product_id">
                                         <input type="hidden" :name="'items[' + index + '][product_sku_id]'" :value="item.product_sku_id">
                                         <input type="hidden" :name="'items[' + index + '][unit_id]'" :value="item.unit_id">
@@ -401,7 +439,7 @@
                                     <option value="percentage">Percent (%)</option>
                                 </select>
                             </div>
-                            <input type="number" step="0.01" name="discount_amount" x-model="global.discount_value"
+                            <input type="number" step="0.01" name="discount_value" x-model="global.discount_value"
                                 @input="calculate()"
                                 class="w-24 sm:w-32 border border-gray-300 rounded px-3 py-1.5 text-right font-bold text-red-500 focus:border-[#108c2a] outline-none ml-auto shadow-sm"
                                 placeholder="0.00">
@@ -454,6 +492,12 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">GST
+                            (%)</label>
+                        <input type="number" step="0.01" x-model="activeEditData.tax_percent"
+                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
+                    </div>
+                    <div>
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
                             Type</label>
                         <select x-model="activeEditData.discount_type"
@@ -466,12 +510,6 @@
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
                             Value</label>
                         <input type="number" step="0.01" x-model="activeEditData.discount_value"
-                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">GST
-                            (%)</label>
-                        <input type="number" step="0.01" x-model="activeEditData.tax_percent"
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
                     </div>
                     <div>
@@ -518,6 +556,13 @@
                 globalSearchResults: [],
                 isGuest: isGuestInit,
 
+                // 🌟 Searchable Dropdown State (Pre-fills existing customer name)
+                clientSearchTerm: existingData?.customer_name || '',
+                isClientDropdownOpen: false,
+
+                // 🌟 Store -> Warehouse mapping for Auto-Select
+                storeDefaults: @json($warehouses->where('is_default', 1)->pluck('id', 'store_id')),
+
                 // 🌟 Pre-fill the form with existing quotation data
                 formData: {
                     customer_id: existingData?.customer_id || '',
@@ -539,7 +584,7 @@
                 global: {
                     shipping: parseFloat(existingData?.shipping_charge || 0),
                     discount_type: existingData?.discount_type || 'fixed',
-                    discount_value: parseFloat(existingData?.discount_amount || 0),
+                    discount_value: parseFloat(existingData?.discount_value || 0),
                     round_off: parseFloat(existingData?.round_off || 0).toFixed(2)
                 },
 
@@ -558,6 +603,37 @@
                 isItemModalOpen: false,
                 activeEditIndex: null,
                 activeEditData: {},
+                get filteredClientList() {
+                    if (this.clientSearchTerm.trim() === '') return this.clientsList;
+                    const term = this.clientSearchTerm.toLowerCase();
+                    return this.clientsList.filter(client => {
+                        return client.name.toLowerCase().includes(term) || 
+                               (client.phone && client.phone.includes(term));
+                    });
+                },
+
+                // 🌟 Handle clicking an item in the dropdown
+                selectCustomer(client) {
+                    this.isGuest = false;
+                    this.formData.customer_id = client.id;
+                    this.clientSearchTerm = client.name;
+                    this.formData.supply_state = client.state_name_only || client.state?.name || this.company_state;
+                    this.formData.customer_name = client.name;
+                    this.formData.customer_gstin = client.gst_number || client.gstin || '';
+                    this.formData.gst_treatment = this.formData.customer_gstin ? 'registered' : 'unregistered';
+                    this.isClientDropdownOpen = false;
+                    this.calculate();
+                },
+
+                autoSelectWarehouse() {
+                    let sId = String(this.formData.store_id);
+                    if (this.storeDefaults[sId]) {
+                        this.formData.warehouse_id = String(this.storeDefaults[sId]);
+                    } else {
+                        this.formData.warehouse_id = ''; 
+                    }
+                },
+
                 isClientModalOpen: false,
                 newClient: {
                     name: '',
@@ -584,13 +660,25 @@
                             tax_percent: parseFloat(item.tax_percent) || 0,
                             tax_type: item.tax_type || 'exclusive',
                             discount_type: item.discount_type || 'percentage',
-                            discount_value: parseFloat(item.discount_amount) || 0,
+                            discount_value: parseFloat(item.discount_value || 0),
                             line_total: parseFloat(item.total_amount) || 0
                         }));
 
                         // Force a recalculation so the UI totals match immediately
                         this.calculate();
                     }
+
+                    this.$nextTick(() => {
+                        let selectEl = document.querySelector('select[name="store_id"]');
+                        if (selectEl && selectEl.value) {
+                            this.updateStoreData({ target: selectEl });
+                        }
+                        
+                        // 🌟 Auto-sync warehouse on page load if it's empty
+                        if (!this.formData.warehouse_id) {
+                            this.autoSelectWarehouse();
+                        }
+                    });
                 },
 
                 async saveQuickClient() {
@@ -632,13 +720,7 @@
                             registration_type: 'unregistered'
                         };
                         this.clientsList.push(data.client);
-                        this.formData.customer_id = data.client.id;
-                        this.$nextTick(() => {
-                            let selectEl = document.getElementById('customerSelect');
-                            this.updateCustomerData({
-                                target: selectEl
-                            });
-                        });
+                        this.selectCustomer(data.client);
                     } catch (error) {
                         BizAlert.toast('Network error.', 'error');
                     }
@@ -649,22 +731,8 @@
                     if (this.isGuest) {
                         this.formData.customer_id = '';
                         this.formData.customer_name = '';
+                        this.clientSearchTerm = '';
                         this.formData.supply_state = this.company_state;
-                    }
-                    this.calculate();
-                },
-
-                updateCustomerData(e) {
-                    const opt = e.target.options[e.target.selectedIndex];
-                    if (opt.value) {
-                        this.isGuest = false;
-                        this.formData.supply_state = opt.dataset.state || this.company_state;
-                        this.formData.customer_name = opt.dataset.name;
-                        this.formData.customer_gstin = opt.dataset.gstin || '';
-                        this.formData.gst_treatment = this.formData.customer_gstin ? 'registered' : 'unregistered';
-                    } else {
-                        this.formData.customer_gstin = '';
-                        this.formData.gst_treatment = 'unregistered';
                     }
                     this.calculate();
                 },

@@ -3,7 +3,7 @@
 @section('title', 'Invoice: ' . $invoice->invoice_number)
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Invoices</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Invoice Details</h1>
 @endsection
 
 @push('styles')
@@ -139,7 +139,7 @@
         {{-- ACTION BAR (Hidden on Print) --}}        
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
             <div>
-                <h1 class="text-xl font-bold text-[#212538] tracking-tight">Invoice Details</h1>
+                <h1 class="text-xl font-bold text-gray-500 uppercase tracking-widest">Invoice Details</h1>
             </div>
 
             {{-- UI Fix: Allow buttons to wrap cleanly on mobile --}}
@@ -149,7 +149,7 @@
                     <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i> Back
                 </a>
 
-                @if ($invoice->status !== 'cancelled' && has_permission('invoices.update'))
+                @if ($invoice->status !== 'cancelled' && $invoice->status !== 'confirmed' && has_permission('invoices.update'))
                     <a href="{{ route('admin.invoices.edit', $invoice->id) }}"
                         class="bg-white border border-gray-200 hover:bg-blue-50 hover:text-blue-600 text-gray-600 px-4 py-2 rounded text-sm transition-colors flex items-center shadow-sm font-medium flex-1 sm:flex-none justify-center">
                         <i data-lucide="pencil" class="w-4 h-4 mr-1.5"></i> Edit
@@ -354,7 +354,12 @@
                                     <td class="py-4 px-2 text-right text-gray-600">{{ $formatAmt($item->unit_price) }}</td>
                                     <td class="py-4 px-2 text-right text-gray-600">
                                         @if ($item->discount_amount > 0)
-                                            {{ $formatAmt($item->discount_amount) }}
+                                            @if ($item->discount_type === 'percentage' && (float) $item->discount_value > 0)
+                                                {{ (float) $item->discount_value }}%
+                                                <span class="text-[10px] text-gray-400 block">(-₹{{ $formatAmt($item->discount_amount) }})</span>
+                                            @else
+                                                ₹{{ $formatAmt($item->discount_amount) }}
+                                            @endif
                                         @else
                                             -
                                         @endif
@@ -445,9 +450,13 @@
 
                                 @if ($invoice->discount_amount > 0)
                                     <tr>
-                                        <td class="py-1 text-gray-600 font-semibold">Discount</td>
-                                        <td class="py-1 text-right text-red-600 font-bold">(-)
-                                            ₹{{ $formatAmt($invoice->discount_amount) }}</td>
+                                        <td class="py-2 text-gray-600 font-medium">
+                                            Discount
+                                            @if($invoice->discount_type === 'percentage')
+                                                <span class="text-xs text-gray-500 ml-1">({{ (float) $invoice->discount_value }}%)</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-2 text-right font-bold text-red-600">(-) ₹{{ $formatAmt($invoice->discount_amount) }}</td>
                                     </tr>
                                 @endif
 

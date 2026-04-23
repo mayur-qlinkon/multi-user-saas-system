@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('phone', 20)->nullable()->index();
             $table->string('gst_number', 30)->nullable();
             $table->string('registration_type')->default('unregistered');
+            // $table->enum('registration_type', ['registered', 'unregistered', 'composition', 'overseas', 'sez'])->default('unregistered');
 
             // Segmented Address (Crucial for future filtering/shipping APIs)
             $table->text('address')->nullable();

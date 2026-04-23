@@ -211,7 +211,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::post('/', 'add')->name('add');
                 Route::delete('/{productId}', 'remove')->name('remove');
                 Route::post('/reorder', 'reorder')->name('reorder');
-            });
+        });
 
         // ── Orders ──
         Route::middleware('permission:orders.view')->group(function () {
@@ -258,7 +258,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             Route::resource('/suppliers', SupplierController::class)->except(['create', 'show', 'edit'])->middleware('permission:suppliers.view');
             Route::resource('/warehouses', WarehouseController::class)->middleware('permission:warehouses.view');
             Route::resource('/purchases', PurchaseController::class)->middleware('permission:purchases.view');
-            Route::resource('purchase-returns', PurchaseReturnController::class)->middleware('permission:purchase-returns.view');
+            Route::resource('purchase-returns', PurchaseReturnController::class)->middleware('permission:purchase_returns.view');
             Route::resource('invoices', InvoiceController::class)->middleware('permission:invoices.view');
 
             // ==========================================
@@ -279,7 +279,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             // 3. Standard Resource (Handles index, show, edit, update, destroy)
             Route::resource('invoice-returns', InvoiceReturnController::class)
                 ->except(['create', 'store'])
-                ->middleware('permission:invoice-returns.view')
+                ->middleware('permission:invoice_returns.view')
                 ->names('invoice-returns');
 
             Route::resource('quotations', QuotationController::class)->middleware('permission:quotations.view');

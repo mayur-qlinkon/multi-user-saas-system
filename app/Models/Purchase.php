@@ -49,6 +49,8 @@ class Purchase extends Model
 
         // Amounts
         'subtotal',
+        'discount_type',
+        'discount_value',
         'discount_amount',
         'taxable_amount',
         'cgst_amount',
@@ -81,6 +83,7 @@ class Purchase extends Model
 
         // Decimal casting ensures accuracy for financial calculations
         'subtotal' => 'decimal:2',
+        'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'taxable_amount' => 'decimal:2',
         'cgst_amount' => 'decimal:2',

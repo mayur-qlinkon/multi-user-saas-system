@@ -71,7 +71,8 @@ return new class extends Migration
             // IMPORTANT: this becomes the new product_sku.cost on receive
             // so your selling margin stays accurate
 
-            $table->decimal('discount_percent', 5, 2)->default(0);
+            $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
+            $table->decimal('discount_value', 15, 4)->default(0);
             $table->decimal('discount_amount', 15, 4)->default(0);
             // Item-level trade discount from supplier — common in Indian wholesale
 

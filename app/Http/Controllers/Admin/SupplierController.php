@@ -3,80 +3,73 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreSupplierRequest;
+use App\Http\Requests\Admin\UpdateSupplierRequest;
 use App\Models\State;
 use App\Models\Store;
-use App\Models\Supplier; // 🌟 ADDED: For the state selector
+use App\Models\Supplier;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
     /**
      * Display a listing of the suppliers.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Eager load the store and state relationships
-        $suppliers = Supplier::with(['store', 'state'])->orderBy('created_at', 'desc')->get();
+        $search = trim((string) $request->input('search', ''));
+        $status = $request->input('status'); // 'active' | 'inactive' | null
+        $registrationType = $request->input('registration_type'); // 'regular' | 'composition' | 'unregistered' | null
 
-        // Fetch active stores for the logged-in owner to display in the modal dropdown
+        $query = Supplier::with(['store', 'state'])->orderBy('created_at', 'desc');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $like = '%'.$search.'%';
+                $q->where('name', 'like', $like)
+                    ->orWhere('phone', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('city', 'like', $like)
+                    ->orWhere('gstin', 'like', $like);
+            });
+        }
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        if (in_array($registrationType, ['regular', 'composition', 'unregistered', 'overseas'], true)) {
+            $query->where('registration_type', $registrationType);
+        }
+
+        $suppliers = $query->paginate(15)->withQueryString();
+
         $stores = Store::where('is_active', true)->get();
-
-        // 🌟 NEW: Fetch states for the GST logic dropdown
         $states = State::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.suppliers', compact('suppliers', 'stores', 'states'));
+        return view('admin.suppliers', compact('suppliers', 'stores', 'states', 'search', 'status', 'registrationType'));
     }
 
     /**
      * Store a newly created supplier.
      */
-    public function store(Request $request)
+    public function store(StoreSupplierRequest $request)
     {
-        $validated = $request->validate([
-            'store_id' => [
-                'nullable',
-                Rule::exists('stores', 'id')->where('company_id', Auth::user()->company_id),
-            ],
-            'name' => 'required|string|max:150',
-            'email' => 'nullable|email|max:100',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'pincode' => 'nullable|string|max:10',
-            'state_id' => 'required|exists:states,id', // 🌟 REQUIRED for GST routing
+        $validated = $request->validated();
 
-            // Indian Compliance
-            'gstin' => 'nullable|string|max:15',
-            'pan' => 'nullable|string|max:10',
-            'registration_type' => 'required|string|in:regular,composition,unregistered,sez,overseas',
-
-            // Banking
-            'bank_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:255',
-            'ifsc_code' => 'nullable|string|max:50',
-            'branch' => 'nullable|string|max:255',
-
-            // Financials
-            'opening_balance' => 'nullable|numeric|min:0',
-            'balance_type' => 'required|in:payable,advance',
-            'credit_days' => 'nullable|integer|min:0',
-            'credit_limit' => 'nullable|numeric|min:0',
-
-            'is_active' => 'boolean',
-            'notes' => 'nullable|string',
-        ]);
-
-        $validated['is_active'] = $request->boolean('is_active', true);
-
-        // 🌟 Set initial current balance
+        // 🌟 Set initial current balance based on opening balance
         $validated['current_balance'] = $validated['opening_balance'] ?? 0;
 
         $supplier = Supplier::create($validated);
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Supplier onboarded successfully!', 'data' => $supplier]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Supplier onboarded successfully!',
+                'data' => $supplier,
+            ]);
         }
 
         return redirect()->back()->with('success', 'Supplier onboarded successfully!');
@@ -85,43 +78,9 @@ class SupplierController extends Controller
     /**
      * Update the specified supplier.
      */
-    public function update(Request $request, Supplier $supplier)
+    public function update(UpdateSupplierRequest $request, Supplier $supplier)
     {
-        $validated = $request->validate([
-            'store_id' => [
-                'nullable',
-                Rule::exists('stores', 'id')->where('company_id', Auth::user()->company_id),
-            ],
-            'name' => 'required|string|max:150',
-            'email' => 'nullable|email|max:100',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'pincode' => 'nullable|string|max:10',
-            'state_id' => 'required|exists:states,id',
-
-            // Indian Compliance
-            'gstin' => 'nullable|string|max:15',
-            'pan' => 'nullable|string|max:10',
-            'registration_type' => 'required|string|in:regular,composition,unregistered,sez,overseas',
-
-            // Banking
-            'bank_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:255',
-            'ifsc_code' => 'nullable|string|max:50',
-            'branch' => 'nullable|string|max:255',
-
-            // Financials
-            'opening_balance' => 'nullable|numeric|min:0',
-            'balance_type' => 'required|in:payable,advance',
-            'credit_days' => 'nullable|integer|min:0',
-            'credit_limit' => 'nullable|numeric|min:0',
-
-            'is_active' => 'boolean',
-            'notes' => 'nullable|string',
-        ]);
-
-        $validated['is_active'] = $request->boolean('is_active', true);
+        $validated = $request->validated();
 
         // Note: In a live ERP, updating opening balance after transactions exist requires recalculating the ledger.
         // For now, we update it as provided. If opening balance changed, we adjust current balance roughly.
@@ -133,7 +92,10 @@ class SupplierController extends Controller
         $supplier->update($validated);
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Supplier details updated!']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Supplier details updated!',
+            ]);
         }
 
         return redirect()->back()->with('success', 'Supplier details updated!');

@@ -5,7 +5,7 @@
 @section('header-title')
     <div>        
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Settings</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Company configuration & preferences</p>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Company configuration & preferences</p> --}}
     </div>
 @endsection
 
@@ -519,12 +519,12 @@
                         <p class="section-title"><i data-lucide="image" class="w-4 h-4"></i> Identity Assets</p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-                            <div>
+                            {{-- <div>
                                 <label class="field-label">Admin Logo <span
                                         class="text-gray-400 normal-case font-normal">(shown in sidebar)</span></label>
                                 <div class="upload-zone">
                                     <img :src="previews.logo ||
-                                        '{{ get_setting('logo') ? asset('storage/' . get_setting('logo')) : asset('assets/images/placeholder.png') }}'"
+                                        '{{ get_setting('logo') ? asset('storage/' . get_setting('logo')) : asset('assets/images/placeholder.webp') }}'"
                                         class="w-24 h-12 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="logo" @change="previewFile($event, 'logo')"
@@ -533,13 +533,13 @@
                                         <p class="text-[10px] text-gray-400 mt-1.5">PNG/SVG, transparent bg recommended</p>
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
                             <div>
                                 <label class="field-label">Website Logo <span
                                         class="text-gray-400 normal-case font-normal">(public storefront)</span></label>
                                 <div class="upload-zone">
                                     <img :src="previews.icon ||
-                                        '{{ get_setting('icon') ? asset('storage/' . get_setting('icon')) : asset('assets/images/placeholder.png') }}'"
+                                        '{{ get_setting('icon') ? asset('storage/' . get_setting('icon')) : 'https://placehold.co/400x200?text=Logo' }}'"
                                         class="w-24 h-12 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="icon" @change="previewFile($event, 'icon')"
@@ -553,7 +553,7 @@
                                 <label class="field-label">Browser Favicon</label>
                                 <div class="upload-zone">
                                     <img :src="previews.favicon ||
-                                        '{{ get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : asset('assets/images/placeholder.png') }}'"
+                                        '{{ get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : asset('assets/images/placeholder.webp') }}'"
                                         class="w-10 h-10 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="favicon" @change="previewFile($event, 'favicon')"
@@ -568,7 +568,7 @@
                                         class="text-gray-400 normal-case font-normal">(invoice footer)</span></label>
                                 <div class="upload-zone">
                                     <img :src="previews.signature ||
-                                        '{{ get_setting('signature') ? asset('storage/' . get_setting('signature')) : asset('assets/images/placeholder.png') }}'"
+                                        '{{ get_setting('signature') ? asset('storage/' . get_setting('signature')) : 'https://placehold.co/400x200?text=Signature' }}'"
                                         class="w-24 h-12 rounded-lg object-contain border border-gray-200 bg-white flex-shrink-0">
                                     <div class="flex-1">
                                         <input type="file" name="signature" @change="previewFile($event, 'signature')"

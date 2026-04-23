@@ -2,7 +2,7 @@
 
 @section('title', 'Access Control & Roles - Qlinkon BIZNESS')
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Roles / Access Control</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Roles</h1>
 @endsection
 @section('content')
     <div class="space-y-6 pb-10" x-data="roleIndex()">

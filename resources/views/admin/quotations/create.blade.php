@@ -37,12 +37,16 @@
             {{-- UI Fix: Stack on mobile, side-by-side on md+ --}}
             <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
                 <a href="{{ route('admin.quotations.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-2 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
+                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-3 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
                     Cancel
                 </a>
-                <button type="submit" form="mainQuotationForm"
-                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-2">
-                    <i data-lucide="file-signature" class="w-4 h-4"></i> Generate Proposal
+                <button type="submit" form="mainQuotationForm" name="status" value="draft"
+                    class="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 order-2 sm:order-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
+                </button>
+                <button type="submit" form="mainQuotationForm" name="status" value="sent"
+                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-3">
+                    <i data-lucide="send" class="w-4 h-4"></i> Save &amp; Mark as Sent
                 </button>
             </div>
         </div>
@@ -307,7 +311,7 @@
                                             :value="item.tax_percent">
                                         <input type="hidden" :name="'items[' + index + '][discount_type]'"
                                             :value="item.discount_type">
-                                        <input type="hidden" :name="'items[' + index + '][discount_amount]'"
+                                        <input type="hidden" :name="'items[' + index + '][discount_value]'"
                                             :value="item.discount_value">
                                         <input type="hidden" :name="'items[' + index + '][product_id]'"
                                             :value="item.product_id">
@@ -445,7 +449,7 @@
                                     <option value="percentage">Percent (%)</option>
                                 </select>
                             </div>
-                            <input type="number" step="0.01" name="discount_amount" x-model="global.discount_value"
+                            <input type="number" step="0.01" name="discount_value" x-model="global.discount_value"
                                 @input="calculate()"
                                 class="w-24 sm:w-32 border border-gray-300 rounded px-3 py-1.5 text-right font-bold text-red-500 focus:border-[#108c2a] outline-none ml-auto shadow-sm"
                                 placeholder="0.00">
@@ -498,6 +502,12 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">GST
+                            (%)</label>
+                        <input type="number" step="0.01" x-model="activeEditData.tax_percent"
+                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
+                    </div>
+                    <div>
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
                             Type</label>
                         <select x-model="activeEditData.discount_type"
@@ -510,12 +520,6 @@
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
                             Value</label>
                         <input type="number" step="0.01" x-model="activeEditData.discount_value"
-                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">GST
-                            (%)</label>
-                        <input type="number" step="0.01" x-model="activeEditData.tax_percent"
                             class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm outline-none">
                     </div>
                     <div>

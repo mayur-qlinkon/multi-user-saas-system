@@ -252,21 +252,32 @@ class ChallanController extends Controller
      */
     public function downloadPdf(Challan $challan)
     {
-        $challan->load([
-            'store',
-            'client',
-            'supplier',
-            'branchStore',
-            'fromState',
-            'toState',
-            'items.product',
-            'items.productSku',
-        ]);
+        try {
+            $challan->load([
+                'store',
+                'client',
+                'supplier',
+                'branchStore',
+                'fromState',
+                'toState',
+                'items.product',
+                'items.productSku',
+            ]);
 
-        $pdf = Pdf::loadView('admin.challans.pdf', compact('challan'))
-            ->setPaper('a4', 'portrait');
+            $pdf = Pdf::loadView('admin.challans.pdf', compact('challan'))
+                ->setPaper('a4', 'portrait');
+            
+            return $pdf->download('Challan_'.$challan->challan_number.'.pdf');
+        }
+        catch (Exception $e) {
+            Log::error('Challan PDF Download Failed: '.$e->getMessage());
 
-        return $pdf->download('Challan_'.$challan->challan_number.'.pdf');
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
     }
 
     /**

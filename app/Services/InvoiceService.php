@@ -27,6 +27,10 @@ class InvoiceService
     {
         return DB::transaction(function () use ($data, $companyId) {
 
+            // Draft invoices are fully editable working copies — no stock / counter side effects yet.
+            $status = $data['status'] ?? 'confirmed';
+            $isDraft = $status === 'draft';
+
             // 1. Generate Invoice Number (Logic to be customized per company)
             $invoiceNumber = $this->generateInvoiceNumber($companyId, $data['source']);
 
@@ -49,7 +53,7 @@ class InvoiceService
                 'supply_state' => $data['supply_state'],
                 'gst_treatment' => $data['gst_treatment'] ?? 'unregistered',
                 'currency_code' => $data['currency_code'] ?? 'INR',
-                'status' => $data['status'] ?? 'confirmed',
+                'status' => $status,
                 'payment_status' => 'unpaid',
                 'notes' => $data['notes'] ?? null,           // 🌟 ADD THIS
                 'terms_conditions' => $data['terms_conditions'] ?? null, // 🌟 ADD THIS
@@ -79,6 +83,11 @@ class InvoiceService
                     $isInterState
                 );
 
+                // Normalize the type into the DB enum once, reuse everywhere.
+                $discountType = (isset($item['discount_type']) && in_array($item['discount_type'], ['percent', 'percentage']))
+                    ? 'percentage'
+                    : 'fixed';
+
                 // Create Item Snapshot
                 $invoice->items()->create([
                     'product_id' => $sku->product_id,
@@ -89,8 +98,10 @@ class InvoiceService
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
 
-                    // Disounts
-                    'discount_type' => (isset($item['discount_type']) && $item['discount_type'] === 'percent') ? 'percentage' : 'fixed',
+                    // Discounts — raw input preserved in discount_value, calculated deduction in discount_amount.
+                    // NEVER trust a client-supplied discount_amount; it's derived here.
+                    'discount_type' => $discountType,
+                    'discount_value' => (float) ($item['discount_value'] ?? 0),
                     'discount_amount' => $itemTax['discount_amount'],
 
                     // Tax & Totals
@@ -112,20 +123,24 @@ class InvoiceService
                 $totals['igst'] += $itemTax['igst'];
                 $totals['tax'] += $itemTax['total_tax'];
 
-                // 5. Deduct Inventory — pass batch info when converting from a challan
-                $this->inventory->deductStock(
-                    sku: $sku,
-                    warehouseId: $data['warehouse_id'],
-                    qty: $item['quantity'],
-                    movementType: 'sale',
-                    reference: $invoice,
-                    batchId: $item['batch_id'] ?? null,
-                    batchNumber: $item['batch_number'] ?? null,
-                );
+                // 5. Deduct Inventory — pass batch info when converting from a challan.
+                //    Skipped for drafts; stock is only touched when the invoice is confirmed.
+                if (! $isDraft) {
+                    $this->inventory->deductStock(
+                        sku: $sku,
+                        warehouseId: $data['warehouse_id'],
+                        qty: $item['quantity'],
+                        movementType: 'sale',
+                        reference: $invoice,
+                        batchId: $item['batch_id'] ?? null,
+                        batchNumber: $item['batch_number'] ?? null,
+                    );
+                }
             }
 
-            // 6. Update Challan Item qty_invoiced when converting from a challan
-            if (! empty($data['challan_id'])) {
+            // 6. Update Challan Item qty_invoiced when converting from a challan.
+            //    Drafts don't consume challan quantities until confirmed.
+            if (! $isDraft && ! empty($data['challan_id'])) {
                 foreach ($data['items'] as $item) {
                     if (! empty($item['challan_item_id'])) {
                         ChallanItem::where('id', $item['challan_item_id'])
@@ -140,11 +155,11 @@ class InvoiceService
 
             // 7. Finalize Header Totals & Apply Global Discount
             $itemsSum = $totals['taxable'] + $totals['tax'];
-            $globalDiscountType = $data['global_discount_type'] ?? 'fixed';
-            $globalDiscountValue = (float) ($data['global_discount_value'] ?? 0);
+            $globalDiscountType = $data['discount_type'] ?? 'fixed';
+            $globalDiscountValue = (float) ($data['discount_value'] ?? 0);
 
             $globalDiscountAmount = 0;
-            if ($globalDiscountType === 'percent') {
+            if ($globalDiscountType === 'percentage' || $globalDiscountType === 'percent') {
                 $globalDiscountAmount = $itemsSum * ($globalDiscountValue / 100);
             } else {
                 $globalDiscountAmount = $globalDiscountValue;
@@ -166,7 +181,8 @@ class InvoiceService
                 'tax_amount' => $totals['tax'],
 
                 // 🌟 FIX & SAVE: Global Discount
-                'discount_type' => $globalDiscountType === 'percent' ? 'percentage' : 'fixed',
+                'discount_type' => ($globalDiscountType === 'percentage' || $globalDiscountType === 'percent') ? 'percentage' : 'fixed',
+                'discount_value' => $globalDiscountValue,
                 'discount_amount' => $globalDiscountAmount,
                 'shipping_charge' => $shippingCharge,
 
@@ -188,8 +204,26 @@ class InvoiceService
      */
     public function updateInvoice(Invoice $invoice, array $data, int $companyId): Invoice
     {
-        // Reverse best-seller counters for old items if the invoice was already counted
+        // Guard: once any line on this invoice has a confirmed return against it,
+        // the item set is sealed. Editing would orphan the return rows (which reference
+        // invoice_item.id) and could reduce qty below what's already been returned.
+        $hasReturns = $invoice->items()->where('return_quantity', '>', 0)->exists();
+        if ($hasReturns) {
+            throw new \RuntimeException(
+                'This invoice has confirmed returns against it and its items can no longer be edited. Cancel the related Credit Notes first if you need to change the invoice.'
+            );
+        }
+
+        // Status transition map:
+        //   draft  -> draft      : no stock touch
+        //   draft  -> confirmed  : no reverse, deduct new
+        //   confirmed -> confirmed: reverse old, deduct new (existing behavior)
+        //   confirmed -> draft   : reverse old only (downgrade)
         $wasConfirmed = $invoice->status === 'confirmed';
+        $newStatus = $data['status'] ?? $invoice->status;
+        $isNowConfirmed = $newStatus === 'confirmed';
+
+        // Reverse best-seller counters for old items if the invoice was already counted
         if ($wasConfirmed) {
             self::applySaleCounters(
                 $invoice->items()->get(['product_id', 'product_sku_id', 'quantity', 'return_quantity'])
@@ -202,19 +236,20 @@ class InvoiceService
             );
         }
 
-        // 1. Reverse old stock (Add it back to the OLD warehouse)
-        foreach ($invoice->items as $oldItem) {
-            $sku = ProductSku::find($oldItem->product_sku_id);
-            if ($sku) {
-                // Note: Assuming your InventoryService has an 'addStock' method
-                // to reverse deductions. If it's called something else, adjust the name!
-                $this->inventory->addStock(
-                    $sku,
-                    $invoice->warehouse_id,
-                    $oldItem->quantity,
-                    'sale_return',
-                    $invoice
-                );
+        // 1. Reverse old stock (Add it back to the OLD warehouse) — only if old was confirmed.
+        //    Draft invoices never deducted stock, so there's nothing to reverse.
+        if ($wasConfirmed) {
+            foreach ($invoice->items as $oldItem) {
+                $sku = ProductSku::find($oldItem->product_sku_id);
+                if ($sku) {
+                    $this->inventory->addStock(
+                        $sku,
+                        $invoice->warehouse_id,
+                        $oldItem->quantity,
+                        'sale_return',
+                        $invoice
+                    );
+                }
             }
         }
 
@@ -233,6 +268,7 @@ class InvoiceService
             'invoice_date' => $data['invoice_date'],
             'due_date' => $data['due_date'] ?? null,
             'supply_state' => $data['supply_state'],
+            'status' => $newStatus,
             'notes' => $data['notes'] ?? null,
             'terms_conditions' => $data['terms_conditions'] ?? null,
         ]);
@@ -255,6 +291,10 @@ class InvoiceService
                 $isInterState
             );
 
+            $discountType = (isset($item['discount_type']) && $item['discount_type'] === 'percentage')
+                ? 'percentage'
+                : 'fixed';
+
             $invoice->items()->create([
                 'product_id' => $sku->product_id,
                 'product_sku_id' => $sku->id,
@@ -263,7 +303,8 @@ class InvoiceService
                 'hsn_code' => $sku->product->hsn_code,
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
-                'discount_type' => (isset($item['discount_type']) && $item['discount_type'] === 'percent') ? 'percentage' : 'fixed',
+                'discount_type' => $discountType,
+                'discount_value' => (float) ($item['discount_value'] ?? 0),
                 'discount_amount' => $itemTax['discount_amount'],
                 'taxable_value' => $itemTax['taxable'],
                 'tax_percent' => $item['tax_percent'] ?? 0,
@@ -282,23 +323,25 @@ class InvoiceService
             $totals['igst'] += $itemTax['igst'];
             $totals['tax'] += $itemTax['total_tax'];
 
-            // Deduct from the NEW warehouse selection
-            $this->inventory->deductStock(
-                $sku,
-                $data['warehouse_id'],
-                $item['quantity'],
-                'sale',
-                $invoice
-            );
+            // Deduct from the NEW warehouse selection — only when the invoice is confirmed.
+            if ($isNowConfirmed) {
+                $this->inventory->deductStock(
+                    $sku,
+                    $data['warehouse_id'],
+                    $item['quantity'],
+                    'sale',
+                    $invoice
+                );
+            }
         }
 
         // 6. Finalize Header Totals & Apply Global Discount
         $itemsSum = $totals['taxable'] + $totals['tax'];
-        $globalDiscountType = $data['global_discount_type'] ?? 'fixed';
-        $globalDiscountValue = (float) ($data['global_discount_value'] ?? 0);
+        $globalDiscountType = $data['discount_type'] ?? 'fixed';
+        $globalDiscountValue = (float) ($data['discount_value'] ?? 0);
 
         $globalDiscountAmount = 0;
-        if ($globalDiscountType === 'percent') {
+        if ($globalDiscountType === 'percentage' || $globalDiscountType === 'percent') {
             $globalDiscountAmount = $itemsSum * ($globalDiscountValue / 100);
         } else {
             $globalDiscountAmount = $globalDiscountValue;
@@ -317,7 +360,8 @@ class InvoiceService
             'sgst_amount' => $totals['sgst'],
             'igst_amount' => $totals['igst'],
             'tax_amount' => $totals['tax'],
-            'discount_type' => $globalDiscountType === 'percent' ? 'percentage' : 'fixed',
+            'discount_type' => ($globalDiscountType === 'percentage' || $globalDiscountType === 'percent') ? 'percentage' : 'fixed',
+            'discount_value' => $globalDiscountValue,
             'discount_amount' => $globalDiscountAmount,
             'shipping_charge' => $shippingCharge,
             'round_off' => $roundOff,
@@ -362,7 +406,7 @@ class InvoiceService
 
         // 1. Calculate and Deduct Line Discount FIRST
         $discountAmount = 0;
-        if ($discountType === 'percent') {
+        if ($discountType === 'percent' || $discountType === 'percentage') {
             $discountAmount = $baseSubtotal * ($discountValue / 100);
         } else {
             $discountAmount = $discountValue;

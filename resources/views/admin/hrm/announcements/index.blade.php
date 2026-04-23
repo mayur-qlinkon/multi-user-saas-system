@@ -4,8 +4,8 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">HRM / Announcements</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage and broadcast company-wide updates.</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Announcements</h1>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Manage and broadcast company-wide updates.</p> --}}
     </div>
 @endsection
 

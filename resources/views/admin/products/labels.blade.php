@@ -3,7 +3,7 @@
 @section('title', 'Label Print - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Labels / Products</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Labels</h1>
 @endsection
 
 @section('content')

@@ -60,7 +60,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
             rel="stylesheet">
-        <link rel="icon" type="image/png" href="{{ get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : 'https://fav.farm/🔷' }}">
+        <link rel="icon" type="image/png" href="{{ get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : asset('assets/icons/favicon.png') }}">
 
         {{-- 1. Load Tailwind FIRST --}}
         <script src="{{ asset('assets/js/tailwind.min.js') }}"></script>
@@ -456,20 +456,20 @@
 
                 <div class="h-[60px] flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0">
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5">
-                       {{-- 1. The Full Logo --}}
-                        @if ($logo)
-                            <img src="{{ asset('storage/' . $logo) }}" alt="{{ $siteName }} logo"
-                                class="sidebar-logo-img h-7 md:h-8 lg:h-9 max-w-[150px] w-auto object-contain" />
-                        @else
-                            <div class="sidebar-logo-img w-8 h-8 bg-brand-600 rounded-lg text-white flex items-center justify-center shadow-sm">
-                                <i data-lucide="leaf" class="w-[18px] h-[18px] fill-current"></i>
-                                <span class="ml-2 font-bold">{{ $siteName }}</span>
-                            </div>
-                        @endif
+                        {{-- Full Logo --}}
+                        <img
+                            src="{{ asset('assets/images/logo.png') }}"
+                            alt="{{ $siteName }} logo"
+                            class="sidebar-logo-img h-7 md:h-8 lg:h-9 max-w-[150px] w-auto object-contain"
+                        />
 
-                        {{-- 🌟 2. NEW: The Mini Logo (Only shows when shrunk) --}}
-                        <div class="sidebar-logo-mini w-8 h-8 bg-brand-600 rounded-lg text-white flex items-center justify-center shadow-sm">
-                            <i data-lucide="leaf" class="w-[18px] h-[18px] fill-current"></i>
+                        {{-- Mini Logo --}}
+                        <div class="sidebar-logo-mini w-10 h-10 rounded-lg text-white flex items-center justify-center shadow-sm overflow-hidden">
+                            <img
+                                src="{{ asset('assets/icons/favicon.png') }}"
+                                alt="{{ $siteName }} mini logo"
+                                class="w-full h-full object-contain p-1"
+                            />
                         </div>
                     </a>
 
@@ -537,39 +537,7 @@
                                 Order Process
                             </span>
                         </a>
-                    @endif
-
-                    {{-- Challans --}}
-                    @if (has_module('challan') && has_permission('challans.view'))
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.challans.*','admin.challan-returns.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls(['admin.challans.*','admin.challan-returns.*']) }}">
-                                <span class="flex items-center gap-3">
-                                    <i data-lucide="file-text" class="nav-icon w-[18px] h-[18px]"></i> Challans
-                                </span>
-                                <i data-lucide="chevron-right" class="nav-chevron"></i>
-                            </button>
-
-                            <div class="acc-wrap">
-                                <div class="sub-menu">
-
-                                    {{-- All Challans --}}
-                                    <a href="{{ route('admin.challans.index') }}" class="sub-item {{ $subCls('admin.challans.*') }} flex items-center gap-2">
-                                        <i data-lucide="list" class="w-4 h-4"></i>
-                                        All Challans
-                                    </a>
-
-                                    {{-- Returns --}}
-                                    
-                                        <a href="{{ route('admin.challan-returns.index') }}" class="sub-item {{ $subCls('admin.challan-returns.*') }} flex items-center gap-2">
-                                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                                            Returns
-                                        </a>
-                                    
-
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+                    @endif                
                     
                     
                     @if(has_module('invoicing') && has_permission(['invoices.view', 'quotations.view']))
@@ -596,9 +564,40 @@
                             <div class="acc-wrap">
                                 <div class="sub-menu">
                                     <a href="{{ route('admin.invoices.index') }}"
-                                        class="sub-item {{ $subCls('admin.invoices.*') }}">Sales</a>
+                                        class="sub-item {{ $subCls('admin.invoices.*') }}">
+                                        <i data-lucide="list" class="w-4 h-4"></i>
+                                        Sales</a>
                                     <a href="{{ route('admin.invoice-returns.index') }}"
-                                        class="sub-item {{ $subCls('admin.invoice-returns.*') }}">Sales Returns</a>
+                                        class="sub-item {{ $subCls('admin.invoice-returns.*') }}">
+                                        <i data-lucide="corner-up-left" class="w-4 h-4"></i>
+                                        Sales Returns</a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Challans --}}
+                    @if (has_module('challan') && has_permission('challans.view'))
+                        <div class="acc-group" data-open="{{ $accOpen(['admin.challans.*','admin.challan-returns.*']) }}">
+                            <button class="nav-item acc-trigger {{ $navCls(['admin.challans.*','admin.challan-returns.*']) }}">
+                                <span class="flex items-center gap-3">
+                                    <i data-lucide="truck" class="nav-icon w-[18px] h-[18px]"></i> Delivery Challans
+                                </span>
+                                <i data-lucide="chevron-right" class="nav-chevron"></i>
+                            </button>
+
+                            <div class="acc-wrap">
+                                <div class="sub-menu">
+                                    {{-- All Challans --}}
+                                    <a href="{{ route('admin.challans.index') }}" class="sub-item {{ $subCls('admin.challans.*') }} flex items-center gap-2">
+                                        <i data-lucide="list" class="w-4 h-4"></i>
+                                        All Challans
+                                    </a>
+                                    {{-- Returns --}}                                    
+                                    <a href="{{ route('admin.challan-returns.index') }}" class="sub-item {{ $subCls('admin.challan-returns.*') }} flex items-center gap-2">
+                                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                                        Challan Returns
+                                    </a>                                    
                                 </div>
                             </div>
                         </div>
@@ -608,7 +607,8 @@
                         <a href="{{ route('admin.quotations.index') }}"
                             class="nav-item {{ $navCls('admin.quotations.*') }}">
                             <span class="flex items-center gap-3"><i data-lucide="quote"
-                                class="nav-icon w-[18px] h-[18px]"></i> Quotations</span>
+                                class="nav-icon w-[18px] h-[18px]"></i> 
+                                Quotations</span>
                         </a>
                     @endif
                                   
@@ -625,10 +625,13 @@
                             <div class="acc-wrap">
                                 <div class="sub-menu">
                                     <a href="{{ route('admin.purchases.index') }}"
-                                        class="sub-item {{ $subCls('admin.purchases.*') }}">Purchases</a>
+                                        class="sub-item {{ $subCls('admin.purchases.*') }}">
+                                        <i data-lucide="list" class="w-4 h-4"></i>
+                                        Purchases</a>
                                     <a href="{{ route('admin.purchase-returns.index') }}"
-                                        class="sub-item {{ $subCls('admin.purchase-returns.*') }}">Purchase
-                                        Returns</a>
+                                        class="sub-item {{ $subCls('admin.purchase-returns.*') }}">
+                                        <i data-lucide="corner-up-left" class="w-4 h-4"></i>
+                                        Purchase Returns</a>
                                 </div>
                             </div>
                         </div>
@@ -692,23 +695,33 @@
                                 <div class="sub-menu">
                                     @if (has_permission('products.view'))
                                         <a href="{{ route('admin.products.index') }}"
-                                            class="sub-item {{ $subCls('admin.products.*') }}">All Products</a>
+                                            class="sub-item {{ $subCls('admin.products.*') }}">
+                                            <i data-lucide="list" class="w-4 h-4"></i>
+                                            All Products</a>
                                     @endif
                                     @if (has_permission('attributes.view'))
                                         <a href="{{ route('admin.attributes.index') }}"
-                                            class="sub-item {{ $subCls('admin.attributes.*') }}">Attributes</a>
+                                            class="sub-item {{ $subCls('admin.attributes.*') }}">
+                                            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                                            Attributes</a>
                                     @endif
                                     @if (has_permission('categories.view'))
                                         <a href="{{ route('admin.categories.index') }}"
-                                            class="sub-item {{ $subCls('admin.categories.*') }}">Categories</a>
+                                            class="sub-item {{ $subCls('admin.categories.*') }}">
+                                            <i data-lucide="folder" class="w-4 h-4"></i>
+                                            Categories</a>
                                     @endif
                                     @if (has_permission('units.view'))
                                         <a href="{{ route('admin.units.index') }}"
-                                            class="sub-item {{ $subCls('admin.units.*') }}">Units</a>
+                                            class="sub-item {{ $subCls('admin.units.*') }}">
+                                            <i data-lucide="ruler" class="w-4 h-4"></i>
+                                            Units</a>
                                     @endif
                                     @if (has_permission('labels.view'))
                                         <a href="{{ route('admin.labels.index') }}"
-                                            class="sub-item {{ $subCls('admin.labels.*') }}">Print Barcode</a>
+                                            class="sub-item {{ $subCls('admin.labels.*') }}">
+                                            <i data-lucide="barcode" class="w-4 h-4"></i>
+                                            Print Barcode</a>
                                     @endif
                                 </div>
                             </div>
@@ -753,18 +766,28 @@
                                 <div class="sub-menu">
                                     @if(has_permission('crm_dashboard.view'))
                                      <a href="{{ route('admin.crm.dashboard') }}"
-                                        class="sub-item {{ $subCls('admin.crm.dashboard') }}">Dashboard</a>
+                                        class="sub-item {{ $subCls('admin.crm.dashboard') }}">
+                                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                                        Dashboard</a>
                                     @endif
                                     <a href="{{ route('admin.crm.leads.index') }}"
-                                        class="sub-item {{ $subCls('admin.crm.leads.*') }}">All Leads</a>
+                                        class="sub-item {{ $subCls('admin.crm.leads.*') }}">
+                                        <i data-lucide="users" class="w-4 h-4"></i>
+                                        All Leads</a>
                                     @if(has_permission('crm_pipelines.view'))
                                     <a href="{{ route('admin.crm.pipelines.index') }}"
-                                        class="sub-item {{ $subCls(['admin.crm.pipelines.*','admin.crm.stages.*']) }}">Pipelines</a>
+                                        class="sub-item {{ $subCls(['admin.crm.pipelines.*','admin.crm.stages.*']) }}">
+                                        <i data-lucide="git-branch" class="w-4 h-4"></i>
+                                        Pipelines</a>
                                     @endif
                                     <a href="{{ route('admin.crm.sources.index') }}"
-                                        class="sub-item {{ $subCls('admin.crm.sources.*') }}">Lead Sources</a>
+                                        class="sub-item {{ $subCls('admin.crm.sources.*') }}">
+                                        <i data-lucide="target" class="w-4 h-4"></i>
+                                        Lead Sources</a>
                                     <a href="{{ route('admin.crm.tags.index') }}?tab=tags"
-                                        class="sub-item {{ $subCls('admin.crm.tags.*') }}">Tags</a>
+                                        class="sub-item {{ $subCls('admin.crm.tags.*') }}">
+                                        <i data-lucide="tag" class="w-4 h-4"></i>
+                                        Tags</a>
                                 </div>
                             </div>
                         </div>
@@ -786,11 +809,15 @@
                             <div class="sub-menu">
                                 @if (has_permission('clients.view'))
                                     <a href="{{ route('admin.clients.index') }}"
-                                        class="sub-item {{ $subCls('admin.clients.*') }}">Clients</a>
+                                        class="sub-item {{ $subCls('admin.clients.*') }}">
+                                        <i data-lucide="briefcase" class="w-4 h-4"></i>
+                                        Clients</a>
                                 @endif
                                 @if (has_permission('suppliers.view'))
                                     <a href="{{ route('admin.suppliers.index') }}"
-                                        class="sub-item {{ $subCls('admin.suppliers.*') }}">Suppliers</a>
+                                        class="sub-item {{ $subCls('admin.suppliers.*') }}">
+                                        <i data-lucide="building-2" class="w-4 h-4"></i>
+                                        Suppliers</a>
                                 @endif                                    
                             </div>
                         </div>
@@ -817,12 +844,18 @@
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.hrm.attendance.today') }}" class="sub-item {{ $subCls('admin.hrm.attendance.today') }}">Today</a>
+                                    <a href="{{ route('admin.hrm.attendance.today') }}" class="sub-item {{ $subCls('admin.hrm.attendance.today') }}">
+                                        <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                                        Today</a>
                                     @if(has_permission('attendance.report'))
-                                        <a href="{{ route('admin.hrm.attendance.report') }}" class="sub-item {{ $subCls('admin.hrm.attendance.report') }}">Report</a>
+                                        <a href="{{ route('admin.hrm.attendance.report') }}" class="sub-item {{ $subCls('admin.hrm.attendance.report') }}">
+                                            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                                            Report</a>
                                     @endif
                                     @if(has_permission('office_locations.view'))
-                                        <a href="{{ route('admin.hrm.office-locations.index') }}" class="sub-item {{ $subCls('admin.hrm.office-locations.*') }}">Office Locations</a>                                    
+                                        <a href="{{ route('admin.hrm.office-locations.index') }}" class="sub-item {{ $subCls('admin.hrm.office-locations.*') }}">
+                                            <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                            Office Locations</a>                                    
                                     @endif
                                 </div>
                             </div>
@@ -852,9 +885,15 @@
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.hrm.leaves.index') }}" class="sub-item {{ $subCls('admin.hrm.leaves.*') }}">All Requests</a>
-                                    <a href="{{ route('admin.hrm.leave-types.index') }}" class="sub-item {{ $subCls('admin.hrm.leave-types.*') }}">Leave Types</a>
-                                    <a href="{{ route('admin.hrm.leave-balances.index') }}" class="sub-item {{ $subCls('admin.hrm.leave-balances.*') }}">Leave Balances</a>
+                                    <a href="{{ route('admin.hrm.leaves.index') }}" class="sub-item {{ $subCls('admin.hrm.leaves.*') }}">
+                                        <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+                                        All Requests</a>
+                                    <a href="{{ route('admin.hrm.leave-types.index') }}" class="sub-item {{ $subCls('admin.hrm.leave-types.*') }}">
+                                        <i data-lucide="layers" class="w-4 h-4"></i>
+                                        Leave Types</a>
+                                    <a href="{{ route('admin.hrm.leave-balances.index') }}" class="sub-item {{ $subCls('admin.hrm.leave-balances.*') }}">
+                                        <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                                        Leave Balances</a>
                                 </div>
                             </div>
                         </div>
@@ -869,9 +908,15 @@
                                 </button>
                                 <div class="acc-wrap">
                                     <div class="sub-menu">                                        
-                                            <a href="{{ route('admin.hrm.salary-slips.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-slips.*') }}">Salary Slips</a>                                        
+                                            <a href="{{ route('admin.hrm.salary-slips.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-slips.*') }}">
+                                                <i data-lucide="file-text" class="w-4 h-4"></i> 
+                                                Salary Slips</a>                                        
                                         @if(has_permission('salary_components.view'))
-                                            <a href="{{ route('admin.hrm.salary-components.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-components.*') }}">Components</a>
+                                            <a href="{{ route('admin.hrm.salary-components.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-components.*') }}">
+                                                <i data-lucide="list-checks" class="w-4 h-4"></i>
+
+
+                                                Components</a>
                                         @endif
                                     </div>
                                 </div>
@@ -894,19 +939,29 @@
                             <div class="acc-wrap">
                                 <div class="sub-menu">
                                     @if(has_permission('departments.view'))
-                                        <a href="{{ route('admin.hrm.departments.index') }}" class="sub-item {{ $subCls('admin.hrm.departments.*') }}">Departments</a>
+                                        <a href="{{ route('admin.hrm.departments.index') }}" class="sub-item {{ $subCls('admin.hrm.departments.*') }}">
+                                            <i data-lucide="building-2" class="w-4 h-4"></i>
+                                            Departments</a>
                                     @endif
                                     @if(has_permission('designations.view'))
-                                        <a href="{{ route('admin.hrm.designations.index') }}" class="sub-item {{ $subCls('admin.hrm.designations.*') }}">Designations</a>
+                                        <a href="{{ route('admin.hrm.designations.index') }}" class="sub-item {{ $subCls('admin.hrm.designations.*') }}">
+                                            <i data-lucide="id-card" class="w-4 h-4"></i> 
+                                            Designations</a>
                                     @endif
                                     @if(has_permission('shifts.view'))
-                                        <a href="{{ route('admin.hrm.shifts.index') }}" class="sub-item {{ $subCls('admin.hrm.shifts.*') }}">Shifts</a>
+                                        <a href="{{ route('admin.hrm.shifts.index') }}" class="sub-item {{ $subCls('admin.hrm.shifts.*') }}">
+                                            <i data-lucide="clock-8" class="w-4 h-4"></i> 
+                                            Shifts</a>
                                     @endif
                                     @if(has_permission('holidays.view'))
-                                        <a href="{{ route('admin.hrm.holidays.index') }}" class="sub-item {{ $subCls('admin.hrm.holidays.*') }}">Holidays</a>
+                                        <a href="{{ route('admin.hrm.holidays.index') }}" class="sub-item {{ $subCls('admin.hrm.holidays.*') }}">
+                                            <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                                            Holidays</a>
                                     @endif
                                     @if(has_permission('attendance_rules.view'))
-                                        <a href="{{ route('admin.hrm.attendance-rules.index') }}" class="sub-item {{ $subCls('admin.hrm.attendance-rules.*') }}">Attendance Rules</a>
+                                        <a href="{{ route('admin.hrm.attendance-rules.index') }}" class="sub-item {{ $subCls('admin.hrm.attendance-rules.*') }}">
+                                            <i data-lucide="check-square" class="w-4 h-4"></i>
+                                            Attendance Rules</a>
                                     @endif
                                 </div>
                             </div>
@@ -1251,6 +1306,119 @@
                 </main>
             </div>
 
+
+        
+        {{-- ══════════════════════════════════════════════════════
+            ANNOUNCEMENT POPUP — auto-loads on page ready
+        ══════════════════════════════════════════════════════ --}}
+        <div x-data="announcementPopup()" x-init="init()" x-cloak>
+            <template x-if="announcements.length > 0">
+                <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
+                     @keydown.escape.window="dismissCurrent()">
+                    {{-- Backdrop --}}
+                    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
+                         :class="currentAnnouncement?.requires_acknowledgement ? '' : 'cursor-pointer'"
+                         @click="!currentAnnouncement?.requires_acknowledgement && dismissCurrent()"></div>
+                    {{-- Modal Card --}}
+                    <div class="relative w-full max-w-[520px] bg-white rounded-[24px] shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out] flex flex-col"
+                         style="max-height: 90vh;">
+                        {{-- Header / Category Ribbon --}}
+                        <div class="px-6 py-5 border-b border-gray-50 flex items-center justify-between shrink-0 bg-gray-50/30">
+                            <div class="flex items-center gap-3">
+                                {{-- Icon Box --}}
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                                     :style="'background:' + (currentAnnouncement?.type_color?.text || '#4b5563') + '15; color:' + (currentAnnouncement?.type_color?.text || '#4b5563')">
+                                    <svg x-show="currentAnnouncement?.requires_acknowledgement" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <svg x-show="!currentAnnouncement?.requires_acknowledgement" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                </div>
+                                {{-- Labels --}}
+                                <div class="flex items-center gap-2 flex-wrap mt-0.5">
+                                    <span class="text-[11px] font-black uppercase tracking-widest"
+                                          :style="'color:' + (currentAnnouncement?.type_color?.text || '#4b5563')"
+                                          x-text="currentAnnouncement?.type_label || 'GENERAL'"></span>
+                                    <span x-show="currentAnnouncement?.requires_acknowledgement"
+                                          class="text-[10px] font-black uppercase tracking-widest text-[#dc2626] bg-[#fef2f2] px-2 py-0.5 rounded-md">
+                                        Mandatory
+                                    </span>
+                                </div>
+                            </div>
+                            {{-- Counter (if multiple) --}}
+                            <div x-show="announcements.length > 1" class="text-[11px] font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full shrink-0">
+                                <span x-text="currentIndex + 1"></span> / <span x-text="announcements.length"></span>
+                            </div>
+                        </div>
+                        {{-- Scrollable Content Body --}}
+                        <div class="px-6 py-6 overflow-y-auto no-scrollbar flex-1">
+                            {{-- Title & Time --}}
+                            <div class="mb-5">
+                                <h2 class="text-[20px] font-black text-gray-900 leading-tight tracking-tight mb-1"
+                                    x-text="currentAnnouncement?.title"></h2>
+                                <p class="text-[13px] font-medium text-gray-400" x-text="currentAnnouncement?.published_at"></p>
+                            </div>
+                            {{-- HTML Content --}}
+                            <div class="prose prose-sm sm:prose-base max-w-none text-[#4b5563] leading-relaxed"
+                                 x-html="currentAnnouncement?.content"></div>
+                            {{-- Attachment Button --}}
+                            <template x-if="currentAnnouncement?.attachment_url">
+                                <a :href="currentAnnouncement.attachment_url" target="_blank"
+                                   class="mt-5 inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all group">
+                                    <svg class="text-gray-400 group-hover:text-gray-600 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                    </svg>
+                                    <span x-text="currentAnnouncement.attachment_name || 'View Attachment'"></span>
+                                </a>
+                            </template>
+                            {{-- Priority Alert Box (Matches Screenshot exactly) --}}
+                            <template x-if="currentAnnouncement?.priority === 'critical' || currentAnnouncement?.priority === 'high'">
+                                <div class="mt-6 p-3.5 rounded-xl flex items-center gap-2.5 font-bold text-sm"
+                                     :class="currentAnnouncement.priority === 'critical' ? 'bg-[#fdf2f2] text-[#d32f2f]' : 'bg-amber-50 text-amber-700'">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    <span x-text="currentAnnouncement.priority === 'critical' ? 'Critical Priority' : 'High Priority'"></span>
+                                </div>
+                            </template>
+                        </div>
+                        {{-- Footer Actions --}}
+                        <div class="px-6 py-5 border-t border-gray-100 bg-white shrink-0 flex items-center gap-3"
+                             :class="currentAnnouncement?.requires_acknowledgement ? 'justify-center' : 'justify-end'">
+                            {{-- Dismiss Button (Hidden if Mandatory) --}}
+                            <button x-show="!currentAnnouncement?.requires_acknowledgement"
+                                    @click="dismissCurrent()"
+                                    :disabled="processing"
+                                    class="px-5 py-3 text-[14px] font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-[14px] transition-colors active:scale-95 disabled:opacity-50">
+                                Dismiss
+                            </button>
+                            {{-- Action Button (Accept / Got It) --}}
+                            <button @click="acknowledgeCurrent()"
+                                    :disabled="processing"
+                                    class="px-8 py-3.5 rounded-[14px] text-[15px] font-extrabold text-white transition-all active:scale-95 flex items-center justify-center"
+                                    :class="processing ? 'bg-gray-400 cursor-wait shadow-none' : (currentAnnouncement?.requires_acknowledgement ? 'bg-[#d32f2f] hover:bg-[#b71c1c] w-[260px]' : 'bg-brand-600 hover:bg-brand-700 w-auto')">
+                                <span x-show="!processing" x-text="currentAnnouncement?.requires_acknowledgement ? 'I Accept & Acknowledge' : 'Got It'"></span>
+                                <span x-show="processing" class="flex items-center gap-2">
+                                    <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"></circle>
+                                        <path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    Processing...
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+
         <script>
             /* ── Lucide global init ── */
             window.initIcons = function(scope) {
@@ -1262,6 +1430,20 @@
                     nodes: scope.querySelectorAll('[data-lucide]')
                 } : undefined);
             };
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.close();
+                    }
+                }
+            });
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.close();
+                    }
+                }
+            });
 
 
             /* ── Page cover fade ── */
@@ -1637,119 +1819,8 @@
             
         </script>
                               
-          <script src="{{ asset('assets/js/swal.js') }}"></script>
-
-        {{-- ══════════════════════════════════════════════════════
-            ANNOUNCEMENT POPUP — auto-loads on page ready
-        ══════════════════════════════════════════════════════ --}}
-        <div x-data="announcementPopup()" x-init="init()" x-cloak>
-            <template x-if="announcements.length > 0">
-                <div class="fixed inset-0 z-[9999] flex items-center justify-center"
-                     @keydown.escape.window="dismissCurrent()">
-
-                    {{-- Backdrop --}}
-                    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                         :class="currentAnnouncement?.requires_acknowledgement ? '' : 'cursor-pointer'"
-                         @click="!currentAnnouncement?.requires_acknowledgement && dismissCurrent()"></div>
-
-                    {{-- Modal --}}
-                    <div class="relative w-full max-w-lg mx-4 sm:mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out]"
-                         style="max-height: 90vh;">
-
-                        {{-- Counter badge --}}
-                        <div x-show="announcements.length > 1"
-                             class="absolute top-4 right-4 z-10 bg-gray-900/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
-                            <span x-text="currentIndex + 1"></span> / <span x-text="announcements.length"></span>
-                        </div>
-
-                        {{-- Type ribbon --}}
-                        <div class="px-6 pt-5 pb-3" :style="'background:' + (currentAnnouncement?.type_color?.bg || '#f3f4f6')">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-9 h-9 rounded-xl flex items-center justify-center"
-                                     :style="'background:' + (currentAnnouncement?.type_color?.text || '#374151') + '15'">
-                                    <svg x-show="currentAnnouncement?.requires_acknowledgement" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                         :style="'color:' + (currentAnnouncement?.type_color?.text || '#374151')">
-                                        <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    <svg x-show="!currentAnnouncement?.requires_acknowledgement" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                         :style="'color:' + (currentAnnouncement?.type_color?.text || '#374151')">
-                                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] font-extrabold uppercase tracking-wider"
-                                          :style="'color:' + (currentAnnouncement?.type_color?.text || '#374151')"
-                                          x-text="currentAnnouncement?.type_label"></span>
-                                    <span x-show="currentAnnouncement?.requires_acknowledgement"
-                                          class="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
-                                        Mandatory
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Content --}}
-                        <div class="px-6 py-4 overflow-y-auto" style="max-height: 55vh;">
-                            <h2 class="text-base font-bold text-gray-900 leading-snug mb-1"
-                                x-text="currentAnnouncement?.title"></h2>
-                            <p class="text-[11px] text-gray-400 mb-4" x-text="currentAnnouncement?.published_at"></p>
-
-                            <div class="prose prose-sm max-w-none text-gray-600 text-[13px] leading-relaxed"
-                                 x-html="currentAnnouncement?.content"></div>
-
-                            {{-- Attachment --}}
-                            <template x-if="currentAnnouncement?.attachment_url">
-                                <a :href="currentAnnouncement.attachment_url" target="_blank"
-                                   class="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-[12px] font-medium text-gray-600 hover:bg-gray-100 transition-colors">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
-                                    </svg>
-                                    <span x-text="currentAnnouncement.attachment_name || 'Attachment'"></span>
-                                </a>
-                            </template>
-                        </div>
-
-                        {{-- Priority indicator --}}
-                        <template x-if="currentAnnouncement?.priority === 'critical' || currentAnnouncement?.priority === 'high'">
-                            <div class="mx-6 mb-3 px-3 py-2 rounded-lg text-[11px] font-bold"
-                                 :class="currentAnnouncement.priority === 'critical' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'">
-                                <span x-text="currentAnnouncement.priority === 'critical' ? '⚠ Critical Priority' : '⚡ High Priority'"></span>
-                            </div>
-                        </template>
-
-                        {{-- Actions --}}
-                        <div class="px-6 py-4 border-t border-gray-100 flex items-center gap-3"
-                             :class="currentAnnouncement?.requires_acknowledgement ? 'justify-center' : 'justify-between'">
-
-                            {{-- Dismiss (non-mandatory only) --}}
-                            <button x-show="!currentAnnouncement?.requires_acknowledgement"
-                                    @click="dismissCurrent()"
-                                    :disabled="processing"
-                                    class="px-4 py-2.5 text-[12px] font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">
-                                Dismiss
-                            </button>
-
-                            {{-- Acknowledge / Accept --}}
-                            <button @click="acknowledgeCurrent()"
-                                    :disabled="processing"
-                                    class="px-6 py-2.5 rounded-xl text-[12px] font-bold text-white transition-all"
-                                    :class="processing ? 'bg-gray-400 cursor-wait' : (currentAnnouncement?.requires_acknowledgement ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700')">
-                                <span x-show="!processing" x-text="currentAnnouncement?.requires_acknowledgement ? 'I Accept & Acknowledge' : 'Got It'"></span>
-                                <span x-show="processing" class="flex items-center gap-2">
-                                    <svg class="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25"/>
-                                        <path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
-                                    </svg>
-                                    Processing...
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </template>
-        </div>
+        <script src="{{ asset('assets/js/swal.js') }}"></script>
+        
         <audio id="qlinkon-notif-audio" src="{{ asset('assets/audio/notification.mp3') }}" preload="auto" style="display:none;"></audio>
         <script>
         window.announcementPopup = function() {

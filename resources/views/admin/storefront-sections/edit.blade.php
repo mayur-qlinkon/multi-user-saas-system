@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Section — ' . $section->title)
+@section('title', 'Edit Section — ' . $section->admin_label)
 
 @section('header-title')
     <div>
@@ -482,17 +482,19 @@
                         </div>
 
                         {{-- Conditional: Manual selection — manage products button ── --}}
-                        <div class="mt-4" x-show="sectionType === 'manual'" x-cloak>
-                            <a href="{{ route('admin.storefront-sections.products.index', $section->id) }}"
-                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors hover:opacity-90"
-                                style="background: var(--brand-600);">
-                                <i data-lucide="list-checks" class="w-4 h-4"></i>
-                                Manage Products
-                            </a>
-                            <p class="text-[11px] text-gray-400 mt-2">
-                                Hand-pick exactly which products appear in this section and their order.
-                            </p>
-                        </div>
+                        @if ($section->type === 'manual')
+                            <div class="mt-4" x-show="sectionType === 'manual'" x-cloak>
+                                <a href="{{ route('admin.storefront-sections.products.index', $section->id) }}"
+                                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors hover:opacity-90"
+                                    style="background: var(--brand-600);">
+                                    <i data-lucide="list-checks" class="w-4 h-4"></i>
+                                    Manage Products
+                                </a>
+                                <p class="text-[11px] text-gray-400 mt-2">
+                                    Hand-pick exactly which products appear in this section and their order.
+                                </p>
+                            </div>
+                        @endif
 
                         {{-- Conditional: Custom HTML ── --}}
                         <div class="mt-4" x-show="sectionType === 'custom_html'" x-cloak>
@@ -534,21 +536,21 @@
                         </p>
                         <div class="space-y-4">
                             <div>
-                                <label class="field-label">Section Title <span class="text-red-500">*</span></label>
-                                <input type="text" name="title" value="{{ old('title', $section->title) }}"
-                                    placeholder="e.g. Indoor Plants, New Arrivals"
-                                    class="field-input {{ $errors->has('title') ? 'error' : '' }}">
-                                @error('title')
-                                    <p class="field-error mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-                            <div>
-                                <label class="field-label">Admin Label <span
-                                        class="text-gray-400 normal-case font-normal">(optional — internal only)</span></label>
+                                <label class="field-label">Admin Label <span class="text-red-500">*</span><span
+                                        class="text-gray-400 normal-case font-normal"> (internal only)</span></label>
                                 <input type="text" name="admin_label" value="{{ old('admin_label', $section->admin_label) }}"
                                     placeholder="e.g. Monsoon Promo Row — shown only in admin"
                                     class="field-input {{ $errors->has('admin_label') ? 'error' : '' }}">
                                 @error('admin_label')
+                                    <p class="field-error mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="field-label">Section Title</label>
+                                <input type="text" name="title" value="{{ old('title', $section->title) }}"
+                                    placeholder="e.g. Indoor Plants, New Arrivals"
+                                    class="field-input {{ $errors->has('title') ? 'error' : '' }}">
+                                @error('title')
                                     <p class="field-error mt-1">{{ $message }}</p>
                                 @enderror
                             </div>

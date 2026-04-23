@@ -37,10 +37,11 @@ class StoreQuotationRequest extends FormRequest
             'exchange_rate' => ['nullable', 'numeric', 'min:0.0001'],
             'supply_state' => ['nullable', 'string', 'max:100'],
             'gst_treatment' => ['required', Rule::in(['registered', 'unregistered', 'composition', 'overseas', 'sez'])],
+            'status' => ['nullable', Rule::in(['draft', 'sent'])],
 
             // Global Financials
             'discount_type' => ['required', Rule::in(['fixed', 'percentage'])],
-            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'discount_value' => ['nullable', 'numeric', 'min:0'],            
             'shipping_charge' => ['nullable', 'numeric', 'min:0'],
             'other_charges' => ['nullable', 'numeric', 'min:0'],
 
@@ -67,7 +68,7 @@ class StoreQuotationRequest extends FormRequest
             'items.*.tax_type' => ['required', Rule::in(['inclusive', 'exclusive'])],
             'items.*.tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount_type' => ['required', Rule::in(['fixed', 'percentage'])],
-            'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'items.*.discount_value' => ['nullable', 'numeric', 'min:0'],            
         ];
     }
 

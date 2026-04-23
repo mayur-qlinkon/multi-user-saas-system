@@ -3,7 +3,7 @@
 @section('title', 'Sales Invoices - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Invoices</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Invoices</h1>
 @endsection
 
 @push('styles')
@@ -254,13 +254,15 @@
                                             </button>
                                         @endif
 
-                                        @if ($invoice->status !== 'cancelled' && has_permission('invoices.update'))
+                                        @if ($invoice->status !== 'cancelled')
                                             {{-- 🌟 2. NEW: Edit Button --}}
+                                            @if($invoice->status !== 'confirmed' && has_permission('invoices.update'))
                                             <a href="{{ route('admin.invoices.edit', $invoice->id) }}"
                                                 class="w-8 h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
                                                 title="Edit Invoice">
                                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                                             </a>
+                                            @endif
 
                                             {{-- 3. Cancel Button --}}
                                             <form action="{{ route('admin.invoices.destroy', $invoice->id) }}"

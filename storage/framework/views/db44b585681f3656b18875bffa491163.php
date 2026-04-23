@@ -4,8 +4,8 @@
 
 <?php $__env->startSection('header-title'); ?>
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Notifications / History</h1>
-        <p class="text-xs text-gray-400 font-medium mt-1">Review all system alerts and activity logs</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Notifications / History</h1>
+        
     </div>
 <?php $__env->stopSection(); ?>
 

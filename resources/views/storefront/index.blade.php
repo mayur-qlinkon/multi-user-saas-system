@@ -134,7 +134,7 @@
                                 alt="{{ $banner->alt_text ?? 'Banner' }}"
                                 class="absolute inset-0 w-full h-full object-cover" 
                                 loading="eager"
-                                onerror="this.src='{{ asset('assets/images/placeholder.png') }}'">
+                                onerror="this.src='{{ asset('assets/images/placeholder.webp') }}'">
                         </div>
                     @empty
                         <div class="swiper-slide bg-gray-100 aspect-[21/9] md:aspect-[3/1] flex items-center justify-center">

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\ExcessReturnQuantityException;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceReturn;
@@ -22,13 +23,14 @@ class InvoiceReturnService
     /**
      * 🟢 STEP 1: CREATE DRAFT RETURN
      * Calculates all math and creates the Credit Note header and items.
+     * Drafts do NOT touch stock or invoice_items.return_quantity — that happens only on confirm.
      */
     public function createReturn(Invoice $invoice, array $data): InvoiceReturn
     {
         return DB::transaction(function () use ($invoice, $data) {
             $companyId = $invoice->company_id;
 
-            // 1. Crunch the numbers in memory
+            // 1. Crunch the numbers in memory — enforces the return-qty ceiling.
             $mathEngine = $this->calculateReturnMath($data, $invoice);
 
             // 2. Generate Credit Note Number safely
@@ -53,7 +55,7 @@ class InvoiceReturnService
 
                 'return_type' => $data['return_type'],
                 'return_reason' => $data['return_reason'] ?? 'other',
-                'restock' => $data['restock'] ?? true, // Will we put it back on the shelf?
+                'restock' => $data['restock'] ?? false, // Explicit — checkbox semantics handled upstream.
                 'stock_updated' => false, // Stock only updates upon Confirmation
 
                 'supply_state' => $data['supply_state'],
@@ -80,16 +82,20 @@ class InvoiceReturnService
     /**
      * 🟢 STEP 2: UPDATE DRAFT RETURN
      * Wipes old items, recalculates, and updates the header.
+     * Edits are only allowed while the return is still a draft.
      */
     public function updateReturn(InvoiceReturn $return, array $data): InvoiceReturn
     {
         if ($return->status === 'confirmed') {
-            throw new Exception('Cannot update a confirmed Credit Note. It is locked.');
+            throw new Exception('This Credit Note has already been confirmed and cannot be edited.');
         }
 
         return DB::transaction(function () use ($return, $data) {
 
-            $mathEngine = $this->calculateReturnMath($data, $return->invoice);
+            // Recalculate — pass the current return so its own line quantities
+            // (which are NOT yet reflected in return_quantity since it's a draft)
+            // are not double-counted against itself.
+            $mathEngine = $this->calculateReturnMath($data, $return->invoice, $return);
 
             $return->update(array_merge([
                 'store_id' => $data['store_id'],
@@ -97,7 +103,7 @@ class InvoiceReturnService
                 'return_date' => $data['return_date'],
                 'return_type' => $data['return_type'],
                 'return_reason' => $data['return_reason'] ?? 'other',
-                'restock' => $data['restock'] ?? true,
+                'restock' => $data['restock'] ?? false,
                 'supply_state' => $data['supply_state'],
                 'gst_treatment' => $data['gst_treatment'],
                 'notes' => $data['notes'] ?? null,
@@ -117,28 +123,73 @@ class InvoiceReturnService
 
     /**
      * 🟢 STEP 3: CONFIRM RETURN & UPDATE STOCK
-     * This is the critical ERP barrier. It locks the return and calls your InventoryService.
+     * The critical ERP barrier. Re-checks return quantities against live data under a row lock,
+     * increments invoice_items.return_quantity atomically, and optionally restocks.
      */
     public function confirmReturn(InvoiceReturn $return): InvoiceReturn
     {
+        // Idempotent: already confirmed -> no-op. (Prevents double stock-add or double counter.)
         if ($return->status === 'confirmed') {
-            throw new Exception('This return has already been confirmed.');
+            return $return;
         }
 
         return DB::transaction(function () use ($return) {
 
-            // 1. Should we put the stock back on the shelf?
-            if ($return->restock && ! $return->stock_updated) {
+            // 1. Lock every affected invoice_item row and re-verify remaining capacity.
+            //    This closes the race where two drafts were created against the same capacity.
+            $return->load('items');
 
-                // Fetch items with their SKUs
+            // Aggregate requested qty per invoice_item_id from the return we're about to confirm.
+            $requestedByItem = [];
+            foreach ($return->items as $ri) {
+                $key = (int) $ri->invoice_item_id;
+                $requestedByItem[$key] = ($requestedByItem[$key] ?? 0) + (float) $ri->quantity;
+            }
+
+            if (empty($requestedByItem)) {
+                throw new Exception('This Credit Note has no items and cannot be confirmed.');
+            }
+
+            $lockedItems = InvoiceItem::whereIn('id', array_keys($requestedByItem))
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($requestedByItem as $invoiceItemId => $requestedQty) {
+                $invoiceItem = $lockedItems->get($invoiceItemId);
+                if (! $invoiceItem) {
+                    throw new Exception('Original invoice line could not be found while confirming the return.');
+                }
+
+                $original = (float) $invoiceItem->quantity;
+                $alreadyReturned = (float) ($invoiceItem->return_quantity ?? 0);
+                $remaining = max(0.0, $original - $alreadyReturned);
+
+                if ($requestedQty > $remaining + 0.00005) { // tiny epsilon for float noise
+                    throw new ExcessReturnQuantityException(
+                        productLabel: $this->buildProductLabel($invoiceItem),
+                        originalQty: $original,
+                        alreadyReturnedQty: $alreadyReturned,
+                        remainingQty: $remaining,
+                        requestedQty: $requestedQty,
+                    );
+                }
+            }
+
+            // 2. Atomically bump return_quantity on each invoice line.
+            foreach ($requestedByItem as $invoiceItemId => $requestedQty) {
+                InvoiceItem::where('id', $invoiceItemId)->increment('return_quantity', $requestedQty);
+            }
+
+            // 3. Optionally put stock back on the shelf (respect the toggle).
+            if ($return->restock && ! $return->stock_updated) {
                 $items = $return->items()->with('sku')->get();
 
                 foreach ($items as $item) {
                     if (! $item->sku) {
-                        continue;
-                    } // Skip non-inventory items
+                        continue; // non-inventory line, skip
+                    }
 
-                    // 🌟 Call your robust InventoryService!
                     $this->inventoryService->addStock(
                         sku: $item->sku,
                         warehouseId: $return->warehouse_id,
@@ -153,11 +204,11 @@ class InvoiceReturnService
                 $return->update(['stock_updated' => true]);
             }
 
-            // 2. Reverse best-seller counters — sales are being undone
-            $items = $return->items()->get(['product_id', 'product_sku_id', 'quantity']);
-            InvoiceService::applySaleCounters($items->toArray(), -1);
+            // 4. Reverse best-seller counters — sales are being undone.
+            $counterItems = $return->items()->get(['product_id', 'product_sku_id', 'quantity']);
+            InvoiceService::applySaleCounters($counterItems->toArray(), -1);
 
-            // 3. Lock the document
+            // 5. Lock the document.
             $return->update([
                 'status' => 'confirmed',
                 'approved_by' => Auth::id(),
@@ -168,15 +219,77 @@ class InvoiceReturnService
         });
     }
 
+    /**
+     * Undo a confirmed (or draft) return cleanly.
+     * - Confirmed: decrements invoice_items.return_quantity, reverses stock if it was restocked,
+     *   re-applies best-seller counters.
+     * - Draft: just cascades delete via the model's softDelete (caller handles).
+     *
+     * Callers should delete the return themselves after this runs.
+     */
+    public function reverseReturnEffects(InvoiceReturn $return): void
+    {
+        if ($return->status !== 'confirmed') {
+            return; // drafts had no side effects
+        }
+
+        DB::transaction(function () use ($return) {
+            $return->load('items.sku');
+
+            // 1. Decrement return_quantity on each parent invoice line.
+            foreach ($return->items as $ri) {
+                $qty = (float) $ri->quantity;
+                if ($qty <= 0) {
+                    continue;
+                }
+
+                $locked = InvoiceItem::where('id', $ri->invoice_item_id)->lockForUpdate()->first();
+                if (! $locked) {
+                    continue;
+                }
+
+                $next = max(0.0, (float) ($locked->return_quantity ?? 0) - $qty);
+                $locked->update(['return_quantity' => $next]);
+            }
+
+            // 2. Reverse the stock restock if it ever happened.
+            if ($return->stock_updated) {
+                foreach ($return->items as $ri) {
+                    if (! $ri->sku) {
+                        continue;
+                    }
+
+                    $this->inventoryService->deductStock(
+                        sku: $ri->sku,
+                        warehouseId: $return->warehouse_id,
+                        qty: (float) $ri->quantity,
+                        movementType: 'adjustment',
+                        reference: $return
+                    );
+                }
+                $return->update(['stock_updated' => false]);
+            }
+
+            // 3. Re-apply best-seller counters (return is being undone → sales count comes back).
+            $counterItems = $return->items()->get(['product_id', 'product_sku_id', 'quantity']);
+            InvoiceService::applySaleCounters($counterItems->toArray(), 1);
+        });
+    }
+
     // ─────────────────────────────────────────────────────────
     // PRIVATE INTERNAL ENGINE
     // ─────────────────────────────────────────────────────────
 
     /**
      * Calculates the exact financial values of the return.
-     * Maps inputs to the original Invoice Items to ensure data integrity.
+     * Maps inputs to the original Invoice Items to ensure data integrity AND enforces
+     * the ceiling of (original_qty - already_returned_qty) per line.
+     *
+     * @param  InvoiceReturn|null  $currentReturn  When updating an existing draft, we pass the draft itself
+     *                                             so its own previously-saved quantities are NOT counted as
+     *                                             "already returned" capacity that's been eaten.
      */
-    private function calculateReturnMath(array $data, Invoice $originalInvoice): array
+    private function calculateReturnMath(array $data, Invoice $originalInvoice, ?InvoiceReturn $currentReturn = null): array
     {
         $totalSubtotal = 0;
         $totalTax = 0;
@@ -186,12 +299,53 @@ class InvoiceReturnService
 
         $processedItems = [];
 
+        // Aggregate requested qty per invoice_item_id across ALL lines in this submission.
+        // Multiple rows for the same line still share one capacity bucket.
+        $requestedByItem = [];
         foreach ($data['items'] as $itemData) {
-            // Retrieve original invoice item for reference (prevents tampering)
-            $originalLine = InvoiceItem::find($itemData['invoice_item_id']);
+            $key = (int) $itemData['invoice_item_id'];
+            $requestedByItem[$key] = ($requestedByItem[$key] ?? 0) + (float) $itemData['quantity'];
+        }
+
+        // Preload the parent invoice lines for capacity math.
+        $invoiceItems = InvoiceItem::whereIn('id', array_keys($requestedByItem))->get()->keyBy('id');
+
+        foreach ($requestedByItem as $invoiceItemId => $requestedQty) {
+            $originalLine = $invoiceItems->get($invoiceItemId);
             if (! $originalLine || $originalLine->invoice_id !== $originalInvoice->id) {
-                throw new Exception('Invalid Invoice Item referenced.');
+                throw new Exception('Invalid invoice item referenced on this return.');
             }
+
+            $original = (float) $originalLine->quantity;
+            $alreadyReturned = (float) ($originalLine->return_quantity ?? 0);
+
+            // When editing an existing draft, re-credit its own saved quantities — they will be
+            // replaced in this same transaction, so they should not consume capacity twice.
+            // NB: a *draft* never wrote to return_quantity, but this keeps the math safe if
+            //     someone later re-purposes this for confirmed edits.
+            if ($currentReturn && $currentReturn->status === 'confirmed') {
+                $selfReturned = (float) $currentReturn->items()
+                    ->where('invoice_item_id', $invoiceItemId)
+                    ->sum('quantity');
+                $alreadyReturned = max(0.0, $alreadyReturned - $selfReturned);
+            }
+
+            $remaining = max(0.0, $original - $alreadyReturned);
+
+            if ($requestedQty > $remaining + 0.00005) {
+                throw new ExcessReturnQuantityException(
+                    productLabel: $this->buildProductLabel($originalLine),
+                    originalQty: $original,
+                    alreadyReturnedQty: $alreadyReturned,
+                    remainingQty: $remaining,
+                    requestedQty: $requestedQty,
+                );
+            }
+        }
+
+        // Now do the per-row math.
+        foreach ($data['items'] as $itemData) {
+            $originalLine = $invoiceItems->get((int) $itemData['invoice_item_id']);
 
             $qty = (float) $itemData['quantity'];
             $price = (float) $itemData['unit_price'];
@@ -288,6 +442,28 @@ class InvoiceReturnService
             ],
             'line_items' => $processedItems,
         ];
+    }
+
+    /**
+     * Builds a readable product label for error messages — prefers "Name (SKU)"
+     * and falls back gracefully when either piece is missing.
+     */
+    private function buildProductLabel(InvoiceItem $invoiceItem): string
+    {
+        $name = trim((string) ($invoiceItem->product_name ?? ''));
+        $sku = $invoiceItem->sku?->sku
+            ?? $invoiceItem->sku?->sku_code
+            ?? null;
+
+        if ($name !== '' && $sku) {
+            return "{$name} ({$sku})";
+        }
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        return $sku ?: 'this item';
     }
 
     /**

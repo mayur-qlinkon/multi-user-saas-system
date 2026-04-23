@@ -112,13 +112,30 @@ class PurchaseService
             // 3. Recalculate all financials
             $calculatedData = $this->calculateFinancials($data);
 
+            // 🌟 PRODUCTION FIX 1: Prevent wiping out previous payments on edit!
+            $amountPreviouslyPaid = $purchase->total_amount - $purchase->balance_amount;
+            $newBalance = max(0, $calculatedData['total_amount'] - $amountPreviouslyPaid);
+            $calculatedData['balance_amount'] = $newBalance;
+
+            if ($newBalance <= 0 && $calculatedData['total_amount'] > 0) {
+                $calculatedData['payment_status'] = 'paid';
+            } elseif ($newBalance < $calculatedData['total_amount']) {
+                $calculatedData['payment_status'] = 'partial';
+            } else {
+                $calculatedData['payment_status'] = 'unpaid';
+            }
+
+            // 🌟 PRODUCTION FIX 2: Safely extract items before updating header
+            $items = $calculatedData['items'];
+            unset($calculatedData['items']);
+
             // 4. Update Header
             $purchase->update(array_merge($calculatedData, [
                 'updated_by' => Auth::id(),
             ]));
 
             // 5. Sync Line Items (Create, Update, Delete)
-            $this->syncLineItems($purchase, $calculatedData['items']);
+            $this->syncLineItems($purchase, $items);
 
             // 6. Handle Stock if status transitioned to Received
             if ($oldStatus !== 'received' && $purchase->status === 'received') {
@@ -264,20 +281,37 @@ class PurchaseService
         foreach ($data['items'] as &$item) {
             $qty = (float) $item['quantity'];
             $cost = (float) $item['unit_cost'];
-            $discountPct = (float) ($item['discount_percent'] ?? 0);
             $taxPct = (float) ($item['tax_percent'] ?? 0);
             $isInclusive = ($item['tax_type'] ?? 'exclusive') === 'inclusive';
+
+            // Extract new discount fields
+            $discountType = $item['discount_type'] ?? 'percent';
+            $discountValueInput = (float) ($item['discount_value'] ?? 0);
+
+            // 🌟 ROOT FIX: Match ENUM and retain the UI input values
+            $item['discount_type'] = ($discountType === 'fixed') ? 'fixed' : 'percentage';
+            $item['discount_value'] = $discountValueInput;
 
             // Base Subtotal
             $itemSubtotal = $qty * $cost;
             $item['subtotal'] = round($itemSubtotal, 4);
 
-            // Discount
-            $discountAmt = $itemSubtotal * ($discountPct / 100);
+            // Calculate Item-Level Line Discount
+            $discountAmt = 0.0;
+            if ($item['discount_type'] === 'percentage') {
+                $discountAmt = $itemSubtotal * ($discountValueInput / 100);
+            } else {
+                $discountAmt = $discountValueInput;
+            }
+
+            // Prevent negative totals and apply discount
+            $afterDiscount = max(0, $itemSubtotal - $discountAmt);
             $item['discount_amount'] = round($discountAmt, 4);
-            $afterDiscount = $itemSubtotal - $discountAmt;
 
             // Inclusive / Exclusive Tax Math
+            $taxableAmt = 0.0;
+            $taxAmt = 0.0;
+
             if ($isInclusive) {
                 // Price includes tax -> extract it backward
                 $taxableAmt = $afterDiscount / (1 + ($taxPct / 100));
@@ -288,9 +322,10 @@ class PurchaseService
                 $taxAmt = $taxableAmt * ($taxPct / 100);
             }
 
-            $item['taxable_amount'] = round($taxableAmt, 4);
+            // 🌟 ROOT FIX: Map to invoice_items column names exactly
+            $item['taxable_value'] = round($taxableAmt, 4);
             $item['tax_amount'] = round($taxAmt, 4);
-            $item['total_price'] = round($taxableAmt + $taxAmt, 4);
+            $item['total_amount'] = round($taxableAmt + $taxAmt, 4);
 
             // Split Indian GST
             $item['cgst_amount'] = 0;
@@ -312,20 +347,25 @@ class PurchaseService
 
             // Aggregate up to global totals
             $globalSubtotal += $item['subtotal'];
-            $globalTaxable += $item['taxable_amount'];
+            $globalTaxable += $item['taxable_value'];
             $globalTaxAmt += $item['tax_amount'];
             $globalCgst += $item['cgst_amount'];
             $globalSgst += $item['sgst_amount'];
             $globalIgst += $item['igst_amount'];
         }
+        unset($item);
 
         // Apply Global Extra Charges & Rounding
-        $globalDiscount = (float) ($data['discount_amount'] ?? 0); // Flat bill discount
+        // 🌟 ROOT FIX: Normalize global discount type to match database ENUM and retain value
+        $data['discount_type'] = (isset($data['discount_type']) && $data['discount_type'] === 'fixed') ? 'fixed' : 'percentage';
+        $data['discount_value'] = (float) ($data['discount_value'] ?? 0);
+        
+        $globalDiscount = (float) ($data['discount_amount'] ?? 0); // Flat bill cash discount
         $shipping = (float) ($data['shipping_cost'] ?? 0);
         $other = (float) ($data['other_charges'] ?? 0);
 
-        $finalTaxable = $globalTaxable - $globalDiscount;
-        $totalBeforeRound = $finalTaxable + $globalTaxAmt + $shipping + $other;
+        // 🌟 ROOT FIX: Global Discount reduces the GRAND TOTAL, not the Taxable Value.
+        $totalBeforeRound = $globalTaxable + $globalTaxAmt - $globalDiscount + $shipping + $other;
 
         // Indian accounting standard: Round to nearest Rupee
         $roundedTotal = round($totalBeforeRound);
@@ -333,14 +373,14 @@ class PurchaseService
 
         // Assign to header data
         $data['subtotal'] = round($globalSubtotal, 2);
-        $data['taxable_amount'] = round($finalTaxable, 2);
+        $data['taxable_amount'] = round($globalTaxable, 2); // Header retains taxable_amount
         $data['cgst_amount'] = round($globalCgst, 2);
         $data['sgst_amount'] = round($globalSgst, 2);
         $data['igst_amount'] = round($globalIgst, 2);
         $data['tax_amount'] = round($globalTaxAmt, 2);
         $data['round_off'] = round($roundOff, 2);
         $data['total_amount'] = $roundedTotal;
-        $data['balance_amount'] = $roundedTotal; // Assumes unpaid initially
+        $data['balance_amount'] = $roundedTotal; // Default, overridden in updatePurchase if needed
 
         return $data;
     }

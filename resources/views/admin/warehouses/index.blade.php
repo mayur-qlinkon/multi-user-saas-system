@@ -3,7 +3,7 @@
 @section('title', 'Warehouses - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-widest">Inventory / Warehouses</h1>
+    <h1 class="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-widest">Warehouses</h1>
 @endsection
 
 @section('content')

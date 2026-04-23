@@ -27,7 +27,8 @@ return new class extends Migration
             $table->foreignId('updated_by')->nullable()->constrained('users');
 
             // ── REFERENCE NUMBERS ──────────────────────────────────────
-            $table->string('purchase_number', 50)->unique();
+            $table->string('purchase_number', 50);
+            $table->unique(['company_id', 'purchase_number']);
             // e.g. PO-2024-0001 — generated from your settings counter
 
             $table->string('supplier_invoice_number', 100)->nullable();
@@ -71,6 +72,8 @@ return new class extends Migration
             $table->decimal('subtotal', 15, 2)->default(0);
             // Sum of (unit_cost × qty) before any tax/discount
 
+            $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
+            $table->decimal('discount_value', 15, 4)->default(0);
             $table->decimal('discount_amount', 15, 2)->default(0);
             // Bill-level discount (item-level discount is in purchase_items)
 

@@ -1,11 +1,8 @@
-
-
 <?php $__env->startSection('title', 'CRM Settings — Sources & Tags'); ?>
 
 <?php $__env->startSection('header-title'); ?>
     <div>
-        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CRM Settings</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Lead sources and tags</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CRM Settings</h1>        
     </div>
 <?php $__env->stopSection(); ?>
 

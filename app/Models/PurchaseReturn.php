@@ -45,6 +45,8 @@ class PurchaseReturn extends Model
 
         // Amounts (15,2)
         'subtotal',
+        'discount_type',        
+        'discount_value',
         'discount_amount',
         'taxable_amount',
         'cgst_amount',
@@ -66,6 +68,7 @@ class PurchaseReturn extends Model
     protected $casts = [
         'return_date' => 'date',
         'subtotal' => 'decimal:2',
+        'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'taxable_amount' => 'decimal:2',
         'cgst_amount' => 'decimal:2',

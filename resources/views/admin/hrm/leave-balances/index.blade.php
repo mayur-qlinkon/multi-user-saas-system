@@ -5,7 +5,7 @@
 @section('header-title')
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Leave Balances</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Allocate & manage employee leave balances</p>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Allocate & manage employee leave balances</p> --}}
     </div>
 @endsection
 

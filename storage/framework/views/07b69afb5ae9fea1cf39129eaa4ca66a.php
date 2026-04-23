@@ -1,9 +1,7 @@
-
-
 <?php $__env->startSection('title', 'Sales Invoices - Qlinkon BIZNESS'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Invoices</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Invoices</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('styles'); ?>
@@ -261,13 +259,15 @@
                                             </button>
                                         <?php endif; ?>
 
-                                        <?php if($invoice->status !== 'cancelled' && has_permission('invoices.update')): ?>
+                                        <?php if($invoice->status !== 'cancelled'): ?>
                                             
+                                            <?php if($invoice->status !== 'confirmed' && has_permission('invoices.update')): ?>
                                             <a href="<?php echo e(route('admin.invoices.edit', $invoice->id)); ?>"
                                                 class="w-8 h-8 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
                                                 title="Edit Invoice">
                                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                                             </a>
+                                            <?php endif; ?>
 
                                             
                                             <form action="<?php echo e(route('admin.invoices.destroy', $invoice->id)); ?>"

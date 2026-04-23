@@ -6,7 +6,7 @@
 $db_host = 'localhost';
 $db_user = 'root';
 $db_pass = '';
-$db_name = 'system2';
+$db_name = env('DB_DATABASE');
 
 /* ===================================================================================
    1. MYSQLI CONNECTION (Legacy Support)

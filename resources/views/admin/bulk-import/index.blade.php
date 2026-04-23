@@ -2,6 +2,10 @@
 
 @section('title', 'Bulk Import')
 
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Bulk Import</h1>
+@endsection
+
 @push('styles')
 <style>
     [x-cloak] { display: none !important; }
@@ -16,7 +20,7 @@
 
     {{-- Page Header ── --}}
     <div class="mb-6">
-        <h1 class="text-xl font-black text-gray-800 tracking-tight">Bulk Import</h1>
+        {{-- <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Bulk Import</h1> --}}
         <p class="text-sm text-gray-500 mt-1">Upload CSV files to import data in bulk. Each entity has its own format.</p>
     </div>
 

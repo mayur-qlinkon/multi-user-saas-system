@@ -7,9 +7,12 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Models\Order;
 use App\Models\Store;
+use App\Models\Client;
 use App\Models\Warehouse;
+
 use App\Services\OrderService;
 use App\Services\PaymentService;
+
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -92,7 +95,7 @@ class AdminOrderController extends Controller
     {
         $companyId = Auth::user()->company_id;
 
-        // Fetch active stores for the branch dropdown
+        $clients = Client::where('is_active', true)->get();
         $stores = Store::where('is_active', true)->get();
         $warehouses = Warehouse::where('is_active', true)->get();
 
@@ -101,7 +104,7 @@ class AdminOrderController extends Controller
             'by' => Auth::id(),
         ]);
 
-        return view('admin.orders.create', compact('stores', 'warehouses'));
+        return view('admin.orders.create', compact('stores', 'warehouses','clients'));
     }
 
     // ════════════════════════════════════════════════════
@@ -161,6 +164,7 @@ class AdminOrderController extends Controller
 
         // 🌟 "Iron Wall" in action: Global scopes automatically filter by the tenant's company!
         $stores = Store::where('is_active', true)->get();
+        $clients = Client::where('is_active', true)->get();
         $warehouses = Warehouse::where('is_active', true)->get();
 
         Log::info('[AdminOrder] Edit form loaded', [
@@ -168,7 +172,7 @@ class AdminOrderController extends Controller
             'by' => Auth::id(),
         ]);
 
-        return view('admin.orders.edit', compact('order', 'stores', 'warehouses'));
+        return view('admin.orders.edit', compact('order', 'stores', 'warehouses','clients'));
     }
 
     // ════════════════════════════════════════════════════

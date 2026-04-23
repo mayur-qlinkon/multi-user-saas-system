@@ -165,12 +165,6 @@ class SkuImporter
                             return;
                         }
 
-                        if (! $product['is_variable']) {
-                            $rowError = "Product '{$row['product_slug']}' is not a variable product. Only variable products can have variants.";
-
-                            return;
-                        }
-
                         $productId = $product['id'];
                         $pairs = $this->extractAttributePairs($row);
 
@@ -294,6 +288,50 @@ class SkuImporter
                             $this->variantCountByProduct[$productId] = ($this->variantCountByProduct[$productId] ?? 0) + 1;
 
                             $rowAction = 'created';
+
+                            // Auto-convert product to 'variable' when it has more than one SKU.
+                            // Runs only AFTER a successful create. Dry-run rolls back with the transaction.
+                            $totalSkus = ProductSku::withoutGlobalScopes()
+                                ->where('product_id', $productId)
+                                ->count();
+
+                            if ($totalSkus > 1) {
+                                $productModel = Product::withoutGlobalScopes()->find($productId);
+                                if ($productModel && $productModel->type !== 'variable') {
+                                    $productModel->type = 'variable';
+                                    $productModel->save();
+
+                                    // Soft-delete the initial default SKU (the one with no attribute values).
+                                    $defaultSkuIds = ProductSku::withoutGlobalScopes()
+                                        ->where('product_id', $productId)
+                                        ->whereNotIn('id', function ($q) {
+                                            $q->select('product_sku_id')->from('product_sku_values');
+                                        })
+                                        ->pluck('id')
+                                        ->all();
+
+                                    if (! empty($defaultSkuIds)) {
+                                        ProductSku::withoutGlobalScopes()
+                                            ->whereIn('id', $defaultSkuIds)
+                                            ->delete();
+
+                                        foreach ($defaultSkuIds as $deletedId) {
+                                            $codeKey = array_search($deletedId, $this->existingSkuCodes, true);
+                                            if ($codeKey !== false) {
+                                                unset($this->existingSkuCodes[$codeKey]);
+                                            }
+                                        }
+                                        $this->variantCountByProduct[$productId] = max(
+                                            0,
+                                            ($this->variantCountByProduct[$productId] ?? 0) - count($defaultSkuIds)
+                                        );
+                                    }
+
+                                    if (isset($this->productBySlug[$slug])) {
+                                        $this->productBySlug[$slug]['is_variable'] = true;
+                                    }
+                                }
+                            }
                         }
 
                         if ($isDryRun && $rowAction !== null) {

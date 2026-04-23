@@ -214,16 +214,15 @@
                 @php
                     $qty = (float) $item->quantity;
                     $cost = (float) $item->unit_cost;
-                    $discPct = (float) ($item->discount_percent ?? 0);
 
-                    // Core line math
+                    // Core line math using explicit database amounts
                     $lineGross = $qty * $cost;
-                    $lineDiscAmount = $lineGross * ($discPct / 100);
+                    $lineDiscAmount = (float) $item->discount_amount;
                     $lineTax = (float) $item->tax_amount;
 
                     // Fallback to strict math if item->total isn't perfectly mapped
-$lineTotal =
-    $item->total ?? $lineGross - $lineDiscAmount + ($item->tax_type === 'exclusive' ? $lineTax : 0);
+                    $lineTotal =
+                    $item->total ?? $lineGross - $lineDiscAmount + ($item->tax_type === 'exclusive' ? $lineTax : 0);
                 @endphp
                 <tr class="page-break">
                     <td>
@@ -234,9 +233,13 @@ $lineTotal =
                     <td class="text-right">{{ $formatAmt($cost) }}</td>
 
                     <td class="text-right">
-                        @if ($discPct > 0)
-                            {{ $discPct }}%<br>
-                            <span style="font-size: 10px; color: #555;">(-{{ $formatAmt($lineDiscAmount) }})</span>
+                        @if ($item->discount_amount > 0)
+                            @if ($item->discount_type === 'percentage')
+                                {{ $formatAmt($item->discount_value) }}%<br>
+                                <span style="font-size: 10px; color: #555;">(-{{ $formatAmt($lineDiscAmount) }})</span>
+                            @else
+                                Rs. {{ $formatAmt($lineDiscAmount) }}
+                            @endif
                         @else
                             -
                         @endif
@@ -268,7 +271,12 @@ $lineTotal =
 
                 @if ($purchase->discount_amount > 0)
                     <tr>
-                        <td>Global Discount</td>
+                        <td>
+                            Global Discount
+                            @if ($purchase->discount_type === 'percentage' && (float) $purchase->discount_value > 0)
+                                <span style="font-size: 10px; color: #555;">({{ (float) $purchase->discount_value }}%)</span>
+                            @endif
+                        </td>
                         <td class="text-right">(-) Rs. {{ $formatAmt($purchase->discount_amount) }}</td>
                     </tr>
                 @endif

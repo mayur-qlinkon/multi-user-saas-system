@@ -5,7 +5,7 @@
 @section('header-title')
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Designations</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage job titles and designation levels</p>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Manage job titles and designation levels</p> --}}
     </div>
 @endsection
 

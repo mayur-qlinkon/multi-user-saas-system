@@ -3,7 +3,7 @@
 @section('title', 'Challans - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">LIST / Challans</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Challans</h1>
 @endsection
 
 @push('styles')
@@ -283,8 +283,8 @@
 
         {{-- 🌟 QUICK STATUS MODAL --}}
         <div x-show="isStatusModalOpen" x-cloak
-            class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-            <div class="bg-white w-full mx-4 sm:mx-0 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity px-4">
+            <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden"
                 x-show="isStatusModalOpen" x-transition @click.away="closeStatusModal()">
 
                 <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">

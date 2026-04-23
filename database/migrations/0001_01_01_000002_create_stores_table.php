@@ -14,7 +14,8 @@ return new class extends Migration
 
             // --- 🏠 Core Branding ---
             $table->string('name');
-            $table->string('slug')->unique();
+            $table->string('slug');
+            $table->unique(['company_id', 'slug']);
             $table->string('email')->nullable();
             $table->string('phone', 20)->nullable();
             $table->string('upi_id')->nullable();

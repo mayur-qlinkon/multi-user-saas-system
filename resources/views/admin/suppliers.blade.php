@@ -2,7 +2,7 @@
 
 @section('title', 'Suppliers Management - Qlinkon BIZNESS')
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">List / Suppliers</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Suppliers</h1>
 @endsection
 
 @push('styles')
@@ -18,46 +18,98 @@
 @endpush
 
 @section('content')
-    <div class="pb-10" x-data="supplierCrud(@js($suppliers))">
+    <div class="pb-10" x-data="supplierCrud(@js($suppliers->items()))">
 
+        {{-- Alerts --}}
         @if (session('success'))
-            <script>
+            <div class="bg-green-50 text-green-700 px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-green-100 mb-6 flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> {{ session('success') }}
+            </div>
+              <script>
                 document.addEventListener('DOMContentLoaded', () => BizAlert.toast("{{ session('success') }}", 'success'));
             </script>
         @endif
-        
-{{-- ── TOOLBAR (Search & Actions) ── --}}
-        <div class="bg-white rounded-t-xl shadow-sm border border-gray-100 p-4 border-b-0 mb-0">
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                
-                {{-- Left Side: Search --}}
-                <div class="w-full md:w-auto flex-1 max-w-xl">
-                    <div class="relative w-full">
-                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#108c2a]"></i>
-                        
-                        <input type="text" x-model="search" placeholder="Search Name, Phone, or City..."
-                            class="w-full border border-gray-200 rounded-lg pl-10 pr-10 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all placeholder-gray-400">
+        @if (session('error'))
+            <div class="bg-red-50 text-red-700 px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-red-100 mb-6 flex items-center gap-2">
+                <i data-lucide="alert-octagon" class="w-5 h-5"></i> {{ session('error') }}
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="bg-[#fee2e2] text-[#ef4444] px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-red-100 mb-6">
+                <div class="flex items-center gap-2 mb-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Please fix the following errors:</div>
+                <ul class="list-disc list-inside pl-7 text-xs font-medium space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-                        <button type="button" x-show="search.length > 0" @click="search = ''" x-cloak
-                            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 p-1.5 rounded-md transition-colors flex items-center justify-center"
-                            title="Clear Filters">
-                            <i data-lucide="x" class="w-4 h-4"></i>
+
+        {{-- ── TOOLBAR (Search, Filters & Actions) ── --}}
+        <div class="bg-white rounded-t-xl shadow-sm border border-gray-100 p-4 border-b-0 mb-0">            
+            <form method="GET" action="{{ route('admin.suppliers.index') }}"
+                class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+
+                {{-- Left Side: Search + Filters --}}                
+                <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full xl:flex-1 xl:max-w-3xl">
+                    <div class="relative w-full sm:flex-1">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#108c2a]"></i>
+                        <input type="text" name="search" value="{{ $search ?? '' }}"
+                            placeholder="Search Name, Phone, Email, City or GSTIN..."
+                            class="w-full border border-gray-200 rounded-lg pl-10 pr-10 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all placeholder-gray-400">
+                    </div>
+
+                    <select name="status"
+                        class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none bg-white">
+                        <option value="">All Status</option>
+                        <option value="active" @selected(($status ?? '') === 'active')>Active</option>
+                        <option value="inactive" @selected(($status ?? '') === 'inactive')>Inactive</option>
+                    </select>
+
+                    <select name="registration_type"
+                        class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none bg-white">
+                        <option value="">All GST Types</option>
+                        <option value="regular" @selected(($registrationType ?? '') === 'regular')>Regular</option>
+                        <option value="composition" @selected(($registrationType ?? '') === 'composition')>Composition</option>
+                        <option value="unregistered" @selected(($registrationType ?? '') === 'unregistered')>Unregistered</option>
+                        <option value="overseas" @selected(($registrationType ?? '') === 'overseas')>Overseas</option>
+                    </select>
+
+                    <div class="flex gap-2">
+                        <button type="submit"
+                            class="bg-[#108c2a] hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="filter" class="w-4 h-4"></i> Apply
                         </button>
+                        @if (!empty($search) || !empty($status) || !empty($registrationType))
+                            <a href="{{ route('admin.suppliers.index') }}"
+                                class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap"
+                                title="Clear filters">
+                                <i data-lucide="x" class="w-4 h-4"></i> Clear
+                            </a>
+                        @endif
                     </div>
                 </div>
 
-                {{-- Right Side: Actions --}}
-                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
+                {{-- Right Side: Actions --}}                
+                <div class="flex flex-row flex-wrap items-center gap-2 w-full xl:w-auto justify-start xl:justify-end mt-2 xl:mt-0">
 
                     @if (has_permission('suppliers.export'))
                         <button type="button" @click="exportCSV()"
                             class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                             <i data-lucide="file-spreadsheet" class="w-4 h-4 text-[#108c2a]"></i> CSV
-                        </button>                                        
+                        </button>
                         <button type="button" @click="exportPDF()"
                             class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
                             <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i> PDF
                         </button>
+                    @endif
+
+                    @if (has_module('bulk_import') && has_permission('suppliers.create'))
+                        <a href="{{ route('admin.bulk-import.index') }}"
+                            class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 md:px-4 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                            <i data-lucide="upload-cloud" class="w-4 h-4 text-[#108c2a]"></i> Bulk Import
+                        </a>
                     @endif
 
                     @if (has_permission('suppliers.create'))
@@ -67,8 +119,7 @@
                         </button>
                     @endif
                 </div>
-
-            </div>
+            </form>
         </div>
 
         {{-- SUPPLIERS TABLE --}}
@@ -80,15 +131,14 @@
                         <tr>
                             <th class="px-6 py-4">SUPPLIER DETAILS</th>
                             <th class="px-6 py-4">CONTACT</th>
-                            <th class="px-6 py-4">CITY</th>
-                            <th class="px-6 py-4 text-center">STATUS</th>
+                            <th class="px-6 py-4 hidden md:table-cell">CITY</th>
+                            <th class="px-6 py-4 text-center hidden md:table-cell">STATUS</th>
                             <th class="px-6 py-4 text-right">ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse ($suppliers as $supplier)
-                            <tr class="hover:bg-gray-50/50 transition-colors group"
-                                x-show="matchesSearch('{{ strtolower($supplier->name) }}', '{{ strtolower($supplier->phone) }}', '{{ strtolower($supplier->city) }}')">
+                            <tr class="hover:bg-gray-50/50 transition-colors group">
 
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-4">
@@ -112,7 +162,7 @@
                                     </div>
                                 </td>
 
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 hidden md:table-cell">
                                     @if ($supplier->city)
                                         <span
                                             class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100">
@@ -123,7 +173,7 @@
                                     @endif
                                 </td>
 
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center hidden md:table-cell">
                                     @if ($supplier->is_active)
                                         <span
                                             class="bg-[#dcfce7] text-[#16a34a] px-3 py-1 rounded-md font-bold text-[10px] uppercase tracking-wider">Active</span>
@@ -172,7 +222,9 @@
                     </tbody>
                 </table>
             </div>
-            <div class="h-4 bg-white w-full"></div>
+            <div class="px-6 py-4 border-t border-gray-100 bg-white">
+                {{ $suppliers->links() }}
+            </div>
         </div>
 
         {{-- CREATE / EDIT MODAL --}}
@@ -224,10 +276,10 @@
                                     <div>
                                         <label
                                             class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Phone
-                                            Number</label>
+                                            Number <span class="text-red-500">*</span></label>
                                         <input type="tel" name="phone" x-model="formData.phone"
                                             placeholder="+91 00000 00000" maxlength="10" minlength="10"
-                                            pattern="[0-9]{10}" inputmode="numeric"
+                                            pattern="[0-9]{10}" inputmode="numeric" required
                                             oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                             class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:ring-2 focus:ring-[#108c2a]/20 focus:border-[#108c2a] outline-none transition-all">
                                     </div>
@@ -469,10 +521,10 @@
                     notes: '',
                 },
 
-                matchesSearch(name, phone, city) {
+                matchesSearch(name, phone, email='', city) {
                     if (this.search === '') return true;
                     const query = this.search.toLowerCase();
-                    return name.includes(query) || phone.includes(query) || city.includes(query);
+                    return name.includes(query) || phone.includes(query) || email.includes(query) || city.includes(query);
                 },
 
                 openCreateModal() {

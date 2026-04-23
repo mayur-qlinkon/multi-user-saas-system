@@ -5,7 +5,7 @@
 @section('header-title')
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Salary Slips</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage employee payroll and salary disbursements</p>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Manage employee payroll and salary disbursements</p> --}}
     </div>
 @endsection
 

@@ -2,7 +2,7 @@
 
 @section('title', 'Expense Categories - Qlinkon BIZNESS')
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Categories / Expenses</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Categories</h1>
 @endsection
 @section('content')
     <div class="space-y-6 pb-10" x-data="categoryCrud()">

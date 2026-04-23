@@ -30,6 +30,7 @@ return new class extends Migration
             $table->enum('tax_type', ['inclusive', 'exclusive'])->default('exclusive');
 
             $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
+            $table->decimal('discount_value', 15, 4)->default(0);
             $table->decimal('discount_amount', 15, 4)->default(0);
 
             $table->decimal('taxable_value', 15, 4)->default(0);

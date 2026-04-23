@@ -328,7 +328,12 @@
                                         ₹{{ $formatAmt($item->unit_price) }}</td>
                                     <td class="py-4 px-4 text-center text-gray-600 align-top">
                                         @if ($item->discount_amount > 0)
-                                            {{ $formatAmt($item->discount_amount) }}
+                                            @if ($item->discount_type === 'percentage')
+                                                <div class="font-bold text-gray-800">{{ (float) $item->discount_value }}%</div>
+                                                <div class="text-[11px] text-gray-500 mt-0.5">(-₹{{ $formatAmt($item->discount_amount) }})</div>
+                                            @else
+                                                <div class="font-bold text-gray-800">₹{{ $formatAmt($item->discount_amount) }}</div>
+                                            @endif
                                         @else
                                             -
                                         @endif
@@ -380,7 +385,12 @@
 
                                 @if ($quotation->discount_amount > 0)
                                     <tr>
-                                        <td class="py-2 text-gray-600 font-medium">Discount</td>
+                                        <td class="py-2 text-gray-600 font-medium">
+                                            Discount
+                                            @if($quotation->discount_type === 'percentage')
+                                                <span class="text-xs text-gray-500 ml-1">({{ (float) $quotation->discount_value }}%)</span>
+                                            @endif
+                                        </td>
                                         <td class="py-2 text-right font-bold text-red-600">(-) ₹{{ $formatAmt($quotation->discount_amount) }}</td>
                                     </tr>
                                 @endif

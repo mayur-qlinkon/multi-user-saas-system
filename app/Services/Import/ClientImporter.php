@@ -215,6 +215,16 @@ class ClientImporter
             $data['email'] = strtolower($data['email']);
         }
 
+        // Normalize registration_type to match invoices.gst_treatment enum.
+        if (isset($data['registration_type'])) {
+            $rt = strtolower(trim($data['registration_type']));
+            if ($rt === 'regular') {
+                $rt = 'registered';
+            }
+            $allowed = ['registered', 'unregistered', 'composition', 'overseas', 'sez'];
+            $data['registration_type'] = in_array($rt, $allowed, true) ? $rt : 'unregistered';
+        }
+
         $stateName = trim($row['state'] ?? '');
         if ($stateName !== '') {
             $key = strtolower($stateName);

@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Digital Catalog and Online Appointment - Qlinkon Shop'); ?>
 <?php $__env->startPush('styles'); ?>
 <style>
@@ -119,10 +117,10 @@
                     
                     
                     <template x-if="!youtubeActive">
-                        <img :src="activeImage || '<?php echo e(asset('assets/images/no-product.png')); ?>'" alt="<?php echo e($product->name); ?>"
+                        <img :src="activeImage || '<?php echo e($product->primary_image_url); ?>'" alt="<?php echo e($product->name); ?>"
                             class="w-full h-full object-cover mix-blend-multiply transition-all duration-300"
                             style="position: absolute; inset: 0; width: 100%; height: 100%;"
-                            onerror="this.src='<?php echo e(asset('assets/images/no-product.png')); ?>'">
+                            onerror="this.src='<?php echo e(asset('assets/images/no-product.webp')); ?>'">
                     </template>
 
                     
@@ -548,7 +546,7 @@
                                         <img src="<?php echo e($rel->primary_image_url); ?>" alt="<?php echo e($rel->name); ?>"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             loading="lazy"
-                                            onerror="this.src='<?php echo e(asset('assets/images/no-product.png')); ?>'">
+                                            onerror="this.src='<?php echo e(asset('assets/images/no-product.webp')); ?>'">
                                     </div>
                                     <div class="p-3">
                                         <p
@@ -683,7 +681,7 @@
         function productPage() {
             return {
                 // ── Image state ──
-                activeImage: '<?php echo e($firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.png')); ?>',
+                activeImage: '<?php echo e($product->primary_image_url); ?>',
                 youtubeActive: null,
                 // ── Speak state ──
                 speakingKey: null,
@@ -936,7 +934,7 @@
                         '<?php echo e(addslashes($product->name)); ?>',
                         variantLabel,
                         this.currentPrice,
-                        '<?php echo e($firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.png')); ?>',
+                        '<?php echo e($firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.webp')); ?>',
                         this.qty,
                     );
 
@@ -967,7 +965,7 @@
                         '<?php echo e(addslashes($product->name)); ?>',
                         variantLabel,
                         this.currentPrice,
-                        '<?php echo e($firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.png')); ?>',
+                        '<?php echo e($firstImg ? asset('storage/' . $firstImg) : asset('assets/images/no-product.webp')); ?>',
                         1, // always 1 for buy now
                     );
 

@@ -545,7 +545,7 @@
                                     <div class="existing-image-wrap mb-2">
                                         <img src="{{ $banner->image_url }}"
                                             alt="{{ $banner->alt_text ?? $banner->title }}" class="upload-preview"
-                                            onerror="this.src='{{ asset('assets/images/placeholder.png') }}'">
+                                            onerror="this.src='{{ asset('assets/images/placeholder.webp') }}'">
                                         <div class="existing-image-overlay">
                                             <label for="desktop-image-input" class="overlay-btn change">
                                                 <i data-lucide="upload" class="w-3 h-3"></i> Change
@@ -603,7 +603,7 @@
                                     <div class="existing-image-wrap mb-2">
                                         <img src="{{ $banner->mobile_image_url }}" alt="Mobile banner"
                                             class="upload-preview"
-                                            onerror="this.src='{{ asset('assets/images/placeholder.png') }}'">
+                                            onerror="this.src='{{ asset('assets/images/placeholder.webp') }}'">
                                         <div class="existing-image-overlay">
                                             <label for="mobile-image-input" class="overlay-btn change">
                                                 <i data-lucide="upload" class="w-3 h-3"></i> Change

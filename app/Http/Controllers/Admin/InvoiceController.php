@@ -168,8 +168,7 @@ class InvoiceController extends Controller
             'stockMovements',
             'company',
             'store.state',
-        ]);
-
+        ]);        
         return view('admin.invoices.show', compact('invoice'));
     }
 
@@ -180,6 +179,12 @@ class InvoiceController extends Controller
     {
         if ($invoice->status === 'cancelled') {
             return back()->with('error', 'Cannot edit a cancelled invoice.');
+        }
+
+        // Confirmed invoices are finalized records. Only drafts are freely editable.
+        if ($invoice->status === 'confirmed') {
+            return redirect()->route('admin.invoices.show', $invoice->id)
+                ->with('error', 'This invoice is already confirmed. Confirmed invoices cannot be edited — cancel it and create a new one instead.');
         }
         $company = Company::first();
         $companyState = $company->state->name ?? 'Unknown';
@@ -223,9 +228,16 @@ class InvoiceController extends Controller
                     ->with('success', 'Invoice updated successfully!');
             });
         } catch (\Exception $e) {
-            Log::error('Invoice Update Failed: '.$e->getMessage());
+            Log::error('Invoice Update Failed', [
+                'error' => $e->getMessage(),
+                'data' => $request->all(),
+            ]);
 
-            return back()->with('error', $e->getMessage())->withInput();
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'error' => $e->getMessage(),
+                ]);
         }
     }
 
@@ -294,7 +306,8 @@ class InvoiceController extends Controller
         $companyInfo = $invoice->store ?? Auth::user()->company;
 
         // Load the view and pass data
-        $pdf = Pdf::loadView('admin.invoices.pdf', compact('invoice', 'companyInfo'));
+        $pdf = Pdf::loadView('admin.invoices.pdf', compact('invoice', 'companyInfo'))
+        ->setOption(['defaultFont' => 'DejaVu Sans']); // Ensures ₹ is supported globally
 
         // Optional: Configure PDF settings for A4 paper
         $pdf->setPaper('A4', 'portrait');

@@ -76,7 +76,7 @@
                             </div>
                             <div class="sm:col-span-2">
                                 <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Description / Notes</p>
-                                <p class="text-sm text-gray-600 mt-0.5 leading-relaxed whitespace-pre-line">{{ $expense->description ?: '—' }}</p>
+                                <p class="text-sm text-gray-600 mt-0.5 leading-relaxed whitespace-pre-line">{{ $expense->notes ?: '—' }}</p>
                             </div>
                         </div>
                     </div>
@@ -159,7 +159,7 @@
                                     <div class="flex justify-between items-start text-sm py-2 border-b border-gray-100 last:border-0">
                                         <div>
                                             <span class="font-medium text-gray-800">{{ $activity->description }}</span>
-                                            @if($activity->properties->count())
+                                            @if($activity->properties->count() && is_super_admin())
                                                 <div class="mt-1.5">
                                                     <button type="button" @click="openAuditModal('{{ $activity->description }}', {{ $activity->properties->toJson() }})"
                                                         class="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded transition-colors">

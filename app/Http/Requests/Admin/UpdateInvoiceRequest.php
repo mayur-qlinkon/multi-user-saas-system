@@ -11,9 +11,9 @@ class UpdateInvoiceRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // 🌟 Prevent updating if the invoice is cancelled
+        // Only drafts are editable. Cancelled + confirmed invoices are locked.
         $invoice = $this->route('invoice');
-        if ($invoice && $invoice->status === 'cancelled') {
+        if ($invoice && in_array($invoice->status, ['cancelled', 'confirmed'], true)) {
             return false;
         }
 
@@ -34,13 +34,14 @@ class UpdateInvoiceRequest extends FormRequest
             'supply_state' => ['required', 'string', 'max:100'],
             'invoice_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:invoice_date'],
+            'status' => ['nullable', 'in:draft,confirmed'],
             'notes' => ['nullable', 'string'],
             'terms_conditions' => ['nullable', 'string'],
 
-            // Global Financials
+            // Global Financials            
             'shipping_charge' => ['nullable', 'numeric', 'min:0'],
-            'global_discount_type' => ['nullable', 'in:fixed,percent,percentage'],
-            'global_discount_value' => ['nullable', 'numeric', 'min:0'],
+            'discount_type' => ['nullable', 'in:fixed,percentage'],
+            'discount_value' => ['nullable', 'numeric', 'min:0'],
 
             // Payment Receipt Data
             'payment_method_id' => ['nullable', 'exists:payment_methods,id'],
@@ -54,7 +55,7 @@ class UpdateInvoiceRequest extends FormRequest
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.tax_type' => ['required', 'in:inclusive,exclusive'],
-            'items.*.discount_type' => ['required', 'in:fixed,percent,percentage'],
+            'items.*.discount_type' => ['required', 'in:fixed,percentage'],
             'items.*.discount_value' => ['required', 'numeric', 'min:0'],
         ];
     }

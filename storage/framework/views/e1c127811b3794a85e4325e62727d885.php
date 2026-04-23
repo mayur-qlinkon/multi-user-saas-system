@@ -78,7 +78,7 @@ unset($__defined_vars, $__key, $__value); ?>
                 <select x-model="newClient.registration_type"
                     class="w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none focus:border-[#108c2a] bg-white">
                     <option value="unregistered">Unregistered</option>
-                    <option value="regular">Regular</option>
+                    <option value="registered">Regular</option>
                     <option value="composition">Composition</option>
                 </select>
             </div>

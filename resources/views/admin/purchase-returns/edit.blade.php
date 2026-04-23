@@ -15,6 +15,22 @@
 @section('content')
     <div class="pb-10" x-data="purchaseReturnForm(@js($purchaseReturn), @js($purchaseReturn->purchase), @js($units ?? []))">
 
+        @if (session('error'))
+            <div class="bg-red-50 text-red-700 px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-red-100 mb-6 flex items-center gap-2">
+                <i data-lucide="alert-octagon" class="w-5 h-5"></i> {{ session('error') }}
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="bg-[#fee2e2] text-[#ef4444] px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-red-100 mb-6">
+                <div class="flex items-center gap-2 mb-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Please fix the following errors:</div>
+                <ul class="list-disc list-inside pl-7 text-xs font-medium space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Purchase Return</h1>

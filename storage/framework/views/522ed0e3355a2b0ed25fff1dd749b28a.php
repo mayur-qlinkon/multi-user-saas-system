@@ -1,42 +1,5 @@
 <?php $__env->startSection('title', 'Sign In — '.get_system_setting('app_name', config('app.name'))); ?>
-<?php $__env->startSection('heading', 'Welcome back'); ?>
-<?php $__env->startSection('subheading', 'Sign in to your workspace to continue'); ?>
 
-<?php $__env->startSection('panel'); ?>
-    <div class="flex flex-col gap-8 max-w-[380px]">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-white/20 to-white/5 border border-white/30 shadow-[0_0_25px_rgba(255,255,255,0.1)] backdrop-blur-md flex items-center justify-center">
-    <svg class="w-6 h-6 text-white drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-    </svg>
-</div>
-
-        <div>
-            <h1 class="text-3xl xl:text-4xl font-800 text-white leading-snug tracking-tight mb-3">
-                Your business,<br><span class="text-brand-300">your platform.</span>
-            </h1>
-            <p class="text-brand-100/60 text-sm font-300 leading-relaxed">
-                Access invoices, inventory, POS, attendance and more — all in one place.
-            </p>
-        </div>
-
-        <div class="space-y-4 pt-2">
-            <?php $__currentLoopData = [
-                ['text' => 'Secure role-based access'],
-                ['text' => 'Multi-store management'],
-                ['text' => 'GST-compliant invoicing'],
-            ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $f): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <div class="flex items-center gap-3.5">
-                    <div class="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0 shadow-sm">
-                        <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </div>
-                    <span class="text-[13px] text-white/80 font-medium leading-tight"><?php echo e($f['text']); ?></span>
-                </div>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        </div>
-    </div>
-<?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>
     <form method="POST" action="<?php echo e(route('login.store')); ?>" novalidate class="space-y-5"

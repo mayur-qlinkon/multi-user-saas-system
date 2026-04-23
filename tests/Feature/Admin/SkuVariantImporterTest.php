@@ -127,13 +127,19 @@ test('creates variant with auto-resolved attributes and values', function () {
         ->toBe(['Ceramic', 'Small']);
 });
 
-test('rejects non-variable products', function () {
+test('auto-converts single product to variable and soft-deletes default SKU when multiple SKUs exist', function () {
     [$company, $user] = bootTenant();
 
-    Product::factory()->create([
+    $product = Product::factory()->create([
         'company_id' => $company->id,
         'slug' => 'simple-plant',
         'type' => 'single',
+    ]);
+
+    // Default SKU with no attribute values (classic "single product" setup).
+    $defaultSku = ProductSku::factory()->create([
+        'company_id' => $company->id,
+        'product_id' => $product->id,
     ]);
 
     $import = makeImport($user->id);
@@ -149,9 +155,43 @@ test('rejects non-variable products', function () {
         ]),
     ], 2, $company->id);
 
-    expect($result)->toMatchArray(['success' => 0, 'failed' => 1, 'created' => 0]);
-    expect(ImportLog::where('import_id', $import->id)->first()->error_message)
-        ->toContain('not a variable product');
+    expect($result)->toMatchArray(['success' => 1, 'failed' => 0, 'created' => 1]);
+
+    $product->refresh();
+    expect($product->type)->toBe('variable');
+
+    // The default (no-attrs) SKU should be soft-deleted.
+    expect(ProductSku::find($defaultSku->id))->toBeNull();
+    expect(ProductSku::withTrashed()->find($defaultSku->id)->trashed())->toBeTrue();
+
+    // The new variant SKU should be alive and well.
+    expect(ProductSku::where('product_id', $product->id)->count())->toBe(1);
+});
+
+test('does not convert product type when only one SKU exists after import', function () {
+    [$company, $user] = bootTenant();
+
+    $product = Product::factory()->create([
+        'company_id' => $company->id,
+        'slug' => 'lonely-plant',
+        'type' => 'single',
+    ]);
+
+    $import = makeImport($user->id);
+    $importer = new SkuImporter;
+
+    $result = $importer->processChunk($import, [
+        variantRow([
+            'product_slug' => 'lonely-plant',
+            'price' => '100',
+            'cost' => '50',
+            'attribute_1_name' => 'Size',
+            'attribute_1_value' => 'Small',
+        ]),
+    ], 2, $company->id);
+
+    expect($result)->toMatchArray(['success' => 1, 'created' => 1]);
+    expect($product->fresh()->type)->toBe('single');
 });
 
 test('rejects duplicate attribute combination for the same product', function () {

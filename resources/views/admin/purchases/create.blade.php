@@ -45,19 +45,48 @@
                     <h2 class="text-lg font-bold text-gray-800 tracking-tight">Purchase Details</h2>
                 </div>
                 <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
+                    <div x-data="supplierSearch(@js($suppliers ?? []), '{{ old('supplier_id') }}')"
+                        @click.away="isOpen = false" class="relative">
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Supplier <span
                                 class="text-red-500">*</span></label>
-                        <select name="supplier_id" required
-                            class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white">
-                            <option value="">-- Select Supplier --</option>
-                            @foreach ($suppliers ?? [] as $supplier)
-                                <option value="{{ $supplier->id }}"
-                                    {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                    {{ $supplier->name }}
-                                </option>
-                            @endforeach
-                        </select>
+
+                        {{-- Visible search input --}}
+                        <div class="relative">
+                            <input type="text" x-model="searchTerm"
+                                @focus="isOpen = true"
+                                @input="isOpen = true; selectedId = ''"
+                                placeholder="Search supplier by name or phone..."
+                                autocomplete="off"
+                                class="w-full border border-gray-300 rounded px-3 py-2.5 pr-9 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white font-bold text-gray-700">
+                            <i data-lucide="chevron-down"
+                                class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                        </div>
+
+                        {{-- Hidden input actually submitted to Laravel --}}
+                        <input type="hidden" name="supplier_id" :value="selectedId">
+
+                        {{-- Suggestion dropdown --}}
+                        <ul x-show="isOpen" x-cloak x-transition
+                            class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto overscroll-contain top-full left-0">
+
+                            <li x-show="filtered.length === 0"
+                                class="px-4 py-4 text-sm text-gray-500 text-center font-medium">
+                                No matching suppliers found.
+                            </li>
+
+                            <template x-for="supplier in filtered" :key="supplier.id">
+                                <li @click="select(supplier)"
+                                    class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
+                                    <div class="font-bold text-[13px] text-gray-800" x-text="supplier.name"></div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5 flex flex-wrap items-center gap-2">
+                                        <span x-show="supplier.phone" x-text="'📞 ' + supplier.phone"></span>
+                                        <span x-show="supplier.gstin"
+                                            class="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 text-[9px] font-bold text-gray-600"
+                                            x-text="'GST: ' + supplier.gstin"></span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
                     </div>
 
                     <div>
@@ -233,9 +262,9 @@
                                                     class="text-[9px] uppercase tracking-wider text-gray-500"></span>
                                             </span>
 
-                                            <span x-show="item.discount_percent > 0"
+                                            <span x-show="item.discount_value > 0"
                                                 class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded border border-amber-200">
-                                                Disc: <span x-text="item.discount_percent + '%'" class="font-bold"></span>
+                                                Disc: <span x-text="item.discount_type === 'percent' ? item.discount_value + '%' : '₹' + item.discount_value" class="font-bold"></span>
                                             </span>
                                         </div>
                                         <input type="hidden" :name="'items[' + index + '][product_id]'"
@@ -244,8 +273,10 @@
                                             :value="item.product_sku_id">
                                         <input type="hidden" :name="'items[' + index + '][unit_id]'"
                                             :value="item.unit_id">
-                                        <input type="hidden" :name="'items[' + index + '][discount_percent]'"
-                                            :value="item.discount_percent">
+                                        <input type="hidden" :name="'items[' + index + '][discount_type]'"
+                                            :value="item.discount_type">
+                                        <input type="hidden" :name="'items[' + index + '][discount_value]'"
+                                            :value="item.discount_value">
                                         <input type="hidden" :name="'items[' + index + '][tax_percent]'"
                                             :value="item.tax_percent">
                                         <input type="hidden" :name="'items[' + index + '][tax_type]'"
@@ -397,13 +428,21 @@
                         </div>
 
                         <div class="flex justify-between items-center pt-2">
-                            <span class="font-semibold">Global Discount Amount:</span>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
-                                <input type="number" step="0.01" name="discount_amount" x-model="global.discount"
-                                    @input="calculate()"
-                                    class="w-32 border border-gray-300 rounded px-2 pl-6 py-1 text-right text-sm focus:border-brand-500 outline-none font-bold">
+                            <span class="font-semibold">Global Discount:</span>
+                            <div class="flex items-center gap-2">
+                                <select name="discount_type" x-model="global.discount_type" @change="calculate()"
+                                    class="w-24 border border-gray-300 rounded px-2 py-1 text-sm focus:border-brand-500 outline-none bg-white">
+                                    <option value="percent">%</option>
+                                    <option value="fixed">Fixed</option>
+                                </select>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium" x-text="global.discount_type === 'percent' ? '%' : '₹'"></span>
+                                    <input type="number" step="0.01" name="discount_value" x-model="global.discount_value" @input="calculate()"
+                                        class="w-24 border border-gray-300 rounded px-2 pl-6 py-1 text-right text-sm focus:border-brand-500 outline-none font-bold">
+                                </div>
                             </div>
+                            {{-- Keeps backend logic intact --}}
+                            <input type="hidden" name="discount_amount" :value="global.discount_amount">
                         </div>
 
                         <div class="flex justify-between items-center pt-2">
@@ -494,14 +533,22 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount
-                            (%)</label>
-                        <div class="relative">
-                            <input type="number" step="0.01" x-model="activeEditData.discount_percent"
-                                class="w-full border border-gray-300 rounded px-3 pr-8 py-2.5 text-sm focus:border-brand-500 outline-none">
-                            <span
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">%</span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount Type</label>
+                            <select x-model="activeEditData.discount_type"
+                                class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none bg-white">
+                                <option value="percent">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount (₹)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Discount Value</label>
+                            <div class="relative">
+                                <input type="number" step="0.01" x-model="activeEditData.discount_value"
+                                    class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-brand-500 outline-none">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs" x-text="activeEditData.discount_type === 'percent' ? '%' : '₹'"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -535,6 +582,42 @@
 
 @push('scripts')
     <script>
+        function supplierSearch(suppliers, preselectedId) {
+            return {
+                suppliers: suppliers || [],
+                searchTerm: '',
+                selectedId: preselectedId ? String(preselectedId) : '',
+                isOpen: false,
+
+                init() {
+                    if (this.selectedId) {
+                        const match = this.suppliers.find(s => String(s.id) === this.selectedId);
+                        if (match) {
+                            this.searchTerm = match.name;
+                        }
+                    }
+                },
+
+                get filtered() {
+                    const term = (this.searchTerm || '').trim().toLowerCase();
+                    if (term === '') {
+                        return this.suppliers;
+                    }
+                    return this.suppliers.filter(s => {
+                        const nameMatch = s.name && s.name.toLowerCase().includes(term);
+                        const phoneMatch = s.phone && String(s.phone).includes(term);
+                        return nameMatch || phoneMatch;
+                    });
+                },
+
+                select(supplier) {
+                    this.selectedId = String(supplier.id);
+                    this.searchTerm = supplier.name;
+                    this.isOpen = false;
+                }
+            };
+        }
+
         function purchaseForm(allUnits = [], batchEnabled = false, prefillSku = null, prefillQty = 1) {
             // 1. Safely handle old data so UI doesn't wipe on validation error
             const oldItemsRaw = @json(old('items', []));
@@ -553,7 +636,8 @@
                 sku_code: item.sku_code || '', // Restore UI data
                 quantity: parseFloat(item.quantity) || 1,
                 unit_cost: parseFloat(item.unit_cost) || 0,
-                discount_percent: parseFloat(item.discount_percent) || 0,
+                discount_type: item.discount_type || 'percent',
+                discount_value: parseFloat(item.discount_value) || 0,
                 tax_percent: parseFloat(item.tax_percent) || 0,
                 tax_type: item.tax_type || 'exclusive',
                 line_total: 0
@@ -576,7 +660,8 @@
                     sku_code: prefillSku.sku,
                     quantity: parseFloat(prefillQty) || 1,
                     unit_cost: parseFloat(prefillSku.cost) || 0,
-                    discount_percent: 0,
+                    discount_type: 'percent',
+                    discount_value: 0,
                     tax_percent: parseFloat(prefillSku.order_tax) || 0,
                     tax_type: prefillSku.tax_type || 'exclusive',
                     line_total: 0
@@ -607,7 +692,9 @@
                 activeEditData: {},
 
                 global: {
-                    discount: parseFloat("{{ old('discount_amount', 0) }}") || 0,
+                    discount_type: "{{ old('discount_type', 'percent') }}",
+                    discount_value: parseFloat("{{ old('discount_value', 0) }}") || 0,
+                    discount_amount: 0,
                     shipping: parseFloat("{{ old('shipping_cost', 0) }}") || 0,
                     other: parseFloat("{{ old('other_charges', 0) }}") || 0,
                     round_off: '0.00'
@@ -683,7 +770,8 @@
                         sku_code: result.sku_code,
                         quantity: 1,
                         unit_cost: parseFloat(result.cost) || 0,
-                        discount_percent: 0,
+                        discount_type: 'percent',
+                        discount_value: 0,
                         tax_percent: parseFloat(result.tax_percent) || 0,
                         tax_type: result.tax_type || 'exclusive',
                         line_total: 0
@@ -718,8 +806,8 @@
                     if (this.activeEditIndex !== null) {
                         this.items[this.activeEditIndex].tax_type = this.activeEditData.tax_type;
                         this.items[this.activeEditIndex].tax_percent = parseFloat(this.activeEditData.tax_percent) || 0;
-                        this.items[this.activeEditIndex].discount_percent = parseFloat(this.activeEditData
-                            .discount_percent) || 0;
+                        this.items[this.activeEditIndex].discount_type = this.activeEditData.discount_type;
+                        this.items[this.activeEditIndex].discount_value = parseFloat(this.activeEditData.discount_value) || 0;
                         this.items[this.activeEditIndex].unit_id = this.activeEditData.unit_id;
                         this.calculate();
                     }
@@ -734,13 +822,20 @@
                     this.items.forEach(item => {
                         let qty = parseFloat(item.quantity) || 0;
                         let cost = parseFloat(item.unit_cost) || 0;
-                        let discountPct = parseFloat(item.discount_percent) || 0;
+                        let discountValInput = parseFloat(item.discount_value) || 0;
                         let taxPct = parseFloat(item.tax_percent) || 0;
                         let isInclusive = item.tax_type === 'inclusive';
 
                         let baseVal = qty * cost;
-                        let discountVal = baseVal * (discountPct / 100);
-                        let afterDiscount = baseVal - discountVal;
+                        
+                        let discountVal = 0;
+                        if (item.discount_type === 'percent') {
+                            discountVal = baseVal * (discountValInput / 100);
+                        } else {
+                            discountVal = discountValInput;
+                        }
+                        
+                        let afterDiscount = Math.max(0, baseVal - discountVal); // Prevent negative totals
 
                         let taxable = 0;
                         let tax = 0;
@@ -762,7 +857,13 @@
                     this.totals.subtotal = subtotalAcc;
                     this.totals.tax = taxAcc;
 
-                    let gDiscount = parseFloat(this.global.discount) || 0;
+                    let globalDiscountVal = parseFloat(this.global.discount_value) || 0;
+                    if (this.global.discount_type === 'percent') {
+                        this.global.discount_amount = subtotalAcc * (globalDiscountVal / 100);
+                    } else {
+                        this.global.discount_amount = globalDiscountVal;
+                    }
+                    let gDiscount = this.global.discount_amount;
                     let shipping = parseFloat(this.global.shipping) || 0;
                     let other = parseFloat(this.global.other) || 0;
 

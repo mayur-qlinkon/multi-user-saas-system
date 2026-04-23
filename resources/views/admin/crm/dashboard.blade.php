@@ -4,10 +4,11 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">CRM Dashboard</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Overview of your pipeline — {{ now()->format('d M Y') }}</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CRM Dashboard</h1>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Overview of your pipeline — {{ now()->format('d M Y') }}</p> --}}
     </div>
 @endsection
+
 
 @push('styles')
 <style>

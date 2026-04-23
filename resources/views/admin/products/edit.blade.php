@@ -960,7 +960,11 @@
                 },
 
                 removeVariation(index) {
-                    this.variations.splice(index, 1);
+                    if (this.variations.length > 1) {
+                        this.variations.splice(index, 1);
+                    } else {
+                        BizAlert.toast('You must have at least one variation.', 'error');
+                    }
                 }
             }
         }

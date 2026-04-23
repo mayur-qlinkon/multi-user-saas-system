@@ -1,6 +1,11 @@
 @extends('layouts.admin')
 
 @section('title', 'Credit Note: ' . $invoiceReturn->credit_note_number)
+
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales Return Details</h1>
+@endsection
+
 @push('styles')
     <style>
         /* 🖨️ PRO-GRADE A4 PRINT OPTIMIZATION */
@@ -50,7 +55,19 @@
 @section('content')
     @php
         $formatAmt = fn($amount) => number_format((float) $amount, 2, '.', ',');
+        
+        // Company & Store Details
         $company = $invoiceReturn->company ?? auth()->user()->company;
+        $store   = $invoiceReturn->store;
+
+        // Billing priority (Fallback safety)
+        $billingGstin = $company->gst_number ?? $store->gst_number ?? get_setting('gst_number');
+
+        // Customer Details fallback
+        $customerName = $invoiceReturn->customer ? $invoiceReturn->customer->name : $invoiceReturn->customer_name ?? 'Guest Customer';
+        $customerAddress = $invoiceReturn->customer ? $invoiceReturn->customer->address : 'N/A';
+        $customerPhone = $invoiceReturn->customer ? $invoiceReturn->customer->phone : 'N/A';
+        $customerGSTIN = $invoiceReturn->customer ? $invoiceReturn->customer->gst_number : null;
 
         $stateCodes = [
             'Andhra Pradesh' => '37',
@@ -101,7 +118,7 @@
                     class="text-gray-500 hover:text-gray-800 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
-                <h1 class="text-xl sm:text-2xl font-bold text-[#212538] tracking-tight">Credit Note Details</h1>
+                <h1 class="text-xl font-bold text-gray-500 uppercase tracking-widest">Credit Note Details</h1>
             </div>
 
             {{-- UI Fix: Allowed buttons to wrap and fill width on mobile --}}
@@ -155,21 +172,24 @@
                 <div class="w-full md:w-auto text-left md:text-right print:text-right flex flex-col items-start md:items-end print:items-end">
                     <h2 class="text-lg sm:text-xl font-black text-gray-900 uppercase leading-none">{{ $company->name }}</h2>
                     <div class="text-gray-600 text-[12px] mt-1 font-medium">
-                        @if ($company->gst_number)
-                            GSTIN: <span class="font-bold text-gray-900 uppercase">{{ $company->gst_number }}</span><br>
+                        @if ($billingGstin)
+                            GSTIN: <span class="font-bold text-gray-900 uppercase">{{ $billingGstin }}</span><br>
                         @endif
                         Email: {{ $company->email }}<br>
                         Phone: {{ $company->phone }}
                     </div>
 
-                    @if ($invoiceReturn->store)
+                    @if ($store)
                         <div class="mt-4 text-left md:text-right print:text-right">
                             <h3 class="text-[10px] font-black text-gray-700 uppercase tracking-widest leading-none mb-1">
-                                Branch: <span class="text-black">{{ $invoiceReturn->store->name }}</span>
+                                Branch: <span class="text-black">{{ $store->name }}</span>
                             </h3>
                             <div class="text-gray-800 text-[12px] leading-tight font-medium">
-                                {{ $invoiceReturn->store->address }}<br>
-                                {{ $invoiceReturn->store->city }}, {{ $invoiceReturn->store->state->name ?? '' }}
+                                @if ($store->address)
+                                    {{ $store->address }}<br>
+                                @endif
+                                {{ $store->city }}{{ $store->city && $store->zip_code ? ', ' : '' }}{{ $store->zip_code ?? '' }}<br>
+                                {{ $store->state->name ?? $store->state_id ?? '' }}
                             </div>
                         </div>
                     @endif
@@ -178,22 +198,24 @@
 
             {{-- The Heavy Separator Line --}}
             <div class="mx-5 sm:mx-8 md:mx-12 border-t-2 border-gray-900"></div>
-
-            {{-- 🌟 INFO BLOCK: Billed To on Left, Metadata on Right --}}
-            {{-- UI Fix: Stack on mobile (grid-cols-1), 2 columns on desktop (md:grid-cols-2) --}}
+            
             <div class="px-5 sm:px-8 md:px-12 py-6 grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-8 md:gap-12">
                 {{-- Customer Details --}}
                 <div>
                     <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2">Billed To</h3>
                     <div class="text-sm text-gray-800">
-                        <div class="font-black text-base mb-0.5 uppercase">{{ $invoiceReturn->customer_name }}</div>
-                        @if ($invoiceReturn->customer && $invoiceReturn->customer->gst_number)
-                            <div class="font-bold text-gray-900 uppercase">GSTIN:
-                                {{ $invoiceReturn->customer->gst_number }}</div>
+                        <div class="font-black text-base mb-0.5 uppercase">{{ $customerName }}</div>
+                        @if ($customerGSTIN)
+                            <div class="font-bold text-gray-900 uppercase">GSTIN: {{ $customerGSTIN }}</div>
                         @endif
-                        <div class="text-gray-600 leading-snug font-medium mt-1">
-                            {!! nl2br(e($invoiceReturn->customer->address ?? 'N/A')) !!}
-                        </div>
+                        @if ($customerAddress !== 'N/A')
+                            <div class="text-gray-600 leading-snug font-medium mt-1">
+                                {!! nl2br(e($customerAddress)) !!}
+                            </div>
+                        @endif
+                        @if ($customerPhone !== 'N/A')
+                            <div class="text-gray-600 font-medium mt-1">Phone: {{ $customerPhone }}</div>
+                        @endif
                     </div>
                 </div>
 
@@ -233,12 +255,15 @@
 
             {{-- Items Table --}}
             <div class="overflow-x-auto mb-10 px-5 sm:px-8 md:px-12">
-                <table class="w-full text-sm border-collapse min-w-[600px]">
+                <table class="w-full text-sm border-collapse min-w-[720px]">
                     <thead class="bg-gray-100 text-gray-700">
                         <tr>
                             <th class="py-3 px-4 text-left font-bold border-b">Description</th>
                             <th class="py-3 px-4 text-center font-bold border-b">HSN</th>
-                            <th class="py-3 px-4 text-center font-bold border-b">Qty</th>
+                            <th class="py-3 px-4 text-center font-bold border-b no-print">Original</th>
+                            <th class="py-3 px-4 text-center font-bold border-b no-print">Returned<br><span class="text-[10px] font-normal text-gray-500">(all returns)</span></th>
+                            <th class="py-3 px-4 text-center font-bold border-b no-print">Remaining</th>
+                            <th class="py-3 px-4 text-center font-bold border-b">This Return</th>
                             <th class="py-3 px-4 text-right font-bold border-b">Rate</th>
                             <th class="py-3 px-4 text-center font-bold border-b">GST</th>
                             <th class="py-3 px-4 text-right font-bold border-b">Total</th>
@@ -246,11 +271,31 @@
                     </thead>
                     <tbody>
                         @foreach ($invoiceReturn->items as $item)
+                            @php
+                                $cap = $returnableMap[$item->invoice_item_id] ?? null;
+                                $formatQty = function ($v) {
+                                    $s = number_format((float) $v, 4, '.', '');
+                                    return rtrim(rtrim($s, '0'), '.') ?: '0';
+                                };
+                            @endphp
                             <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50/50">
-                                <td class="py-4 px-4 font-bold text-gray-800">{{ $item->product_name }}</td>
+                                <td class="py-4 px-4 font-bold text-gray-800">
+                                    {{ $item->product_name }}
+                                    <div class="text-[11px] text-gray-500 font-mono mt-0.5">SKU:
+                                            {{ $item->sku->sku_code ?? ($item->sku->sku ?? 'N/A') }}</div>
+                                </td>
                                 <td class="py-4 px-4 text-center text-gray-500">{{ $item->hsn_code ?? '-' }}</td>
+                                <td class="py-4 px-4 text-center text-gray-700 font-semibold no-print">
+                                    {{ $cap ? $formatQty($cap['original']) : '-' }}
+                                </td>
+                                <td class="py-4 px-4 text-center font-semibold no-print {{ $cap && $cap['returned'] > 0 ? 'text-amber-700' : 'text-gray-400' }}">
+                                    {{ $cap ? $formatQty($cap['returned']) : '-' }}
+                                </td>
+                                <td class="py-4 px-4 text-center font-semibold no-print {{ $cap && $cap['remaining'] > 0 ? 'text-green-700' : 'text-gray-400' }}">
+                                    {{ $cap ? $formatQty($cap['remaining']) : '-' }}
+                                </td>
                                 <td class="py-4 px-4 text-center font-bold text-red-600">
-                                    {{ (float) $item->quantity }}
+                                    {{ $formatQty($item->quantity) }}
                                 </td>
                                 <td class="py-4 px-4 text-right text-gray-600">
                                     ₹{{ number_format($item->unit_price, 2) }}</td>

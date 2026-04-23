@@ -29,13 +29,14 @@ class StoreInvoiceRequest extends FormRequest
             'invoice_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:invoice_date'],
             'source' => ['required', 'in:pos,direct,online'],
+            'status' => ['nullable', 'in:draft,confirmed'],
             'notes' => ['nullable', 'string'],
             'terms_conditions' => ['nullable', 'string'],
 
             // Global Financials
             'shipping_charge' => ['nullable', 'numeric', 'min:0'],
-            'global_discount_type' => ['nullable', 'in:fixed,percent,percentage'],
-            'global_discount_value' => ['nullable', 'numeric', 'min:0'],
+            'discount_type' => ['nullable', 'in:fixed,percentage'],
+            'discount_value' => ['nullable', 'numeric', 'min:0'],
 
             // Payment Receipt Data
             'payment_method_id' => [
@@ -56,7 +57,7 @@ class StoreInvoiceRequest extends FormRequest
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.tax_type' => ['required', 'in:inclusive,exclusive'],
-            'items.*.discount_type' => ['required', 'in:fixed,percent,percentage'],
+            'items.*.discount_type' => ['required', 'in:fixed,percentage'],
             'items.*.discount_value' => ['required', 'numeric', 'min:0'],
             // Challan item reference (populated when converting from a challan)
             'items.*.challan_item_id' => ['nullable', 'exists:challan_items,id'],

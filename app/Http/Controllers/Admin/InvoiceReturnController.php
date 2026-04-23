@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\ExcessReturnQuantityException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreInvoiceReturnRequest;
 use App\Http\Requests\Admin\UpdateInvoiceReturnRequest;
@@ -83,13 +84,17 @@ class InvoiceReturnController extends Controller
         // Load the original invoice items with their SKUs
         $invoice->load(['items.sku', 'client']);
 
+        // Per-line returnable capacity. `return_quantity` already reflects confirmed returns,
+        // so remaining = quantity - return_quantity. Keyed by invoice_item.id for the blade.
+        $returnableMap = $this->buildReturnableMap($invoice);
+
         $companyId = Auth::user()->company_id;
         $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
         $warehouses = Warehouse::where('company_id', $companyId)->get();
         $states = State::where('is_active', true)->orderBy('name')->get();
         $companyState = Auth::user()->company->state->name ?? 'Unknown';
 
-        return view('admin.invoice-returns.create', compact('invoice', 'stores', 'warehouses', 'states', 'companyState'));
+        return view('admin.invoice-returns.create', compact('invoice', 'stores', 'warehouses', 'states', 'companyState', 'returnableMap'));
     }
 
     /**
@@ -106,7 +111,18 @@ class InvoiceReturnController extends Controller
             return redirect()->route('admin.invoice-returns.show', $invoiceReturn->id)
                 ->with('success', 'Draft Credit Note created successfully. Please review and confirm.');
 
+        } catch (ExcessReturnQuantityException $e) {
+            Log::warning('Invoice Return Store blocked by excess quantity', [
+                'invoice_id' => $invoice->id,
+                'product' => $e->productLabel,
+                'requested' => $e->requestedQty,
+                'remaining' => $e->remainingQty,
+            ]);
+
+            return back()->withInput()->with('error', $e->friendlyMessage());
         } catch (Exception $e) {
+            Log::error('Invoice Return Store Failed: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Failed to create return: '.$e->getMessage());
         }
     }
@@ -118,9 +134,23 @@ class InvoiceReturnController extends Controller
     {
         abort_if($invoiceReturn->company_id !== Auth::user()->company_id, 403);
 
-        $invoiceReturn->load(['items.product', 'items.sku', 'customer', 'store', 'warehouse', 'invoice']);
+        $invoiceReturn->load([
+            'items.product',
+            'items.sku',
+            'items.originalInvoiceItem',
+            'customer',
+            'store',
+            'warehouse',
+            'invoice.items',
+        ]);
 
-        return view('admin.invoice-returns.show', compact('invoiceReturn'));
+        // Capacity snapshot for the invoice, so the "show" page can display
+        // Original / Already Returned / Remaining next to each line.
+        $returnableMap = $invoiceReturn->invoice
+            ? $this->buildReturnableMap($invoiceReturn->invoice)
+            : [];
+
+        return view('admin.invoice-returns.show', compact('invoiceReturn', 'returnableMap'));
     }
 
     /**
@@ -135,8 +165,12 @@ class InvoiceReturnController extends Controller
                 ->with('error', 'Confirmed Credit Notes cannot be edited. They are locked for accounting.');
         }
 
-        $invoiceReturn->load(['items', 'invoice.items']);
+        $invoiceReturn->load(['items', 'invoice.items.sku']);
         $invoice = $invoiceReturn->invoice; // Need original invoice context for the UI
+
+        // Returnable capacity — exclude this draft's own line quantities so the user
+        // can see the "room" they already have reserved for themselves.
+        $returnableMap = $this->buildReturnableMap($invoice, excludeReturn: $invoiceReturn);
 
         $companyId = Auth::user()->company_id;
         $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
@@ -144,7 +178,7 @@ class InvoiceReturnController extends Controller
         $states = State::where('is_active', true)->orderBy('name')->get();
         $companyState = Auth::user()->company->state->name ?? 'Unknown';
 
-        return view('admin.invoice-returns.edit', compact('invoiceReturn', 'invoice', 'stores', 'warehouses', 'states', 'companyState'));
+        return view('admin.invoice-returns.edit', compact('invoiceReturn', 'invoice', 'stores', 'warehouses', 'states', 'companyState', 'returnableMap'));
     }
 
     /**
@@ -160,7 +194,18 @@ class InvoiceReturnController extends Controller
             return redirect()->route('admin.invoice-returns.show', $invoiceReturn->id)
                 ->with('success', 'Credit Note updated successfully.');
 
+        } catch (ExcessReturnQuantityException $e) {
+            Log::warning('Invoice Return Update blocked by excess quantity', [
+                'return_id' => $invoiceReturn->id,
+                'product' => $e->productLabel,
+                'requested' => $e->requestedQty,
+                'remaining' => $e->remainingQty,
+            ]);
+
+            return back()->withInput()->with('error', $e->friendlyMessage());
         } catch (Exception $e) {
+            Log::error('Invoice Return Update Failed: '.$e->getMessage());
+
             return back()->withInput()->with('error', 'Failed to update return: '.$e->getMessage());
         }
     }
@@ -174,12 +219,25 @@ class InvoiceReturnController extends Controller
 
         try {
             // This triggers the InventoryService under the hood!
-            $this->returnService->confirmReturn($invoiceReturn);
+            $invoiceReturn = $this->returnService->confirmReturn($invoiceReturn);
 
-            return back()->with('success', 'Credit Note confirmed! Stock has been securely returned to the warehouse.');
+            $message = $invoiceReturn->restock
+                ? 'Credit Note confirmed! Stock has been securely returned to the warehouse.'
+                : 'Credit Note confirmed! No stock was moved (restock was off for this return).';
 
+            return back()->with('success', $message);
+
+        } catch (ExcessReturnQuantityException $e) {
+            Log::warning('Invoice Return Confirm blocked by excess quantity', [
+                'return_id' => $invoiceReturn->id,
+                'product' => $e->productLabel,
+                'requested' => $e->requestedQty,
+                'remaining' => $e->remainingQty,
+            ]);
+
+            return back()->with('error', $e->friendlyMessage());
         } catch (Exception $e) {
-            Log::error('Update Failed: '.$e->getMessage());
+            Log::error('Invoice Return Confirm Failed: '.$e->getMessage());
 
             return back()->with('error', 'Confirmation failed: '.$e->getMessage());
         }
@@ -200,5 +258,58 @@ class InvoiceReturnController extends Controller
 
         return redirect()->route('admin.invoice-returns.index')
             ->with('success', 'Draft Credit Note deleted successfully.');
+    }
+
+    /**
+     * Build a per-invoice-item capacity snapshot:
+     *   [invoice_item_id => ['original' => 10, 'returned' => 3, 'remaining' => 7]]
+     *
+     * Draft returns DON'T yet consume `return_quantity`, so we layer their line quantities
+     * in separately to produce an honest "room left" figure for the UI. When editing a
+     * specific draft, pass it via $excludeReturn so its own saved lines aren't counted
+     * against the user.
+     */
+    private function buildReturnableMap(Invoice $invoice, ?InvoiceReturn $excludeReturn = null): array
+    {
+        if (! $invoice->relationLoaded('items')) {
+            $invoice->load('items');
+        }
+
+        $invoiceItemIds = $invoice->items->pluck('id')->all();
+
+        // Sum quantities across OTHER draft returns of this invoice.
+        $draftAggregates = [];
+        if (! empty($invoiceItemIds)) {
+            InvoiceReturn::where('invoice_id', $invoice->id)
+                ->where('status', 'draft')
+                ->when($excludeReturn, fn ($q) => $q->where('id', '!=', $excludeReturn->id))
+                ->with(['items' => fn ($q) => $q->whereIn('invoice_item_id', $invoiceItemIds)])
+                ->get()
+                ->each(function ($draft) use (&$draftAggregates) {
+                    foreach ($draft->items as $line) {
+                        $key = (int) $line->invoice_item_id;
+                        $draftAggregates[$key] = ($draftAggregates[$key] ?? 0) + (float) $line->quantity;
+                    }
+                });
+        }
+
+        $map = [];
+        foreach ($invoice->items as $item) {
+            $original = (float) $item->quantity;
+            $confirmed = (float) ($item->return_quantity ?? 0);
+            $draft = (float) ($draftAggregates[$item->id] ?? 0);
+            $alreadyReturned = $confirmed + $draft;
+            $remaining = max(0.0, $original - $alreadyReturned);
+
+            $map[$item->id] = [
+                'original' => $original,
+                'returned' => $alreadyReturned,
+                'returned_confirmed' => $confirmed,
+                'returned_draft' => $draft,
+                'remaining' => $remaining,
+            ];
+        }
+
+        return $map;
     }
 }

@@ -5,7 +5,7 @@
 @section('header-title')
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Shifts</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage work shifts and timings</p>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Manage work shifts and timings</p> --}}
     </div>
 @endsection
 

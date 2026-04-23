@@ -80,7 +80,7 @@ class DashboardController extends Controller
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            $request->session()->flash('warning', 'Some dashboard metrics could not be loaded at this time.');
+            // $request->session()->flash('warning', 'Some dashboard metrics could not be loaded at this time.');
         }
 
         return view('admin.dashboard', $data);

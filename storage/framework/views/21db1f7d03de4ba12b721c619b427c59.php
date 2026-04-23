@@ -1,9 +1,7 @@
-
-
 <?php $__env->startSection('title', 'Credit Notes & Returns'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Credit Notes</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales Returns</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('styles'); ?>

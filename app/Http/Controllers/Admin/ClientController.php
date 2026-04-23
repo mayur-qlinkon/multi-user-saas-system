@@ -13,25 +13,41 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
+        $search = trim((string) $request->input('search', ''));
+        $status = $request->input('status'); // 'active' | 'inactive' | null
+        $registrationType = $request->input('registration_type'); // 'registered' | 'composition' | 'unregistered' | 'overseas' | 'sez' | null
+
         // Tenantable trait automatically restricts this to the owner's company!
         $query = Client::query();
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('city', 'like', "%{$search}%")
-                    ->orWhere('company_name', 'like', "%{$search}%");
+                $like = '%'.$search.'%';
+                $q->where('name', 'like', $like)
+                    ->orWhere('phone', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('city', 'like', $like)
+                    ->orWhere('gst_number', 'like', $like)
+                    ->orWhere('company_name', 'like', $like);
             });
         }
 
-        $clients = $query->latest()->paginate(15);
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        if (in_array($registrationType, ['registered', 'composition', 'unregistered', 'overseas', 'sez'], true)) {
+            $query->where('registration_type', $registrationType);
+        }
+
+        $clients = $query->latest()->paginate(15)->withQueryString();
 
         // Pass states to the view for the dropdown
         $states = State::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.clients', compact('clients', 'states'));
+        return view('admin.clients', compact('clients', 'states', 'search', 'status', 'registrationType'));
     }
 
     /**

@@ -4,8 +4,7 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">CRM Leads</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Track and manage your sales pipeline</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CRM Leads</h1>        
     </div>
 @endsection
 

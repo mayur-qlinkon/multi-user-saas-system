@@ -3,7 +3,7 @@
 @section('title', 'Dashboard - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Overview / Dashboard</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Dashboard</h1>
 @endsection
 
 @push('styles')
@@ -25,20 +25,7 @@
     @php
         $formatAmt = fn($amount) => number_format((float) $amount, 2, '.', ',');
         
-        $hour = now()->format('H');
-        if ($hour < 12) {
-            $greeting = 'Good Morning';
-            $greetingIcon = 'sun';
-            $iconColor = 'text-yellow-500';
-        } elseif ($hour < 17) {
-            $greeting = 'Good Afternoon';
-            $greetingIcon = 'sun-medium';
-            $iconColor = 'text-orange-500';
-        } else {
-            $greeting = 'Good Evening';
-            $greetingIcon = 'moon';
-            $iconColor = 'text-indigo-500';
-        }
+        $hour = now()->format('H');      
         // Prepare continuous 7-day data for the chart
         $chartDates = [];
         $salesData = [];
@@ -79,43 +66,41 @@
         @endif
 
         {{-- 1. HEADER & QUICK ACTIONS ROW --}}
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 overflow-hidden">
-            
-            {{-- Greeting (Prevented from squishing/wrapping) --}}
-            <div class="flex items-center gap-2 shrink-0">
-                {{-- <i data-lucide="{{ $greetingIcon }}" class="w-6 h-6 {{ $iconColor }} fill-current"></i> --}}
-                <h1 class="text-xl font-bold text-gray-800 tracking-tight whitespace-nowrap">{{ $greeting }}, <span class="text-brand-600">{{ auth()->user()->name }}</span></h1>
-            </div>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 overflow-hidden">                                
             
             {{-- Quick Actions Container (Invisible scrollbar, touch-friendly) --}}
             <div class="flex overflow-x-auto pb-1 hide-scrollbar gap-2 w-full lg:w-auto">
-                @if(has_module('pos'))
-                <a href="{{ route('admin.pos.index') }}" target="_blank" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600"></i> POS
-                </a>
+                @if(has_module('pos') && has_permission('pos.access'))
+                    <a href="{{ route('admin.pos.index') }}" target="_blank" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600"></i> POS
+                    </a>
                 @endif
                 @if(has_module('invoicing'))
-                <a href="{{ route('admin.invoices.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Create Invoice
-                </a>
-                <a href="{{ route('admin.quotations.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Create Quotation
-                </a>
+                    @if(has_permission('invoices.create'))
+                        <a href="{{ route('admin.invoices.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                            <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Invoice
+                        </a>
+                    @endif
+                    @if(has_permission('quotations.create'))
+                        <a href="{{ route('admin.quotations.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                            <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Quotation
+                        </a>
+                    @endif
                 @endif
-                @if(has_module('challan'))
-                <a href="{{ route('admin.challans.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Create Challan
-                </a>
+                @if(has_module('challan') && has_permission('challans.create'))
+                    <a href="{{ route('admin.challans.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Challan
+                    </a>
                 @endif
-                @if(has_module('purchases'))
-                <a href="{{ route('admin.purchases.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="shopping-bag" class="w-4 h-4 text-purple-600"></i> Add Purchase
-                </a>
+                @if(has_module('purchases') && has_permission('purchases.create'))
+                    <a href="{{ route('admin.purchases.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-purple-600"></i> Purchase
+                    </a>
                 @endif
-                @if(has_module('crm'))
-                <a href="{{ route('admin.crm.leads.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
-                    <i data-lucide="user-plus" class="w-4 h-4 text-orange-500"></i> Create Lead
-                </a>
+                @if(has_module('crm') && has_permission('crm_leads.create'))
+                    <a href="{{ route('admin.crm.leads.create') }}" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="user-plus" class="w-4 h-4 text-orange-500"></i> Lead
+                    </a>
                 @endif
             </div>
         </div>

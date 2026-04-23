@@ -3,7 +3,7 @@
 @section('title', 'Challan Returns - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">LIST / CHALLAN RETURNS</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CHALLAN RETURNS</h1>
 @endsection
 
 @push('styles')

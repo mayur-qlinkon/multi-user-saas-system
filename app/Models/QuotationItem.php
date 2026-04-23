@@ -30,6 +30,7 @@ class QuotationItem extends Model
 
         // 💰 Discounts
         'discount_type',
+        'discount_value',
         'discount_amount',
 
         // 🇮🇳 Tax & GST Breakups
@@ -51,6 +52,8 @@ class QuotationItem extends Model
     protected $casts = [
         'quantity' => 'float',
         'unit_price' => 'float',
+
+        'discount_value' => 'float',
         'discount_amount' => 'float',
         'taxable_value' => 'float',
         'tax_percent' => 'float',

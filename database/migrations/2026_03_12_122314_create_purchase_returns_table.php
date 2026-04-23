@@ -28,7 +28,8 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users');
 
             // ── REFERENCE ──────────────────────────────────────────────
-            $table->string('return_number', 50)->unique();
+            $table->string('return_number', 50);
+            $table->unique(['company_id', 'return_number']);
             // e.g. PR-RTN-2024-0001
 
             $table->string('supplier_credit_note_number', 100)->nullable();
@@ -57,7 +58,11 @@ return new class extends Migration
 
             // ── AMOUNTS ────────────────────────────────────────────────
             $table->decimal('subtotal', 15, 2)->default(0);
+            
+            $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
+            $table->decimal('discount_value', 15, 4)->default(0);
             $table->decimal('discount_amount', 15, 2)->default(0);
+
             $table->decimal('taxable_amount', 15, 2)->default(0);
             $table->decimal('cgst_amount', 15, 2)->default(0);
             $table->decimal('sgst_amount', 15, 2)->default(0);
@@ -96,6 +101,10 @@ return new class extends Migration
             $table->decimal('cgst_percent', 5, 2)->default(0);
             $table->decimal('sgst_percent', 5, 2)->default(0);
             $table->decimal('igst_percent', 5, 2)->default(0);
+
+            $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
+            $table->decimal('discount_value', 15, 4)->default(0);
+            $table->decimal('discount_amount', 15, 2)->default(0);
 
             $table->decimal('taxable_amount', 15, 4)->default(0);
             $table->decimal('cgst_amount', 15, 4)->default(0);

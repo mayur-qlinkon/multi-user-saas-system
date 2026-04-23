@@ -57,7 +57,17 @@
       "Bash(php -l app/Services/InvoiceService.php)",
       "Bash(php -l app/Services/InvoiceReturnService.php)",
       "Bash(php -l app/Models/StorefrontSection.php)",
-      "Bash(php -l app/Http/Controllers/Admin/PosController.php)"
+      "Bash(php -l app/Http/Controllers/Admin/PosController.php)",
+      "Bash(vendor/bin/pint app/Http/Controllers/Admin/UnitController.php --format agent)",
+      "Bash(vendor/bin/pint app/Services/Import/SkuImporter.php --format agent)",
+      "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $app = require '\\\\''bootstrap/app.php'\\\\''; $app->make\\('\\\\''Illuminate\\\\Contracts\\\\Console\\\\Kernel'\\\\''\\)->bootstrap\\(\\); try { $v = view\\('\\\\''admin.suppliers'\\\\'', ['\\\\''suppliers'\\\\'' => new \\\\Illuminate\\\\Pagination\\\\LengthAwarePaginator\\([], 0, 15\\), '\\\\''stores'\\\\'' => collect\\(\\), '\\\\''states'\\\\'' => collect\\(\\), '\\\\''search'\\\\'' => '\\\\'''\\\\'', '\\\\''status'\\\\'' => null, '\\\\''registrationType'\\\\'' => null]\\); echo '\\\\''View compiled OK'\\\\'' . PHP_EOL; } catch \\(\\\\Throwable $e\\) { echo '\\\\''ERROR: '\\\\'' . $e->getMessage\\(\\) . PHP_EOL; }')",
+      "Bash(vendor/bin/pint app/Http/Controllers/Admin/ClientController.php --format agent)",
+      "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $app = require '\\\\''bootstrap/app.php'\\\\''; $app->make\\('\\\\''Illuminate\\\\Contracts\\\\Console\\\\Kernel'\\\\''\\)->bootstrap\\(\\); try { view\\('\\\\''admin.clients'\\\\'', ['\\\\''clients'\\\\'' => new \\\\Illuminate\\\\Pagination\\\\LengthAwarePaginator\\([], 0, 15\\), '\\\\''states'\\\\'' => collect\\(\\), '\\\\''search'\\\\'' => '\\\\'''\\\\'', '\\\\''status'\\\\'' => null, '\\\\''registrationType'\\\\'' => null]\\)->render\\(\\); echo '\\\\''View renders OK'\\\\'' . PHP_EOL; } catch \\(\\\\Throwable $e\\) { echo '\\\\''ERROR: '\\\\'' . $e->getMessage\\(\\) . PHP_EOL; }')",
+      "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $app = require '\\\\''bootstrap/app.php'\\\\''; $app->make\\('\\\\''Illuminate\\\\Contracts\\\\Console\\\\Kernel'\\\\''\\)->bootstrap\\(\\); app\\('\\\\''view'\\\\''\\)->getEngineResolver\\(\\)->resolve\\('\\\\''blade'\\\\''\\)->getCompiler\\(\\)->compile\\(resource_path\\('\\\\''views/admin/clients.blade.php'\\\\''\\)\\); echo '\\\\''Compiled OK'\\\\'' . PHP_EOL;')",
+      "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $app = require '\\\\''bootstrap/app.php'\\\\''; $app->make\\('\\\\''Illuminate\\\\Contracts\\\\Console\\\\Kernel'\\\\''\\)->bootstrap\\(\\); app\\('\\\\''view'\\\\''\\)->getEngineResolver\\(\\)->resolve\\('\\\\''blade'\\\\''\\)->getCompiler\\(\\)->compile\\(resource_path\\('\\\\''views/admin/clients.blade.php'\\\\''\\)\\); echo '\\\\''OK'\\\\'' . PHP_EOL;')",
+      "Bash(php -l resources/views/admin/invoices/create.blade.php)",
+      "Bash(Select-String \"invoice_items|invoice_return\")",
+      "Bash(php -l resources/views/admin/storefront-sections/products.blade.php)"
     ]
   }
 }

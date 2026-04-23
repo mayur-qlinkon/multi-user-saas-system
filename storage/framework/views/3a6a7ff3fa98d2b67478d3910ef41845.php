@@ -3,7 +3,7 @@
 <?php $__env->startSection('header-title'); ?>
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Employees</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage your workforce and employee records</p>
+        
     </div>
 <?php $__env->stopSection(); ?>
 

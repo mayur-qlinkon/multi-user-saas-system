@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Services\ImageUploadService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -35,7 +36,7 @@ class CategoryController extends Controller
             'is_active' => $request->has('is_active'),
         ]);
 
-        $companyId = auth()->user()->company_id ?? null;
+        $companyId = Auth::user()->company_id ?? null;
 
         // 2. Validate with SaaS Scoping
         $data = $request->validate([
@@ -94,7 +95,7 @@ class CategoryController extends Controller
             'is_active' => $request->has('is_active'),
         ]);
 
-        $companyId = auth()->user()->company_id ?? null;
+        $companyId = Auth::user()->company_id ?? null;
 
         $data = $request->validate([
             'name' => [

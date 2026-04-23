@@ -136,13 +136,13 @@
 
         <!-- Header -->
         <div class="poster-header">
-            <p class="label">Office QR Code</p>
+            {{-- <p class="label">Office QR Code</p> --}}
             <p class="store-name">{{ $store->name }}</p>
         </div>
 
         <!-- Body -->
         <div class="poster-body">
-            <p class="instruction">Employees scan this to mark attendance</p>
+            <p class="instruction">Scan QR & Mark Your Attendance</p>
 
             <!-- QR Code -->
             <div class="qr-wrapper">

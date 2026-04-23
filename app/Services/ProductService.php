@@ -592,6 +592,7 @@ class ProductService
      */
     private function processInitialStock($sku, array $stockData): void
     {
+        $storeId = session('store_id') ?? auth()->user()->store_id;
         foreach ($stockData as $stock) {
             $qty = (int) $stock['qty'];
 
@@ -604,6 +605,7 @@ class ProductService
 
                 // Log it in the Immutable Ledger
                 StockMovement::create([
+                    'store_id' => $storeId,
                     'product_sku_id' => $sku->id,
                     'warehouse_id' => $stock['warehouse_id'],
                     'quantity' => $qty,

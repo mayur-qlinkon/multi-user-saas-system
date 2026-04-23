@@ -3,7 +3,7 @@
 @section('title', 'Edit Order - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Orders / Edit</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Order</h1>
 @endsection
 
 @push('styles')
@@ -22,7 +22,7 @@
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3 mb-1">
-                    <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight">Edit Order #{{ $order->order_number }}</h1>
+                    <h1 class="text-[1.5rem] font-bold text-gray-500 uppercase tracking-widest">Edit Order #{{ $order->order_number }}</h1>
                     @if($order->source === 'storefront')
                         <span class="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider rounded">Storefront</span>
                     @else

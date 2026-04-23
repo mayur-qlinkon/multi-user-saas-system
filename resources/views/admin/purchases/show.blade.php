@@ -309,14 +309,21 @@
                                     <td class="py-3 px-2 text-center text-gray-600">₹ {{ $formatAmt($item->unit_cost) }}
                                     </td>
 
-                                    <td class="py-3 px-2 text-center text-gray-600">
-                                        ₹
-                                        {{ $formatAmt($item->quantity * $item->unit_cost * ($item->discount_percent / 100)) }}
+                                    <td class="py-3 px-2 text-center text-gray-600 leading-tight">
+                                        @if ($item->discount_amount > 0)
+                                            @if ($item->discount_type === 'percentage' && (float) $item->discount_value > 0)
+                                                {{ (float) $item->discount_value }}%
+                                                <span class="text-[10px] text-gray-400 block">(-₹{{ $formatAmt($item->discount_amount) }})</span>
+                                            @else
+                                                ₹ {{ $formatAmt($item->discount_amount) }}
+                                            @endif
+                                        @else
+                                            -
+                                        @endif
                                     </td>
 
                                     @php
-                                        $baseAfterDisc =
-                                            $item->quantity * $item->unit_cost * (1 - $item->discount_percent / 100);
+                                        $baseAfterDisc = ($item->quantity * $item->unit_cost) - $item->discount_amount;
                                         $taxAmt =
                                             $item->tax_type === 'inclusive'
                                                 ? $baseAfterDisc - $baseAfterDisc / (1 + $item->tax_percent / 100)
@@ -334,8 +341,8 @@
                 </div>
             </div>
 
-            <div class="px-6 py-6 print:py-2 flex justify-end page-break-avoid">
-                <div class="w-full md:w-[380px] border border-gray-200 rounded p-4">
+            <div class="px-6 py-6 print:py-2 flex justify-end print:block page-break-avoid">
+                <div class="w-full md:w-[380px] print:w-[380px] print:ml-auto border border-gray-200 rounded p-4">
                     <table class="w-full text-[13px] text-gray-600">
                         <tbody>
                             <tr>
@@ -343,11 +350,18 @@
                                 <td class="py-2 text-right border-b border-gray-100">₹
                                     {{ $formatAmt($purchase->tax_amount) }}</td>
                             </tr>
-                            <tr>
-                                <td class="py-2 border-b border-gray-100">Discount</td>
-                                <td class="py-2 text-right border-b border-gray-100">₹
-                                    {{ $formatAmt($purchase->discount_amount) }}</td>
-                            </tr>
+                            @if ($purchase->discount_amount > 0)
+                                <tr>
+                                    <td class="py-2 border-b border-gray-100">
+                                        Discount 
+                                        @if ($purchase->discount_type === 'percentage' && (float) $purchase->discount_value > 0)
+                                            <span class="text-xs text-gray-400 font-medium">({{ (float) $purchase->discount_value }}%)</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-2 text-right border-b border-gray-100">(-) ₹
+                                        {{ $formatAmt($purchase->discount_amount) }}</td>
+                                </tr>
+                            @endif
                             <tr>
                                 <td class="py-2 border-b border-gray-100">Shipping</td>
                                 <td class="py-2 text-right border-b border-gray-100">₹

@@ -173,10 +173,15 @@
                 <td class="text-right">{{ number_format($invoice->subtotal, 2) }}</td>
             </tr>
 
-            {{-- 🌟 FIXED: SHOW DISCOUNT IF APPLIED --}}
+            {{-- 🌟 FIXED: SHOW DISCOUNT IF APPLIED --}}            
             @if ($invoice->discount_amount > 0)
                 <tr>
-                    <td class="font-bold">Discount</td>
+                    <td class="font-bold">
+                        Discount 
+                        @if(in_array($invoice->discount_type, ['percent', 'percentage']) && $invoice->discount_value > 0)
+                            ({{ (float) $invoice->discount_value }}%)
+                        @endif
+                    </td>
                     <td class="text-right font-bold">-{{ number_format($invoice->discount_amount, 2) }}</td>
                 </tr>
             @endif

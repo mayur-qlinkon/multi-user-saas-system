@@ -22,7 +22,7 @@ return new class extends Migration
             // ── 2. Pricing & Billing ──
             $table->decimal('price', 10, 2)->default(0); // e.g., 9.99
             $table->enum('billing_cycle', ['monthly', 'yearly', 'lifetime'])->default('monthly'); // Used for the "/mo" text
-            $table->integer('trial_days')->default(0); // E.g., 14 for the "Free trial" plan
+            $table->integer('trial_days')->nullable(); // E.g., 14 for the "Free trial" plan
 
             // ── 3. Resource Limits (For Tenant Gates) ──
             $table->integer('user_limit')->default(1);

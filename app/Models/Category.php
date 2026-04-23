@@ -45,7 +45,7 @@ class Category extends Model
      */
     public function getImageUrlAttribute()
     {
-        return $this->image ? asset('storage/'.$this->image) : asset('assets/images/default-category.png');
+        return $this->image ? asset('storage/'.$this->image) : asset('assets/images/no-category.webp');
     }
 
     /**

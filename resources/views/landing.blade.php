@@ -47,6 +47,8 @@
                 $actionUrl = route('storefront.portal.dashboard', ['slug' => $companySlug]);
             } elseif ($user->hasRole('owner')) {
                 $actionUrl = route('admin.dashboard');
+            } elseif ($user->hasRole('super_admin')) {
+                $actionUrl = route('platform.dashboard');
             } elseif ($user->hasRole('employee')) {
                 $actionUrl = route('admin.hrm.employee.dashboard');
             } else {

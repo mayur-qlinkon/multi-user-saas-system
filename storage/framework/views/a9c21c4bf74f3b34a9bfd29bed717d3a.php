@@ -1,9 +1,7 @@
-
-
 <?php $__env->startSection('title', 'My Stores - Qlinkon BIZNESS'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-widest">List / Stores</h1>
+    <h1 class="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-widest">Stores</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startSection('content'); ?>

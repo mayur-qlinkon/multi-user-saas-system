@@ -60,8 +60,11 @@ return new class extends Migration
 
             // Financials (These represent the NEGATIVE value to be deducted)
             $table->decimal('subtotal', 15, 4)->default(0);
+            
             $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
+            $table->decimal('discount_value', 15, 4)->default(0);
             $table->decimal('discount_amount', 15, 4)->default(0);
+
             $table->decimal('taxable_amount', 15, 4)->default(0);
 
             $table->decimal('cgst_amount', 15, 4)->default(0);

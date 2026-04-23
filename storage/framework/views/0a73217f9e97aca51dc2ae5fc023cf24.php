@@ -1,11 +1,9 @@
-
-
 <?php $__env->startSection('title', 'Storefront Sections'); ?>
 
 <?php $__env->startSection('header-title'); ?>
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Storefront Sections</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Design your homepage layout · Drag to reorder</p>
+        
     </div>
 <?php $__env->stopSection(); ?>
 

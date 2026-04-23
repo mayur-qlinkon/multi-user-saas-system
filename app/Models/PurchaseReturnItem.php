@@ -34,6 +34,10 @@ class PurchaseReturnItem extends Model
         // Quantities & Pricing
         'quantity',
         'unit_cost',
+
+        'discount_type',
+        'discount_value',
+        'discount_amount',
         'taxable_amount',
         'cgst_amount',
         'sgst_amount',
@@ -64,6 +68,9 @@ class PurchaseReturnItem extends Model
         // High Precision Amounts (15,4)
         'quantity' => 'decimal:4',
         'unit_cost' => 'decimal:4',
+
+        'discount_value' => 'decimal:4',
+        'discount_amount' => 'decimal:4',
         'taxable_amount' => 'decimal:4',
         'cgst_amount' => 'decimal:4',
         'sgst_amount' => 'decimal:4',

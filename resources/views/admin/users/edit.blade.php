@@ -3,7 +3,7 @@
 @section('title', 'Edit Staff Member - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">LIST / USERS / EDIT</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">EDIT USER</h1>
 @endsection
 
 @section('content')

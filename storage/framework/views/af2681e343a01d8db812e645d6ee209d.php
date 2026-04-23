@@ -1,9 +1,7 @@
-
-
 <?php $__env->startSection('title', 'Quotations - Qlinkon BIZNESS'); ?>
 
 <?php $__env->startSection('header-title'); ?>
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Quotations</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Quotations</h1>
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('styles'); ?>

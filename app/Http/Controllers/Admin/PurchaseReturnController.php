@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePurchaseReturnRequest;
 use App\Http\Requests\Admin\UpdatePurchaseReturnRequest;
@@ -213,6 +214,29 @@ class PurchaseReturnController extends Controller
             return redirect()->route('admin.purchase-returns.show', $purchaseReturn->id)
                 ->with('success', 'Purchase Return updated successfully.');
 
+        } catch (InsufficientStockException $e) {
+            Log::warning('Purchase Return Update blocked by insufficient stock', [
+                'return_id' => $purchaseReturn->id,
+                'sku_id' => $e->sku->id,
+                'sku' => $e->sku->sku,
+                'available' => $e->available,
+                'requested' => $e->requested,
+            ]);
+
+            $label = $e->sku->sku ?: ($e->sku->product->name ?? 'this item');
+            $productName = $e->sku->product->name ?? null;
+            $identifier = $productName && $e->sku->sku ? "{$productName} ({$e->sku->sku})" : $label;
+
+            $requestedQty = rtrim(rtrim(number_format($e->requested, 2, '.', ''), '0'), '.');
+            $availableQty = rtrim(rtrim(number_format($e->available, 2, '.', ''), '0'), '.');
+
+            $friendly = "You cannot return {$requestedQty} units for {$identifier} because only {$availableQty} units are currently available in stock.";
+
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $friendly], 422);
+            }
+
+            return back()->withInput()->with('error', $friendly);
         } catch (\Exception $e) {
             Log::error('Purchase Return Update Failed', [
                 'return_id' => $purchaseReturn->id,

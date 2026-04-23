@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Home - ' . $company->name); ?>
 
 <?php $__env->startPush('styles'); ?>
@@ -132,7 +130,7 @@
                                 alt="<?php echo e($banner->alt_text ?? 'Banner'); ?>"
                                 class="absolute inset-0 w-full h-full object-cover" 
                                 loading="eager"
-                                onerror="this.src='<?php echo e(asset('assets/images/placeholder.png')); ?>'">
+                                onerror="this.src='<?php echo e(asset('assets/images/placeholder.webp')); ?>'">
                         </div>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <div class="swiper-slide bg-gray-100 aspect-[21/9] md:aspect-[3/1] flex items-center justify-center">

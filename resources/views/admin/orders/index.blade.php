@@ -4,8 +4,7 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">List / Orders</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Manage storefront orders and inquiries</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Orders</h1>        
     </div>
 @endsection
 

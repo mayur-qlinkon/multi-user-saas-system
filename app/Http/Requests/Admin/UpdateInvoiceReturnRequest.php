@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,8 @@ class UpdateInvoiceReturnRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            'restock' => $this->has('restock') ? filter_var($this->restock, FILTER_VALIDATE_BOOLEAN) : true,
+            // Unchecked checkboxes are absent from POST; default to false (don't restock unless toggled on).
+            'restock' => $this->has('restock') ? filter_var($this->restock, FILTER_VALIDATE_BOOLEAN) : false,
         ]);
     }
 
@@ -63,5 +65,33 @@ class UpdateInvoiceReturnRequest extends FormRequest
             'items.*.discount_type' => ['required', 'in:fixed,percentage,percent'],
             'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
         ];
+    }
+
+    /**
+     * After structural rules pass, cross-check each line against remaining returnable capacity.
+     * Excludes the current draft return's own lines so re-saving the same draft is allowed.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $items = $this->input('items', []);
+            if (! is_array($items) || empty($items)) {
+                return;
+            }
+
+            // Resource routes bind as `invoice_return`; the confirm custom route uses `invoiceReturn`.
+            // Support both so the request class works regardless of which endpoint invoked it.
+            $invoiceReturn = $this->route('invoice_return') ?? $this->route('invoiceReturn');
+            if (! $invoiceReturn) {
+                return;
+            }
+
+            InvoiceReturnQuantityValidator::validate(
+                validator: $validator,
+                items: $items,
+                invoiceId: (int) $invoiceReturn->invoice_id,
+                excludeReturnId: (int) $invoiceReturn->id,
+            );
+        });
     }
 }

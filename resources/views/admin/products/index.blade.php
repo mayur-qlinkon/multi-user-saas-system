@@ -2,7 +2,7 @@
 
 @section('title', 'Products Management - Qlinkon BIZNESS')
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Catalog / Products</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Products</h1>
 @endsection
 @section('content')
     <div class="space-y-6 pb-10" x-data="productTable()">
@@ -32,19 +32,25 @@
             </div>
         @endif
 
-        <div class="flex flex-col md:flex-row justify-end items-center gap-3 mb-2">
+        <div class="flex justify-end mb-4">
             <form action="{{ route('admin.products.index') }}" method="GET"
-                class="flex flex-col md:flex-row w-full md:w-auto gap-3">
+                class="flex flex-col sm:flex-row flex-wrap w-full md:w-auto gap-3 items-stretch sm:items-center">
 
-                <div class="w-full md:w-80 relative">
+                {{-- Search Bar --}}
+                <div class="flex w-full sm:w-auto sm:flex-1 lg:flex-none lg:w-[320px]">
                     <input type="text" name="search" value="{{ request('search') }}"
                         placeholder="Search Product Name or SKU..."
-                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 focus:ring-2 focus:ring-[#108c2a]/20 focus:border-[#108c2a] outline-none transition-all placeholder:text-gray-400 bg-white shadow-sm">
+                        class="min-w-0 w-full flex-1 border border-gray-200 rounded-l-lg px-4 py-2.5 text-sm text-gray-700 focus:ring-2 focus:ring-[#108c2a]/20 focus:border-[#108c2a] outline-none placeholder:text-gray-400 bg-white">
+                    <button type="submit"
+                        class="shrink-0 px-4 sm:px-5 py-2.5 text-sm font-semibold text-white bg-[#108c2a] hover:bg-[#0e7a24] rounded-r-lg border border-l-0 border-[#108c2a] transition-colors">
+                        Search
+                    </button>
                 </div>
 
-                <div class="w-full md:w-64 relative">
+                {{-- Category Filter --}}
+                <div class="relative w-full sm:w-auto sm:flex-1 lg:flex-none lg:w-[220px]">
                     <select name="category_id" onchange="this.form.submit()"
-                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-600 focus:ring-2 focus:ring-[#108c2a]/20 focus:border-[#108c2a] outline-none appearance-none cursor-pointer bg-white shadow-sm font-bold">
+                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 pr-10 text-sm text-gray-600 focus:ring-2 focus:ring-[#108c2a]/20 focus:border-[#108c2a] outline-none appearance-none cursor-pointer bg-white shadow-sm">
                         <option value="">All Categories</option>
                         @foreach ($categories as $cat)
                             <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
@@ -56,8 +62,9 @@
                         class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                 </div>
 
+                {{-- Reset Button --}}
                 <a href="{{ route('admin.products.index') }}" title="Reset Filters"
-                    class="w-full md:w-auto bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center transition-colors shadow-sm">
+                    class="shrink-0 w-full sm:w-auto bg-white hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center transition-colors shadow-sm">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 </a>
             </form>

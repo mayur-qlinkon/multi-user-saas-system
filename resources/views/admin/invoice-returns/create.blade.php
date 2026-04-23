@@ -3,7 +3,7 @@
 @section('title', 'Create Credit Note for ' . $invoice->invoice_number)
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Invoices / Returns</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Sales Return</h1>
 @endsection
 
 @push('styles')
@@ -25,11 +25,11 @@
 @endpush
 
 @section('content')
-    <div class="pb-20" x-data="invoiceReturnForm(@js($invoice), @js($companyState))">
+    <div class="pb-20" x-data="invoiceReturnForm(@js($invoice), @js($companyState), @js($returnableMap))">
 
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">
+                <h1 class="text-[1.5rem] font-bold text-gray-500 uppercase tracking-widest1">
                     Create Return for <span class="text-[#108c2a]">{{ $invoice->invoice_number }}</span>
                 </h1>
                 <p class="text-sm text-gray-500 font-medium">Select the items the customer is returning to generate a Credit Note.</p>
@@ -153,7 +153,9 @@
                             <tr>
                                 <th class="px-4 py-4 w-12 text-center"><i data-lucide="check-square" class="w-4 h-4 mx-auto"></i></th>
                                 <th class="px-4 py-4 min-w-[250px]">PRODUCT DETAILS</th>
-                                <th class="px-4 py-4 min-w-[100px] text-center">ORIGINAL QTY</th>
+                                <th class="px-4 py-4 min-w-[90px] text-center">ORIGINAL</th>
+                                <th class="px-4 py-4 min-w-[90px] text-center">RETURNED</th>
+                                <th class="px-4 py-4 min-w-[90px] text-center">REMAINING</th>
                                 <th class="px-4 py-4 min-w-[140px] text-right">RETURN PRICE (₹)</th>
                                 {{-- 🌟 NEW: Editable Tax Column --}}
                                 <th class="px-4 py-4 min-w-[110px] text-right">TAX (%)</th>
@@ -164,20 +166,27 @@
                         <tbody class="divide-y divide-gray-100">
                             <template x-for="(item, index) in items" :key="item.invoice_item_id">
                                 <tr class="transition-colors"
-                                    :class="item.is_returning ? 'bg-red-50/30' : 'hover:bg-gray-50/50'">
+                                    :class="item.remaining_qty <= 0 ? 'bg-gray-50 opacity-60' : (item.is_returning ? 'bg-red-50/30' : 'hover:bg-gray-50/50')">
 
                                     {{-- Checkbox --}}
                                     <td class="px-4 py-3 text-center align-middle">
                                         {{-- UI Fix: Bigger touch target wrapper --}}
                                         <div class="flex items-center justify-center w-full h-full min-h-[40px]">
                                             <input type="checkbox" x-model="item.is_returning" @change="calculate()"
-                                                class="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer shadow-sm">
+                                                :disabled="item.remaining_qty <= 0"
+                                                class="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500 cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-40">
                                         </div>
                                     </td>
 
                                     {{-- Product Info --}}
                                     <td class="px-4 py-3 align-middle">
-                                        <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
+                                            <span x-show="item.remaining_qty <= 0"
+                                                class="bg-gray-200 text-gray-600 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                                Fully Returned
+                                            </span>
+                                        </div>
                                         <div class="flex flex-wrap items-center gap-2 mt-1">
                                             <span class="text-[11px] text-gray-500 font-mono" x-text="'SKU: ' + item.sku_code"></span>
                                             <span x-show="item.discount_amount > 0"
@@ -188,10 +197,23 @@
                                     </td>
 
                                     {{-- Original Qty --}}
-                                    {{-- UI Fix: Center aligned to match header, better spacing --}}
                                     <td class="px-4 py-3 text-center align-middle">
-                                        <span class="text-[13px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded"
-                                            x-text="item.original_qty"></span>
+                                        <span class="text-[13px] font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded"
+                                            x-text="formatQty(item.original_qty)"></span>
+                                    </td>
+
+                                    {{-- Already Returned Qty --}}
+                                    <td class="px-4 py-3 text-center align-middle">
+                                        <span class="text-[13px] font-bold px-2 py-1 rounded"
+                                            :class="item.already_returned_qty > 0 ? 'text-amber-700 bg-amber-50 border border-amber-200' : 'text-gray-400 bg-gray-50'"
+                                            x-text="formatQty(item.already_returned_qty)"></span>
+                                    </td>
+
+                                    {{-- Remaining Returnable Qty --}}
+                                    <td class="px-4 py-3 text-center align-middle">
+                                        <span class="text-[13px] font-black px-2 py-1 rounded"
+                                            :class="item.remaining_qty > 0 ? 'text-green-700 bg-green-50 border border-green-200' : 'text-gray-400 bg-gray-100'"
+                                            x-text="formatQty(item.remaining_qty)"></span>
                                     </td>
 
                                     {{-- Editable Return Price --}}
@@ -215,13 +237,18 @@
                                         </div>
                                     </td>
 
-                                    {{-- Return Qty Input --}}
+                                    {{-- Return Qty Input (capped at remaining) --}}
                                     <td class="px-4 py-3 align-middle">
-                                        <div class="flex justify-center min-w-[100px]"
-                                            :class="!item.is_returning ? 'opacity-50 pointer-events-none' : ''">
+                                        <div class="flex flex-col items-center min-w-[100px]"
+                                            :class="(!item.is_returning || item.remaining_qty <= 0) ? 'opacity-50 pointer-events-none' : ''">
                                             <input type="number" step="0.0001" x-model="item.return_qty"
-                                                @input="validateQty(item)" :disabled="!item.is_returning"
+                                                @input="validateQty(item)"
+                                                :disabled="!item.is_returning || item.remaining_qty <= 0"
+                                                :max="item.remaining_qty"
                                                 class="w-24 h-10 border border-gray-300 rounded px-2 text-center text-sm font-black focus:border-red-500 outline-none text-red-600 bg-white shadow-inner">
+                                            <span class="text-[10px] text-gray-400 font-bold mt-1"
+                                                x-show="item.is_returning && item.remaining_qty > 0"
+                                                x-text="'max ' + formatQty(item.remaining_qty)"></span>
                                         </div>
                                     </td>
 
@@ -357,10 +384,15 @@
 
 @push('scripts')
     <script>
-        function invoiceReturnForm(invoiceData, companyState) {
+        function invoiceReturnForm(invoiceData, companyState, returnableMap) {
 
-            // 🌟 1. Map exactly from the existing invoice items
+            // 🌟 1. Map exactly from the existing invoice items, enriched with capacity info
             const initialItems = invoiceData.items.map(item => {
+                const cap = (returnableMap && returnableMap[item.id]) ? returnableMap[item.id] : null;
+                const original = parseFloat(item.quantity) || 0;
+                const alreadyReturned = cap ? parseFloat(cap.returned) || 0 : 0;
+                const remaining = cap ? parseFloat(cap.remaining) || 0 : original;
+
                 return {
                     invoice_item_id: item.id,
                     product_id: item.product_id,
@@ -369,10 +401,12 @@
                     product_name: item.product_name,
                     sku_code: item.sku ? (item.sku.sku_code || item.sku.sku) : '',
                     hsn_code: item.hsn_code || '',
-                    original_qty: parseFloat(item.quantity) || 0,
+                    original_qty: original,
+                    already_returned_qty: alreadyReturned,
+                    remaining_qty: remaining,
 
-                    // Default to returning everything, but uncheck the box by default to be safe
-                    return_qty: parseFloat(item.quantity) || 0,
+                    // Default: checkbox OFF, pre-fill with the remaining capacity
+                    return_qty: remaining,
                     is_returning: false,
 
                     unit_price: parseFloat(item.unit_price) || 0,
@@ -419,14 +453,23 @@
                 },
 
                 validateQty(item) {
-                    // Prevent users from returning MORE than they bought
-                    if (item.return_qty > item.original_qty) {
-                        item.return_qty = item.original_qty;
-                        BizAlert.toast('Cannot return more than the original quantity purchased.', 'warning');
+                    // Cap at the remaining returnable qty (original - already returned).
+                    if (item.return_qty > item.remaining_qty) {
+                        item.return_qty = item.remaining_qty;
+                        BizAlert.toast(
+                            'Only ' + this.formatQty(item.remaining_qty) + ' units remain returnable on this line.',
+                            'warning'
+                        );
                     }
                     if (item.return_qty < 0) item.return_qty = 0;
 
                     this.calculate();
+                },
+
+                formatQty(val) {
+                    const num = parseFloat(val) || 0;
+                    // Drop trailing zeros so "5.0000" reads as "5" and "5.5000" as "5.5".
+                    return num.toString().replace(/\.?0+$/, '') || '0';
                 },
 
                 calculate() {

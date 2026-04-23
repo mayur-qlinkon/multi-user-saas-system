@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Auth\Customer\CustomerAuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -61,7 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LogoutController::class, 'destroy'])->name('logout');
 });
 
-Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+Route::view('/subscriptions', 'admin.subscriptions')->name('subscriptions.index');
 Route::redirect('/admin/help', 'https://office.qlinkon.com/help-center')->name('help');
 Route::view('/db', 'tools.DB-SCHEMA')->name('db');
 

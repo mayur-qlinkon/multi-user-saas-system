@@ -170,7 +170,7 @@ class Product extends Model
         }
 
         // Fallback to a default placeholder if no images exist at all
-        return $primaryMedia ? asset('storage/'.$primaryMedia->media_path) : asset('assets/images/no-product.png');
+        return $primaryMedia ? asset('storage/'.$primaryMedia->media_path) : asset('assets/images/no-product.webp');
     }
 
     /**
