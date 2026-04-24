@@ -1,0 +1,205 @@
+<?php
+
+namespace App\Services\Admin;
+
+use App\Models\User;
+use App\Services\ImageUploadService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+
+class UserService
+{
+    public function __construct(
+        protected ImageUploadService $imageService
+    ) {}
+
+    /**
+     * Get a paginated list of internal admin users for the tenant.
+     *
+     * @param  array  $filters  (e.g., search queries)
+     */
+    public function getPaginatedUsers(int $companyId, array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = User::internal()
+            ->where('company_id', $companyId)
+            ->with(['roles', 'stores']); // Eager load relationships to prevent N+1
+
+        // Apply Search Filter if provided
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply Status Filter if provided
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        // 🌟 ADD THIS NEW BLOCK: Apply Store Filter via the Pivot Table
+        if (! empty($filters['store_id'])) {
+            $query->whereHas('stores', function ($q) use ($filters) {
+                $q->where('stores.id', $filters['store_id']);
+            });
+        }
+
+        return $query->latest()->paginate($perPage);
+    }
+
+    /**
+     * Create a new user with roles, stores, and image.
+     *
+     * @throws \Exception
+     */
+    public function createUser(int $companyId, array $data): User
+    {
+        try {
+            return DB::transaction(function () use ($companyId, $data) {
+
+                // 1. Process Image Upload
+                $imagePath = $this->handleImageUpload($data['image'] ?? null);
+
+                // 2. Create the User Record
+                $user = User::create([
+                    'company_id' => $companyId,
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'phone' => $data['phone'] ?? null,
+                    'password' => Hash::make($data['password']),
+                    'phone_number' => $data['phone_number'] ?? null,
+                    'address' => $data['address'] ?? null,
+                    'country' => $data['country'] ?? 'India',
+                    'state_id' => $data['state_id'] ?? null,
+                    'zip_code' => $data['zip_code'] ?? null,
+                    'status' => $data['status'] ?? 'active',
+                    'image' => $imagePath,
+                ]);
+
+                // 3. Assign Role
+                if (! empty($data['role_id'])) {
+                    $user->roles()->attach($data['role_id']);
+                }
+
+                // 4. Assign to Multiple Stores
+                if (! empty($data['store_ids']) && is_array($data['store_ids'])) {
+                    $user->stores()->attach($data['store_ids']);
+                }
+
+                Log::info('[UserService] User created successfully.', [
+                    'user_id' => $user->id,
+                    'company_id' => $companyId,
+                ]);
+
+                return $user;
+            });
+        } catch (\Exception $e) {
+            Log::error('[UserService] Failed to create user.', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e; // Rethrow to be caught by the controller
+        }
+    }
+
+    /**
+     * Update an existing user, their roles, stores, and image.
+     *
+     * @throws \Exception
+     */
+    public function updateUser(User $user, array $data): User
+    {
+        try {
+            return DB::transaction(function () use ($user, $data) {
+
+                // 1. Handle Password Update (Only hash if a new one is provided)
+                if (! empty($data['password'])) {
+                    $data['password'] = Hash::make($data['password']);
+                } else {
+                    unset($data['password']); // Remove from array to prevent overwriting with null
+                }
+
+                // 2. Handle Image Upload & Cleanup Old Image
+                if (array_key_exists('image', $data)) {
+                    $data['image'] = $this->handleImageUpload($data['image'], $user->image);
+                }
+
+                // 3. Update User Core Data
+                $user->update($data);
+
+                // 4. Sync Role
+                if (! empty($data['role_id'])) {
+                    $user->roles()->sync([$data['role_id']]);
+                }
+
+                // 5. Sync Stores (Replaces existing store assignments with the new array)
+                if (isset($data['store_ids']) && is_array($data['store_ids'])) {
+                    $user->stores()->sync($data['store_ids']);
+                } elseif (isset($data['store_ids']) && empty($data['store_ids'])) {
+                    // If store_ids is explicitly passed as empty, clear all stores
+                    $user->stores()->sync([]);
+                }
+
+                Log::info('[UserService] User updated successfully.', ['user_id' => $user->id]);
+
+                return $user;
+            });
+        } catch (\Exception $e) {
+            Log::error('[UserService] Failed to update user.', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Soft delete a user.
+     *
+     * @throws \Exception
+     */
+    public function deleteUser(User $user): bool
+    {
+        try {
+            // Because your migration has softDeletes(), this safely flags them
+            // without breaking foreign key constraints on past orders/audits.
+            $user->delete();
+
+            Log::info('[UserService] User soft-deleted.', ['user_id' => $user->id]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('[UserService] Failed to delete user.', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Optimized Avatar Upload using ImageUploadService
+     */
+    protected function handleImageUpload(?UploadedFile $file, ?string $oldPath = null): ?string
+    {
+        if (! $file) {
+            return $oldPath;
+        }
+
+        // We use the service to handle validation, resizing, and cleanup in one go
+        return $this->imageService->upload($file, 'users/avatars', [
+            'old_file' => $oldPath,   // Automatically deletes the old one on success
+            'width' => 400,        // Standard profile size
+            'height' => 400,        // Standard profile size
+            'crop' => true,       // Force square aspect ratio
+            'format' => 'webp',     // Highly optimized for web
+            'quality' => 80,          // Good balance of size and clarity
+        ]);
+    }
+}
