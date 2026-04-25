@@ -15,8 +15,8 @@ return new class extends Migration
             $table->json('row_data')->nullable();
             $table->text('error_message');
             $table->timestamps();
-        });
-        // Remember New GitUpload
+            // Date:25-4-26 9:45am
+        });        
     }
 
     public function down(): void

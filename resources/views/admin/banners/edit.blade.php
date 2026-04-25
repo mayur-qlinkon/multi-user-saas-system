@@ -4,8 +4,8 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Edit Banner</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">{{ $banner->display_admin_label }}</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Banner</h1>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">{{ $banner->display_admin_label }}</p> --}}
     </div>
 @endsection
 
@@ -382,7 +382,7 @@
         $currentType = old('type', $banner->type);
     @endphp
 
-    <div class="pb-10 w-full max-w-[1600px] mx-auto" x-data="bannerEdit()">
+    <div class="pb-10" x-data="bannerEdit()">
 
         {{-- ── Breadcrumb ── --}}
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -545,7 +545,7 @@
                                     <div class="existing-image-wrap mb-2">
                                         <img src="{{ $banner->image_url }}"
                                             alt="{{ $banner->alt_text ?? $banner->title }}" class="upload-preview"
-                                            onerror="this.src='{{ asset('assets/images/placeholder.webp') }}'">
+                                            onerror="this.onerror=null; this.src='{{ asset('assets/images/placeholder.webp') }}'">
                                         <div class="existing-image-overlay">
                                             <label for="desktop-image-input" class="overlay-btn change">
                                                 <i data-lucide="upload" class="w-3 h-3"></i> Change
@@ -603,7 +603,7 @@
                                     <div class="existing-image-wrap mb-2">
                                         <img src="{{ $banner->mobile_image_url }}" alt="Mobile banner"
                                             class="upload-preview"
-                                            onerror="this.src='{{ asset('assets/images/placeholder.webp') }}'">
+                                            onerror="this.onerror=null; this.src='{{ asset('assets/images/placeholder.webp') }}'">
                                         <div class="existing-image-overlay">
                                             <label for="mobile-image-input" class="overlay-btn change">
                                                 <i data-lucide="upload" class="w-3 h-3"></i> Change

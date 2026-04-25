@@ -12,7 +12,7 @@ class WorkLogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = WorkLog::with(['employee.user', 'task', 'approvedByUser']);
+        $query = WorkLog::with(['employee.user', 'task', 'approvedByUser'])->where('status', '!=', 'draft');
 
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);

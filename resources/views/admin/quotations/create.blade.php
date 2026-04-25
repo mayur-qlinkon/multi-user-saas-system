@@ -3,7 +3,7 @@
 @section('title', 'Create Quotation')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Create Quotation</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Quotation</h1>
 @endsection
 
 @push('styles')

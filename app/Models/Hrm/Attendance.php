@@ -34,6 +34,8 @@ class Attendance extends Model
 
     const STATUS_WEEK_OFF = 'week_off';
 
+    const STATUS_PENDING = 'pending';
+
     const METHOD_QR = 'qr';
 
     const METHOD_MANUAL = 'manual';
@@ -50,6 +52,7 @@ class Attendance extends Model
         self::STATUS_ON_LEAVE => 'On Leave',
         self::STATUS_HOLIDAY => 'Holiday',
         self::STATUS_WEEK_OFF => 'Week Off',
+        self::STATUS_PENDING => 'Pending Approval',
     ];
 
     const STATUS_COLORS = [
@@ -60,6 +63,7 @@ class Attendance extends Model
         self::STATUS_ON_LEAVE => ['bg' => '#f5f3ff', 'text' => '#5b21b6', 'dot' => '#8b5cf6'],
         self::STATUS_HOLIDAY => ['bg' => '#fdf4ff', 'text' => '#86198f', 'dot' => '#d946ef'],
         self::STATUS_WEEK_OFF => ['bg' => '#f3f4f6', 'text' => '#374151', 'dot' => '#9ca3af'],
+        self::STATUS_PENDING => ['bg' => '#fff7ed', 'text' => '#9a3412', 'dot' => '#f97316'],
     ];
 
     // ── Fillable ──
@@ -69,6 +73,7 @@ class Attendance extends Model
         'check_in_time', 'check_in_lat', 'check_in_lng', 'check_in_method',
         'check_out_time', 'check_out_lat', 'check_out_lng', 'check_out_method',
         'worked_hours', 'overtime_hours', 'status',
+        'is_holiday', 'working_on_holiday',
         'is_overridden', 'overridden_by', 'override_reason', 'notes',
     ];
 
@@ -82,6 +87,8 @@ class Attendance extends Model
         'check_out_lng' => 'decimal:7',
         'worked_hours' => 'decimal:2',
         'overtime_hours' => 'decimal:2',
+        'is_holiday' => 'boolean',
+        'working_on_holiday' => 'boolean',
         'is_overridden' => 'boolean',
     ];
 

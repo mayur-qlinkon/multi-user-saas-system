@@ -118,7 +118,9 @@
         </div>
 
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-50/80 border-b border-gray-100">
@@ -207,6 +209,71 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+                @forelse ($clients as $client)
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Avatar, Name & Status --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 border border-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold shrink-0">
+                                    {{ strtoupper(substr($client->name, 0, 1)) }}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-[14px] text-gray-900 truncate">{{ $client->name }}</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 truncate">{{ $client->email ?? 'No email added' }}</p>
+                                </div>
+                            </div>
+                            <div class="shrink-0">
+                                @if ($client->is_active)
+                                    <span class="bg-[#dcfce7] text-[#16a34a] px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider">Active</span>
+                                @else
+                                    <span class="bg-gray-200 text-gray-500 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider">Inactive</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Details: Phone & City --}}
+                        <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
+                                <i data-lucide="phone" class="w-3.5 h-3.5 text-gray-400"></i>
+                                {{ $client->phone ?? 'N/A' }}
+                            </div>
+                            @if ($client->city)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                                    {{ $client->city }}
+                                </span>
+                            @else
+                                <span class="text-[10px] text-gray-400 italic font-medium">-</span>
+                            @endif
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1">
+                            @if(has_permission('clients.update'))
+                                <button type="button" @click="openEdit({{ $client->id }})" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors" title="Edit Client">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+
+                            @if(has_permission('clients.delete'))
+                                <button type="button" @click="openDelete({{ $client->id }}, '{{ addslashes($client->name) }}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors" title="Delete Client">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="users" class="w-12 h-12 mb-3 text-gray-300 opacity-50"></i>
+                            <p class="font-medium text-gray-500">No clients found matching your criteria.</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
 
             @if ($clients->hasPages())

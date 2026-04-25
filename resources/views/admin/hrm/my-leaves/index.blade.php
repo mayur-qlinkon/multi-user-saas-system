@@ -111,8 +111,8 @@
             </button>
         </div>
 
-        {{-- Table --}}
-        <div class="overflow-x-auto">
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left whitespace-nowrap">
                 <thead>
                     <tr class="border-b border-gray-50">
@@ -129,7 +129,14 @@
                     @php $sc = \App\Models\Hrm\Leave::STATUS_COLORS[$leave->status]; @endphp
                     <tr class="hover:bg-gray-50/50 transition-colors">
                         <td class="px-5 py-3.5">
-                            <p class="text-[13px] font-bold text-gray-800">{{ $leave->leaveType?->name }}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-[13px] font-bold text-gray-800">{{ $leave->leaveType?->name }}</p>
+                                @if(!empty($leave->document))
+                                    <a href="{{ asset('storage/' . $leave->document) }}" target="_blank" class="text-blue-500 hover:text-blue-700 transition-colors" title="View Document">
+                                        <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
+                                    </a>
+                                @endif
+                            </div>
                             <p class="text-[11px] text-gray-400 mt-0.5">{{ str_replace('_', ' ', $leave->day_type) }}</p>
                         </td>
                         <td class="px-5 py-3.5">
@@ -153,7 +160,7 @@
                         <td class="px-5 py-3.5">
                             <div class="flex items-center gap-1">
                                 @if($leave->status === 'pending')
-                                <button @click="openEdit({{ $leave->id }}, {{ $leave->leave_type_id }}, '{{ $leave->from_date->format('Y-m-d') }}', '{{ $leave->to_date->format('Y-m-d') }}', {{ $leave->total_days }}, '{{ $leave->day_type }}', '{{ addslashes($leave->reason) }}')"
+                                <button @click="openEdit({{ $leave->id }}, {{ $leave->leave_type_id }}, '{{ $leave->from_date->format('Y-m-d') }}', '{{ $leave->to_date->format('Y-m-d') }}', {{ $leave->total_days }}, '{{ $leave->day_type }}', '{{ addslashes($leave->reason) }}', '{{ $leave->document ? asset('storage/' . $leave->document) : '' }}')"
                                     class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                 </button>
@@ -174,6 +181,72 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+            @forelse($leaves as $leave)
+                @php $sc = \App\Models\Hrm\Leave::STATUS_COLORS[$leave->status]; @endphp
+                <div class="p-4 hover:bg-gray-50/50 transition-colors">
+                    
+                    {{-- Header: Type, Days, Status --}}
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="text-[13px] font-bold text-gray-800">{{ $leave->leaveType?->name }}</p>
+                                @if(!empty($leave->document))
+                                    <a href="{{ asset('storage/' . $leave->document) }}" target="_blank" class="text-blue-500 hover:text-blue-700 transition-colors" title="View Document">
+                                        <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
+                                    </a>
+                                @endif
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-0.5 capitalize">{{ str_replace('_', ' ', $leave->day_type) }} • <span class="font-bold text-gray-600">{{ $leave->total_days }} Day(s)</span></p>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                            style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}">
+                            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: {{ $sc['dot'] }}"></span>
+                            {{ \App\Models\Hrm\Leave::STATUS_LABELS[$leave->status] }}
+                        </span>
+                    </div>
+
+                    {{-- Context: Dates --}}
+                    <div class="flex items-center justify-between">
+                        <div class="inline-flex items-center gap-2 text-[12px] font-medium text-gray-700 bg-gray-50/80 px-2.5 py-1.5 rounded-lg border border-gray-100">
+                            <span>{{ $leave->from_date->format('d M Y') }}</span>
+                            @if($leave->from_date != $leave->to_date)
+                                <i data-lucide="arrow-right" class="w-3 h-3 text-gray-400"></i>
+                                <span>{{ $leave->to_date->format('d M Y') }}</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Footer: Applied Date & Actions --}}
+                    <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-50">
+                        <span class="text-[11px] text-gray-400 font-medium">Applied: {{ $leave->created_at->format('d M Y') }}</span>
+                        
+                        <div class="flex items-center gap-1">
+                            @if($leave->status === 'pending')
+                                <button @click="openEdit({{ $leave->id }}, {{ $leave->leave_type_id }}, '{{ $leave->from_date->format('Y-m-d') }}', '{{ $leave->to_date->format('Y-m-d') }}', {{ $leave->total_days }}, '{{ $leave->day_type }}', '{{ addslashes($leave->reason) }}', '{{ $leave->document ? asset('storage/' . $leave->document) : '' }}')"
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                                <button @click="confirmDelete({{ $leave->id }})"
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            @else
+                                <span class="text-[11px] text-gray-300 px-2 italic">Locked</span>
+                            @endif
+                        </div>
+                    </div>
+                    
+                </div>
+            @empty
+                <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                    <p class="font-semibold text-gray-500 mb-1">No leave requests found</p>
+                    <p class="text-xs text-gray-400">Use the button above to apply for leave.</p>
+                </div>
+            @endforelse
         </div>
 
         @if($leaves->hasPages())
@@ -198,10 +271,10 @@
                 <div class="p-5 space-y-4">
                     <div>
                         <p class="field-label">Leave Type</p>
-                        <select x-model="form.leave_type_id" class="field-input">
-                            <option value="">Select leave type</option>
+                        <select x-model="form.leave_type_id" @change="checkDocumentRequirement($event)" class="field-input">
+                            <option value="" data-requires-document="0">Select leave type</option>
                             @foreach($leaveTypes as $lt)
-                            <option value="{{ $lt->id }}">{{ $lt->name }}</option>
+                            <option value="{{ $lt->id }}" data-requires-document="{{ $lt->requires_document ? '1' : '0' }}">{{ $lt->name }}</option>
                             @endforeach
                         </select>
                         <p class="field-error" x-show="errors.leave_type_id" x-text="errors.leave_type_id"></p>
@@ -240,6 +313,28 @@
                         <textarea x-model="form.reason" rows="3" class="field-input" style="resize:none" placeholder="Briefly describe the reason..."></textarea>
                         <p class="field-error" x-show="errors.reason" x-text="errors.reason"></p>
                     </div>
+
+                    {{-- Dynamic Document Upload Field --}}
+                    <div x-show="requiresDocument || existingDocumentUrl" x-transition x-cloak class="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-xl">
+                        <p class="field-label flex items-center gap-1.5 mb-3">
+                            <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
+                            Supporting Document <span class="text-red-500" x-show="!existingDocumentUrl">*</span>
+                        </p>
+                        
+                        {{-- Show existing document if editing --}}
+                        <div x-show="existingDocumentUrl" class="mb-2 p-2.5 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                            <a :href="existingDocumentUrl" target="_blank" class="text-[12px] font-bold text-blue-600 hover:underline flex items-center gap-1.5">
+                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> View Uploaded Document
+                            </a>
+                            <span class="text-[10px] text-gray-400">Upload below to replace</span>
+                        </div>
+
+                        <input type="file" x-ref="fileInput" @change="handleFileUpload($event)" accept=".pdf,.jpg,.jpeg,.png"
+                            class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-200 rounded-xl p-1"
+                            :required="requiresDocument && !existingDocumentUrl">
+                        <p class="text-[10px] text-gray-400 mt-1.5">Medical certificate or proof required for this leave type (PDF, JPG, PNG).</p>
+                        <p class="field-error" x-show="errors.document" x-text="errors.document"></p>
+                    </div>
                 </div>
 
                 <div class="px-5 pb-5 flex justify-end gap-2">
@@ -263,6 +358,9 @@ function myLeaves() {
         showModal: false,
         editId: null,
         saving: false,
+        requiresDocument: false,
+        documentFile: null,
+        existingDocumentUrl: '',
         filterStatus: '{{ request('status', '') }}',
         filterType: '{{ request('leave_type_id', '') }}',
         form: { leave_type_id: '', from_date: '', to_date: '', day_type: 'full_day', total_days: 1, reason: '' },
@@ -275,17 +373,47 @@ function myLeaves() {
         openApply() {
             this.editId = null;
             this.form = { leave_type_id: '', from_date: '', to_date: '', day_type: 'full_day', total_days: 1, reason: '' };
+            this.requiresDocument = false;
+            this.documentFile = null;
+            this.existingDocumentUrl = '';
+            if (this.$refs.fileInput) this.$refs.fileInput.value = '';
             this.errors = {};
             this.showModal = true;
             this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
         },
 
-        openEdit(id, typeId, from, to, days, dayType, reason) {
+        openEdit(id, typeId, from, to, days, dayType, reason, documentUrl = '') {
             this.editId = id;
             this.form = { leave_type_id: String(typeId), from_date: from, to_date: to, total_days: days, day_type: dayType, reason: reason };
+            this.requiresDocument = false;
+            this.documentFile = null;
+            this.existingDocumentUrl = documentUrl || '';
+            if (this.$refs.fileInput) this.$refs.fileInput.value = '';
             this.errors = {};
             this.showModal = true;
-            this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            this.$nextTick(() => { 
+                if (window.lucide) lucide.createIcons();
+                
+                // Force DOM to sync before triggering change
+                const selectEl = document.querySelector('select[x-model="form.leave_type_id"]');
+                if(selectEl) {
+                    selectEl.value = typeId;
+                    selectEl.dispatchEvent(new Event('change'));
+                }
+            });
+        },
+
+        checkDocumentRequirement(event) {
+            const selectedOption = event.target.options[event.target.selectedIndex];
+            this.requiresDocument = selectedOption.getAttribute('data-requires-document') === '1';
+            if (!this.requiresDocument) {
+                this.documentFile = null;
+                if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+            }
+        },
+
+        handleFileUpload(event) {
+            this.documentFile = event.target.files[0];
         },
 
         calcDays() {
@@ -307,16 +435,32 @@ function myLeaves() {
         async submitLeave() {
             this.saving = true;
             this.errors = {};
+            
             const url = this.editId
                 ? `/admin/hrm/my-leaves/${this.editId}`
                 : '/admin/hrm/my-leaves';
-            const method = this.editId ? 'PUT' : 'POST';
+            
+            // Construct FormData to support File Uploads
+            const formData = new FormData();
+            Object.keys(this.form).forEach(key => formData.append(key, this.form[key]));
+            
+            // Method Spoofing for Laravel (Fetch + Files + PUT = fail in Laravel usually)
+            if (this.editId) {
+                formData.append('_method', 'PUT');
+            }
+
+            if (this.requiresDocument && this.documentFile) {
+                formData.append('document', this.documentFile);
+            }
 
             try {
                 const res = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
-                    body: JSON.stringify(this.form)
+                    method: 'POST', // Always POST, method spoofing handles PUT
+                    headers: { 
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 
+                        'Accept': 'application/json' 
+                    }, // Do not set Content-Type; the browser will set it automatically to multipart/form-data with bounds.
+                    body: formData
                 });
                 const data = await res.json();
                 if (data.success) {

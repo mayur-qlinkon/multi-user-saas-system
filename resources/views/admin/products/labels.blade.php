@@ -155,7 +155,9 @@
         </div>
 
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto min-h-[400px]">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto min-h-[400px]">
                 <table class="w-full text-left text-sm whitespace-nowrap min-w-[850px]">
                     <thead
                         class="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
@@ -234,6 +236,67 @@
 
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+                
+                {{-- Loading State --}}
+                <div x-show="isLoading" x-cloak class="text-center py-16">
+                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin text-[#108c2a] mx-auto mb-3"></i>
+                    <p class="text-gray-500 font-medium text-sm">Loading products...</p>
+                </div>
+
+                {{-- Empty State --}}
+                <div x-show="!isLoading && products.length === 0" x-cloak class="text-center py-16">
+                    <i data-lucide="package-x" class="w-10 h-10 text-gray-300 mx-auto mb-3"></i>
+                    <p class="text-gray-500 font-medium text-sm">No products found.</p>
+                </div>
+
+                {{-- Data Cards --}}
+                <template x-for="(product, index) in products" :key="product.unique_id">
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3" 
+                         x-show="!isLoading" 
+                         :class="product._selected ? 'bg-[#f0fdf4]' : ''">
+                        
+                        {{-- Header: Checkbox, Name, Price --}}
+                        <div class="flex items-start gap-3">
+                            <div class="pt-0.5">
+                                <input type="checkbox" x-model="product._selected"
+                                    class="rounded border-gray-300 text-[#108c2a] focus:ring-[#108c2a] w-4 h-4 cursor-pointer">
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="font-bold text-[#212538] text-[13.5px] leading-tight" x-text="product.name"></div>
+                                <div class="text-[11px] text-gray-500 mt-0.5" x-show="product.attributes && product.attributes.length > 0" x-text="formatAttrs(product.attributes)"></div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="font-black text-gray-800 text-[14px]" x-text="'₹' + parseFloat(product.display_price).toFixed(2)"></div>
+                            </div>
+                        </div>
+
+                        {{-- Badges: SKU & Category --}}
+                        <div class="flex flex-wrap items-center gap-2 pl-7">
+                            <span x-show="product.sku" class="font-mono text-[10px] text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded font-bold tracking-wide" x-text="product.sku"></span>
+                            <span x-show="!product.sku" class="font-mono text-[10px] text-gray-400 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded">-</span>
+                            <span class="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded" x-text="product.category_name"></span>
+                        </div>
+
+                        {{-- Footer: Copies & Label Preview --}}
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-100/50 pl-7 mt-1">
+                            <div class="flex items-center gap-2">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Copies:</label>
+                                <input type="number" min="1" max="99" x-model.number="product._copies"
+                                    class="w-16 border border-gray-200 rounded-md px-2 py-1 text-center text-xs font-bold outline-none focus:border-[#108c2a] bg-gray-50 focus:bg-white transition-colors shadow-inner">
+                            </div>
+                            
+                            <div @click="triggerPrint(true, product)" title="Click to Quick Preview"
+                                class="w-16 h-10 border border-gray-200 rounded overflow-hidden bg-white p-1 hover:border-[#108c2a] transition-colors cursor-pointer shadow-sm hover:shadow shrink-0">
+                                <img :src="getLabelUrl(product.label_value, 80)" class="w-full h-full object-contain">
+                            </div>
+                        </div>
+
+                    </div>
+                </template>
             </div>
 
             <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between"

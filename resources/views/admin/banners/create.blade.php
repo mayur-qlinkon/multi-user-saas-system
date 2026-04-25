@@ -4,8 +4,8 @@
 
 @section('header-title')
     <div>
-        <h1 class="text-[17px] font-bold text-gray-800 leading-none">Create Banner</h1>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Add a new banner to your storefront</p>
+        <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Banner</h1>
+        {{-- <p class="text-xs text-gray-400 font-medium mt-0.5">Add a new banner to your storefront</p> --}}
     </div>
 @endsection
 
@@ -289,7 +289,7 @@
 @endpush
 
 @section('content')
-    <div class="pb-10 w-full max-w-[1600px] mx-auto" x-data="bannerCreate()">
+    <div class="pb-10" x-data="bannerCreate()">
 
         {{-- ── Breadcrumb + Header ── --}}
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">

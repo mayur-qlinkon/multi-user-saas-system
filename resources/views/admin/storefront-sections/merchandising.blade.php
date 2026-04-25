@@ -658,7 +658,7 @@
                             {{-- Category image ── --}}
                             @if ($cat->image)
                                 <img src="{{ asset('storage/' . $cat->image) }}" alt="{{ $cat->name }}" class="cat-thumb"
-                                    onerror="this.style.display='none'">
+                                   onerror="this.onerror=null; this.style.display='none'">
                             @else
                                 {{-- <div class="cat-thumb-placeholder">
                                     <i data-lucide="folder" class="w-4 h-4"></i>
@@ -770,7 +770,7 @@
                                 </template>
                             </span>
                             <img :src="prod.image_url" class="avail-thumb"
-                                onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold text-gray-800 truncate" x-text="prod.name"></p>
                                 <p class="text-[10px] text-gray-400"
@@ -865,9 +865,9 @@
 
                                         {{-- Product image ── --}}
                                         <img :src="prod.product?.primary_image_url ?? prod.image_url ??
-                                            '{{ asset('assets/images/no-product.png') }}'"
+                                            '{{ asset('assets/images/no-product.webp') }}'"
                                             class="prod-thumb"
-                                            onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                            onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
 
                                         {{-- Product info ── --}}
                                         <div class="flex-1 min-w-0">

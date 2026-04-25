@@ -3,7 +3,7 @@
 @section('title', 'Process Return - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Inventory / Process Return / {{ $challan->challan_number }}</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Challan Return {{ $challan->challan_number }}</h1>
 @endsection
 
 @push('styles')

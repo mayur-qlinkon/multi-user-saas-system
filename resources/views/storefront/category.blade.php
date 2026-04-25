@@ -27,7 +27,7 @@
             @php $cbanner = $categoryBanners->first(); @endphp
             <div class="mb-6 rounded-2xl overflow-hidden relative shadow-sm">
                 <img src="{{ asset('storage/' . $cbanner->image) }}" alt="{{ $cbanner->alt_text ?? $category->name }}"
-                    class="w-full h-[140px] sm:h-[180px] object-cover" onerror="this.parentElement.remove()">
+                    class="w-full h-[140px] sm:h-[180px] object-cover" onerror="this.onerror=null; this.parentElement.remove()">
                 @if ($cbanner->title)
                     <div class="absolute inset-0 flex items-center px-8"
                         style="background: linear-gradient(to right, rgba(0,0,0,0.45), transparent 60%)">
@@ -173,7 +173,8 @@
                                 <div class="relative bg-[#f8f9fa] aspect-square overflow-hidden">
                                     <img src="{{ $product->primary_image_url }}" alt="{{ $product->name }}"
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        loading="lazy" onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                        loading="lazy" 
+                                        onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
 
                                     {{-- Badge ── --}}
                                     @if ($discount > 0)

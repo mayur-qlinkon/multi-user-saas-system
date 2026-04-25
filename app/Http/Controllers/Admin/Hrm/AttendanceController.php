@@ -49,6 +49,12 @@ class AttendanceController extends Controller
                 'type' => $result['type'] ?? 'success',
                 'data' => $result['attendance'] ?? null,
             ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Today is a holiday. Attendance is not required.',
+                'type' => 'info',
+            ], 422);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage(), 'type' => 'error'], 422);
         }

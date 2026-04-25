@@ -7,11 +7,15 @@ use App\Models\Company;
 use App\Models\Hrm\Attendance;
 use App\Models\Hrm\AttendanceLog;
 use App\Models\Hrm\Employee;
+use App\Models\Hrm\Holiday;
 use App\Models\Hrm\Shift;
+use App\Models\Setting;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\Hrm\AnnouncementService;
+use App\Services\Hrm\AttendanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -419,4 +423,270 @@ test('attendance record is created with the correct company id', function () {
         'company_id' => $ctx['company']->id,
         'employee_id' => $ctx['employee']->id,
     ]);
+});
+
+function seedHolidayForToday(int $companyId): Holiday
+{
+    return Holiday::create([
+        'company_id' => $companyId,
+        'name' => 'Founders Day',
+        'date' => today(),
+        'type' => Holiday::TYPE_COMPANY,
+        'is_paid' => true,
+        'is_active' => true,
+    ]);
+}
+
+function setHolidayPolicy(int $companyId, string $policy): void
+{
+    Setting::updateOrCreate(
+        ['company_id' => $companyId, 'key' => 'attendance.holiday_policy'],
+        ['value' => $policy, 'group' => 'attendance', 'type' => 'string']
+    );
+    Cache::forget("company_settings_{$companyId}");
+}
+
+test('holiday policy block rejects check-in on a holiday with friendly message', function () {
+    $ctx = seedAttendanceContext();
+    seedHolidayForToday($ctx['company']->id);
+    setHolidayPolicy($ctx['company']->id, 'block');
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertStatus(422)
+        ->assertJson([
+            'success' => false,
+            'message' => 'Today is a holiday. Attendance is not required.',
+            'type' => 'info',
+        ]);
+
+    $this->assertDatabaseCount('attendances', 0);
+    $this->assertDatabaseHas('attendance_logs', [
+        'employee_id' => $ctx['employee']->id,
+        'is_valid' => false,
+        'rejection_reason' => 'Today is a holiday. Attendance is not allowed.',
+    ]);
+});
+
+test('holiday policy allow records attendance flagged as working on holiday', function () {
+    $ctx = seedAttendanceContext();
+    seedHolidayForToday($ctx['company']->id);
+    setHolidayPolicy($ctx['company']->id, 'allow');
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('action', AttendanceLog::ACTION_CHECK_IN);
+
+    $this->assertDatabaseHas('attendances', [
+        'employee_id' => $ctx['employee']->id,
+        'status' => Attendance::STATUS_PRESENT,
+        'is_holiday' => true,
+        'working_on_holiday' => true,
+    ]);
+});
+
+test('holiday policy approval records attendance as pending approval', function () {
+    $ctx = seedAttendanceContext();
+    seedHolidayForToday($ctx['company']->id);
+    setHolidayPolicy($ctx['company']->id, 'approval');
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('type', 'warning');
+
+    $this->assertDatabaseHas('attendances', [
+        'employee_id' => $ctx['employee']->id,
+        'status' => Attendance::STATUS_PENDING,
+        'is_holiday' => true,
+        'working_on_holiday' => true,
+    ]);
+});
+
+test('holiday policy has no effect on non-holiday dates', function () {
+    $ctx = seedAttendanceContext();
+    setHolidayPolicy($ctx['company']->id, 'block');
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertOk()
+        ->assertJsonPath('success', true);
+
+    $this->assertDatabaseHas('attendances', [
+        'employee_id' => $ctx['employee']->id,
+        'status' => Attendance::STATUS_PRESENT,
+        'is_holiday' => false,
+        'working_on_holiday' => false,
+    ]);
+});
+
+test('inactive holiday does not trigger the block policy', function () {
+    $ctx = seedAttendanceContext();
+    Holiday::create([
+        'company_id' => $ctx['company']->id,
+        'name' => 'Retired Holiday',
+        'date' => today(),
+        'type' => Holiday::TYPE_COMPANY,
+        'is_paid' => true,
+        'is_active' => false,
+    ]);
+    setHolidayPolicy($ctx['company']->id, 'block');
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance.scan'), scanPayload($ctx['store']));
+
+    $response->assertOk();
+    $this->assertDatabaseHas('attendances', [
+        'employee_id' => $ctx['employee']->id,
+        'is_holiday' => false,
+    ]);
+});
+
+test('holiday policy endpoint persists the setting', function () {
+    $ctx = seedAttendanceContext();
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance-rules.holiday-policy'), [
+            'holiday_policy' => 'approval',
+        ]);
+
+    $response->assertOk()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('data.holiday_policy', 'approval');
+
+    $this->assertDatabaseHas('settings', [
+        'company_id' => $ctx['company']->id,
+        'key' => 'attendance.holiday_policy',
+        'value' => 'approval',
+    ]);
+});
+
+test('holiday policy endpoint rejects invalid values', function () {
+    $ctx = seedAttendanceContext();
+
+    withoutAttendanceMiddleware($this);
+
+    $response = $this->actingAs($ctx['user'])
+        ->postJson(route('admin.hrm.attendance-rules.holiday-policy'), [
+            'holiday_policy' => 'bogus',
+        ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['holiday_policy']);
+});
+
+test('evaluateHolidayPolicy detects a date inside a multi-day holiday range', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    Holiday::create([
+        'company_id' => $companyId,
+        'name' => 'Diwali Break',
+        'date' => '2026-11-08',
+        'end_date' => '2026-11-10',
+        'type' => Holiday::TYPE_COMPANY,
+        'is_paid' => true,
+        'is_active' => true,
+    ]);
+
+    setHolidayPolicy($companyId, 'allow');
+
+    $service = app(AttendanceService::class);
+
+    expect($service->evaluateHolidayPolicy($ctx['employee'], '2026-11-08'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2026-11-09'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2026-11-10'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2026-11-07'))->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2026-11-11'))->toBeNull();
+});
+
+test('evaluateHolidayPolicy detects recurring single-day holiday across years', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    Holiday::create([
+        'company_id' => $companyId,
+        'name' => 'Republic Day',
+        'date' => '2026-01-26',
+        'type' => Holiday::TYPE_NATIONAL,
+        'is_paid' => true,
+        'is_active' => true,
+        'is_recurring' => true,
+    ]);
+
+    setHolidayPolicy($companyId, 'allow');
+
+    $service = app(AttendanceService::class);
+
+    expect($service->evaluateHolidayPolicy($ctx['employee'], '2027-01-26'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2030-01-26'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2027-01-25'))->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2027-01-27'))->toBeNull();
+});
+
+test('evaluateHolidayPolicy detects recurring multi-day holiday across years', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    Holiday::create([
+        'company_id' => $companyId,
+        'name' => 'Diwali Week',
+        'date' => '2026-11-08',
+        'end_date' => '2026-11-10',
+        'type' => Holiday::TYPE_COMPANY,
+        'is_paid' => true,
+        'is_active' => true,
+        'is_recurring' => true,
+    ]);
+
+    setHolidayPolicy($companyId, 'allow');
+
+    $service = app(AttendanceService::class);
+
+    expect($service->evaluateHolidayPolicy($ctx['employee'], '2029-11-08'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2029-11-09'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2029-11-10'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2029-11-07'))->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2029-11-11'))->toBeNull();
+});
+
+test('evaluateHolidayPolicy ignores non-recurring holidays in other years', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    Holiday::create([
+        'company_id' => $companyId,
+        'name' => 'One-off Event',
+        'date' => '2026-06-15',
+        'type' => Holiday::TYPE_COMPANY,
+        'is_paid' => true,
+        'is_active' => true,
+        'is_recurring' => false,
+    ]);
+
+    setHolidayPolicy($companyId, 'allow');
+
+    $service = app(AttendanceService::class);
+
+    expect($service->evaluateHolidayPolicy($ctx['employee'], '2026-06-15'))->not->toBeNull()
+        ->and($service->evaluateHolidayPolicy($ctx['employee'], '2027-06-15'))->toBeNull();
 });

@@ -76,7 +76,8 @@
             </button>
         </div>
 
-        <div class="overflow-x-auto">
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="data-table w-full min-w-[800px]">
                 <thead>
                     <tr>
@@ -155,6 +156,76 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+            @forelse($attendances as $att)
+                <div class="p-4 hover:bg-gray-50/50 transition-colors">
+                    
+                    {{-- Header: Employee & Action --}}
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500 shrink-0">
+                                {{ substr($att->employee->user->name ?? '?', 0, 2) }}
+                            </div>
+                            <div>
+                                <p class="text-[13px] font-bold text-gray-900 leading-tight">{{ $att->employee->user->name ?? 'Unknown' }}</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">
+                                    {{ $att->employee->employee_code }} • <span class="font-semibold text-gray-500">{{ $att->employee->department->name ?? 'N/A' }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button @click="openOverrideModal({{ json_encode($att) }})" 
+                                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-brand-600 hover:bg-gray-100 transition-colors shrink-0" 
+                                title="Override Record">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    {{-- Context: Check-in / Check-out --}}
+                    <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100 mb-3">
+                        <div>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Check In</p>
+                            @if($att->check_in_time)
+                                <p class="text-[12px] font-bold text-gray-700">{{ $att->check_in_time->format('h:i A') }}</p>
+                                @if($att->is_overridden) <p class="text-[9px] text-red-500 font-bold mt-0.5">*Overridden</p> @endif
+                            @else
+                                <p class="text-[12px] text-gray-300">--:--</p>
+                            @endif
+                        </div>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-gray-300"></i>
+                        <div class="text-right">
+                            <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Check Out</p>
+                            @if($att->check_out_time)
+                                <p class="text-[12px] font-bold text-gray-700">{{ $att->check_out_time->format('h:i A') }}</p>
+                                <p class="text-[9px] text-gray-400 font-medium mt-0.5">{{ $att->worked_hours }} hrs worked</p>
+                            @else
+                                <p class="text-[11px] text-blue-500 font-semibold italic">Working...</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Footer: Location & Status --}}
+                    <div class="flex items-center justify-between text-[11px] pt-1">
+                        <div class="flex items-center gap-1.5 text-gray-500">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                            <span class="font-medium">{{ $att->store->name ?? 'Head Office' }}</span>
+                        </div>
+                        <span class="status-badge status-{{ $att->status }} px-2 py-0.5 text-[10px]">
+                            {{ str_replace('_', ' ', $att->status) }}
+                        </span>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                    <div class="flex flex-col items-center justify-center">
+                        <i data-lucide="inbox" class="w-8 h-8 mb-2 opacity-50"></i>
+                        <p class="font-bold text-gray-900 mb-1">No attendance records found for today.</p>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+
     </div>
 
     {{-- ── OVERRIDE MODAL ── --}}

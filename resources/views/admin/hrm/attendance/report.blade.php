@@ -144,7 +144,8 @@
                 </p>
             </div>
         @else
-            <div class="overflow-x-auto">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-gray-100">
@@ -279,6 +280,94 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @foreach($report as $att)
+                    @php
+                        $emp          = $att->employee;
+                        $empName      = $emp->user->name ?? 'Unknown';
+                        $initials     = strtoupper(substr($empName, 0, 1));
+                        $avatarColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
+                        $avatarBg     = $avatarColors[crc32($empName) % count($avatarColors)];
+                        $sColor       = $statusColors[$att->status] ?? $statusColors['present'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors">
+                        
+                        {{-- Header: Employee & Action --}}
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="emp-avatar shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-white text-xs font-bold" style="background: {{ $avatarBg }}">
+                                    {{ $initials }}
+                                </div>
+                                <div>
+                                    <p class="text-[13px] font-bold text-gray-900 leading-tight">{{ $empName }}</p>
+                                    <p class="text-[11px] text-gray-400 font-medium">{{ $emp->employee_code ?? '---' }}</p>
+                                </div>
+                            </div>
+                            <button @click="openOverride({{ $att->id }}, '{{ addslashes($empName) }}', '{{ $att->date->format('d M Y') }}', '{{ $att->status }}', '{{ $att->check_in_time ? $att->check_in_time->format('Y-m-d H:i:s') : '' }}', '{{ $att->check_out_time ? $att->check_out_time->format('Y-m-d H:i:s') : '' }}', {{ json_encode($att->override_reason ?? '') }})"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors shrink-0"
+                                title="Override Attendance">
+                                <i data-lucide="pencil-line" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        {{-- Date & Status --}}
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <span class="text-[12px] font-bold text-gray-700">{{ $att->date->format('d M Y') }}</span>
+                                <span class="text-[10px] text-gray-400 ml-1">{{ $att->date->format('l') }}</span>
+                            </div>
+                            <div class="text-right flex flex-col items-end gap-1">
+                                <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                                    style="background: {{ $sColor['bg'] }}; color: {{ $sColor['text'] }}">
+                                    <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $sColor['dot'] }}"></span>
+                                    {{ $statusLabels[$att->status] ?? ucfirst($att->status) }}
+                                </span>
+                                @if($att->is_overridden)
+                                    <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded inline-block flex items-center gap-1">
+                                        <i data-lucide="shield-check" class="w-3 h-3"></i> Edited
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Check-in / Check-out --}}
+                        <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100 mb-3">
+                            <div>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                                    Check In @if($att->check_in_method)<span class="text-[8px] bg-gray-200 text-gray-500 px-1 rounded">{{ strtoupper(substr($att->check_in_method, 0, 3)) }}</span>@endif
+                                </p>
+                                <p class="text-[12px] font-bold text-gray-700">{{ $att->check_in_time ? $att->check_in_time->format('h:i A') : '—' }}</p>
+                            </div>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-gray-300"></i>
+                            <div class="text-right">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 flex items-center justify-end gap-1">
+                                    @if($att->check_out_method)<span class="text-[8px] bg-gray-200 text-gray-500 px-1 rounded">{{ strtoupper(substr($att->check_out_method, 0, 3)) }}</span>@endif Check Out
+                                </p>
+                                <p class="text-[12px] font-bold text-gray-700">{{ $att->check_out_time ? $att->check_out_time->format('h:i A') : '—' }}</p>
+                            </div>
+                        </div>
+
+                        {{-- Footer: Hours & Overtime --}}
+                        <div class="flex items-center justify-between text-[11px] pt-1">
+                            <div>
+                                <span class="text-gray-400 font-medium">Worked:</span>
+                                <span class="font-bold text-gray-700 ml-0.5">{{ $att->worked_hours ? number_format($att->worked_hours, 1) . ' hrs' : '—' }}</span>
+                            </div>
+                            @if($att->overtime_hours > 0)
+                            <div>
+                                <span class="text-gray-400 font-medium">OT:</span>
+                                <span class="font-black text-blue-600 ml-0.5">{{ number_format($att->overtime_hours, 1) }} hrs</span>
+                            </div>
+                            @else
+                            <div class="text-gray-400 font-medium">OT: —</div>
+                            @endif
+                        </div>
+                        
+                    </div>
+                @endforeach
             </div>
 
             {{-- Pagination ── --}}

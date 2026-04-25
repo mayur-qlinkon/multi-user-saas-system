@@ -425,7 +425,7 @@
 
                                     <img :src="prod.image"
                                         class="prod-thumb"
-                                        onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                        onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
 
                                     <div class="flex-1 min-w-0">
                                         <p class="prod-name" x-text="prod.name"></p>
@@ -536,7 +536,7 @@
                                         </template>
                                     </span>
                                     <img :src="prod.image" class="avail-thumb"
-                                        onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                        onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
                                     <div class="flex-1 min-w-0">
                                         <p class="text-sm font-semibold text-gray-800 truncate" x-text="prod.name"></p>
                                         <p class="text-[11px] text-gray-400">

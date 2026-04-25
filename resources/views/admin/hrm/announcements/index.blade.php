@@ -87,7 +87,8 @@
 
     {{-- DATA TABLE --}}
     <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-        <div class="overflow-x-auto">
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left whitespace-nowrap min-w-[800px]">
                 <thead class="table-header">
                     <tr>
@@ -243,6 +244,132 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+            @forelse ($announcements as $announcement)
+                @php
+                    $typeBadge = match($announcement->type) {
+                        'policy' => 'bg-blue-50 text-blue-700',
+                        'event' => 'bg-purple-50 text-purple-700',
+                        'urgent' => 'bg-orange-50 text-orange-700',
+                        'celebration' => 'bg-green-50 text-green-700',
+                        default => 'bg-gray-50 text-gray-600',
+                    };
+                    $priorityColor = match($announcement->priority) {
+                        'critical' => 'text-red-500',
+                        'high' => 'text-amber-500',
+                        default => 'text-gray-400',
+                    };
+                    $statusBadge = match($announcement->status) {
+                        'published' => 'bg-green-50 text-green-700 border-green-200',
+                        'scheduled' => 'bg-sky-50 text-sky-700 border-sky-200',
+                        'expired'   => 'bg-red-50 text-red-600 border-red-200',
+                        default     => 'bg-gray-50 text-gray-500 border-gray-200',
+                    };
+                @endphp
+                <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                    
+                    {{-- Header: Title & Status --}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex items-start gap-2 min-w-0">
+                            @if($announcement->is_pinned)
+                                <i data-lucide="pin" class="w-4 h-4 text-yellow-500 shrink-0 mt-0.5"></i>
+                            @else
+                                <i data-lucide="megaphone" class="w-4 h-4 text-gray-300 shrink-0 mt-0.5"></i>
+                            @endif
+                            <a href="{{ route('admin.hrm.announcements.show', $announcement) }}" class="font-bold text-[14px] text-brand-600 hover:text-brand-700 hover:underline line-clamp-2">
+                                {{ $announcement->title }}
+                            </a>
+                        </div>
+                        <span class="inline-flex text-[9px] font-extrabold uppercase tracking-wider border px-1.5 py-0.5 rounded {{ $statusBadge }} shrink-0">
+                            {{ $announcement->status_label }}
+                        </span>
+                    </div>
+
+                    {{-- Metadata: Type, Priority, Target --}}
+                    <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                        <span class="inline-flex text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded {{ $typeBadge }}">
+                            {{ $announcement->type_label }}
+                        </span>
+                        <span class="text-[10px] font-bold {{ $priorityColor }} flex items-center gap-1">
+                            <i data-lucide="flag" class="w-3 h-3"></i> {{ $announcement->priority_label }}
+                        </span>
+                        <span class="text-gray-300">|</span>
+                        <span class="text-[11px] font-bold text-gray-700">
+                            {{ \App\Models\Hrm\Announcement::TARGET_LABELS[$announcement->target_audience] ?? ucfirst($announcement->target_audience) }}
+                        </span>
+                        @if($announcement->requires_acknowledgement)
+                            <div class="text-[9px] text-gray-400 font-medium bg-gray-100 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <i data-lucide="check-square" class="w-3 h-3"></i> Req. Ack
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Dates --}}
+                    <div class="flex items-center justify-between text-[11px] bg-gray-50/80 px-3 py-2 rounded-lg border border-gray-100 mt-1">
+                        <div>
+                            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-0.5">Publish</span>
+                            <span class="font-semibold text-gray-800">{{ $announcement->publish_at ? $announcement->publish_at->format('d M Y') : 'Draft' }}</span>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-3 h-3 text-gray-300"></i>
+                        <div class="text-right">
+                            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-0.5">Expire</span>
+                            <span class="font-semibold text-gray-800">{{ $announcement->expire_at ? $announcement->expire_at->format('d M Y') : 'Never' }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-50 mt-1">
+                        @if(!$announcement->is_published && has_permission('announcements.publish'))
+                            <button @click="publishAnnouncement({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Publish Now"
+                                class="w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 flex items-center justify-center transition-colors">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                            </button>
+                        @endif
+
+                        @if(has_permission('announcements.view'))
+                            <a href="{{ route('admin.hrm.announcements.show', $announcement) }}" title="View"
+                                class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                        @endif
+                        
+                        @if(has_permission('announcements.update'))
+                            <a href="{{ route('admin.hrm.announcements.edit', $announcement) }}" title="Edit"
+                                class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </a>
+                        @endif
+
+                        @if(has_permission('announcements.create'))
+                            <button @click="duplicateAnnouncement({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Duplicate as Draft"
+                                class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 flex items-center justify-center transition-colors">
+                                <i data-lucide="copy-plus" class="w-4 h-4"></i>
+                            </button>
+                        @endif
+
+                        @if(has_permission('announcements.delete'))
+                            <button @click="confirmDelete({{ $announcement->id }}, '{{ addslashes($announcement->title) }}')" title="Delete"
+                                class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        @endif
+                    </div>
+
+                </div>
+            @empty
+                <div class="p-8 text-center text-gray-400 font-medium bg-white">
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="megaphone" class="w-6 h-6 text-gray-300"></i>
+                        </div>
+                        <p class="text-sm font-bold text-gray-500">No Announcements</p>
+                        <p class="text-xs mt-1">Adjust filters or create a new announcement.</p>
+                    </div>
+                </div>
+            @endforelse
         </div>
 
         {{-- PAGINATION --}}

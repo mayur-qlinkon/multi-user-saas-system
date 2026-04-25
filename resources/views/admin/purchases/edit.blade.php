@@ -3,7 +3,7 @@
 @section('title', 'Edit Purchase Order')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Purchases / Edit PO /
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Purchase
         {{ $purchase->purchase_number }}</h1>
 @endsection
 

@@ -56,7 +56,7 @@
                                     class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
                                     <img :src="product.image"
                                         class="w-9 h-9 rounded-lg object-cover flex-shrink-0 bg-gray-100"
-                                        onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                        onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
                                     <div class="flex-1 min-w-0">
                                         <p class="text-[13px] font-semibold text-gray-800 truncate" x-text="product.name"></p>
                                         <p class="text-[12px] text-gray-400">₹<span x-text="parseFloat(product.price).toFixed(2)"></span></p>
@@ -134,7 +134,7 @@
                                 alt="{{ $product->name }}"
                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 loading="lazy"
-                                onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
 
                             @if($discount > 0)
                                 <span class="absolute top-2 left-2 text-[9px] font-black px-2 py-0.5 rounded bg-red-100 text-red-600 uppercase tracking-wide">

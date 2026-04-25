@@ -125,7 +125,9 @@
 
         {{-- DATA TABLE --}}
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead
                         class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
@@ -286,12 +288,132 @@
                 </table>
             </div>
 
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse ($purchaseReturns as $return)
+                    @php
+                        $statusColors = [
+                            'draft' => 'bg-gray-100 text-gray-600 border-gray-200',
+                            'returned' => 'bg-green-50 text-green-700 border-green-200',
+                            'cancelled' => 'bg-red-50 text-red-600 border-red-200',
+                        ];
+                        $color = $statusColors[$return->status] ?? $statusColors['draft'];
+                        
+                        $payColors = [
+                            'pending' => 'bg-orange-50 text-orange-600',
+                            'adjusted' => 'bg-blue-50 text-blue-600',
+                            'refunded' => 'bg-green-50 text-green-700',
+                        ];
+                        $pColor = $payColors[$return->payment_status] ?? $payColors['pending'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Supplier & Total --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-bold text-gray-800 text-[14px] truncate">
+                                    {{ $return->supplier->name ?? 'Unknown' }}
+                                </p>
+                                @if ($return->supplier_credit_note_number)
+                                    <p class="text-[11px] text-gray-400 mt-0.5 font-mono truncate">
+                                        CN: {{ $return->supplier_credit_note_number }}
+                                    </p>
+                                @endif
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="font-black text-gray-800 text-[15px]">₹{{ number_format($return->total_amount, 2) }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Details & Badges --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <a href="{{ route('admin.purchase-returns.show', $return->id) }}" class="font-extrabold text-[#108c2a] text-[13px] hover:underline">
+                                    {{ $return->return_number }}
+                                </a>
+                                <span class="text-[11px] text-gray-500 font-medium">
+                                    {{ $return->return_date->format('d M, Y') }}
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100/50">
+                                @if ($return->purchase)
+                                    <a href="{{ route('admin.purchases.show', $return->purchase_id) }}" class="text-[10px] text-blue-500 hover:text-blue-700 font-bold uppercase tracking-wider">
+                                        Ref: {{ $return->purchase->purchase_number }}
+                                    </a>
+                                    <span class="text-gray-300">|</span>
+                                @endif
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border {{ $color }}">
+                                    {{ str_replace('_', ' ', $return->status) }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider {{ $pColor }}">
+                                    {{ $return->payment_status }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Footer: Destination & Actions --}}
+                        <div class="flex items-center justify-between pt-1">
+                            <div class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest truncate">
+                                {{ $return->warehouse->name ?? 'N/A' }}
+                                @if ($return->store)
+                                    • {{ $return->store->name }}
+                                @endif
+                            </div>
+                            
+                            <div class="flex items-center justify-end gap-2 shrink-0">
+                                @if(has_permission('purchase_returns.view'))
+                                    <a href="{{ route('admin.purchase-returns.show', $return->id) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors" title="View Return">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if ($return->status !== 'cancelled' && has_permission('purchase_returns.add_payment'))
+                                    <button type="button" @click="openPaymentModal({{ $return->id }}, '{{ $return->payment_status }}')" class="w-8 h-8 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 flex items-center justify-center transition-colors" title="Update Refund Status">
+                                        <i data-lucide="indian-rupee" class="w-4 h-4"></i>
+                                    </button>
+                                @endif
+
+                                @if ($return->status !== 'returned' && $return->status !== 'cancelled' && has_permission('purchase_returns.update'))
+                                    <a href="{{ route('admin.purchase-returns.edit', $return->id) }}" class="w-8 h-8 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors" title="Edit Return">
+                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if ($return->status !== 'returned')
+                                    @if(has_permission('purchase_returns.delete'))
+                                        <form action="{{ route('admin.purchase-returns.destroy', $return->id) }}" method="POST" @submit.prevent="confirmDelete($event.target)" class="inline-block m-0 p-0">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors" title="Delete Return">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                @else
+                                    <div class="w-8 h-8 rounded-lg border border-gray-100 text-gray-300 flex items-center justify-center cursor-not-allowed" title="Cannot delete finalized return">
+                                        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="corner-up-left" class="w-10 h-10 mb-3 opacity-20"></i>
+                            <p class="font-medium text-gray-500 text-[13px]">No purchase returns found.</p>
+                        </div>
+                    </div>
+                @endforelse
+            </div>
+
             @if ($purchaseReturns->hasPages())
                 <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
                     {{ $purchaseReturns->links() }}
                 </div>
             @endif
         </div>
+
         {{-- REFUND / PAYMENT MODAL --}}
         <div x-show="paymentModalOpen" x-cloak
             class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">

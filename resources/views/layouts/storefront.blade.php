@@ -7,54 +7,66 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="company-slug" content="{{ request()->route('slug') ?? '' }}">
 
-    @php
+   @php
         try {
-            $user = Auth::user();
-            $primary = get_setting('primary_color') ?: '#008a62';
-            $hover = get_setting('primary_hover_color') ?: '#007050';
-            
-            // 🛡️ Fallback safe company object
-            $company = $company ?? new \App\Models\Company(['name' => 'StoreFront', 'slug' => request()->route('slug') ?? 'store']);
-            $companySlug = $company->slug;
+            $user = auth()->user();
 
-            // 🌟 Auto-Fill Logic
+            $primary = get_setting('primary_color') ?: '#008a62';
+            $hover   = get_setting('primary_hover_color') ?: '#007050';
+
+            $routeSlug  = request()->route('slug') ?? 'store';
+            $company    = $company ?? new \App\Models\Company(['name' => 'StoreFront', 'slug' => $routeSlug]);
+            $companySlug = $company?->slug ?: $routeSlug;
+
             $autoFill = [
-                'name'    => '',
-                'phone'   => '',
-                'email'   => '',
+                'name' => '',
+                'phone' => '',
+                'email' => '',
                 'address' => '',
-                'notes'   => ''
+                'notes' => '',
             ];
 
-            if ($user) {
-                $client = \App\Models\Client::where('company_id', $company->id ?? null)
-                                            ->where('user_id', $user->id)
-                                            ->first();
-                                            
+            if ($user && $company?->id) {
+                $client = \App\Models\Client::where('company_id', $company->id)
+                    ->where('user_id', $user->id)
+                    ->first();
+
                 $autoFill = [
-                    'name'    => $client?->name ?? $user->name ?? '',
-                    'phone'   => $client?->phone ?? $user->phone ?? '',
-                    'email'   => $user->email ?? '',
+                    'name' => $client?->name ?? $user->name ?? '',
+                    'phone' => $client?->phone ?? $user->phone ?? '',
+                    'email' => $user->email ?? '',
                     'address' => $client?->address ?? '',
-                    'notes'   => ''
+                    'notes' => '',
                 ];
-                
+
                 if ($client?->city || $client?->zip_code) {
                     $append = implode(', ', array_filter([$client?->city, $client?->zip_code]));
                     if ($append) {
-                         $autoFill['address'] .= ($autoFill['address'] ? ', ' : '') . $append;
+                        $autoFill['address'] .= ($autoFill['address'] ? ', ' : '') . $append;
                     }
                 }
             }
+
+            $accountUrl = route('storefront.login', ['slug' => $companySlug]);
+
+            if ($user) {
+                if ($user->hasRole('customer')) {
+                    $accountUrl = route('storefront.portal.dashboard', ['slug' => $companySlug]);
+                } elseif ($user->hasRole('owner')) {
+                    $accountUrl = route('admin.dashboard');
+                } elseif ($user->hasRole('employee')) {
+                    $accountUrl = route('admin.hrm.employee.dashboard');
+                }
+            }
         } catch (\Throwable $e) {
-            // 🛡️ Fail-safe logging prevents 500 errors
             \Illuminate\Support\Facades\Log::error('Storefront Layout Error: ' . $e->getMessage());
-            
-            // Emergency defaults
+
             $primary = '#008a62';
             $hover = '#007050';
             $companySlug = request()->route('slug') ?? 'store';
+            $company = $company ?? new \App\Models\Company(['name' => 'StoreFront', 'slug' => $companySlug]);
             $autoFill = ['name' => '', 'phone' => '', 'email' => '', 'address' => '', 'notes' => ''];
+            $accountUrl = route('storefront.login', ['slug' => $companySlug]);
         }
     @endphp
 
@@ -361,7 +373,7 @@
                                     class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
                                     <img :src="product.image"
                                         class="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100 border border-gray-100"
-                                        onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                        onerror="this.onerror=null; this.src='{{ asset('assets/images/no-product.webp') }}';">
                                     <div class="flex-1 min-w-0">
                                         <p class="text-[13px] font-semibold text-gray-800 truncate" x-text="product.name"></p>
                                         <p class="text-[12px] text-gray-400 font-medium">
@@ -404,21 +416,7 @@
                 <button @click="qrScannerOpen = true; startScanner();" class="hover:text-brand-600 transition-colors">
                     <i data-lucide="qr-code" class="w-[22px] h-[22px]"></i>
                 </button>
-                <a href="
-                @auth
-                    @if($user->hasRole('customer'))
-                        {{ route('storefront.portal.dashboard', ['slug' => $companySlug]) }}
-                    @elseif($user->hasRole('owner'))
-                        {{ route('admin.dashboard') }}
-                    @elseif($user->hasRole('employee'))
-                        {{ route('admin.hrm.employee.dashboard') }}
-                    @else
-                        {{ route('admin.dashboard') }}
-                    @endif
-                @else
-                    {{ route('storefront.login',['slug' => $companySlug]) }}
-                @endauth    
-                " class="hover:text-gray-900 transition-colors sm:block">
+                <a href="{{ $accountUrl }}" class="hover:text-gray-900 transition-colors sm:block">
                     <i data-lucide="user" class="w-[22px] h-[22px]"></i>
                 </a>
                 <button @click="openCart()" class="hover:text-gray-900 transition-colors relative">
@@ -455,7 +453,7 @@
                                 class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
                                 <img :src="product.image"
                                     class="w-9 h-9 rounded-lg object-cover flex-shrink-0 bg-gray-100"
-                                    onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                    onerror="this.onerror=null; this.src='{{ asset('assets/images/no-product.webp') }}';">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-[13px] font-semibold text-gray-800 truncate" x-text="product.name"></p>
                                     <template x-if="product.product_type !== 'catalog'">
@@ -564,7 +562,7 @@
                                                     <div class="flex gap-3 bg-gray-50 rounded-xl p-3">
                                                         <img :src="item.image"
                                                             class="w-16 h-16 rounded-lg object-cover flex-shrink-0 bg-white border border-gray-100"
-                                                            onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                                            onerror="this.onerror=null; this.src='{{ asset('assets/images/no-product.webp') }}';">
                                                         <div class="flex-1 min-w-0">
                                                             <p class="text-[13px] font-semibold text-gray-800 line-clamp-1 mb-0.5"
                                                                 x-text="item.name"></p>
@@ -840,13 +838,18 @@
         <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
                <div>
-                    <h4 class="text-[15px] font-bold text-gray-900 mb-5">Contact Us</h4>
+                    <div class="mb-5">
+                        <h4 class="text-[16px] font-black text-gray-900 tracking-tight">{{ $company->name ?? config('app.name') }}</h4>
+                        @if(get_setting('storefront_tagline'))
+                            <p class="text-[12px] text-gray-500 font-medium mt-1 leading-relaxed">{{ get_setting('storefront_tagline') }}</p>
+                        @endif
+                    </div>
                     <ul class="space-y-4 text-[13px] text-gray-500 font-medium">
                         {{-- 🛡️ Fallback dummy data if settings are empty --}}
                         @php
                             $phone = get_setting('call_number') ?: '+91 98765 43210';
-                            $email = get_setting('email') ?: 'support@' . ($companySlug ?? 'store') . '.com';
-                            $address = get_setting('address') ?: '123 Commerce Avenue, Business District, 400001';
+                            $email = get_setting('support_email') ?: 'support@' . ($companySlug ?? 'store') . '.com';
+                            $address = get_setting('storefront_address') ?: '123 Commerce Avenue, Business District, 400001';
                         @endphp
                         
                         <li class="flex items-start gap-3">
@@ -861,6 +864,14 @@
                             <i data-lucide="map-pin" class="w-4 h-4 shrink-0 mt-0.5 text-gray-400"></i>
                             <span class="leading-relaxed">{{ $address }}</span>
                         </li>
+                        
+                        {{-- Business Hours --}}
+                        @if(get_setting('business_hours'))
+                            <li class="flex items-start gap-3 pt-2">
+                                <i data-lucide="clock" class="w-4 h-4 shrink-0 mt-0.5 text-gray-400"></i>
+                                <span class="leading-relaxed whitespace-pre-line">{{ get_setting('business_hours') }}</span>
+                            </li>
+                        @endif
                     </ul>
                     
                     {{-- Social Icons (Left as-is) --}}

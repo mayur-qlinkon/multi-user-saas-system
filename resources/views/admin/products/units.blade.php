@@ -52,7 +52,8 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead
                         class="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-[#f8fafc]">
@@ -133,7 +134,66 @@
                 </table>
             </div>
 
-            <div class="h-12 border-t border-gray-100 bg-white w-full"></div>
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse ($units as $unit)
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3"
+                         x-show="matchesSearch('{{ strtolower($unit->name) }}', '{{ strtolower($unit->short_name) }}')">
+                        
+                        {{-- Header: Unit Name & Status --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <p class="font-bold text-[14px] text-gray-900 truncate">{{ $unit->name }}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[11px] text-gray-500 font-medium">ID: #{{ $unit->id }}</span>
+                                    <span class="text-gray-300">|</span>
+                                    @if ($unit->short_name)
+                                        <span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider">
+                                            {{ $unit->short_name }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 text-[10px]">-</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="shrink-0">
+                                @if ($unit->is_active)
+                                    <span class="bg-[#dcfce7] text-[#16a34a] px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider">Active</span>
+                                @else
+                                    <span class="bg-gray-200 text-gray-500 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider">Inactive</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-50 mt-1">
+                            @if(has_permission('units.update'))
+                                <button @click="openEditModal({{ $unit->toJson() }})" class="w-8 h-8 flex items-center justify-center rounded-lg border border-[#108c2a] text-[#108c2a] hover:bg-green-50 transition-colors" title="Edit">
+                                    <i data-lucide="edit" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+
+                            @if(has_permission('units.delete'))
+                                <form action="{{ route('admin.units.destroy', $unit->id) }}" method="POST" @submit.prevent="deleteUnit($event.target)" class="inline-block m-0 p-0">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="w-8 h-8 flex items-center justify-center rounded-lg border border-red-400 text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                        
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                        <p class="font-medium text-gray-500">No units found.</p>
+                        <p class="text-xs mt-1">Click "Add" to create one.</p>
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="hidden md:block h-12 border-t border-gray-100 bg-white w-full"></div>
         </div>
 
         <div x-show="isModalOpen" style="display: none;"

@@ -61,60 +61,81 @@
                         <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
                             <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Customer Details</h2>
                             <button type="button" @click="toggleWalkIn()"
-                                :class="isWalkIn ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'"
+                                :class="isWalkIn ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
                                 class="px-3 py-1.5 rounded text-xs font-bold uppercase tracking-widest transition-colors">
-                                <span x-text="isWalkIn ? 'Walk-in Active' : 'Set as Walk-in'"></span>
+                                <span x-text="isWalkIn ? 'Walk-in Active' : 'Select Existing'"></span>
                             </button>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" :class="isWalkIn ? 'opacity-50 pointer-events-none grayscale' : ''">
+                        {{-- CLIENT DROPDOWN (Shown when NOT Walk-in) --}}
+                        <div class="mb-4 relative" x-show="!isWalkIn" @click.away="isClientDropdownOpen = false" x-cloak>
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1.5">
+                                Search Existing Customer <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" x-model="clientSearchTerm" 
+                                    @focus="isClientDropdownOpen = true"
+                                    @input="isClientDropdownOpen = true; formData.client_id = ''"
+                                    placeholder="Search customer by name or phone..."
+                                    class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none bg-white font-bold text-gray-700">
+                                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                            </div>
+                            <input type="hidden" name="client_id" :value="formData.client_id">
+
+                            <ul x-show="isClientDropdownOpen" x-transition
+                                class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto overscroll-contain top-full left-0 custom-scrollbar">
+                                <li x-show="filteredClients.length === 0" class="px-4 py-4 text-sm text-gray-500 text-center font-medium">
+                                    No matching customers found.
+                                </li>
+                                <template x-for="client in filteredClients" :key="client.id">
+                                    <li @click="selectClient(client)"
+                                        class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
+                                        <div class="font-bold text-[13px] text-gray-800" x-text="client.name"></div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5 flex items-center gap-2">
+                                            <span x-show="client.phone" x-text="'📞 ' + client.phone"></span>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+
+                        {{-- If not Walk-In AND no client is selected, fade out the inputs to force user to use dropdown --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4" :class="!isWalkIn && !formData.client_id ? 'opacity-50 pointer-events-none grayscale' : ''">
                             <div>
                                 <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1.5">Name</label>
-                                <input type="text" name="customer_name" x-model="formData.customer_name" :readonly="isWalkIn"
+                                <input type="text" name="customer_name" x-model="formData.customer_name" :readonly="!isWalkIn"
                                     class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none">
                             </div>
                            <div>
-                                <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1.5">
-                                    Phone
-                                </label>
-
-                                <input 
-                                    type="text"
-                                    name="customer_phone"
-                                    x-model="formData.customer_phone"
-                                    :disabled="isWalkIn"
-                                    maxlength="10"
-                                    pattern="[0-9]{10}"
-                                    inputmode="numeric"
-                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1.5">Phone</label>
+                                <input type="text" name="customer_phone" x-model="formData.customer_phone" :readonly="!isWalkIn"
+                                    maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                     class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none"
-                                    placeholder="Enter 10 digit phone number"
-                                    required
-                                >
+                                    placeholder="Enter 10 digit phone number" required>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1.5">Email</label>
-                                <input type="email" name="customer_email" x-model="formData.customer_email" :disabled="isWalkIn"
+                                <input type="email" name="customer_email" x-model="formData.customer_email" :readonly="!isWalkIn"
                                     class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none">
                             </div>
                         </div>
 
                         <h3 class="text-xs font-bold text-gray-700 mt-6 mb-3">Delivery Address</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" :class="isWalkIn ? 'opacity-50 pointer-events-none grayscale' : ''">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" :class="!isWalkIn && !formData.client_id ? 'opacity-50 pointer-events-none grayscale' : ''">
                             <div class="md:col-span-3">
-                                <input type="text" name="delivery_address" placeholder="Street Address" :disabled="isWalkIn"
+                                <input type="text" name="delivery_address" x-model="formData.delivery_address" placeholder="Street Address" :readonly="!isWalkIn"
                                     class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none">
                             </div>
                             <div>
-                                <input type="text" name="delivery_city" placeholder="City" :disabled="isWalkIn"
+                                <input type="text" name="delivery_city" x-model="formData.delivery_city" placeholder="City" :readonly="!isWalkIn"
                                     class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none">
                             </div>
                             <div>
-                                <input type="text" name="delivery_state" placeholder="State" x-model="formData.delivery_state" :disabled="isWalkIn"
+                                <input type="text" name="delivery_state" placeholder="State" x-model="formData.delivery_state" :readonly="!isWalkIn"
                                     class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none">
                             </div>
                             <div>
-                                <input type="text" name="delivery_pincode" placeholder="Pincode" :disabled="isWalkIn"
+                                <input type="text" name="delivery_pincode" x-model="formData.delivery_pincode" placeholder="Pincode" :readonly="!isWalkIn"
                                     class="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:border-[#108c2a] outline-none">
                             </div>
                         </div>
@@ -320,10 +341,14 @@
 
 @push('scripts')
 <script>
-    function orderForm(storeDefaults = {}) {
+    function orderForm(storeDefaults = {}, allClients = []) {
         return {
+            clients: allClients,
+            clientSearchTerm: '',
+            isClientDropdownOpen: false,
+
             storeDefaults: storeDefaults,
-            isWalkIn: true,
+            isWalkIn: false, // Default to false to show the Dropdown first
             globalSearch: '',
             isSearching: false,
             globalSearchResults: [],
@@ -331,12 +356,41 @@
             itemCounter: 0,
             
             formData: {
+                client_id: '',
                 customer_name: '',
                 customer_phone: '',
                 customer_email: '',
+                delivery_address: '',
+                delivery_city: '',
                 delivery_state: '',
+                delivery_pincode: '',
                 store_id: '{{ session("store_id") }}',
                 warehouse_id: '',
+            },
+
+            get filteredClients() {
+                if (this.clientSearchTerm.trim() === '') return this.clients;
+                return this.clients.filter(c => 
+                    (c.name || '').toLowerCase().includes(this.clientSearchTerm.toLowerCase()) || 
+                    (c.phone || '').includes(this.clientSearchTerm)
+                );
+            },
+
+            selectClient(client) {
+                this.formData.client_id = client.id;
+                this.clientSearchTerm = client.name;
+                
+                // Auto-fill form
+                this.formData.customer_name = client.name || '';
+                this.formData.customer_phone = client.phone || '';
+                this.formData.customer_email = client.email || '';
+                this.formData.delivery_address = client.address || '';
+                this.formData.delivery_city = client.city || '';
+                // 🛡️ Bulletproof fallback: Checks loaded relation -> direct attribute -> empty
+                this.formData.delivery_state = (client.state && client.state.name) ? client.state.name : (client.state_name || '');
+                this.formData.delivery_pincode = client.zip_code || '';
+                
+                this.isClientDropdownOpen = false;
             },
 
             totals: {
@@ -369,9 +423,16 @@
             toggleWalkIn() {
                 this.isWalkIn = !this.isWalkIn;
                 if(this.isWalkIn) {
+                    // Switched to Walk-In: Clear everything so user can type freely
+                    this.formData.client_id = '';
+                    this.clientSearchTerm = '';
                     this.formData.customer_name = '';
                     this.formData.customer_phone = '';
                     this.formData.customer_email = '';
+                    this.formData.delivery_address = '';
+                    this.formData.delivery_city = '';
+                    this.formData.delivery_state = '';
+                    this.formData.delivery_pincode = '';
                 }
             },
 

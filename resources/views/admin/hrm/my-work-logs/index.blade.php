@@ -125,7 +125,9 @@
 
     {{-- Logs Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
+        
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full whitespace-nowrap">
                 <thead>
                     <tr class="border-b border-gray-100 bg-gray-50/60">
@@ -227,6 +229,104 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-100">
+            @forelse($logs as $log)
+                <div class="p-4 flex flex-col gap-3 hover:bg-gray-50 transition-colors">
+                    
+                    {{-- Header: Date & Status --}}
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[13px] font-semibold text-gray-800">{{ $log->log_date->format('d M Y') }}</p>
+                            @if($log->start_time && $log->end_time)
+                                <p class="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+                                    <i data-lucide="clock" class="w-3 h-3"></i>
+                                    {{ \Carbon\Carbon::parse($log->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($log->end_time)->format('h:i A') }}
+                                </p>
+                            @endif
+                        </div>
+                        <div>
+                            @php
+                                $pillClass = match($log->status) {
+                                    'draft'     => 'pill-draft',
+                                    'submitted' => 'pill-submitted',
+                                    'approved'  => 'pill-approved',
+                                    'rejected'  => 'pill-rejected',
+                                    default     => 'pill-draft',
+                                };
+                            @endphp
+                            <span class="status-pill {{ $pillClass }}">
+                                <span class="w-1.5 h-1.5 rounded-full"
+                                    style="background: {{ match($log->status) { 'submitted' => '#3b82f6', 'approved' => '#10b981', 'rejected' => '#ef4444', default => '#9ca3af' } }}">
+                                </span>
+                                {{ ucfirst($log->status) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Context: Task & Category --}}
+                    @if($log->task || $log->category)
+                        <div class="flex flex-wrap gap-2 mt-1">
+                            @if($log->task)
+                                <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">{{ $log->task->title }}</span>
+                            @endif
+                            @if($log->category)
+                                <span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[10px] font-bold capitalize">{{ $log->category }}</span>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Description --}}
+                    <div>
+                        <p class="text-[12px] text-gray-600 leading-relaxed">{{ $log->description }}</p>
+                        @if($log->status === 'rejected' && $log->admin_remarks)
+                            <div class="mt-2 p-2.5 bg-red-50 rounded-lg text-[11px] text-red-600 italic border border-red-100">
+                                <i data-lucide="message-circle" class="w-3.5 h-3.5 inline-block -mt-0.5 mr-1"></i>
+                                <strong>Manager Note:</strong> {{ $log->admin_remarks }}
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Footer: Hours & Actions --}}
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-50 mt-1">
+                        <div class="flex items-center gap-1.5 text-gray-800">
+                            <i data-lucide="hourglass" class="w-3.5 h-3.5 text-gray-400"></i>
+                            <span class="text-[13px] font-black">{{ number_format($log->hours_worked, 1) }}<span class="text-[10px] text-gray-400 font-normal ml-0.5">hours</span></span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            @if($log->status === 'draft')
+                                <button @click="openEdit({{ $log->toJson() }})"
+                                    class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button @click="confirmDelete({{ $log->id }})"
+                                    class="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            @else
+                                <span class="text-[10px] text-gray-400 italic font-medium px-2">Locked</span>
+                            @endif
+                        </div>
+                    </div>
+                    
+                </div>
+            @empty
+                <div class="flex flex-col items-center justify-center py-10 text-center">
+                    <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+                        <i data-lucide="clock" class="w-6 h-6 text-gray-300"></i>
+                    </div>
+                    <p class="font-semibold text-gray-500 mb-1 text-[13px]">No work logs yet</p>
+                    <p class="text-[11px] text-gray-400 mb-4">Log what you worked on today</p>
+                    <button @click="openCreate()"
+                        class="text-[11px] font-bold px-4 py-2 rounded-lg text-white"
+                        style="background: var(--brand-600)">
+                        Log Today's Work
+                    </button>
+                </div>
+            @endforelse
         </div>
 
         @if($logs->hasPages())

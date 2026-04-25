@@ -186,7 +186,8 @@
                     @endif
                 </div>
             @else
-                <div class="overflow-x-auto">
+                {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[950px]">
                         <thead>
                             <tr class="border-b border-gray-100 bg-gray-50/50">
@@ -340,6 +341,88 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                {{-- 📱 MOBILE VIEW (CARDS) --}}
+                <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                    @foreach ($expenses as $expense)
+                        @php
+                            $statusConf = $statusColors[$expense->status] ?? $statusColors['draft'];
+                            $payConf = $paymentColors[$expense->payment_status] ?? $paymentColors['unpaid'];
+                            $isFinalized = in_array($expense->status, ['approved', 'reimbursed']);
+                        @endphp
+                        <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                            
+                            {{-- Header: Merchant & Amount --}}
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style="background: var(--brand-50)">
+                                        <i data-lucide="indian-rupee" class="w-4 h-4" style="color: var(--brand-600)"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <a href="{{ route('admin.expenses.show', $expense->id) }}" class="text-[13px] font-bold text-gray-900 hover:text-blue-600 hover:underline block truncate">
+                                            {{ $expense->merchant_name }}
+                                        </a>
+                                        <div class="text-[11px] text-gray-500 font-medium mt-0.5">
+                                            {{ $expense->expense_number }} • {{ $expense->expense_date->format('d M Y') }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="text-[15px] font-black text-gray-900">{{ $expense->currency_code }} {{ number_format($expense->total_amount, 2) }}</p>
+                                    @if ($expense->tax_amount > 0)
+                                        <p class="text-[9px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">Incl. Tax</p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Badges: Category, Reimbursable, Status, Payment --}}
+                            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100/50 mt-1">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600">
+                                    {{ $expense->category->name ?? 'Uncategorized' }}
+                                </span>
+                                @if ($expense->is_reimbursable)
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold text-[#b45309] bg-amber-50 border border-amber-100 tracking-wide">
+                                        Reimbursable
+                                    </span>
+                                @endif
+                                <span class="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border" style="background: {{ $statusConf['bg'] }}; color: {{ $statusConf['text'] }}; border-color: {{ $statusConf['bg'] }}">
+                                    <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $statusConf['dot'] }}"></span>
+                                    {{ str_replace('_', ' ', $expense->status) }}
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider" style="background: {{ $payConf['bg'] }}; color: {{ $payConf['text'] }}">
+                                    {{ $expense->payment_status }}
+                                </span>
+                            </div>
+
+                            {{-- Actions --}}
+                            <div class="flex items-center justify-end gap-2 pt-1">
+                                @if(has_permission('expenses.view'))
+                                    <a href="{{ route('admin.expenses.show', $expense->id) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View Details">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if (!$isFinalized)
+                                    @if(has_permission('expenses.update'))
+                                        <a href="{{ route('admin.expenses.edit', $expense->id) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50 transition-colors" title="Edit">
+                                            <i data-lucide="edit" class="w-4 h-4"></i>
+                                        </a>
+                                    @endif
+                                    
+                                    @if(has_permission('expenses.delete'))
+                                        <button type="button" @click="deleteExpense({{ $expense->id }}, '{{ $expense->expense_number }}')" class="w-8 h-8 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    @endif 
+                                @else
+                                    <div class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-100 text-gray-300 cursor-not-allowed" title="Locked (Finalized)">
+                                        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
 
                 {{-- Pagination --}}

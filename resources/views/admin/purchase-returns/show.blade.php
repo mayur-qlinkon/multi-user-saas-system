@@ -1,7 +1,9 @@
 @extends('layouts.admin')
 
 @section('title', 'Purchase Return: ' . $purchaseReturn->return_number)
-
+@section('header-title')
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Purchase Return Details</h1>
+@endsection
 @push('styles')
     <style>
         /* 🖨️ A4 PRINT OPTIMIZATION */
@@ -83,7 +85,7 @@
 
         <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
             <div>
-                <h1 class="text-xl font-bold text-[#212538] tracking-tight">Return Details</h1>
+                {{-- <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Purchase Return Details</h1> --}}
             </div>
 
             <div class="flex flex-wrap items-center gap-2">

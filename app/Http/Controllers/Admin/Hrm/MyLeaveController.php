@@ -11,6 +11,7 @@ use App\Services\Hrm\LeaveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class MyLeaveController extends Controller
@@ -115,7 +116,7 @@ class MyLeaveController extends Controller
     }
 
     public function update(Request $request, Leave $leave)
-    {
+    {        
         $this->authorizeLeave($leave);
 
         if ($leave->status !== Leave::STATUS_PENDING) {
@@ -129,7 +130,15 @@ class MyLeaveController extends Controller
             'total_days' => ['required', 'numeric', 'min:0.5'],
             'day_type' => ['required', Rule::in(['full_day', 'first_half', 'second_half'])],
             'reason' => ['required', 'string', 'max:1000'],
-        ]);
+            'document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+        ]);        
+        if ($request->hasFile('document')) {
+            if ($leave->document) {
+                Storage::disk('public')->delete($leave->document);
+            }
+            $validated['document'] = $request->file('document')->store('hrm/leave-documents', 'public');
+        }
+
 
         $leave->update($validated);
 

@@ -2,7 +2,7 @@
 
 @section('title', 'Quotation: ' . $quotation->quotation_number)
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Show / Quotations</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Quotation Details</h1>
 @endsection
 @push('styles')
     <style>
@@ -150,8 +150,11 @@
 
         {{-- ACTION BAR (Hidden on Print) --}}
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
-            <div>
-                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Quotation Details</h1>
+            <div class="w-full sm:w-auto">
+                <x-admin.breadcrumb :items="[
+                    ['label' => 'Quotations', 'url' => route('admin.quotations.index')],
+                    ['label' => 'Quotation Details'],
+                ]" />
             </div>
 
             {{-- UI Fix: Buttons wrap and fill width on mobile --}}

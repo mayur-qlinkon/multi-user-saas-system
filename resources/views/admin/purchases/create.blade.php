@@ -3,7 +3,7 @@
 @section('title', 'Create Purchase Order')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Purchases / Create PO</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Purchase</h1>
 @endsection
 
 @push('styles')

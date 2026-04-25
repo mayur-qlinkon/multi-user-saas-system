@@ -121,7 +121,7 @@
                 <div class="card-body">
                     <a href="{{ Storage::url($leave->document) }}" target="_blank"
                         class="inline-flex items-center gap-2 text-[13px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
-                        <i data-lucide="download" class="w-4 h-4"></i> Download Document
+                        <i data-lucide="download" class="w-4 h-4"></i> View Document
                     </a>
                 </div>
             </div>

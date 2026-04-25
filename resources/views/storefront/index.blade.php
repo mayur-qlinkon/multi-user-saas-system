@@ -1,6 +1,6 @@
 @extends('layouts.storefront')
 
-@section('title', 'Home - ' . $company->name)
+@section('title', get_setting('seo_title', 'Home'))
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
@@ -134,7 +134,7 @@
                                 alt="{{ $banner->alt_text ?? 'Banner' }}"
                                 class="absolute inset-0 w-full h-full object-cover" 
                                 loading="eager"
-                                onerror="this.src='{{ asset('assets/images/placeholder.webp') }}'">
+                                onerror="this.onerror=null; this.src='{{ asset('assets/images/placeholder.webp') }}'">
                         </div>
                     @empty
                         <div class="swiper-slide bg-gray-100 aspect-[21/9] md:aspect-[3/1] flex items-center justify-center">
@@ -298,7 +298,7 @@
                                         <img src="{{ $product->primary_image_url }}" alt="{{ $product->name }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             loading="lazy"
-                                            onerror="this.src='{{ asset('assets/images/no-product.png') }}'">
+                                            onerror="this.onerror=null; this.src='/assets/images/no-product.webp';">
 
                                         {{-- Badge ── --}}
                                         @if ($isFeatured)

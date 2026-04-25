@@ -606,12 +606,14 @@ class ProductService
                 // Log it in the Immutable Ledger
                 StockMovement::create([
                     'store_id' => $storeId,
-                    'product_sku_id' => $sku->id,
+                    'product_sku_id' => $sku->id,  
+                    'unit_id' => $sku->product->product_unit_id,              
                     'warehouse_id' => $stock['warehouse_id'],
                     'quantity' => $qty,
                     'movement_type' => 'adjustment', // 'adjustment' is standard for initial opening stock
                     'reference_type' => Product::class,
                     'reference_id' => $sku->product_id,
+                    'balance_after'  => $stock['qty'],
                 ]);
             }
         }

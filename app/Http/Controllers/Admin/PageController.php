@@ -71,7 +71,7 @@ class PageController extends Controller
                 ]);
             }
 
-            return redirect()->route('admin.pages.edit', $page->id)
+            return redirect()->route('admin.pages.index')
                 ->with('success', 'Page created successfully.');
 
         } catch (Throwable $e) {

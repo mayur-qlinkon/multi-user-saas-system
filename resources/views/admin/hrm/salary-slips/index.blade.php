@@ -156,7 +156,9 @@
 
     {{-- Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto w-full pb-2">
+        
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto w-full pb-2">
             <table class="w-full min-w-[1000px]">
                 <thead>
                     <tr class="border-b border-gray-100">
@@ -277,6 +279,101 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+            @forelse($slips as $slip)
+                @php
+                    $sc = \App\Models\Hrm\SalarySlip::STATUS_COLORS[$slip->status] ?? ['bg' => '#f3f4f6', 'text' => '#374151'];
+                    $empName = $slip->employee->user?->name ?? '—';
+                @endphp
+                <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                    
+                    {{-- Header: Employee & Net Salary --}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[14px] font-bold text-gray-900 leading-tight truncate">{{ $empName }}</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5 truncate">
+                                <span class="font-bold">{{ $slip->employee->employee_code }}</span>
+                                @if($slip->employee->department)
+                                    &nbsp;·&nbsp;{{ $slip->employee->department->name }}
+                                @endif
+                            </p>
+                        </div>
+                        <div class="text-right shrink-0 flex flex-col items-end">
+                            <span class="font-black text-green-700 text-[16px]">₹{{ number_format($slip->net_salary, 2) }}</span>
+                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{{ $months[$slip->month] ?? $slip->month }} {{ $slip->year }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Breakdown: Gross & Deductions --}}
+                    <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                        <div>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Gross Pay</p>
+                            <p class="text-[12px] font-bold text-gray-700">₹{{ number_format($slip->gross_salary, 2) }}</p>
+                        </div>
+                        <i data-lucide="minus" class="w-3 h-3 text-gray-300"></i>
+                        <div class="text-right">
+                            <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Deductions</p>
+                            <p class="text-[12px] font-bold text-red-600">₹{{ number_format($slip->total_deductions, 2) }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Footer: Status & Actions --}}
+                    <div class="flex items-center justify-between pt-1 border-t border-gray-50 mt-1">
+                        <span class="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
+                              style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}">
+                            {{ \App\Models\Hrm\SalarySlip::STATUS_LABELS[$slip->status] }}
+                        </span>
+                        
+                        <div class="flex items-center justify-end gap-2">
+                            @if(has_permission('salary_slips.view'))
+                                <a href="{{ route('admin.hrm.salary-slips.show', $slip) }}" class="w-8 h-8 rounded-lg flex items-center justify-center border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="View">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if($slip->status === 'generated' && has_permission('salary_slips.approve'))
+                                <button @click="approveSlip({{ $slip->id }})" class="w-8 h-8 rounded-lg flex items-center justify-center border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors" title="Approve">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+
+                            @if($slip->status === 'approved' && has_permission('salary_slips.mark_paid'))
+                                <button @click="openPayModal({{ $slip->id }})" class="w-8 h-8 rounded-lg flex items-center justify-center border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors" title="Mark Paid">
+                                    <i data-lucide="banknote" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+
+                            @if(has_permission('salary_slips.download_pdf'))
+                                <a href="{{ route('admin.hrm.salary-slips.pdf', $slip) }}" target="_blank" class="w-8 h-8 rounded-lg flex items-center justify-center border border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors" title="Download PDF">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if($slip->status !== 'paid' && has_permission('salary_slips.delete'))
+                                <button @click="deleteSlip({{ $slip->id }}, $el.closest('.p-4'))" class="w-8 h-8 rounded-lg flex items-center justify-center border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 transition-colors" title="Delete">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center bg-white">
+                    <div class="flex flex-col items-center justify-center py-6 text-center">
+                        <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                            <i data-lucide="file-text" class="w-7 h-7 text-gray-300"></i>
+                        </div>
+                        <p class="font-semibold text-gray-500 mb-1 text-sm">No salary slips found</p>
+                        <p class="text-xs text-gray-400 mb-4">Generate slips for a pay period to get started</p>
+                        <button @click="generateModalOpen = true" class="text-xs font-bold px-4 py-2 rounded-xl text-white" style="background: var(--brand-600)">
+                            Generate Slips
+                        </button>
+                    </div>
+                </div>
+            @endforelse
         </div>
 
         @if($slips->hasPages())

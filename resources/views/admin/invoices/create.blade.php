@@ -304,7 +304,8 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto min-h-[200px]">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto min-h-[200px]">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                         <tr>
@@ -445,6 +446,94 @@
                         </template>
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-100 border-t border-gray-100">
+                <template x-for="(item, index) in items" :key="item.key">
+                    <div class="flex flex-col gap-3 p-4 bg-white relative">
+                        
+                        {{-- Header: Name, SKU, Remove --}}
+                        <div class="flex justify-between items-start pr-8">
+                            <div>
+                                <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
+                                <div class="text-[11px] text-gray-500 font-mono mt-0.5" x-text="'SKU: ' + item.sku_code"></div>
+                                <span x-show="item.discount_value > 0"
+                                    class="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold mt-1 inline-block">
+                                    Disc: <span x-text="item.discount_type === 'percentage' ? item.discount_value + '%' : '₹' + item.discount_value"></span>
+                                </span>
+                            </div>
+                            <button type="button" @click="removeItem(index)"
+                                class="absolute top-4 right-4 text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded transition-colors"
+                                title="Remove Item">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {{-- Context: HSN & Tax --}}
+                        <div class="flex justify-between items-center text-[11px] text-gray-500 bg-gray-50 px-2 py-1.5 rounded border border-gray-100">
+                            <span>HSN: <span class="font-mono font-bold text-gray-700" x-text="item.hsn_code || '-'"></span></span>
+                            <span>Tax: <span class="font-bold text-gray-700" x-text="item.tax_percent + '%'"></span> <span class="uppercase" x-text="item.tax_type"></span></span>
+                        </div>
+
+                        {{-- Inputs: Price & Qty --}}
+                        <div class="flex items-end gap-3 mt-1">
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Unit Price</label>
+                                <div class="relative w-full">
+                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
+                                    <input type="number" step="0.01" x-model="item.unit_price" @input="calculate()"
+                                        class="w-full h-10 border border-gray-300 rounded px-2 pl-7 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 shadow-sm transition-all">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 text-center">Qty</label>
+                                <template x-if="item.challan_item_id">
+                                    <div class="h-10 flex items-center justify-center font-black text-gray-800 text-[14px] bg-gray-50 border border-gray-200 rounded px-4 min-w-[100px]" x-text="item.quantity"></div>
+                                </template>
+                                <template x-if="!item.challan_item_id">
+                                    <div class="flex items-center justify-center min-w-[110px]">
+                                        <button type="button" @click="item.quantity = Math.max(1, parseFloat(item.quantity || 0) - 1); calculate()"
+                                            class="w-9 h-10 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200">-</button>
+                                        <input type="number" step="0.0001" x-model="item.quantity" @input="calculate()"
+                                            class="w-14 h-10 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700 shadow-inner">
+                                        <button type="button" @click="item.quantity = parseFloat(item.quantity || 0) + 1; calculate()"
+                                            class="w-9 h-10 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200">+</button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Footer: Line Total & Settings --}}
+                        <div class="flex justify-between items-center pt-3 border-t border-gray-50 mt-1">
+                            <button type="button" @click="openItemModal(index)"
+                                class="text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                </svg>
+                                Edit Settings
+                            </button>
+                            <div class="text-right">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Line Total</span>
+                                <span class="font-black text-[#108c2a] text-[16px]" x-text="formatCurrency(item.line_total)"></span>
+                            </div>
+                        </div>
+
+                    </div>
+                </template>
+                
+                {{-- Empty State for Mobile --}}
+                <div x-show="items.length === 0" class="p-8 text-center text-gray-400 text-sm bg-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                    No items added yet.
+                </div>
             </div>
     </div>
 

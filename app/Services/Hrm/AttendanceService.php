@@ -5,8 +5,10 @@ namespace App\Services\Hrm;
 use App\Models\Hrm\Attendance;
 use App\Models\Hrm\AttendanceLog;
 use App\Models\Hrm\Employee;
+use App\Models\Hrm\Holiday;
 use App\Models\Hrm\Shift;
 use App\Models\Store;
+use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -78,21 +80,31 @@ class AttendanceService
                 ->first();
 
             if (! $attendance) {
-                [$status, $message, $type] = $this->determineCheckInStatus($now, $shiftWindow);
+                $holidayResult = $this->evaluateHolidayPolicy($employee, $shiftWindow['attendance_date']);
 
-                $attendance = DB::transaction(function () use ($companyId, $employee, $store, $shiftWindow, $now, $data, $status) {
-                    return Attendance::create([
-                        'company_id' => $companyId,
-                        'employee_id' => $employee->id,
-                        'store_id' => $store->id,
-                        'date' => $shiftWindow['attendance_date'],
-                        'check_in_time' => $now,
-                        'check_in_lat' => $data['latitude'],
-                        'check_in_lng' => $data['longitude'],
-                        'check_in_method' => Attendance::METHOD_QR,
-                        'status' => $status,
-                    ]);
-                });
+                $attendanceData = [
+                    'company_id' => $companyId,
+                    'employee_id' => $employee->id,
+                    'store_id' => $store->id,
+                    'date' => $shiftWindow['attendance_date'],
+                    'check_in_time' => $now,
+                    'check_in_lat' => $data['latitude'],
+                    'check_in_lng' => $data['longitude'],
+                    'check_in_method' => Attendance::METHOD_QR,
+                ];
+
+                if ($holidayResult !== null) {
+                    $attendanceData = array_merge($attendanceData, $holidayResult);
+                    $message = $holidayResult['status'] === Attendance::STATUS_PENDING
+                        ? 'Holiday attendance recorded. Pending manager approval.'
+                        : 'Holiday attendance recorded. Marked as working on holiday.';
+                    $type = $holidayResult['status'] === Attendance::STATUS_PENDING ? 'warning' : 'success';
+                } else {
+                    [$status, $message, $type] = $this->determineCheckInStatus($now, $shiftWindow);
+                    $attendanceData['status'] = $status;
+                }
+
+                $attendance = DB::transaction(fn () => Attendance::create($attendanceData));
 
                 $this->logAttempt(
                     array_merge($logBase, [
@@ -168,7 +180,7 @@ class AttendanceService
                 'message' => $message,
                 'type' => $type,
             ];
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException|DomainException $e) {
             $this->logAttempt(
                 array_merge($logBase ?? [], [
                     'action' => $action,
@@ -247,6 +259,114 @@ class AttendanceService
 
             return $attendance->fresh();
         });
+    }
+
+   /**
+     * Evaluate the configured holiday attendance policy for a given employee and date.
+     *
+     * Detection covers: single-day holidays, multi-day ranges (date→end_date), and
+     * recurring holidays (match by month/day, ignoring year) including recurring
+     * multi-day ranges (safely handling cross-year ranges like Dec 25 - Jan 5).
+     *
+     * @return array{is_holiday: bool, working_on_holiday: bool, status: string}|null
+     * @throws DomainException when policy is `block`.
+     */
+    public function evaluateHolidayPolicy(Employee $employee, $date): ?array
+    {
+        // 1. Determine correct timezone (Company specific, fallback to app default)
+        $timezone = get_setting('timezone', config('app.timezone'), $employee->company_id);
+
+        // 2. Safely normalize the incoming date to the business timezone
+        if ($date instanceof \Carbon\Carbon) {
+            $target = $date->copy()->setTimezone($timezone);
+        } else {
+            $target = \Carbon\Carbon::parse((string) $date, $timezone);
+        }
+
+        // Now these strings reflect the exact local date, regardless of server UTC time
+        $targetDate = $target->toDateString();
+        $targetMonthDay = $target->format('m-d');
+
+        $driver = DB::connection()->getDriverName();
+
+        // Database dialect formatting
+        $dateMd = match ($driver) {
+            'sqlite' => "strftime('%m-%d', date)",
+            'pgsql'  => "to_char(date, 'MM-DD')",
+            default  => "DATE_FORMAT(date, '%m-%d')", // MySQL/MariaDB
+        };
+
+        $endOrDateMd = match ($driver) {
+            'sqlite' => "strftime('%m-%d', COALESCE(end_date, date))",
+            'pgsql'  => "to_char(COALESCE(end_date, date), 'MM-DD')",
+            default  => "DATE_FORMAT(COALESCE(end_date, date), '%m-%d')", // MySQL/MariaDB
+        };
+
+        // Existing robust holiday detection logic remains untouched
+        $isHoliday = Holiday::query()
+            ->where('company_id', $employee->company_id)
+            ->where('is_active', true)
+            ->where(function ($query) use ($targetDate, $targetMonthDay, $dateMd, $endOrDateMd) {
+                
+                // Scenario A: Non-recurring (exact date match)
+                $query->where(function ($q) use ($targetDate) {
+                    $q->where('is_recurring', false)
+                        ->whereDate('date', '<=', $targetDate)
+                        ->where(function ($q2) use ($targetDate) {
+                            $q2->whereDate('date', $targetDate)
+                               ->orWhereDate('end_date', '>=', $targetDate);
+                        });
+                })
+                
+                // Scenario B: Recurring holidays (annual match ignoring year)
+                ->orWhere(function ($q) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                    $q->where('is_recurring', true)
+                      ->where(function ($sub) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                          
+                          // B1: Normal range (e.g., Mar 1 to Mar 5) -> Start <= End
+                          $sub->where(function ($normal) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                              $normal->whereRaw("{$dateMd} <= {$endOrDateMd}")
+                                     ->whereRaw("{$dateMd} <= ?", [$targetMonthDay])
+                                     ->whereRaw("{$endOrDateMd} >= ?", [$targetMonthDay]);
+                          })
+                          
+                          // B2: Cross-year range (e.g., Dec 25 to Jan 5) -> Start > End
+                          ->orWhere(function ($crossYear) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                              $crossYear->whereRaw("{$dateMd} > {$endOrDateMd}")
+                                        ->where(function ($orTarget) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                                            $orTarget->whereRaw("{$dateMd} <= ?", [$targetMonthDay])
+                                                     ->orWhereRaw("{$endOrDateMd} >= ?", [$targetMonthDay]);
+                                        });
+                          });
+
+                      });
+                });
+            })
+            ->exists();
+
+        if (! $isHoliday) {
+            return null;
+        }
+
+        $policy = (string) get_setting('attendance.holiday_policy', 'block', $employee->company_id);
+
+        if ($policy === 'block') {
+            throw new \DomainException('Today is a holiday. Attendance is not allowed.');
+        }
+
+        if ($policy === 'approval') {
+            return [
+                'is_holiday' => true,
+                'working_on_holiday' => true,
+                'status' => Attendance::STATUS_PENDING,
+            ];
+        }
+
+        return [
+            'is_holiday' => true,
+            'working_on_holiday' => true,
+            'status' => Attendance::STATUS_PRESENT,
+        ];
     }
 
     public function getReport(array $filters): LengthAwarePaginator

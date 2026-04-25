@@ -123,7 +123,9 @@
 
     {{-- Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
+        
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-100">
@@ -202,6 +204,81 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+            @forelse($departments as $dept)
+                <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3" x-show="matchesSearch('{{ strtolower(addslashes($dept->name)) }}', '{{ strtolower(addslashes($dept->code ?? '')) }}')">
+                    
+                    {{-- Header: Name & Status --}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[14px] font-bold text-gray-900 leading-tight truncate">{{ $dept->name }}</p>
+                            @if($dept->description)
+                                <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{{ $dept->description }}</p>
+                            @endif
+                        </div>
+                        <div class="shrink-0">
+                            @if($dept->is_active)
+                                <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-md">Active</span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded-md">Inactive</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Details: Code, Head, Employees --}}
+                    <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Code:</span>
+                                @if($dept->code)
+                                    <span class="text-[10px] font-bold text-gray-600 bg-white border border-gray-200 px-1.5 py-0.5 rounded">{{ $dept->code }}</span>
+                                @else
+                                    <span class="text-[10px] text-gray-400">—</span>
+                                @endif
+                            </div>
+                            <div class="flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-gray-400"></i>
+                                {{ $dept->employees_count }} <span class="font-medium text-gray-500">Emps</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-1.5 border-t border-gray-100/50 mt-0.5">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Head:</span>
+                            <span class="text-[11px] font-medium text-gray-700 truncate">{{ $dept->head?->name ?? '—' }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1">
+                        @if(has_permission('departments.update'))
+                            <button @click="openEdit({{ $dept->toJson() }})" class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors" title="Edit">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                        @endif
+                        
+                        @if(has_permission('departments.delete'))
+                            <button @click="confirmDelete({{ $dept->id }}, '{{ addslashes($dept->name) }}')" class="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center bg-white">
+                    <div class="flex flex-col items-center justify-center py-6 text-center">
+                        <div class="w-14 h-14 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                            <i data-lucide="building-2" class="w-7 h-7 text-gray-300"></i>
+                        </div>
+                        <p class="font-bold text-gray-600 mb-1 text-sm">No departments yet</p>
+                        <p class="text-xs text-gray-400 mb-4">Create your first department to organize teams</p>
+                        <button @click="openCreate()" class="text-xs font-bold px-4 py-2 rounded-lg text-white" style="background: var(--brand-600)">
+                            Add Department
+                        </button>
+                    </div>
+                </div>
+            @endforelse
         </div>
 
         @if($departments->hasPages())

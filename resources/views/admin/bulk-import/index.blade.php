@@ -25,11 +25,11 @@
     </div>
 
     {{-- Tab Navigation — grouped into sections ── --}}
-    <div class="mb-6 border-b border-gray-200">
+    <div class="mb-6 border-b border-gray-200 overflow-x-auto no-scrollbar pb-1">
         <template x-for="section in tabSections" :key="section.key">
-            <div class="flex items-center gap-3 mb-1 last:mb-0">
-                <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider shrink-0 w-[130px]" x-text="section.label"></span>
-                <div class="flex gap-1 flex-wrap">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mb-4 sm:mb-1 last:mb-0 min-w-max">
+                <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider shrink-0 sm:w-[130px] pl-1 sm:pl-0" x-text="section.label"></span>
+                <div class="flex gap-1 flex-nowrap sm:flex-wrap">
                     <template x-for="tab in tabsInSection(section.key)" :key="tab.key">
                         <button @click="activeTab = tab.key"
                             :class="activeTab === tab.key
@@ -146,7 +146,7 @@
                     <span>Dry run — validating only. No data will be saved to the database.</span>
                 </div>
 
-                <div class="grid grid-cols-5 gap-3 mb-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-5">
                     <div class="bg-gray-50 rounded-lg px-4 py-3 text-center border border-gray-100">
                         <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</p>
                         <p class="text-lg font-black text-gray-800" x-text="totalRows"></p>
@@ -303,7 +303,7 @@
                     <span>Dry run — validating only. No data will be saved to the database.</span>
                 </div>
 
-                <div class="grid grid-cols-5 gap-3 mb-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-5">
                     <div class="bg-gray-50 rounded-lg px-4 py-3 text-center border border-gray-100">
                         <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</p>
                         <p class="text-lg font-black text-gray-800" x-text="totalRows"></p>
@@ -507,7 +507,7 @@
                     </p>
                 </div>
 
-                <div class="grid grid-cols-5 gap-3 mb-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-5">
                     <div class="bg-gray-50 rounded-lg px-4 py-3 text-center border border-gray-100">
                         <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</p>
                         <p class="text-lg font-black text-gray-800" x-text="totalRows"></p>
@@ -660,7 +660,7 @@
                     <span>Dry run — validating only. No data will be saved to the database.</span>
                 </div>
 
-                <div class="grid grid-cols-5 gap-3 mb-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-5">
                     <div class="bg-gray-50 rounded-lg px-4 py-3 text-center border border-gray-100">
                         <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</p>
                         <p class="text-lg font-black text-gray-800" x-text="totalRows"></p>
@@ -824,7 +824,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-5 gap-3 mb-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-5">
                     <div class="bg-gray-50 rounded-lg px-4 py-3 text-center border border-gray-100">
                         <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</p>
                         <p class="text-lg font-black text-gray-800" x-text="totalRows"></p>
@@ -979,7 +979,7 @@
                     <span>Dry run — validating only. No data will be saved to the database.</span>
                 </div>
 
-                <div class="grid grid-cols-5 gap-3 mb-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-5">
                     <div class="bg-gray-50 rounded-lg px-4 py-3 text-center border border-gray-100">
                         <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</p>
                         <p class="text-lg font-black text-gray-800" x-text="totalRows"></p>
@@ -1133,7 +1133,7 @@
                     <span>Dry run — validating only. No data will be saved to the database.</span>
                 </div>
 
-                <div class="grid grid-cols-5 gap-3 mb-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-5">
                     <div class="bg-gray-50 rounded-lg px-4 py-3 text-center border border-gray-100">
                         <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total</p>
                         <p class="text-lg font-black text-gray-800" x-text="totalRows"></p>
@@ -1198,7 +1198,9 @@
     @if($imports->isNotEmpty())
     <div class="mt-8">
         <h3 class="text-[13px] font-black text-gray-500 uppercase tracking-wider mb-3">Recent Imports</h3>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <table class="w-full text-left">
                 <thead>
                     <tr class="bg-gray-50 text-[11px] font-black text-gray-500 uppercase tracking-wider">
@@ -1250,6 +1252,68 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border border-gray-100 rounded-xl bg-white shadow-sm">
+            @foreach($imports as $imp)
+                @php
+                    $statusColors = [
+                        'pending'    => 'bg-gray-100 text-gray-600 border-gray-200',
+                        'processing' => 'bg-blue-50 text-blue-600 border-blue-200',
+                        'completed'  => 'bg-emerald-50 text-emerald-600 border-emerald-200',
+                        'failed'     => 'bg-red-50 text-red-600 border-red-200',
+                    ];
+                @endphp
+                <div class="p-4 flex flex-col gap-3">
+                    
+                    {{-- Header: Type, Status, Date --}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0">
+                            <p class="font-bold text-[14px] text-gray-900 capitalize">{{ $imp->type }} Import</p>
+                            <p class="text-[11px] text-gray-500 font-medium mt-0.5">{{ $imp->created_at->format('d M Y, h:i A') }}</p>
+                        </div>
+                        <div class="shrink-0 flex flex-col items-end gap-1.5">
+                            <span class="inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border {{ $statusColors[$imp->status] ?? '' }}">
+                                {{ $imp->status }}
+                            </span>
+                            @if($imp->failed_rows > 0)
+                                <a href="{{ route('admin.bulk-import.errors', $imp) }}" target="_blank" class="text-red-500 hover:text-red-700 text-[10px] font-bold flex items-center gap-1">
+                                    <i data-lucide="download" class="w-3 h-3"></i> Errors
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Data Grid --}}
+                    <div class="bg-gray-50/80 rounded-lg p-3 border border-gray-100">
+                        <div class="grid grid-cols-4 gap-2 text-center mb-2 pb-2 border-b border-gray-100/60">
+                            <div>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Total</p>
+                                <p class="text-[12px] font-bold text-gray-600">{{ $imp->total_rows }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Success</p>
+                                <p class="text-[12px] font-bold text-emerald-600">{{ $imp->success_rows }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Skip</p>
+                                <p class="text-[12px] font-bold text-amber-600">{{ $imp->skipped_rows }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Fail</p>
+                                <p class="text-[12px] font-bold text-red-500">{{ $imp->failed_rows }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-gray-500 font-medium">Mode: <strong class="text-gray-700">{{ str_replace('_', ' ', $imp->import_mode ?? '—') }}</strong></span>
+                            <span class="text-gray-500 font-medium">Dupes: <strong class="text-gray-700 capitalize">{{ $imp->duplicate_mode ?? '—' }}</strong></span>
+                        </div>
+                    </div>
+
+                </div>
+            @endforeach
+        </div>
+
     </div>
     @endif
 </div>

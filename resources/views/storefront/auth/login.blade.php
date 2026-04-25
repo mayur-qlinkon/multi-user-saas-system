@@ -36,7 +36,7 @@
             <div>
                 <div class="flex items-center justify-between mb-1.5">
                     <label for="password" class="block text-[12px] font-bold text-gray-700 uppercase tracking-wide">Password</label>
-                    <a href="#" class="text-[12px] font-bold text-brand-600 hover:text-brand-700">Forgot Password?</a>
+                    <a href="{{ route('password.request') }}" class="text-[12px] font-bold text-brand-600 hover:text-brand-700">Forgot Password?</a>
                 </div>
                 <div class="relative">
                     <i data-lucide="lock" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>

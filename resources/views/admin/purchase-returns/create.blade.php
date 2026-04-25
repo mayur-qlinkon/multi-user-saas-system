@@ -2,7 +2,7 @@
 
 @section('title', 'Create Purchase Return')
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">CREATE / Purchase Returns</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create Purchase Return</h1>
 @endsection
 @push('styles')
     <style>

@@ -104,7 +104,8 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto min-h-[400px]">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto min-h-[400px]">
                 <table class="w-full text-left text-sm whitespace-nowrap min-w-[1000px]">
                     <thead
                         class="text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-[#f8fafc]">
@@ -240,23 +241,124 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="10" class="px-6 py-20 text-center">
-                                    <div class="flex flex-col items-center justify-center text-gray-400">
-                                        <i data-lucide="package-open" class="w-12 h-12 mb-3 opacity-20"></i>
-                                        <p class="font-medium text-gray-500">No products found in your inventory.</p>
-                                        <a href="{{ route('admin.products.create') }}"
-                                            class="text-[#108c2a] font-bold mt-2 hover:underline">Add your first
-                                            product</a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                <tr>
+                                    <td colspan="10" class="px-6 py-20 text-center">
+                                        <div class="flex flex-col items-center justify-center text-gray-400">
+                                            <i data-lucide="package-open" class="w-12 h-12 mb-3 opacity-20"></i>
+                                            <p class="font-medium text-gray-500">No products found in your inventory.</p>
+                                            <a href="{{ route('admin.products.create') }}"
+                                                class="text-[#108c2a] font-bold mt-2 hover:underline">Add your first
+                                                product</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
 
-            @if (method_exists($products, 'links') && $products->hasPages())
+                {{-- 📱 MOBILE VIEW (CARDS) --}}
+                <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                    @forelse ($products as $product)
+                        @php
+                            $hasSku = $product->skus->isNotEmpty();
+                            $minPrice = $hasSku ? ($product->skus->min('price') ?? 0) : 0;
+                            $maxPrice = $hasSku ? ($product->skus->max('price') ?? 0) : 0;
+                            $totalVariants = $product->skus->count();
+                            $totalStock = $hasSku ? $product->skus->sum('total_stock') : 0;
+                        @endphp
+                        <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                            
+                            {{-- Header: Checkbox, Image, Name, Category --}}
+                            <div class="flex items-start gap-3">
+                                <div class="pt-1">
+                                    <input type="checkbox" x-model.number="selected" value="{{ $product->id }}"
+                                        class="rounded border-gray-300 text-[#108c2a] focus:ring-[#108c2a] w-4 h-4 cursor-pointer">
+                                </div>
+                                <div class="w-12 h-12 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
+                                    <img src="{{ $product->primary_image_url }}" alt="Img" class="w-full h-full object-cover">
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-bold text-[14px] text-gray-900 leading-tight truncate">{{ $product->name }}</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 font-medium">
+                                        {{ $product->category->name ?? 'Uncategorized' }} • {{ $product->productUnit->short_name ?? 'Pc' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {{-- Stats: Price, Stock, Variants --}}
+                            <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Price</p>
+                                    <p class="text-[12px] font-bold text-gray-800">
+                                        @if ($minPrice == $maxPrice)
+                                            ₹{{ number_format($minPrice, 2) }}
+                                        @else
+                                            ₹{{ number_format($minPrice, 2) }} - ₹{{ number_format($maxPrice, 2) }}
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Type</p>
+                                    <p class="text-[11px] font-bold text-gray-600">{{ $product->type === 'variable' ? $totalVariants . ' Variants' : 'Single' }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Stock</p>
+                                    <p class="text-[12px] font-black {{ $totalStock > 0 ? 'text-[#108c2a]' : 'text-red-500' }}">
+                                        {{ $totalStock }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {{-- Actions & Created Date --}}
+                            <div class="flex items-center justify-between pt-2 border-t border-gray-50 mt-1">
+                                <span class="text-[10px] text-gray-400 font-medium">Added: {{ $product->created_at->format('d M, y') }}</span>
+                                <div class="flex items-center justify-end gap-1.5">
+                                    @if(has_permission('products.view'))
+                                        <a href="{{ route('admin.products.show', $product->id) }}" class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-indigo-600 flex items-center justify-center transition-colors" title="View">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </a>
+                                    @endif
+
+                                    @if(has_permission('products.update'))
+                                        <a href="{{ route('admin.products.edit', $product->id) }}" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors" title="Edit">
+                                            <i data-lucide="edit" class="w-4 h-4"></i>
+                                        </a>
+                                    @endif
+
+                                    @if(has_permission('products.duplicate'))
+                                        <form action="{{ route('admin.products.duplicate', $product->id) }}" method="POST" class="inline-block m-0 p-0">
+                                            @csrf
+                                            <button type="submit" class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 flex items-center justify-center transition-colors" title="Duplicate">
+                                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if(has_permission('products.delete'))
+                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" @submit.prevent="confirmDelete($event.target)" class="inline-block m-0 p-0">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors" title="Delete">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    @endif 
+                                </div>
+                            </div>
+
+                        </div>
+                    @empty
+                        <div class="p-8 text-center text-gray-400 bg-white">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="package-open" class="w-12 h-12 mb-3 opacity-20"></i>
+                                <p class="font-medium text-gray-500 text-sm">No products found in your inventory.</p>
+                                <a href="{{ route('admin.products.create') }}" class="text-[#108c2a] font-bold mt-2 text-sm hover:underline">Add your first product</a>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+
+                @if (method_exists($products, 'links') && $products->hasPages())
                 <div class="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
                     {{ $products->links() }}
                 </div>

@@ -119,7 +119,9 @@
 
         {{-- DATA TABLE --}}
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
                         <tr>
@@ -272,6 +274,112 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse ($challans as $challan)
+                    @php
+                        $colorMap = [
+                            'gray'   => 'bg-gray-50 text-gray-600 border-gray-200',
+                            'blue'   => 'bg-blue-50 text-blue-600 border-blue-200',
+                            'indigo' => 'bg-indigo-50 text-indigo-600 border-indigo-200',
+                            'cyan'   => 'bg-cyan-50 text-cyan-600 border-cyan-200',
+                            'amber'  => 'bg-amber-50 text-amber-600 border-amber-200',
+                            'teal'   => 'bg-teal-50 text-teal-600 border-teal-200',
+                            'green'  => 'bg-green-50 text-green-700 border-green-200',
+                            'lime'   => 'bg-lime-50 text-lime-700 border-lime-200',
+                            'slate'  => 'bg-slate-50 text-slate-700 border-slate-200',
+                            'red'    => 'bg-red-50 text-red-600 border-red-200',
+                        ];
+                        $c = $colorMap[$challan->status_color] ?? $colorMap['gray'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Party & Total --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <p class="font-bold text-gray-800 text-[14px] truncate">
+                                    {{ $challan->party_name ?: 'Unknown Party' }}
+                                </p>
+                                <p class="text-[11px] text-gray-400 mt-0.5 font-bold uppercase tracking-tighter">
+                                    {{ $challan->party_state ?? 'No State' }}
+                                </p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="font-black text-gray-800 text-[15px]">₹{{ number_format($challan->total_value, 2) }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Challan Details & Badges --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <a href="{{ route('admin.challans.show', $challan->id) }}" class="font-extrabold text-[#108c2a] text-[13px] hover:underline">
+                                    {{ $challan->challan_number }}
+                                </a>
+                                <span class="text-[11px] text-gray-500 font-medium flex items-center gap-1">
+                                    <i data-lucide="calendar" class="w-3 h-3"></i> {{ $challan->challan_date->format('d M, Y') }}
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100/50">
+                                <span class="text-[11px] font-bold text-gray-700">
+                                    {{ $challan->type_label }}
+                                </span>
+                                <span class="text-gray-300">|</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest {{ $challan->direction === 'outward' ? 'text-blue-500' : 'text-purple-500' }}">
+                                    <i data-lucide="{{ $challan->direction === 'outward' ? 'arrow-up-right' : 'arrow-down-left' }}" class="w-3 h-3 inline"></i> 
+                                    {{ $challan->direction }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border {{ $c }} ml-auto">
+                                    {{ $challan->status_label }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1 flex-wrap">
+                            @if(has_permission('challans.view'))
+                                <a href="{{ route('admin.challans.show', $challan->id) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors" title="View Challan">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if(has_permission('challan_returns.create') && $challan->is_returnable && $challan->status !== 'cancelled')
+                                <a href="{{ route('admin.challan-returns.create', ['challan' => $challan->id]) }}" class="w-8 h-8 rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50 flex items-center justify-center transition-colors" title="Process Return">
+                                    <i data-lucide="undo-2" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+                            
+                            @if(has_permission('challans.change_status') && !in_array($challan->status, ['closed', 'cancelled']))
+                                <button type="button" @click="openStatusModal({{ $challan->id }}, '{{ $challan->challan_number }}', '{{ $challan->status }}')" class="w-8 h-8 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition-colors" title="Update Status">
+                                    <i data-lucide="truck" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+
+                            @if(has_permission('challans.update') && $challan->status !== 'cancelled')
+                                <a href="{{ route('admin.challans.edit', $challan->id) }}" class="w-8 h-8 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors" title="Edit Challan">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if(has_permission('challans.delete'))
+                                <form action="{{ route('admin.challans.destroy', $challan->id) }}" method="POST" @submit.prevent="confirmDelete($event.target)" class="inline-block">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors" title="Delete Challan">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="file-text" class="w-10 h-10 mb-3 opacity-20"></i>
+                            <p class="font-medium text-gray-500">No challans found.</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
 
             @if ($challans->hasPages())

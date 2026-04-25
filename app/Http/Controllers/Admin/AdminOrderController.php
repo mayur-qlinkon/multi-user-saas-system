@@ -95,7 +95,7 @@ class AdminOrderController extends Controller
     {
         $companyId = Auth::user()->company_id;
 
-        $clients = Client::where('is_active', true)->get();
+        $clients = Client::with('state')->where('is_active', true)->get();
         $stores = Store::where('is_active', true)->get();
         $warehouses = Warehouse::where('is_active', true)->get();
 
@@ -164,9 +164,8 @@ class AdminOrderController extends Controller
 
         // 🌟 "Iron Wall" in action: Global scopes automatically filter by the tenant's company!
         $stores = Store::where('is_active', true)->get();
-        $clients = Client::where('is_active', true)->get();
-        $warehouses = Warehouse::where('is_active', true)->get();
-
+        $clients = Client::with('state')->where('is_active', true)->get();
+        $warehouses = Warehouse::where('is_active', true)->get();    
         Log::info('[AdminOrder] Edit form loaded', [
             'order_id' => $order->id,
             'by' => Auth::id(),

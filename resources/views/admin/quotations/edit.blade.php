@@ -3,7 +3,7 @@
 @section('title', 'Edit Quotation - ' . $quotation->quotation_number)
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Sales / Edit Quotation</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Quotation</h1>
 @endsection
 
 @push('styles')

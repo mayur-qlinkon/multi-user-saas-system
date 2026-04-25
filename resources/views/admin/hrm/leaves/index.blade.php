@@ -224,8 +224,8 @@
             </div>
         @else
 
-            {{-- Table ── --}}
-            <div class="overflow-x-auto w-full pb-2">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) ── --}}
+            <div class="hidden md:block overflow-x-auto w-full pb-2">
                 <table class="w-full min-w-[1000px]">
                     <thead>
                         <tr class="border-b border-gray-100">
@@ -355,6 +355,84 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) ── --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+                @foreach($leaves as $leave)
+                    @php
+                        $empName     = $leave->employee?->user?->name ?? 'Unknown';
+                        $empCode     = $leave->employee?->employee_code ?? '';
+                        $initials    = strtoupper(substr($empName, 0, 1));
+                        $avatarColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
+                        $avatarBg    = $avatarColors[crc32($empName) % count($avatarColors)];
+                        $sColor      = $statusColors[$leave->status] ?? $statusColors['cancelled'];
+                        $dayTypeLabels = ['full_day' => 'Full Day', 'first_half' => '1st Half', 'second_half' => '2nd Half'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Employee & Status --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-full text-white flex items-center justify-center text-sm font-bold shrink-0" style="background: {{ $avatarBg }}">
+                                    {{ $initials }}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-[14px] text-gray-900 truncate">{{ $empName }}</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 truncate">{{ $empCode ?: '—' }}</p>
+                                </div>
+                            </div>
+                            <div class="shrink-0">
+                                <span class="status-badge px-2 py-0.5 text-[9px] flex items-center gap-1" style="background: {{ $sColor['bg'] }}; color: {{ $sColor['text'] }}">
+                                    <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $sColor['dot'] }}"></span>
+                                    {{ $statusLabels[$leave->status] ?? ucfirst($leave->status) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Details: Leave Type & Dates --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[12px] font-bold text-gray-800">{{ $leave->leaveType?->name ?? '—' }}</span>
+                                <span class="text-[11px] font-bold text-gray-700">
+                                    {{ $leave->total_days }} Day(s) <span class="text-gray-400 font-medium ml-1">({{ $dayTypeLabels[$leave->day_type] ?? ucfirst(str_replace('_', ' ', $leave->day_type ?? '—')) }})</span>
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-gray-100/50 mt-1">
+                                <span class="text-[11px] text-gray-500 font-medium">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">From:</span> {{ $leave->from_date?->format('d M y') }}
+                                </span>
+                                <i data-lucide="arrow-right" class="w-3 h-3 text-gray-300"></i>
+                                <span class="text-[11px] text-gray-500 font-medium">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">To:</span> {{ $leave->to_date?->format('d M y') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Footer: Date Applied & Actions --}}
+                        <div class="flex items-center justify-between pt-1 border-t border-gray-50 mt-1">
+                            <span class="text-[10px] text-gray-400 font-medium">Applied: {{ $leave->created_at?->format('d M Y') }}</span>
+                            <div class="flex items-center justify-end gap-2">
+                                @if(has_permission('leaves.view'))
+                                    <a href="{{ route('admin.hrm.leaves.show', $leave->id) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 transition-colors" title="View">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if($leave->status === 'pending' && has_permission('leaves.approve'))
+                                    <button @click="handleAction({{ $leave->id }}, 'reject')" class="w-8 h-8 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-colors" title="Reject">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                    
+                                    <button @click="handleAction({{ $leave->id }}, 'approve')" class="w-8 h-8 flex items-center justify-center rounded-lg border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors" title="Approve">
+                                        <i data-lucide="check" class="w-4 h-4"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
+                @endforeach
             </div>
 
             {{-- Pagination ── --}}

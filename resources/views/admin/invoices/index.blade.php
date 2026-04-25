@@ -133,7 +133,9 @@
 
         {{-- DATA TABLE --}}
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead
                         class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
@@ -291,6 +293,114 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse ($invoices as $invoice)
+                    @php
+                        $paidAmt = $invoice->payments->where('status', 'completed')->sum('amount');
+                        $balanceDue = $invoice->grand_total - $paidAmt;
+                        
+                        $statusColors = [
+                            'draft' => 'bg-gray-100 text-gray-600 border-gray-200',
+                            'confirmed' => 'bg-green-50 text-green-700 border-green-200',
+                            'cancelled' => 'bg-red-50 text-red-600 border-red-200',
+                        ];
+                        $color = $statusColors[$invoice->status] ?? $statusColors['draft'];
+                        
+                        $payColors = [
+                            'unpaid' => 'bg-red-50 text-red-600',
+                            'partial' => 'bg-blue-50 text-blue-600',
+                            'paid' => 'bg-green-50 text-green-700',
+                        ];
+                        $pColor = $payColors[$invoice->payment_status] ?? $payColors['unpaid'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Customer & Total --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <p class="font-bold text-gray-800 text-[14px] truncate">
+                                    {{ $invoice->customer_name ?: $invoice->client->name ?? 'Walk-in Customer' }}
+                                </p>
+                                <p class="text-[11px] text-gray-400 mt-0.5 font-bold uppercase tracking-tighter">
+                                    {{ $invoice->supply_state }}
+                                </p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="font-black text-[#108c2a] text-[16px]">₹{{ number_format($invoice->grand_total, 2) }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Invoice Details & Badges --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="font-extrabold text-[#108c2a] text-[13px] hover:underline">
+                                    {{ $invoice->invoice_number }}
+                                </a>
+                                <span class="text-[11px] text-gray-500 font-medium">
+                                    {{ $invoice->invoice_date->format('d M, Y') }}
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100/50">
+                                <span class="text-[9px] font-black uppercase tracking-widest {{ $invoice->source === 'pos' ? 'text-orange-500' : 'text-blue-500' }}">
+                                    {{ $invoice->source }}
+                                </span>
+                                <span class="text-gray-300">|</span>
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border {{ $color }}">
+                                    {{ $invoice->status }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider {{ $pColor }}">
+                                    {{ $invoice->payment_status }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1">
+                            @if(has_permission('invoices.view'))
+                                <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors" title="View Invoice">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if ($invoice->status === 'confirmed' && has_permission('invoice_returns.create'))
+                                <a href="{{ route('admin.invoice-returns.create', $invoice->id) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors" title="Create Return">
+                                    <i data-lucide="undo-2" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if ($invoice->status !== 'cancelled' && $balanceDue > 0 && has_permission('invoices.add_payment'))
+                                <button type="button" @click="openPaymentModal({{ $invoice->id }}, '{{ $invoice->invoice_number }}', {{ $balanceDue }})" class="w-8 h-8 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 flex items-center justify-center transition-colors" title="Record Payment">
+                                    <i data-lucide="wallet" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+
+                            @if ($invoice->status !== 'cancelled')
+                                @if($invoice->status !== 'confirmed' && has_permission('invoices.update'))
+                                    <a href="{{ route('admin.invoices.edit', $invoice->id) }}" class="w-8 h-8 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors" title="Edit Invoice">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                <form action="{{ route('admin.invoices.destroy', $invoice->id) }}" method="POST" @submit.prevent="confirmCancel($event.target)" class="inline-block">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors" title="Cancel Invoice">
+                                        <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="shopping-cart" class="w-10 h-10 mb-3 opacity-20"></i>
+                            <p class="font-medium">No sales invoices found.</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
 
             @if ($invoices->hasPages())

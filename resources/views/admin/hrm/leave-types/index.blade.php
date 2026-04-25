@@ -68,7 +68,9 @@
     </div>
 
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
+        
+        {{-- 🖥️ DESKTOP VIEW (TABLE) ── --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-100">
@@ -151,6 +153,76 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) ── --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+            @forelse($leaveTypes as $leaveType)
+                <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3"
+                     x-show="matchesSearch('{{ strtolower(addslashes($leaveType->name)) }}')">
+                    
+                    {{-- Header: Name, Code & Status --}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0">
+                            <p class="font-bold text-[14px] text-gray-900 truncate">{{ $leaveType->name }}</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5 font-mono">Code: {{ $leaveType->code }}</p>
+                        </div>
+                        <div class="shrink-0 flex flex-col items-end gap-1">
+                            @if($leaveType->is_active)
+                                <span class="inline-flex items-center text-[9px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-md">Active</span>
+                            @else
+                                <span class="inline-flex items-center text-[9px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded-md">Inactive</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Context: Settings --}}
+                    <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Days/Year</span>
+                            <span class="text-[14px] font-black text-gray-800">{{ $leaveType->default_days_per_year }}</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100/50 mt-1">
+                            @if($leaveType->is_paid)
+                                <span class="text-[9px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">Paid</span>
+                            @else
+                                <span class="text-[9px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded">Unpaid</span>
+                            @endif
+
+                            @if($leaveType->is_carry_forward)
+                                <span class="text-[9px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">Carry Forward</span>
+                            @endif
+
+                            <span class="text-[9px] font-extrabold uppercase tracking-wider text-gray-600 bg-white border border-gray-200 px-1.5 py-0.5 rounded ml-auto">
+                                Gender: {{ ucfirst($leaveType->applicable_gender) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1">
+                        <button @click="openEdit({{ $leaveType->toJson() }})" class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors" title="Edit">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                        <button @click="confirmDelete({{ $leaveType->id }}, '{{ addslashes($leaveType->name) }}')" class="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors" title="Delete">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                </div>
+            @empty
+                <div class="p-8 text-center text-gray-400 bg-white">
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="calendar-off" class="w-6 h-6 text-gray-300"></i>
+                        </div>
+                        <p class="font-semibold text-gray-500 mb-1 text-sm">No leave types configured</p>
+                        <p class="text-xs mt-1 text-gray-400">Set up leave categories for your organization.</p>
+                        <button @click="openCreate()" class="text-[11px] font-bold px-4 py-2 mt-3 rounded-lg text-white" style="background: var(--brand-600)">Add First Leave Type</button>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+
         @if($leaveTypes->hasPages())
             <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50">{{ $leaveTypes->links() }}</div>
         @endif

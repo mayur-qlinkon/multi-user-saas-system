@@ -100,7 +100,9 @@
 
         {{-- DATA TABLE --}}
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
                         <tr>
@@ -236,6 +238,97 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse ($returns as $return)
+                    @php
+                        $colorMap = [
+                            'green' => 'bg-green-50 text-green-700 border-green-200',
+                            'red'   => 'bg-red-50 text-red-600 border-red-200',
+                            'amber' => 'bg-amber-50 text-amber-600 border-amber-200',
+                            'gray'  => 'bg-gray-50 text-gray-600 border-gray-200',
+                        ];
+                        $c = $colorMap[$return->condition_color] ?? $colorMap['gray'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Return Number & Party --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <a href="{{ route('admin.challan-returns.show', $return->id) }}" class="font-extrabold text-[#108c2a] text-[14px] hover:underline block truncate">
+                                    {{ $return->return_number }}
+                                </a>
+                                <p class="font-bold text-gray-800 text-[12px] truncate mt-0.5">
+                                    {{ $return->challan?->party_name ?? 'Unknown (Record Missing)' }}
+                                </p>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider border {{ $c }} shrink-0">
+                                {{ $return->condition_label }}
+                            </span>
+                        </div>
+
+                        {{-- Details: Challan Ref & Quantities --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Ref Challan</span>
+                                @if($return->challan)
+                                    <a href="{{ route('admin.challans.show', $return->challan_id) }}" class="font-bold text-blue-600 text-[12px] hover:underline">
+                                        {{ $return->challan->challan_number }}
+                                    </a>
+                                @else
+                                    <span class="font-bold text-red-400 text-[12px] italic">Deleted (ID: {{ $return->challan_id }})</span>
+                                @endif
+                            </div>
+                            <div class="flex justify-between items-center pt-1 border-t border-gray-100/50">
+                                <div class="flex items-center gap-2 text-[11px] text-gray-600">
+                                    <span class="font-medium text-gray-500">Returned:</span>
+                                    <span class="font-black text-gray-800">{{ (float) $return->total_qty_returned }}</span>
+                                </div>
+                                @if($return->total_qty_damaged > 0)
+                                    <span class="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                                        {{ (float) $return->total_qty_damaged }} Damaged
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Footer: Date & Actions --}}
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3"></i> {{ $return->return_date->format('d M, Y') }}
+                            </span>
+                            <div class="flex items-center justify-end gap-2">
+                                @if(has_permission('challan_returns.view'))
+                                    <a href="{{ route('admin.challan-returns.show', $return->id) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors" title="View Return">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if(has_permission('challan_returns.download_pdf'))
+                                    <a href="{{ route('admin.challan-returns.pdf', $return->id) }}" target="_blank" class="w-8 h-8 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition-colors" title="Download PDF">
+                                        <i data-lucide="download" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if(has_permission('challan_returns.update'))
+                                    <a href="{{ route('admin.challan-returns.edit', $return->id) }}" class="w-8 h-8 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors" title="Edit Return Notes">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="undo-2" class="w-10 h-10 mb-3 opacity-20"></i>
+                            <p class="font-medium text-gray-500 text-[13px]">No challan returns found.</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
 
             @if ($returns->hasPages())

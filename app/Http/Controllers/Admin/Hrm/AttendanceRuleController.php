@@ -4,22 +4,62 @@ namespace App\Http\Controllers\Admin\Hrm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Hrm\AttendanceRule;
+use App\Models\Setting;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class AttendanceRuleController extends Controller
 {
+    public const HOLIDAY_POLICY_KEY = 'attendance.holiday_policy';
+
+    public const HOLIDAY_POLICY_OPTIONS = ['block', 'allow', 'approval'];
+
     public function index(Request $request)
     {
         $rules = AttendanceRule::ordered()
             ->paginate(25)
             ->withQueryString();
 
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'data' => $rules]);
+        $holidayPolicy = (string) get_setting(self::HOLIDAY_POLICY_KEY, 'block');
+
+        if (! in_array($holidayPolicy, self::HOLIDAY_POLICY_OPTIONS, true)) {
+            $holidayPolicy = 'block';
         }
 
-        return view('admin.hrm.attendance-rules.index', compact('rules'));
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $rules,
+                'holiday_policy' => $holidayPolicy,
+            ]);
+        }
+
+        return view('admin.hrm.attendance-rules.index', compact('rules', 'holidayPolicy'));
+    }
+
+    public function updateHolidayPolicy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'holiday_policy' => ['required', Rule::in(self::HOLIDAY_POLICY_OPTIONS)],
+        ]);
+
+        $companyId = Auth::user()->company_id;
+
+        Setting::updateOrCreate(
+            ['company_id' => $companyId, 'key' => self::HOLIDAY_POLICY_KEY],
+            ['value' => $validated['holiday_policy'], 'group' => 'attendance', 'type' => 'string']
+        );
+
+        Cache::forget("company_settings_{$companyId}");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Holiday attendance policy saved.',
+            'data' => ['holiday_policy' => $validated['holiday_policy']],
+        ]);
     }
 
     public function store(Request $request)

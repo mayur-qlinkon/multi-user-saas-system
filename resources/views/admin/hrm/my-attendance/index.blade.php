@@ -80,8 +80,8 @@
             </a>
         </form>
 
-        {{-- Table --}}
-        <div class="overflow-x-auto">
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left">
                 <thead>
                     <tr class="border-b border-gray-50">
@@ -137,6 +137,73 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+            @forelse($attendances as $att)
+                @php $sc = \App\Models\Hrm\Attendance::STATUS_COLORS[$att->status] ?? ['bg'=>'#f3f4f6','text'=>'#374151','dot'=>'#9ca3af']; @endphp
+                <div class="p-4 hover:bg-gray-50/50 transition-colors">
+                    
+                    {{-- Header: Date & Status --}}
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="text-[13px] font-bold text-gray-800">{{ $att->date->format('d M Y') }}</p>
+                            <p class="text-[11px] text-gray-400 mt-0.5">{{ $att->date->format('l') }}</p>
+                        </div>
+                        <div class="text-right flex flex-col items-end gap-1">
+                            <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                                style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}">
+                                <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: {{ $sc['dot'] }}"></span>
+                                {{ \App\Models\Hrm\Attendance::STATUS_LABELS[$att->status] ?? $att->status }}
+                            </span>
+                            @if($att->is_overridden)
+                                <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded inline-block">Edited</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Context: Check-in / Check-out --}}
+                    <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100 mb-3">
+                        <div>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Check In</p>
+                            <p class="text-[12px] font-bold text-gray-700">{{ $att->check_in_time ? $att->check_in_time->format('h:i A') : '—' }}</p>
+                        </div>
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-gray-300"></i>
+                        <div class="text-right">
+                            <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Check Out</p>
+                            <p class="text-[12px] font-bold text-gray-700">{{ $att->check_out_time ? $att->check_out_time->format('h:i A') : '—' }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Footer: Hours & Method --}}
+                    <div class="flex items-center justify-between text-[11px] pt-1">
+                        <div class="flex items-center gap-3">
+                            <div>
+                                <span class="text-gray-400 font-medium">Worked:</span>
+                                <span class="font-bold text-gray-700 ml-0.5">{{ $att->worked_hours ? number_format($att->worked_hours, 1) . ' hrs' : '—' }}</span>
+                            </div>
+                            @if($att->overtime_hours > 0)
+                            <div>
+                                <span class="text-gray-400 font-medium">OT:</span>
+                                <span class="font-black text-[#108c2a] ml-0.5">{{ number_format($att->overtime_hours, 1) }} hrs</span>
+                            </div>
+                            @endif
+                        </div>
+                        <span class="text-gray-400 capitalize font-medium flex items-center gap-1">
+                            <i data-lucide="smartphone" class="w-3 h-3"></i> {{ $att->check_in_method ?? '—' }}
+                        </span>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3 border border-gray-100">
+                        <i data-lucide="calendar-x" class="w-5 h-5 text-gray-300"></i>
+                    </div>
+                    <p class="font-semibold text-gray-500 mb-1">No attendance records</p>
+                    <p class="text-xs text-gray-400">No logs found for the selected period.</p>
+                </div>
+            @endforelse
         </div>
 
         @if($attendances->hasPages())

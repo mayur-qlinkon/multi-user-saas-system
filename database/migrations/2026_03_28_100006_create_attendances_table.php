@@ -32,6 +32,8 @@ return new class extends Migration
             $table->decimal('worked_hours', 5, 2)->nullable();
             $table->decimal('overtime_hours', 5, 2)->default(0);
             $table->enum('status', ['present', 'absent', 'late', 'half_day', 'on_leave', 'holiday', 'week_off'])->default('present');
+            $table->boolean('is_holiday')->default(false);
+            $table->boolean('working_on_holiday')->default(false);
 
             // Admin Override
             $table->boolean('is_overridden')->default(false);

@@ -173,7 +173,9 @@
 
     {{-- Balance Table --}}
     @if($balances->isNotEmpty())
-    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-x-auto w-full pb-1">
+    
+    {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+    <div class="hidden md:block bg-white border border-gray-100 rounded-2xl shadow-sm overflow-x-auto w-full pb-1">
         <table class="w-full min-w-[800px] balance-table">
             <thead>
                 <tr>
@@ -237,6 +239,77 @@
                 @endforeach
             </tbody>
         </table>
+    </div>
+
+    {{-- 📱 MOBILE VIEW (CARDS) --}}
+    <div class="md:hidden divide-y divide-gray-50 border border-gray-100 rounded-2xl bg-white mt-4 shadow-sm">
+        @foreach($balances as $balance)
+            @php
+                $available = $balance->available;
+                $chipClass = $available <= 0 ? 'avail-zero' : ($available <= 3 ? 'avail-low' : 'avail-positive');
+            @endphp
+            <div class="p-4 flex flex-col gap-3 hover:bg-gray-50/50 transition-colors">
+                
+                {{-- Header: Employee & Available Status --}}
+                <div class="flex justify-between items-start gap-2">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-full bg-brand-50 text-brand-600 font-bold text-sm flex items-center justify-center shrink-0">
+                            {{ strtoupper(substr($balance->employee->user->name ?? '?', 0, 1)) }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-bold text-[14px] text-gray-900 truncate">{{ $balance->employee->user->name ?? '—' }}</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5 truncate">{{ $balance->employee->employee_code ?? "" }}</p>
+                        </div>
+                    </div>
+                    <div class="shrink-0 flex flex-col items-end">
+                        <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Available</span>
+                        <span class="avail-chip {{ $chipClass }} !text-[12px] !px-2 !py-0.5">{{ number_format($available, 1) }}</span>
+                    </div>
+                </div>
+
+                {{-- Context: Leave Type & Breakdown Grid --}}
+                <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                    <div class="flex justify-between items-center border-b border-gray-100/50 pb-1.5 mb-0.5">
+                        <span class="text-[12px] font-bold text-gray-800">{{ $balance->leaveType->name }} <span class="text-gray-400 text-[10px] font-mono ml-1">{{ $balance->leaveType->code }}</span></span>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-2 text-center pt-1">
+                        <div>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase">Alloc</p>
+                            <p class="text-[11px] font-semibold text-gray-700">{{ number_format($balance->allocated, 1) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase">C.Fwd</p>
+                            <p class="text-[11px] font-semibold text-gray-500">{{ number_format($balance->carried_forward, 1) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase">Adj</p>
+                            @if($balance->adjustment != 0)
+                                <p class="text-[11px] font-semibold {{ $balance->adjustment > 0 ? 'text-green-600' : 'text-red-500' }}">
+                                    {{ $balance->adjustment > 0 ? '+' : '' }}{{ number_format($balance->adjustment, 1) }}
+                                </p>
+                            @else
+                                <p class="text-[11px] font-semibold text-gray-400">0.0</p>
+                            @endif
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-bold text-gray-400 uppercase">Used</p>
+                            <p class="text-[11px] font-semibold text-red-500">{{ number_format($balance->used, 1) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="pt-1">
+                    <button @click="openEdit({{ $balance->id }}, {{ $balance->allocated }}, {{ $balance->adjustment }}, '{{ addslashes($balance->employee->user->name ?? '') }}', '{{ addslashes($balance->leaveType->name) }}')"
+                            class="flex items-center justify-center gap-1.5 w-full bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg px-3 py-2.5 transition-colors text-[11px] font-bold uppercase tracking-wider"
+                            title="Edit balance">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Edit Balance
+                    </button>
+                </div>
+            </div>
+        @endforeach
     </div>
     @endif
 

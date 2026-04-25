@@ -138,8 +138,11 @@
     <div class="pb-10">
         {{-- ACTION BAR (Hidden on Print) --}}        
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
-            <div>
-                <h1 class="text-xl font-bold text-gray-500 uppercase tracking-widest">Invoice Details</h1>
+            <div class="w-full sm:w-auto">
+                <x-admin.breadcrumb :items="[
+                        ['label' => 'Invoices', 'url' => route('admin.invoices.index')],
+                        ['label' => 'Invoice Details'],
+                    ]" />
             </div>
 
             {{-- UI Fix: Allow buttons to wrap cleanly on mobile --}}

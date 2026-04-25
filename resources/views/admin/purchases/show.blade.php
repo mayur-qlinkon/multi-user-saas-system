@@ -2,7 +2,7 @@
 
 @section('title', 'Purchase Details: ' . $purchase->purchase_number)
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Show / Purchases</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Purchase Details</h1>
 @endsection
 @push('styles')
     <style>

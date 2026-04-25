@@ -124,7 +124,7 @@
                         <img :src="activeImage || '{{ $product->primary_image_url }}'" alt="{{ $product->name }}"
                             class="w-full h-full object-cover mix-blend-multiply transition-all duration-300"
                             style="position: absolute; inset: 0; width: 100%; height: 100%;"
-                            onerror="this.src='{{ asset('assets/images/no-product.webp') }}'">
+                            onerror="this.onerror=null; this.src='{{ asset('assets/images/no-product.webp') }}'">
                     </template>
 
                     {{-- YouTube embed — shown when video thumbnail clicked ── --}}
@@ -538,7 +538,7 @@
                                         <img src="{{ $rel->primary_image_url }}" alt="{{ $rel->name }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             loading="lazy"
-                                            onerror="this.src='{{ asset('assets/images/no-product.webp') }}'">
+                                            onerror="this.onerror=null; this.src='{{ asset('assets/images/no-product.webp') }}'">
                                     </div>
                                     <div class="p-3">
                                         <p

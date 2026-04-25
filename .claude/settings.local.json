@@ -67,7 +67,13 @@
       "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $app = require '\\\\''bootstrap/app.php'\\\\''; $app->make\\('\\\\''Illuminate\\\\Contracts\\\\Console\\\\Kernel'\\\\''\\)->bootstrap\\(\\); app\\('\\\\''view'\\\\''\\)->getEngineResolver\\(\\)->resolve\\('\\\\''blade'\\\\''\\)->getCompiler\\(\\)->compile\\(resource_path\\('\\\\''views/admin/clients.blade.php'\\\\''\\)\\); echo '\\\\''OK'\\\\'' . PHP_EOL;')",
       "Bash(php -l resources/views/admin/invoices/create.blade.php)",
       "Bash(Select-String \"invoice_items|invoice_return\")",
-      "Bash(php -l resources/views/admin/storefront-sections/products.blade.php)"
+      "Bash(php -l resources/views/admin/storefront-sections/products.blade.php)",
+      "Bash(xargs ls *)",
+      "Bash(php /c/Users/qlinkongraphics/Desktop/MyLab/qlink-saas/artisan make:migration add_holiday_policy_fields_to_attendances_table --no-interaction --table=attendances)",
+      "Bash(git stash *)",
+      "Bash(php -l /c/Users/qlinkongraphics/Desktop/MyLab/qlink-saas/app/Services/Hrm/AttendanceService.php /c/Users/qlinkongraphics/Desktop/MyLab/qlink-saas/app/Http/Controllers/Admin/Hrm/AttendanceController.php /c/Users/qlinkongraphics/Desktop/MyLab/qlink-saas/app/Http/Controllers/Admin/Hrm/AttendanceRuleController.php /c/Users/qlinkongraphics/Desktop/MyLab/qlink-saas/app/Models/Hrm/Attendance.php /c/Users/qlinkongraphics/Desktop/MyLab/qlink-saas/database/migrations/2026_04_24_140327_add_holiday_policy_fields_to_attendances_table.php /c/Users/qlinkongraphics/Desktop/MyLab/qlink-saas/tests/Feature/Hrm/AttendanceScanStoreTest.php)",
+      "Bash(php -l \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlink-saas\\\\app\\\\Services\\\\Hrm\\\\AttendanceService.php\")",
+      "Bash(php -l \"C:\\\\Users\\\\qlinkongraphics\\\\Desktop\\\\MyLab\\\\qlink-saas\\\\tests\\\\Feature\\\\Hrm\\\\AttendanceScanStoreTest.php\")"
     ]
   }
 }

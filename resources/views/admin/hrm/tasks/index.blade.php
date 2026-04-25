@@ -192,7 +192,9 @@
 
     {{-- Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
+        
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full min-w-[800px]">
                 <thead>
                     <tr class="border-b border-gray-100">
@@ -355,6 +357,120 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+            @forelse($tasks as $task)
+                @php
+                    $sc  = $statusColors[$task->status] ?? $statusColors['pending'];
+                    $pc  = $priorityColors[$task->priority] ?? $priorityColors['low'];
+                    $isOverdue = $task->is_overdue;
+                    $visibleAssignees = $task->assignees->take(3);
+                    $extraCount = $task->assignees->count() - $visibleAssignees->count();
+                @endphp
+                <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                    
+                    {{-- Header: Title & Priority --}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[14px] font-bold text-gray-900 leading-tight">{{ $task->title }}</p>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                @if($task->project)
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{{ $task->project }}</span>
+                                @endif
+                                @if($task->category)
+                                    @if($task->project)<span class="text-[10px] text-gray-300">·</span>@endif
+                                    <span class="text-[10px] text-gray-500 font-medium">{{ $task->category }}</span>
+                                @endif
+                            </div>
+                        </div>
+                        <span class="shrink-0 inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                              style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
+                            <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $pc['dot'] ?? $pc['text'] }}"></span>
+                            {{ \App\Models\Hrm\HrmTask::PRIORITY_LABELS[$task->priority] ?? $task->priority }}
+                        </span>
+                    </div>
+
+                    {{-- Context: Status, Due Date & Assignees --}}
+                    <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                        <div class="flex flex-col gap-1.5">
+                            <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md w-fit border border-white/50"
+                                  style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}">
+                                <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $sc['dot'] ?? $sc['text'] }}"></span>
+                                {{ \App\Models\Hrm\HrmTask::STATUS_LABELS[$task->status] ?? $task->status }}
+                            </span>
+                            @if($task->due_date)
+                                <div class="text-[10px] {{ $isOverdue && !in_array($task->status, ['completed', 'cancelled']) ? 'text-red-500 font-bold' : 'text-gray-500 font-medium' }} flex items-center gap-1 mt-0.5">
+                                    <i data-lucide="calendar" class="w-3 h-3"></i>
+                                    {{ $task->due_date->format('d M Y') }}
+                                    @if($isOverdue && !in_array($task->status, ['completed', 'cancelled']))
+                                        <span class="bg-red-100 text-red-600 px-1 rounded uppercase text-[8px] ml-0.5 tracking-wide">Late</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="shrink-0">
+                            @if($task->assignees->count())
+                                <div class="avatar-stack justify-end">
+                                    @foreach($visibleAssignees as $emp)
+                                        <div class="avatar-item" title="{{ $emp->user->name }}"
+                                            style="background: {{ ['#eff6ff','#f0fdf4','#fdf4ff','#fffbeb','#fef2f2'][$loop->index % 5] }}">
+                                            {{ strtoupper(substr($emp->user->name, 0, 1)) }}
+                                        </div>
+                                    @endforeach
+                                    @if($extraCount > 0)
+                                        <div class="avatar-item avatar-more">+{{ $extraCount }}</div>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="text-[10px] text-gray-400 italic">Unassigned</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1">
+                        @if(has_permission('hrm_tasks.view'))
+                            <a href="{{ route('admin.hrm.tasks.show', $task) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors" title="View">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                        @endif
+                        
+                        @if(has_permission('hrm_tasks.change_status'))
+                            <button onclick="quickStatus({{ $task->id }}, '{{ $task->status }}')" class="w-8 h-8 flex items-center justify-center rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors" title="Update Status">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            </button>
+                        @endif
+                        
+                        @if(has_permission('hrm_tasks.update'))
+                            <a href="{{ route('admin.hrm.tasks.edit', $task) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-amber-200 text-amber-500 hover:bg-amber-50 transition-colors" title="Edit">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </a>
+                        @endif
+                        
+                        @if(has_permission('hrm_tasks.delete'))
+                            <button onclick="confirmDelete({{ $task->id }}, '{{ addslashes($task->title) }}')" class="w-8 h-8 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center bg-white">
+                    <div class="flex flex-col items-center justify-center py-6 text-center">
+                        <div class="w-14 h-14 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                            <i data-lucide="clipboard" class="w-7 h-7 text-gray-300"></i>
+                        </div>
+                        <p class="font-bold text-gray-600 mb-1 text-sm">No tasks found</p>
+                        <p class="text-xs text-gray-400 mb-4">Create your first task to get started</p>
+                        <a href="{{ route('admin.hrm.tasks.create') }}" class="text-xs font-bold px-4 py-2 rounded-lg text-white" style="background: var(--brand-600)">
+                            Create Task
+                        </a>
+                    </div>
+                </div>
+            @endforelse
         </div>
 
         @if($tasks->hasPages())

@@ -4,7 +4,7 @@
         <i data-lucide="copy" class="w-3.5 h-3.5 text-gray-500"></i>
         <p class="text-[12px] font-black text-gray-700">Handle Duplicates Within File</p>
     </div>
-    <div class="grid grid-cols-3 gap-2">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <label class="flex items-start gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors"
             :class="duplicateMode === 'skip' ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200 bg-white hover:bg-gray-50'">
             <input type="radio" name="duplicate_mode" value="skip" x-model="duplicateMode" class="mt-0.5 hidden" checked>

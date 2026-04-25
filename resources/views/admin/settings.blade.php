@@ -820,8 +820,18 @@
                             </div>
                             <div>
                                 <label class="field-label">Company Address (Public)</label>
-                                <input type="text" name="address" value="{{ get_setting('address') }}"
+                                <input type="text" name="storefront_address" value="{{ get_setting('storefront_address') }}"
                                     placeholder="Shown on contact page" class="field-input">
+                            </div>
+                            <div>
+                                <label class="field-label">Support Email</label>
+                                <input type="email" name="support_email" value="{{ get_setting('support_email') }}"
+                                    placeholder="support@yourstore.com" class="field-input">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="field-label">Business Hours</label>
+                                <textarea name="business_hours" rows="3" placeholder="e.g., Mon-Fri: 9 AM - 6 PM&#10;Sat-Sun: Closed" class="field-input resize-y">{{ get_setting('business_hours') }}</textarea>
+                                <p class="text-[10px] text-gray-400 mt-1">These hours will be displayed on your public storefront contact page.</p>
                             </div>
                         </div>
 

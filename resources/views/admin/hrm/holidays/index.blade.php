@@ -108,71 +108,71 @@
     ════════════════════════════════════════════════════════ --}}
     <div class="bg-white border border-gray-100 rounded-2xl px-4 py-3 mb-4">
         <form method="GET" action="{{ route('admin.hrm.holidays.index') }}" id="holiday-filter-form">
-            <div class="flex items-center gap-2 flex-wrap">
+            <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+                
+                {{-- Filters --}}
+                <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full xl:w-auto">
+                    <div class="relative w-full sm:w-auto sm:flex-1 min-w-[200px]">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                        <input type="text" x-model="searchQuery" placeholder="Search holidays…"
+                            class="w-full border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-[13px] text-gray-700 focus:border-[#108c2a] focus:ring-1 focus:ring-[#108c2a] outline-none transition-all placeholder-gray-400 bg-white">
+                    </div>
 
-                {{-- Search ── --}}
-                <div class="relative flex-1 min-w-[160px]">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"></i>
-                    <input type="text" x-model="searchQuery" placeholder="Search holidays…"
-                        class="field-input pl-9 !py-2 !text-[13px]">
+                    <select name="year" class="border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-700 outline-none bg-white focus:border-[#108c2a]" onchange="this.form.submit()">
+                        @for($y = now()->year - 1; $y <= now()->year + 2; $y++)
+                            <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endfor
+                    </select>
+
+                    <select name="month" class="border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-700 outline-none bg-white focus:border-[#108c2a]" onchange="this.form.submit()">
+                        <option value="0" {{ $selectedMonth == 0 ? 'selected' : '' }}>All Months</option>
+                        @foreach(['January','February','March','April','May','June','July','August','September','October','November','December'] as $mi => $mn)
+                            <option value="{{ $mi + 1 }}" {{ $selectedMonth == $mi + 1 ? 'selected' : '' }}>{{ $mn }}</option>
+                        @endforeach
+                    </select>
+
+                    <select name="type" class="border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-gray-700 outline-none bg-white focus:border-[#108c2a]" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        @foreach($typeLabels as $val => $label)
+                            <option value="{{ $val }}" {{ $selectedType === $val ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+
+                    @if($selectedType || $selectedMonth)
+                        <a href="{{ route('admin.hrm.holidays.index', ['year' => $selectedYear]) }}"
+                           class="text-[12px] font-bold px-3 py-2.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors whitespace-nowrap flex items-center justify-center gap-1.5">
+                           <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear
+                        </a>
+                    @endif
                 </div>
 
-                {{-- Year ── --}}
-                <select name="year" class="field-input !w-auto !py-2 !text-[13px]" onchange="this.form.submit()">
-                    @for($y = now()->year - 1; $y <= now()->year + 2; $y++)
-                        <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endfor
-                </select>
+                {{-- Actions --}}
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                        <button type="button" @click="view = 'calendar'"
+                            :class="view === 'calendar' ? 'bg-white shadow-sm text-brand-600 font-bold' : 'text-gray-500 hover:text-gray-700'" 
+                            class="px-3 py-2 rounded-md text-sm transition-all flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Calendar</span>
+                        </button>
+                        <button type="button" @click="view = 'list'"
+                            :class="view === 'list' ? 'bg-white shadow-sm text-brand-600 font-bold' : 'text-gray-500 hover:text-gray-700'" 
+                            class="px-3 py-2 rounded-md text-sm transition-all flex items-center gap-1.5">
+                            <i data-lucide="list" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">List</span>
+                        </button>
+                    </div>
 
-                {{-- Month ── --}}
-                <select name="month" class="field-input !w-auto !py-2 !text-[13px]" onchange="this.form.submit()">
-                    <option value="0" {{ $selectedMonth == 0 ? 'selected' : '' }}>All Months</option>
-                    @foreach(['January','February','March','April','May','June','July','August','September','October','November','December'] as $mi => $mn)
-                        <option value="{{ $mi + 1 }}" {{ $selectedMonth == $mi + 1 ? 'selected' : '' }}>{{ $mn }}</option>
-                    @endforeach
-                </select>
-
-                {{-- Type ── --}}
-                <select name="type" class="field-input !w-auto !py-2 !text-[13px]" onchange="this.form.submit()">
-                    <option value="">All Types</option>
-                    @foreach($typeLabels as $val => $label)
-                        <option value="{{ $val }}" {{ $selectedType === $val ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-
-                @if($selectedType || $selectedMonth)
-                    <a href="{{ route('admin.hrm.holidays.index', ['year' => $selectedYear]) }}"
-                       class="text-[11px] font-bold px-3 py-2 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors whitespace-nowrap">
-                       Clear
-                    </a>
-                @endif
-
-                {{-- Spacer ── --}}
-                <div class="flex-1 hidden sm:block"></div>
-
-                {{-- View Toggle ── --}}
-                <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-                    <button type="button" @click="view = 'calendar'"
-                        :class="view === 'calendar' ? 'active' : ''" class="view-btn">
-                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                        <span class="hidden sm:inline">Calendar</span>
-                    </button>
-                    <button type="button" @click="view = 'list'"
-                        :class="view === 'list' ? 'active' : ''" class="view-btn">
-                        <i data-lucide="list" class="w-3.5 h-3.5"></i>
-                        <span class="hidden sm:inline">List</span>
-                    </button>
+                    @if(has_permission('holidays.create'))
+                        <button type="button" @click="openCreate()"
+                            class="inline-flex items-center gap-1.5 text-[13px] font-bold px-4 py-2.5 rounded-lg text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+                            style="background: var(--brand-600)">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Add Holiday</span>
+                            <span class="sm:hidden">Add</span>
+                        </button>
+                    @endif
                 </div>
-
-                {{-- Add Holiday ── --}}
-                @if(has_permission('holidays.create'))
-                    <button type="button" @click="openCreate()"
-                        class="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-lg text-white hover:opacity-90 transition-opacity whitespace-nowrap"
-                        style="background: var(--brand-600)">
-                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                        Add Holiday
-                    </button>
-                @endif
 
             </div>
         </form>
@@ -306,10 +306,12 @@
          x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
 
         <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full block md:table">
-                    <thead class="hidden md:table-header-group">
-                        <tr class="border-b border-gray-100">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full whitespace-nowrap">
+                    <thead>
+                        <tr class="border-b border-gray-100 bg-gray-50">
                             <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
                             <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Holiday</th>
                             <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Date</th>
@@ -319,54 +321,38 @@
                             <th class="px-4 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="block md:table-row-group p-4 md:p-0">
+                    <tbody class="divide-y divide-gray-100">
                         @forelse($holidays as $holiday)
                             @php $tc = $typeColors[$holiday->type] ?? ['bg' => '#f3f4f6', 'text' => '#374151', 'border' => '#e5e7eb']; @endphp
-                            <tr class="block md:table-row bg-white border border-gray-200 md:border-0 md:border-b md:border-gray-100 rounded-xl md:rounded-none mb-4 md:mb-0 p-4 md:p-0 shadow-sm md:shadow-none table-row"
-                                x-show="matchesSearch('{{ strtolower($holiday->name) }}')">
-
-                                <td class="hidden md:table-cell px-5 py-3 text-[12px] font-bold text-gray-400">{{ $holidays->firstItem() + $loop->index }}</td>
-
-                                <td class="block md:table-cell md:px-5 md:py-3 mb-3 md:mb-0">
-                                    <p class="text-[14px] md:text-[13px] font-bold text-gray-800">{{ $holiday->name }}</p>
+                            <tr class="hover:bg-gray-50/50 transition-colors" x-show="matchesSearch('{{ strtolower(addslashes($holiday->name)) }}')">
+                                <td class="px-5 py-3 text-[12px] font-bold text-gray-400">{{ $holidays->firstItem() + $loop->index }}</td>
+                                <td class="px-5 py-3">
+                                    <p class="text-[13px] font-bold text-gray-800">{{ $holiday->name }}</p>
                                     @if($holiday->description)
                                         <p class="text-[11px] text-gray-400 mt-0.5 truncate max-w-[250px]">{{ $holiday->description }}</p>
                                     @endif
                                 </td>
-
-                                <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 border-b border-gray-50 md:border-none pb-2 md:pb-0">
-                                    <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</span>
-                                    <div class="text-right md:text-left">
-                                        <p class="text-[12px] font-bold text-gray-700">{{ $holiday->date->format('d M Y') }}</p>
-                                        @if($holiday->end_date)
-                                            <p class="text-[10px] text-gray-400">to {{ $holiday->end_date->format('d M Y') }} ({{ $holiday->total_days }} days)</p>
-                                        @endif
-                                    </div>
+                                <td class="px-3 py-3">
+                                    <p class="text-[12px] font-bold text-gray-700">{{ $holiday->date->format('d M Y') }}</p>
+                                    @if($holiday->end_date)
+                                        <p class="text-[10px] text-gray-400">to {{ $holiday->end_date->format('d M Y') }} ({{ $holiday->total_days }} days)</p>
+                                    @endif
                                 </td>
-
-                                <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
-                                    <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Day</span>
-                                    <span class="text-[12px] text-gray-600">{{ $holiday->date->format('l') }}</span>
-                                </td>
-
-                                <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-2 md:mb-0 md:text-center border-b border-gray-50 md:border-none pb-2 md:pb-0">
-                                    <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Type</span>
+                                <td class="px-3 py-3 text-center text-[12px] text-gray-600">{{ $holiday->date->format('l') }}</td>
+                                <td class="px-3 py-3 text-center">
                                     <span class="inline-flex text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md border"
                                         style="background: {{ $tc['bg'] }}; color: {{ $tc['text'] }}; border-color: {{ $tc['border'] }}">
                                         {{ $holiday->type_label }}
                                     </span>
                                 </td>
-
-                                <td class="flex justify-between items-center md:table-cell md:px-3 md:py-3 mb-4 md:mb-0 md:text-center">
-                                    <span class="md:hidden text-[11px] font-bold text-gray-400 uppercase tracking-wider">Paid</span>
+                                <td class="px-3 py-3 text-center">
                                     @if($holiday->is_paid)
                                         <span class="text-[10px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded">Yes</span>
                                     @else
                                         <span class="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">No</span>
                                     @endif
                                 </td>
-
-                                <td class="flex justify-end items-center md:table-cell pt-3 md:pt-0 border-t border-gray-100 md:border-none md:px-4 md:py-3 md:text-right">
+                                <td class="px-4 py-3 text-right">
                                     <div class="flex items-center justify-end gap-1.5">
                                         @if(has_permission('holidays.update'))
                                         <button @click="openEdit({{ $holiday->toJson() }})"
@@ -401,6 +387,61 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-gray-50">
+                @forelse($holidays as $holiday)
+                    @php $tc = $typeColors[$holiday->type] ?? ['bg' => '#f3f4f6', 'text' => '#374151', 'border' => '#e5e7eb']; @endphp
+                    <div class="p-4 bg-white hover:bg-gray-50/50 transition-colors" x-show="matchesSearch('{{ strtolower(addslashes($holiday->name)) }}')">
+                        
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-gray-900 text-[15px] leading-tight">{{ $holiday->name }}</h4>
+                                <div class="text-[12px] text-gray-600 font-semibold mt-1">
+                                    {{ $holiday->date->format('d M Y') }} <span class="text-gray-400 font-medium">({{ $holiday->date->format('l') }})</span>
+                                </div>
+                                @if($holiday->end_date)
+                                    <p class="text-[11px] text-gray-400 mt-0.5">to {{ $holiday->end_date->format('d M Y') }} ({{ $holiday->total_days }} days)</p>
+                                @endif
+                            </div>
+                            <div class="shrink-0 flex flex-col items-end gap-1.5">
+                                <span class="inline-flex text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border"
+                                    style="background: {{ $tc['bg'] }}; color: {{ $tc['text'] }}; border-color: {{ $tc['border'] }}">
+                                    {{ $holiday->type_label }}
+                                </span>
+                                @if($holiday->is_paid)
+                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-md">Paid: Yes</span>
+                                @else
+                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md">Paid: No</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-3 mt-3 border-t border-gray-100/50">
+                            @if(has_permission('holidays.update'))
+                            <button @click="openEdit({{ $holiday->toJson() }})"
+                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 transition-colors" title="Edit">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            @endif
+                            @if(has_permission('holidays.delete'))
+                            <button @click="confirmDelete({{ $holiday->id }}, '{{ addslashes($holiday->name) }}')"
+                                class="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                            @endif
+                        </div>
+                        
+                    </div>
+                @empty
+                    <div class="p-8 bg-white text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="calendar-heart" class="w-10 h-10 mb-3 text-gray-300 opacity-50"></i>
+                            <p class="font-semibold text-gray-500 text-sm mb-1">No holidays found</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
 
             @if($holidays->hasPages())

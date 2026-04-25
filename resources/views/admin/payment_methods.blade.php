@@ -63,7 +63,8 @@
             </div>
 
             {{-- Table --}}
-            <div class="overflow-x-auto -mx-4 sm:mx-0">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto -mx-4 sm:mx-0">
                 <table id="sortable-table" class="w-full text-left border-collapse min-w-[720px]">
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-200">
@@ -179,6 +180,100 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-100 bg-white border-t border-gray-100">
+                <template x-for="row in filteredMethods" :key="row.id">
+                    <div class="sortable-row p-4 flex flex-col gap-3 hover:bg-gray-50/50 transition-colors" :data-id="row.id">
+                        
+                        {{-- Header: Drag Handle, Name, Status --}}
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="mt-1">
+                                    <span :class="search === '' ? 'drag-handle text-gray-400 hover:text-brand-500 cursor-move' : 'drag-disabled text-gray-300'" :title="search === '' ? 'Drag to reorder' : 'Clear search to reorder'">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-[18px] h-[18px] inline-block">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5M3.75 15h16.5" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-gray-900 text-[14px] leading-tight truncate" x-text="row.label"></div>
+                                    <div class="text-[11px] text-gray-500 mt-1 font-medium flex items-center gap-1">
+                                        <span class="bg-gray-100 rounded px-1.5 py-0.5 font-mono" x-text="row.slug"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="shrink-0 flex flex-col items-end gap-1">
+                                <template x-if="row.is_active">
+                                    <span class="inline-flex items-center gap-1.5 bg-brand-50 text-brand-600 border border-brand-200 rounded-md px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-brand-500 shadow-[0_0_0_2px_rgba(16,185,129,0.25)]"></span> Active
+                                    </span>
+                                </template>
+                                <template x-if="!row.is_active">
+                                    <span class="inline-flex items-center gap-1.5 bg-gray-50 text-gray-500 border border-gray-200 rounded-md px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> Inactive
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Details: Gateway & Type --}}
+                        <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100 ml-7 mt-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gateway</span>
+                                <template x-if="row.gateway">
+                                    <span class="bg-blue-50 text-blue-700 border border-blue-200 rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase inline-block" x-text="row.gateway.toUpperCase()"></span>
+                                </template>
+                                <template x-if="!row.gateway">
+                                    <span class="bg-gray-50 text-gray-400 border border-gray-200 rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase inline-block">N/A</span>
+                                </template>
+                            </div>
+
+                            <div>
+                                <template x-if="row.is_online">
+                                    <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                                        Online
+                                    </span>
+                                </template>
+                                <template x-if="!row.is_online">
+                                    <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                                        Offline
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1 pl-7">
+                            @if(has_permission('payment_methods.update'))
+                                <button @click="openModal(row)" title="Edit" class="w-8 h-8 rounded-lg border border-gray-200 bg-white text-brand-500 hover:bg-brand-500 hover:text-white hover:border-brand-500 flex items-center justify-center transition-colors">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+                            @if(has_permission('payment_methods.delete'))
+                                <button @click="deleteMethod(row.id)" title="Delete" class="w-8 h-8 rounded-lg border border-gray-200 bg-white text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 flex items-center justify-center transition-colors">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+                        </div>
+
+                    </div>
+                </template>
+
+                {{-- Mobile Empty state --}}
+                <div x-show="filteredMethods.length === 0" class="p-8 text-center text-sm text-gray-400 bg-white">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                        <div class="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center mb-1">
+                            <i data-lucide="credit-card" class="w-6 h-6 text-brand-500"></i>
+                        </div>
+                        <h3 class="text-[14px] font-bold text-gray-900" x-text="search ? 'No results found' : 'No payment methods yet'"></h3>
+                        <p class="text-xs text-gray-500" x-text="search ? 'Try a different search term.' : 'Click Add Method to create your first payment gateway.'"></p>
+                        <button x-show="!search" @click="openModal()" class="mt-3 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl text-[12px] font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add First Method
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 

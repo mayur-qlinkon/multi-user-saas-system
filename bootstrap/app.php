@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function () {
             Route::middleware('web')
+                ->group(base_path('routes/custom_domain.php'));
+            Route::middleware('web')
                 ->group(base_path('routes/admin.php'));
 
             Route::middleware('web')
@@ -28,8 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')
                 ->group(base_path('routes/storefront.php'));
         }
-    )
+    ) 
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
         $middleware->validateCsrfTokens(except: [
             '*/webhooks/razorpay',
         ]);
@@ -41,6 +44,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'store.exists' => EnsureStoreExists::class,
             'store.session' => EnsureValidStoreSession::class,
             'announcements' => CheckPendingAnnouncements::class,
+            'custom.domain' => \App\Http\Middleware\ResolveCustomDomain::class,
+
             'customer' => IsCustomer::class,
         ]);
     })

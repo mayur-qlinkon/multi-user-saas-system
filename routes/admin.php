@@ -211,7 +211,7 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
                 Route::post('/', 'add')->name('add');
                 Route::delete('/{productId}', 'remove')->name('remove');
                 Route::post('/reorder', 'reorder')->name('reorder');
-        });
+            });
 
         // ── Orders ──
         Route::middleware('permission:orders.view')->group(function () {
@@ -566,6 +566,8 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
             });
 
             // ── Attendance Rules (Single Page CRUD) ──
+            Route::post('attendance-rules/holiday-policy', [HrmAttendanceRuleController::class, 'updateHolidayPolicy'])
+                ->name('attendance-rules.holiday-policy');
             Route::resource('attendance-rules', HrmAttendanceRuleController::class)->except(['create', 'show', 'edit']);
 
             // ── Attendance Settings ──

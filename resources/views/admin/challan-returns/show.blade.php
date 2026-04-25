@@ -79,8 +79,11 @@
     <div class="pb-10">
         {{-- ACTION BAR (Hidden on Print) --}}
         <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
-            <div>
-                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Challan Return</h1>
+            <div class="w-full sm:w-auto">
+                <x-admin.breadcrumb :items="[
+                    ['label' => 'Challan Return', 'url' => route('admin.challan-returns.index')],
+                    ['label' => 'Challan Return Details'],
+                ]" />
             </div>
 
             <div class="flex flex-wrap items-center gap-2">

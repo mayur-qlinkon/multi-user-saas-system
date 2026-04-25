@@ -96,7 +96,8 @@
 
         {{-- Data Table --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="overflow-x-auto">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50/80 border-b border-gray-100">
@@ -227,6 +228,110 @@
                         @endforelse
                     </tbody>
                </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+                @forelse ($users as $user)
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3 group">
+                        
+                        {{-- Header: Avatar, Name, Email & Status --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 border border-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold shrink-0">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[14px] font-bold text-gray-900 truncate">{{ $user->name }}</div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5 truncate">{{ $user->email }}</div>
+                                </div>
+                            </div>
+                            <div class="shrink-0 flex flex-col items-end gap-1">
+                                @if ($user->status === 'active')
+                                    <span class="bg-green-100 text-green-700 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Active</span>
+                                @else
+                                    <span class="bg-red-100 text-red-600 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Inactive</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Details: Role & Stores --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Role</span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100">
+                                    {{ $user->roles->first()->name ?? 'No Role' }}
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-start justify-between pt-1 border-t border-gray-100/50 mt-0.5">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider pt-0.5">Stores</span>
+                                <div class="text-right">
+                                    @php
+                                        $totalSystemStores = $stores->count();
+                                        $userStoreCount = $user->stores->count();
+                                    @endphp
+                                    
+                                    @if($userStoreCount === 0)
+                                        <span class="text-gray-400 text-[11px] italic font-medium pt-0.5">No Access</span>
+                                    @elseif($userStoreCount === $totalSystemStores && $totalSystemStores > 0)
+                                        <span class="inline-flex items-center gap-1 bg-brand-50 text-brand-700 border border-brand-200 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest shadow-sm">
+                                            <i data-lucide="globe" class="w-3 h-3"></i> All Stores
+                                        </span>
+                                    @else
+                                        <div class="flex flex-wrap justify-end gap-1.5">
+                                            @foreach($user->stores->take(2) as $store)
+                                                <span class="inline-flex items-center gap-1 bg-white text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shadow-sm">
+                                                    <i data-lucide="store" class="w-2.5 h-2.5 text-brand-500"></i> {{ $store->name }}
+                                                </span>
+                                            @endforeach
+                                            @if($userStoreCount > 2)
+                                                @php $hiddenStores = $user->stores->skip(2)->pluck('name')->implode(', '); @endphp
+                                                <span title="Also assigned to: {{ $hiddenStores }}" class="inline-flex items-center text-[9px] font-black text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100">
+                                                    +{{ $userStoreCount - 2 }} More
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1">
+                            @if(has_permission('users.view'))
+                                <a href="{{ route('admin.users.show', $user->id) }}" class="w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-200 hover:text-gray-800 flex items-center justify-center transition-colors" title="View Staff Details">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if (auth()->id() !== $user->id && ($user->roles->first()->slug ?? '') !== 'owner')
+                                @if(has_permission('users.update'))
+                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 flex items-center justify-center transition-colors" title="Edit Staff">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if(has_permission('users.delete'))
+                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline-block delete-staff-form" data-name="{{ addslashes($user->name) }}">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors" title="Remove Staff">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="users" class="w-12 h-12 mb-3 text-gray-300 opacity-50"></i>
+                            <p class="font-bold text-sm text-gray-600 mb-1">No Staff Members Found</p>
+                            <p class="text-xs">Add your first cashier or manager to get started.</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
             
             {{-- Pagination --}}

@@ -109,7 +109,9 @@
 
         {{-- DATA TABLE --}}
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead
                         class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
@@ -255,6 +257,103 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse ($returns as $return)
+                    @php
+                        $typeColors = [
+                            'refund' => 'text-purple-600',
+                            'credit_note' => 'text-indigo-600',
+                            'replacement' => 'text-orange-600',
+                        ];
+                        $tColor = $typeColors[$return->return_type] ?? 'text-gray-600';
+
+                        $statusColors = [
+                            'draft' => 'bg-gray-100 text-gray-600 border-gray-200',
+                            'confirmed' => 'bg-green-50 text-green-700 border-green-200',
+                            'cancelled' => 'bg-red-50 text-red-600 border-red-200',
+                        ];
+                        $sColor = $statusColors[$return->status] ?? $statusColors['draft'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Customer & Total --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0">
+                                <p class="font-bold text-gray-800 text-[14px] truncate">
+                                    {{ $return->customer_name }}
+                                </p>
+                                @if ($return->customer && $return->customer->phone)
+                                    <p class="text-[11px] text-gray-400 mt-0.5 font-bold tracking-tighter truncate">
+                                        {{ $return->customer->phone }}
+                                    </p>
+                                @endif
+                            </div>
+                            <div class="text-right shrink-0">
+                                <span class="font-black text-[#108c2a] text-[15px]">₹{{ number_format($return->grand_total, 2) }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Details & Badges --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <a href="{{ route('admin.invoice-returns.show', $return->id) }}" class="font-extrabold text-gray-900 text-[13px] hover:underline">
+                                    {{ $return->credit_note_number }}
+                                </a>
+                                <span class="text-[11px] text-gray-500 font-medium">
+                                    {{ \Carbon\Carbon::parse($return->return_date)->format('d M Y') }}
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100/50">
+                                <a href="{{ route('admin.invoices.show', $return->invoice_id) }}" class="text-[10px] text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider">
+                                    Inv: {{ $return->invoice->invoice_number ?? 'Unknown' }}
+                                </a>
+                                <span class="text-gray-300">|</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest {{ $tColor }}">
+                                    {{ str_replace('_', ' ', $return->return_type) }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border {{ $sColor }} ml-auto">
+                                    {{ $return->status }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1">
+                            @if(has_permission('invoice_returns.view'))
+                                <a href="{{ route('admin.invoice-returns.show', $return->id) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors" title="View Credit Note">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if ($return->status === 'draft')
+                                @if(has_permission('invoice_returns.update'))
+                                    <a href="{{ route('admin.invoice-returns.edit', $return->id) }}" class="w-8 h-8 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors" title="Edit Draft">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    </a>
+                                @endif
+
+                                @if(has_permission('invoice_returns.delete'))
+                                    <form action="{{ route('admin.invoice-returns.destroy', $return->id) }}" method="POST" class="inline-block" onsubmit="event.preventDefault(); BizAlert.confirm('Delete Draft?', 'Are you sure you want to delete this draft credit note?').then((result) => { if(result.isConfirmed) this.submit(); });">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors" title="Delete Draft">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="file-x-2" class="w-10 h-10 mb-3 opacity-20"></i>
+                            <p class="font-medium text-gray-500">No Credit Notes Found</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
 
             @if ($returns->hasPages())

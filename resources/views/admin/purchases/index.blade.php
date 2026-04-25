@@ -122,7 +122,9 @@
 
         {{-- DATA TABLE --}}
         <div class="bg-white rounded-b-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-sm whitespace-nowrap">
                     <thead
                         class="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50">
@@ -281,6 +283,124 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse ($purchases as $purchase)
+                    @php
+                        $statusColors = [
+                            'draft' => 'bg-gray-100 text-gray-600 border-gray-200',
+                            'ordered' => 'bg-blue-50 text-blue-600 border-blue-200',
+                            'partially_received' => 'bg-yellow-50 text-yellow-700 border-yellow-200',
+                            'received' => 'bg-green-50 text-green-700 border-green-200',
+                            'cancelled' => 'bg-red-50 text-red-600 border-red-200',
+                        ];
+                        $color = $statusColors[$purchase->status] ?? $statusColors['draft'];
+                        
+                        $payColors = [
+                            'unpaid' => 'bg-red-50 text-red-600',
+                            'partial' => 'bg-orange-50 text-orange-600',
+                            'paid' => 'bg-green-50 text-green-700',
+                        ];
+                        $pColor = $payColors[$purchase->payment_status] ?? $payColors['unpaid'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Supplier & Total --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-bold text-gray-800 text-[14px] truncate">
+                                    {{ $purchase->supplier->name ?? 'Unknown' }}
+                                </p>
+                                @if ($purchase->supplier_invoice_number)
+                                    <p class="text-[11px] text-gray-400 mt-0.5 font-mono truncate">
+                                        Inv: {{ $purchase->supplier_invoice_number }}
+                                    </p>
+                                @else
+                                    <p class="text-[11px] text-gray-400 mt-0.5 font-medium truncate">
+                                        {{ $purchase->warehouse->name ?? 'N/A' }}
+                                    </p>
+                                @endif
+                            </div>
+                            <div class="text-right shrink-0 flex flex-col items-end">
+                                <span class="font-black text-gray-800 text-[15px]">₹{{ number_format($purchase->total_amount, 2) }}</span>
+                                @if ($purchase->balance_amount > 0)
+                                    <span class="text-[10px] font-bold text-red-500 mt-0.5">Bal: ₹{{ number_format($purchase->balance_amount, 2) }}</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- PO Details & Badges --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <a href="{{ route('admin.purchases.show', $purchase->id) }}" class="font-extrabold text-[#108c2a] text-[13px] hover:underline">
+                                    {{ $purchase->purchase_number }}
+                                </a>
+                                <span class="text-[11px] text-gray-500 font-medium">
+                                    {{ $purchase->purchase_date->format('d M, Y') }}
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100/50">
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border {{ $color }}">
+                                    {{ str_replace('_', ' ', $purchase->status) }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider {{ $pColor }}">
+                                    {{ $purchase->payment_status }}
+                                </span>
+                                @if($purchase->store)
+                                    <span class="text-gray-300">|</span>
+                                    <span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">
+                                        {{ $purchase->store->name }}
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1 flex-wrap">
+                            @if(has_permission('purchases.view'))
+                                <a href="{{ route('admin.purchases.show', $purchase->id) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors" title="View PO">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if ($purchase->status !== 'received' && $purchase->status !== 'cancelled' && has_permission('purchases.update'))
+                                <a href="{{ route('admin.purchases.edit', $purchase->id) }}" class="w-8 h-8 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-colors" title="Edit PO">
+                                    <i data-lucide="edit" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+
+                            @if ($purchase->status !== 'cancelled' && has_permission('purchases.add_payment'))
+                                <button type="button" @click="openPaymentModal({{ $purchase->id }}, '{{ $purchase->payment_status }}', {{ $purchase->total_amount }}, {{ $purchase->balance_amount }})" class="w-8 h-8 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 flex items-center justify-center transition-colors" title="Update Payment Status">
+                                    <i data-lucide="indian-rupee" class="w-4 h-4"></i>
+                                </button>
+                            @endif
+
+                            @if ($purchase->status !== 'received')
+                                @if (has_permission('purchases.delete'))
+                                    <form action="{{ route('admin.purchases.destroy', $purchase->id) }}" method="POST" @submit.prevent="confirmDelete($event.target)" class="inline-block m-0 p-0">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="w-8 h-8 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors" title="Delete PO">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            @else
+                                <div class="w-8 h-8 rounded-lg border border-gray-100 text-gray-300 flex items-center justify-center cursor-not-allowed" title="Cannot delete received stock">
+                                    <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-sm text-gray-400 bg-white">
+                        <div class="flex flex-col items-center justify-center">
+                            <i data-lucide="shopping-cart" class="w-10 h-10 mb-3 opacity-20"></i>
+                            <p class="font-medium text-gray-500 text-[13px]">No purchase orders found.</p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
 
             @if ($purchases->hasPages())

@@ -145,7 +145,9 @@
 
     {{-- Table --}}
     <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
+        
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-100">
@@ -232,6 +234,80 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        {{-- 📱 MOBILE VIEW (CARDS) --}}
+        <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+            @forelse($logs as $log)
+                @php
+                    $statusBadge = match($log->status) {
+                        'approved'  => 'text-green-700 bg-green-50 border-green-200',
+                        'submitted' => 'text-blue-700 bg-blue-50 border-blue-200',
+                        'rejected'  => 'text-red-700 bg-red-50 border-red-200',
+                        default     => 'text-gray-500 bg-gray-50 border-gray-200',
+                    };
+                    $statusLabels = ['draft' => 'Draft', 'submitted' => 'Submitted', 'approved' => 'Approved', 'rejected' => 'Rejected'];
+                @endphp
+                <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                    
+                    {{-- Header: Employee & Hours --}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0">
+                            <p class="text-[14px] font-bold text-gray-900 leading-tight truncate">{{ $log->employee?->user?->name ?? '—' }}</p>
+                            <p class="text-[11px] text-gray-500 mt-0.5 font-medium">{{ $log->employee?->employee_code }}</p>
+                        </div>
+                        <div class="text-right shrink-0 flex flex-col items-end">
+                            <span class="font-black text-gray-800 text-[15px]">{{ number_format($log->hours_worked, 1) }}<span class="text-[10px] text-gray-400 ml-0.5 font-bold">h</span></span>
+                        </div>
+                    </div>
+
+                    {{-- Context: Task, Date & Category --}}
+                    <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-start gap-2">
+                            <span class="text-[12px] font-bold text-gray-700">{{ $log->task?->title ?? 'No Task Linked' }}</span>
+                            <span class="text-[10px] text-gray-500 font-medium shrink-0 flex items-center gap-1 mt-0.5">
+                                <i data-lucide="calendar" class="w-3 h-3"></i> {{ $log->log_date ? \Carbon\Carbon::parse($log->log_date)->format('d M y') : '—' }}
+                            </span>
+                        </div>
+                        @if($log->description)
+                            <div class="text-[11px] text-gray-600 border-t border-gray-100/50 pt-1.5 line-clamp-2">
+                                {{ $log->description }}
+                            </div>
+                        @endif
+                        <div class="flex items-center gap-2 pt-1 border-t border-gray-100/50 mt-1">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Cat:</span>
+                            <span class="text-[10px] font-semibold text-gray-600 capitalize">{{ $log->category ?? '—' }}</span>
+                            
+                            <span class="ml-auto inline-flex items-center text-[9px] font-extrabold uppercase tracking-wider border px-1.5 py-0.5 rounded {{ $statusBadge }}">
+                                {{ $statusLabels[$log->status] ?? $log->status }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    @if($log->status === 'submitted' && has_permission('work_logs.approve'))
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1">
+                            <button @click="rejectLog({{ $log->id }})" class="w-8 h-8 rounded-lg flex items-center justify-center border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 transition-colors" title="Reject">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                            <button @click="approveLog({{ $log->id }})" class="w-8 h-8 rounded-lg flex items-center justify-center border border-green-200 bg-green-50 text-green-600 hover:bg-green-100 transition-colors" title="Approve">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    @endif
+
+                </div>
+            @empty
+                <div class="p-8 text-center bg-white">
+                    <div class="flex flex-col items-center justify-center py-6 text-center">
+                        <div class="w-14 h-14 bg-gray-50 border border-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                            <i data-lucide="clock" class="w-7 h-7 text-gray-300"></i>
+                        </div>
+                        <p class="font-bold text-gray-600 mb-1 text-sm">No work logs found</p>
+                        <p class="text-xs text-gray-400">Employees submit their daily work logs for your review.</p>
+                    </div>
+                </div>
+            @endforelse
         </div>
 
         @if($logs->hasPages())

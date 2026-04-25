@@ -12,6 +12,14 @@ use App\Http\Middleware\MaintenanceMode;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+// ══════════════════════════════════════════════════════════════
+// CRITICAL: Restrict ALL main-app routes to your primary domain.
+// This frees up "/" on custom domains for the storefront.
+// ══════════════════════════════════════════════════════════════
+$appDomain = parse_url(config('app.url'), PHP_URL_HOST);
+
+Route::domain($appDomain)->group(function () {
+
 Route::get('/force-logout', function () {
     Auth::logout();
     request()->session()->invalidate();
@@ -76,32 +84,33 @@ Route::post('/razorpay-test/verify', [RazorpayTestController::class, 'verify']);
 | and should be prefixed with '/{slug}/portal' or similar.
 */
 
-Route::prefix('{slug}')->name('storefront.')->group(function () {
+    Route::prefix('{slug}')->name('storefront.')->group(function () {
 
-    // ── GUEST ROUTES (Login & Register) ──
-    Route::middleware('guest')->group(function () {
-        Route::get('/login', [CustomerAuthController::class, 'showLoginForm'])->name('login');
-        Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
+        // ── GUEST ROUTES (Login & Register) ──
+        Route::middleware('guest')->group(function () {
+            Route::get('/login', [CustomerAuthController::class, 'showLoginForm'])->name('login');
+            Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
 
-        Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('register');
-        Route::post('/register', [CustomerAuthController::class, 'register'])->name('register.submit');
-    });
+            Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('register');
+            Route::post('/register', [CustomerAuthController::class, 'register'])->name('register.submit');
+        });
 
-    // ── PROTECTED CUSTOMER ROUTES ──
-    // We will create a 'customer' middleware to ensure Super Admins/Staff don't get stuck here
-    Route::middleware(['auth', 'customer'])->prefix('portal')->name('portal.')->group(function () {
+        // ── PROTECTED CUSTOMER ROUTES ──
+        // We will create a 'customer' middleware to ensure Super Admins/Staff don't get stuck here
+        Route::middleware(['auth', 'customer'])->prefix('portal')->name('portal.')->group(function () {
 
-        Route::get('/dashboard', [CustomerPortalController::class, 'index'])->name('dashboard');
-        Route::get('/orders', [CustomerPortalController::class, 'orders'])->name('orders');
-        Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
+            Route::get('/dashboard', [CustomerPortalController::class, 'index'])->name('dashboard');
+            Route::get('/orders', [CustomerPortalController::class, 'orders'])->name('orders');
+            Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
 
-        // Addresses Management
-        Route::get('/addresses', [CustomerPortalController::class, 'addresses'])->name('addresses');
-        Route::post('/addresses', [CustomerPortalController::class, 'storeAddress'])->name('addresses.store');
+            // Addresses Management
+            Route::get('/addresses', [CustomerPortalController::class, 'addresses'])->name('addresses');
+            Route::post('/addresses', [CustomerPortalController::class, 'storeAddress'])->name('addresses.store');
 
-        // Profile Management
-        Route::get('/profile', [CustomerPortalController::class, 'profile'])->name('profile');
-        Route::post('/profile', [CustomerPortalController::class, 'updateProfile'])->name('profile.update');
+            // Profile Management
+            Route::get('/profile', [CustomerPortalController::class, 'profile'])->name('profile');
+            Route::post('/profile', [CustomerPortalController::class, 'updateProfile'])->name('profile.update');
 
+        });
     });
 });

@@ -7,9 +7,12 @@
 @endsection
 
 @section('content')
-    <div class="pb-20" x-data="{ 
+    <div
+    class="pb-20"
+    x-data="{
         activeTab: new URLSearchParams(window.location.search).get('tab') || 'master',
         expandedRows: [],
+
         toggleRow(id) {
             if (this.expandedRows.includes(id)) {
                 this.expandedRows = this.expandedRows.filter(rowId => rowId !== id);
@@ -17,14 +20,74 @@
                 this.expandedRows.push(id);
             }
         },
+
         setTab(tab) {
             this.activeTab = tab;
-            // Update URL without reloading so pagination links grab the correct tab
+
             const url = new URL(window.location);
             url.searchParams.set('tab', tab);
             window.history.pushState({}, '', url);
+        },
+
+        handleShortcut(e) {
+            const tag = e.target.tagName.toLowerCase();
+
+            // Do not trigger shortcuts while typing in inputs, textareas, selects, or editable fields
+            if (['input', 'textarea', 'select'].includes(tag) || e.target.isContentEditable) {
+                return;
+            }
+
+            // Alt + 1 / 2 / 3 / 4
+            if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+                if (e.key === '1') {
+                    e.preventDefault();
+                    this.setTab('master');
+                }
+
+                if (e.key === '2') {
+                    e.preventDefault();
+                    this.setTab('alerts');
+                }
+
+                if (e.key === '3') {
+                    e.preventDefault();
+                    this.setTab('ledger');
+                }
+
+                if (e.key === '4' && {{ batch_enabled() && $batchReport ? 'true' : 'false' }}) {
+                    e.preventDefault();
+                    this.setTab('batches');
+                }
+            }
+
+            // Optional: Arrow left / right to move between tabs
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                this.nextTab();
+            }
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                this.prevTab();
+            }
+        },
+
+        nextTab() {
+            const tabs = ['master', 'alerts', 'ledger'{{ batch_enabled() && $batchReport ? ", 'batches'" : '' }}];
+            const currentIndex = tabs.indexOf(this.activeTab);
+            const nextIndex = (currentIndex + 1) % tabs.length;
+            this.setTab(tabs[nextIndex]);
+        },
+
+        prevTab() {
+            const tabs = ['master', 'alerts', 'ledger'{{ batch_enabled() && $batchReport ? ", 'batches'" : '' }}];
+            const currentIndex = tabs.indexOf(this.activeTab);
+            const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+            this.setTab(tabs[prevIndex]);
         }
-    }">
+    }"
+    @keydown.window="handleShortcut($event)"
+>
 
         {{-- 1. TOP METRICS OVERVIEW --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -68,6 +131,9 @@
                     :class="activeTab === 'master' ? 'bg-white text-blue-600 border-t-2 border-t-blue-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
                     class="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-all whitespace-nowrap">
                     <i data-lucide="database" class="w-4 h-4 inline-block mr-1.5 pb-0.5"></i> Master Stock
+                    <span class="hidden md:inline-flex ml-2 inline-flex items-center rounded bg-gray-800 px-1.5 py-0.5 text-[9px] font-semibold text-white tracking-wider">
+                        ALT+1
+                    </span>
                 </button>
                 <button @click="setTab('alerts')" 
                     :class="activeTab === 'alerts' ? 'bg-white text-red-600 border-t-2 border-t-red-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
@@ -75,26 +141,37 @@
                     <i data-lucide="alert-circle" class="w-4 h-4 inline-block pb-0.5"></i> 
                     Reorder Alerts
                     @if($lowStockAlerts->total() > 0)
-                        <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{{ $lowStockAlerts->total() }}</span>
+                        <span class="bg-red-500 text-white text-[10px] px-2 rounded-full">{{ $lowStockAlerts->total() }}</span>
                     @endif
+                    <span class="hidden md:inline-flex ml-2 inline-flex items-center rounded bg-gray-800 px-1.5 py-0.5 text-[9px] font-semibold text-white tracking-wider">
+                        ALT+2
+                    </span>
                 </button>
                 <button @click="setTab('ledger')"
                     :class="activeTab === 'ledger' ? 'bg-white text-gray-900 border-t-2 border-t-gray-800 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
                     class="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-all whitespace-nowrap">
                     <i data-lucide="history" class="w-4 h-4 inline-block mr-1.5 pb-0.5"></i> Movement Ledger
+                    <span class="hidden md:inline-flex ml-2 inline-flex items-center rounded bg-gray-800 px-1.5 py-0.5 text-[9px] font-semibold text-white tracking-wider">
+                        ALT+3
+                    </span>
                 </button>
                 @if(batch_enabled())
                 <button @click="setTab('batches')"
                     :class="activeTab === 'batches' ? 'bg-white text-indigo-600 border-t-2 border-t-indigo-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'"
                     class="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-t-lg transition-all whitespace-nowrap">
                     <i data-lucide="layers" class="w-4 h-4 inline-block mr-1.5 pb-0.5"></i> Batch Tracking
+                    <span class="hidden md:inline-flex ml-2 inline-flex items-center rounded bg-gray-800 px-1.5 py-0.5 text-[9px] font-semibold text-white tracking-wider">
+                        ALT+4
+                    </span>
                 </button>
                 @endif
             </div>
 
             {{-- 3. TAB CONTENT: MASTER STOCK --}}
             <div x-show="activeTab === 'master'" x-cloak class="p-0">
-                <div class="overflow-x-auto">
+                
+                {{-- 🖥️ DESKTOP VIEW --}}
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[900px]">
                         <thead class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
@@ -186,6 +263,71 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- 📱 MOBILE VIEW (CARDS) --}}
+                <div class="md:hidden divide-y divide-gray-50">
+                    @forelse ($masterStock as $sku)
+                        @php
+                            $isLow = $sku->total_qty <= $sku->stock_alert;
+                            $isOut = $sku->total_qty <= 0;
+                        @endphp
+                        <div class="p-4 bg-white flex flex-col gap-3">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-900 text-[14px] leading-tight">{{ $sku->product?->name ?? 'Unknown Product' }}</p>
+                                    <p class="text-[11px] text-gray-500 font-mono mt-0.5">SKU: {{ $sku->sku }} • <span class="font-sans font-medium">{{ $sku->product->category->name ?? 'Uncategorized' }}</span></p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    @if ($isOut)
+                                        <span class="bg-red-50 text-red-700 border border-red-200 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Out of Stock</span>
+                                    @elseif ($isLow)
+                                        <span class="bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Low Stock</span>
+                                    @else
+                                        <span class="bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">Healthy</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Total Qty</p>
+                                    <p class="text-[14px] font-black {{ $isOut ? 'text-red-600' : 'text-gray-900' }}">
+                                        {{ (float) $sku->total_qty }} <span class="text-[10px] text-gray-500 font-medium">{{ $sku->product->productUnit->short_name ?? 'Units' }}</span>
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Value</p>
+                                    <p class="text-[13px] font-bold text-brand-600">₹ {{ number_format($sku->total_qty * $sku->cost, 2) }}</p>
+                                </div>
+                            </div>
+
+                            <button @click="toggleRow({{ $sku->id }})" class="text-[11px] font-bold text-gray-500 flex items-center justify-center gap-1 bg-gray-50 py-1.5 rounded-md hover:bg-gray-100 transition-colors">
+                                <i data-lucide="layout-list" class="w-3.5 h-3.5"></i> 
+                                <span x-text="expandedRows.includes({{ $sku->id }}) ? 'Hide Warehouses' : 'View Warehouses'"></span>
+                            </button>
+
+                            {{-- Mobile Expanded Warehouse Breakdown --}}
+                            <div x-show="expandedRows.includes({{ $sku->id }})" x-cloak class="mt-1 border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                                <div class="bg-gray-100 px-3 py-2 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                    Warehouse Breakdown
+                                </div>
+                                <div class="divide-y divide-gray-100">
+                                    @forelse($sku->stocks as $stock)
+                                        <div class="flex justify-between items-center px-3 py-2 text-xs">
+                                            <span class="font-medium text-gray-800">{{ $stock->warehouse->name }} <span class="text-gray-400">({{ $stock->warehouse->store->name ?? 'Primary' }})</span></span>
+                                            <span class="font-bold text-gray-900">{{ (float) $stock->qty }}</span>
+                                        </div>
+                                    @empty
+                                        <div class="px-3 py-3 text-center text-gray-400 italic text-xs">No physical stock recorded.</div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="p-8 text-center text-gray-500 font-medium bg-white text-sm">No inventory data available.</div>
+                    @endforelse
+                </div>
+
                 <div class="p-4 border-t border-gray-100">
                     {{ $masterStock->appends(['tab' => 'master'])->links() }}
                 </div>
@@ -193,7 +335,9 @@
 
             {{-- 4. TAB CONTENT: LOW STOCK ALERTS --}}
             <div x-show="activeTab === 'alerts'" x-cloak class="p-0">
-                <div class="overflow-x-auto">
+                
+                {{-- 🖥️ DESKTOP VIEW --}}
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[750px]">
                         <thead class="bg-red-50 border-b border-red-100 text-[11px] font-bold text-red-800 uppercase tracking-wider">
                             <tr>
@@ -247,6 +391,48 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- 📱 MOBILE VIEW (CARDS) --}}
+                <div class="md:hidden divide-y divide-red-100 bg-red-50/20">
+                    @forelse ($lowStockAlerts as $alert)
+                        @php $deficit = $alert->stock_alert - $alert->current_qty; @endphp
+                        <div class="p-4 flex flex-col gap-3">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-900 text-[14px] leading-tight">{{ $alert->product->name }}</p>
+                                    <p class="text-[11px] text-gray-500 font-mono mt-0.5">SKU: {{ $alert->sku }}</p>
+                                </div>
+                                <span class="bg-red-100 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 border border-red-200">
+                                    -{{ (float) $deficit }} Short
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-white px-3 py-2.5 rounded-lg border border-red-100 shadow-sm">
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Alert Threshold</p>
+                                    <p class="text-[13px] font-semibold text-gray-600">{{ (float) $alert->stock_alert }}</p>
+                                </div>
+                                <i data-lucide="arrow-right" class="w-4 h-4 text-gray-300"></i>
+                                <div class="text-right">
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Current Qty</p>
+                                    <p class="text-[15px] font-black {{ $alert->current_qty <= 0 ? 'text-red-600' : 'text-orange-600' }}">{{ (float) $alert->current_qty }}</p>
+                                </div>
+                            </div>
+
+                            <a href="{{ route('admin.purchases.create', ['sku_id' => $alert->id, 'qty' => $deficit]) }}" class="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm text-center flex items-center justify-center gap-1.5">
+                                <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i> Reorder Now
+                            </a>
+                        </div>
+                    @empty
+                        <div class="p-8 text-center bg-white">
+                            <div class="flex flex-col items-center justify-center text-green-600">
+                                <i data-lucide="check-circle" class="w-10 h-10 mb-2 opacity-50"></i>
+                                <p class="font-bold text-sm">All Stock is Healthy!</p>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+
                 <div class="p-4 border-t border-gray-100">
                     {{ $lowStockAlerts->appends(['tab' => 'alerts'])->links() }}
                 </div>
@@ -265,7 +451,8 @@
                     </form>
                 </div>
 
-                <div class="overflow-x-auto">
+                {{-- 🖥️ DESKTOP VIEW --}}
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[850px]">
                         <thead class="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
@@ -324,6 +511,52 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- 📱 MOBILE VIEW (CARDS) --}}
+                <div class="md:hidden divide-y divide-gray-50 bg-white">
+                    @forelse ($movements as $log)
+                        @php
+                            $badgeClass = match($log->movement_type) {
+                                'transfer_in', 'opening' => 'bg-blue-50 text-blue-700 border-blue-200',
+                                'transfer_out' => 'bg-purple-50 text-purple-700 border-purple-200',
+                                'sale' => 'bg-green-50 text-green-700 border-green-200',
+                                'adjustment' => 'bg-orange-50 text-orange-700 border-orange-200',
+                                default => 'bg-gray-50 text-gray-700 border-gray-200',
+                            };
+                        @endphp
+                        <div class="p-4 flex flex-col gap-2.5">
+                            <div class="flex justify-between items-start">
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-900 text-[13px] leading-tight truncate">{{ $log->sku->product->name ?? 'Unknown' }}</p>
+                                    <p class="text-[10px] text-gray-500 font-mono mt-0.5">SKU: {{ $log->sku->sku ?? '-' }}</p>
+                                </div>
+                                <span class="shrink-0 border px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest {{ $badgeClass }}">
+                                    {{ str_replace('_', ' ', $log->movement_type) }}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center justify-between text-[11px] text-gray-500">
+                                <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> {{ $log->created_at->format('d M y, h:i A') }}</span>
+                                <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> {{ $log->warehouse->name ?? 'Unknown' }}</span>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2 rounded-lg border border-gray-100 mt-1">
+                                <div>
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Qty Change</span>
+                                    <span class="font-black text-[14px] {{ $log->quantity > 0 ? 'text-green-600' : 'text-red-600' }}">{{ $log->quantity > 0 ? '+' : '' }}{{ (float) $log->quantity }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">New Balance</span>
+                                    <span class="font-bold text-gray-900 text-[13px]">{{ (float) $log->balance_after }}</span>
+                                </div>
+                            </div>
+                            <p class="text-[9px] text-gray-400 text-right">Logged by: {{ $log->user->name ?? 'System' }}</p>
+                        </div>
+                    @empty
+                        <div class="p-8 text-center text-gray-500 font-medium text-sm">No movements recorded yet.</div>
+                    @endforelse
+                </div>
+
                 <div class="p-4 border-t border-gray-100">
                     {{ $movements->appends(['tab' => 'ledger', 'search_movement' => request('search_movement')])->links() }}
                 </div>
@@ -332,7 +565,9 @@
             {{-- TAB CONTENT: BATCH TRACKING --}}
             @if(batch_enabled() && $batchReport)
             <div x-show="activeTab === 'batches'" x-cloak class="p-0">
-                <div class="overflow-x-auto">
+                
+                {{-- 🖥️ DESKTOP VIEW --}}
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[950px]">
                         <thead class="bg-white border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                             <tr>
@@ -392,6 +627,66 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- 📱 MOBILE VIEW (CARDS) --}}
+                <div class="md:hidden divide-y divide-gray-50 bg-white">
+                    @forelse($batchReport as $batch)
+                        @php
+                            $isExpired = $batch->expiry_date && $batch->expiry_date->isPast();
+                            $isExpiringSoon = $batch->expiry_date && !$isExpired && $batch->expiry_date->diffInDays(now()) <= 30;
+                        @endphp
+                        <div class="p-4 flex flex-col gap-3 {{ $isExpired ? 'bg-red-50/30' : '' }}">
+                            
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-900 text-[13px] leading-tight truncate">{{ $batch->sku->product->name ?? 'Unknown' }}</p>
+                                    <p class="text-[10px] text-gray-500 font-mono mt-0.5">{{ $batch->sku->sku ?? '-' }}</p>
+                                </div>
+                                <span class="bg-gray-100 text-gray-800 border border-gray-200 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono shrink-0">
+                                    {{ $batch->batch_number ?? '-' }}
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-[11px]">
+                                <div class="text-gray-600"><span class="font-semibold text-gray-400">Whs:</span> {{ $batch->warehouse->name ?? '-' }}</div>
+                                <div class="text-gray-600 text-right truncate"><span class="font-semibold text-gray-400">Sup:</span> {{ $batch->supplier->name ?? '-' }}</div>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-gray-50/80 px-3 py-2 rounded-lg border border-gray-100">
+                                <div>
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Mfg Date</span>
+                                    <span class="font-semibold text-gray-700">{{ $batch->manufacturing_date ? $batch->manufacturing_date->format('d/m/Y') : '-' }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Expiry Date</span>
+                                    @if($batch->expiry_date)
+                                        <span class="font-semibold {{ $isExpired ? 'text-red-600' : ($isExpiringSoon ? 'text-orange-500' : 'text-gray-700') }}">
+                                            {{ $batch->expiry_date->format('d/m/Y') }}
+                                        </span>
+                                        @if($isExpired)
+                                            <span class="ml-1 text-[8px] bg-red-100 text-red-700 px-1 py-0.5 rounded font-bold">EXPIRED</span>
+                                        @elseif($isExpiringSoon)
+                                            <span class="ml-1 text-[8px] bg-orange-100 text-orange-700 px-1 py-0.5 rounded font-bold">SOON</span>
+                                        @endif
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-1">
+                                <span class="text-[10px] text-gray-500 font-medium">Orig: {{ (float) $batch->qty }}</span>
+                                <span class="text-[13px] font-black {{ $batch->remaining_qty <= 0 ? 'text-red-500' : 'text-green-600' }}">
+                                    {{ (float) $batch->remaining_qty }} <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Remaining</span>
+                                </span>
+                            </div>
+
+                        </div>
+                    @empty
+                        <div class="p-8 text-center text-gray-500 font-medium text-sm">No active batches found.</div>
+                    @endforelse
+                </div>
+
                 <div class="p-4 border-t border-gray-100">
                     {{ $batchReport->appends(['tab' => 'batches'])->links() }}
                 </div>

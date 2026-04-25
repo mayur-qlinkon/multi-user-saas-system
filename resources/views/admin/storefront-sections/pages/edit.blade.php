@@ -9,7 +9,7 @@
         </a>
         <div>
             <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">{{ isset($page) ? 'Edit Page' : 'Create Page' }}</h1>
-            <p class="text-xs text-gray-400 font-medium mt-1">{{ isset($page) ? $page->title : 'Add new content to your storefront' }}</p>
+            {{-- <p class="text-xs text-gray-400 font-medium mt-1">{{ isset($page) ? $page->title : 'Add new content to your storefront' }}</p> --}}
         </div>
     </div>
 @endsection
@@ -36,9 +36,11 @@
 <div class="pb-10 w-full max-w-[1600px] mx-auto">
         {{-- Header & Actions --}}
         <div class="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-center justify-between gap-4">
-            <div>
-                {{-- <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Create New Page</h3> --}}
-                {{-- <p class="text-sm text-gray-500 mt-1">{{ isset($page) ? $page->title : 'Add new content to your storefront' }}</p> --}}
+            <div class="w-full sm:w-auto">
+                <x-admin.breadcrumb :items="[
+                    ['label' => 'Pages', 'url' => route('admin.pages.index')],
+                    ['label' => 'Page Edit'],
+                ]" />
             </div>
             <div class="flex items-center gap-2">
                 <a href="{{ route('admin.pages.index') }}"
@@ -119,18 +121,42 @@
                         @error('type') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    @php
+                        $requiredSlugs = [
+                            'return-policy' => 'Return Policy',
+                            'faq' => 'FAQ',
+                            'privacy-policy' => 'Privacy & Policy',
+                            'terms-and-conditions' => 'Terms & Conditions',
+                            'about-us' => 'About Us',
+                            'contact-us' => 'Contact Us',
+                        ];
+                    @endphp
+
                     <div>
                         <label class="form-label">URL Slug</label>
-                        
-                        {{-- 🟢 BUG FIX: Flexbox Input Group (No Overlaps!) --}}
+
                         <div class="input-group">
                             <span class="input-group-prefix">/page/</span>
-                            <input type="text" name="slug" value="{{ old('slug', $page->slug ?? '') }}" 
-                                   class="input-group-field font-mono" placeholder="auto-generated">
+
+                            <select name="slug" class="input-group-field font-mono">
+                                <option value="">Select page slug</option>
+
+                                @foreach ($requiredSlugs as $slug => $label)
+                                    <option value="{{ $slug }}"
+                                        @selected(old('slug', $page->slug ?? '') === $slug)>
+                                        {{ $slug }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
-                        
-                        <p class="text-[11px] text-gray-400 mt-1.5 leading-snug">Leave blank to auto-generate from the title.</p>
-                        @error('slug') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+
+                        <p class="text-[11px] text-gray-400 mt-1.5 leading-snug">
+                            This slug is fixed so storefront links always work.
+                        </p>
+
+                        @error('slug')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 

@@ -3,7 +3,7 @@
 @section('title', 'Edit Return: ' . $challanReturn->return_number)
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Inventory / Edit Return / {{ $challanReturn->return_number }}</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Return {{ $challanReturn->return_number }}</h1>
 @endsection
 
 @push('styles')

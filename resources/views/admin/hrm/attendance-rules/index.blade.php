@@ -34,6 +34,26 @@
 
 <div class="pb-10" x-data="attendanceRulePage()">
 
+    @if(has_module('hrm'))
+        {{-- Holiday Attendance Behavior --}}
+        <div class="bg-white border border-gray-100 rounded-2xl px-4 py-4 mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex-1">
+                    <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Holiday Attendance Behavior</p>
+                    <p class="text-[12px] text-gray-500">Controls what happens when employees try to mark attendance on a configured holiday.</p>
+                </div>
+                <div class="flex items-center gap-2 sm:min-w-[360px]">
+                    <select x-model="holidayPolicy" @change="saveHolidayPolicy()" :disabled="savingPolicy" class="field-input !py-2 !text-[13px]">
+                        <option value="block">Block attendance on holidays</option>
+                        <option value="allow">Allow attendance (mark as Working on Holiday)</option>
+                        <option value="approval">Allow attendance but require approval</option>
+                    </select>
+                    <span x-show="savingPolicy" class="text-[11px] font-bold text-gray-500 whitespace-nowrap">Saving…</span>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Stats --}}
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
         <div class="stat-card">
@@ -289,12 +309,32 @@
 window.attendanceRulePage = function() {
     return {
         modalOpen: false, isEditing: false, editId: null, saving: false, searchQuery: '', errors: {},
+        holidayPolicy: @json($holidayPolicy ?? 'block'),
+        savingPolicy: false,
         form: {
             name: '', code: '', description: '', rule_type: '', threshold_count: '', threshold_period: '',
             action: '', deduction_days: '', leave_type_code: '', auto_apply: true, is_active: true,
         },
 
         init() { this.$nextTick(() => { if (window.lucide) lucide.createIcons(); }); },
+        async saveHolidayPolicy() {
+            this.savingPolicy = true;
+            try {
+                const resp = await fetch(`{{ route('admin.hrm.attendance-rules.holiday-policy') }}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ holiday_policy: this.holidayPolicy }),
+                });
+                const data = await resp.json();
+                if (!resp.ok) { BizAlert.toast(data.message || 'Failed to save policy', 'error'); return; }
+                BizAlert.toast(data.message, 'success');
+            } catch (e) { BizAlert.toast('Network error', 'error'); }
+            finally { this.savingPolicy = false; }
+        },
         matchesSearch(name) { if (!this.searchQuery) return true; return name.includes(this.searchQuery.toLowerCase()); },
         resetForm() {
             this.form = { name: '', code: '', description: '', rule_type: '', threshold_count: '', threshold_period: '', action: '', deduction_days: '', leave_type_code: '', auto_apply: true, is_active: true };

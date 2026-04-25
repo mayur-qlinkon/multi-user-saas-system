@@ -277,8 +277,8 @@
             </div>
         @else
 
-            {{-- Table ── --}}
-            <div class="overflow-x-auto">
+            {{-- 🖥️ DESKTOP VIEW (TABLE) ── --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full min-w-[900px] whitespace-nowrap">
                     <thead>
                         <tr class="border-b border-gray-100">
@@ -417,6 +417,97 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) ── --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50 bg-white">
+                @foreach($employees as $employee)
+                    @php
+                        $empName     = $employee->user->name ?? 'Unknown';
+                        $initials    = strtoupper(substr($empName, 0, 1));
+                        $avatarColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
+                        $avatarBg    = $avatarColors[crc32($empName) % count($avatarColors)];
+                        $sColor      = $statusColors[$employee->status] ?? $statusColors['inactive'];
+                    @endphp
+                    <div class="p-4 hover:bg-gray-50/50 transition-colors flex flex-col gap-3">
+                        
+                        {{-- Header: Avatar, Name & Status --}}
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-full text-white flex items-center justify-center text-sm font-bold shrink-0" style="background: {{ $avatarBg }}">
+                                    {{ $initials }}
+                                </div>
+                                <div class="min-w-0">
+                                    <a href="{{ route('admin.hrm.employees.show', $employee->id) }}" class="font-bold text-[14px] text-gray-900 hover:underline truncate block">
+                                        {{ $empName }}
+                                    </a>
+                                    <p class="text-[11px] text-gray-500 mt-0.5 truncate">
+                                        {{ $employee->employee_code ?? '—' }} 
+                                        @if($employee->user->email ?? null)
+                                            &middot; {{ $employee->user->email }}
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="shrink-0">
+                                <span class="status-badge px-2 py-0.5 text-[9px] flex items-center gap-1" style="background: {{ $sColor['bg'] }}; color: {{ $sColor['text'] }}">
+                                    <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $sColor['dot'] }}"></span>
+                                    {{ $statusLabels[$employee->status] ?? ucfirst($employee->status) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Details: Grid for Roles & Dates --}}
+                        <div class="flex flex-col gap-2 bg-gray-50/80 px-3 py-2.5 rounded-lg border border-gray-100">
+                            <div class="grid grid-cols-2 gap-y-2 gap-x-3 mb-1">
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Department</p>
+                                    <p class="text-[12px] font-semibold text-gray-700 truncate">{{ $employee->department->name ?? '—' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Designation</p>
+                                    <p class="text-[12px] font-semibold text-gray-700 truncate">{{ $employee->designation->name ?? '—' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Store</p>
+                                    <p class="text-[12px] font-semibold text-gray-700 truncate">{{ $employee->store->name ?? '—' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Joined</p>
+                                    <p class="text-[12px] font-semibold text-gray-700 truncate">
+                                        {{ $employee->joining_date ? \Carbon\Carbon::parse($employee->joining_date)->format('d M Y') : '—' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-gray-100/50">
+                                <span class="type-badge !text-[9px] !px-1.5 !py-0.5">
+                                    {{ $typeLabels[$employee->employment_type] ?? ucfirst($employee->employment_type ?? '—') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 mt-1">
+                            @if(has_permission('employees.view'))
+                                <a href="{{ route('admin.hrm.employees.show', $employee->id) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </a>
+                            @endif
+
+                            @if(has_permission('employees.update'))
+                                <a href="{{ route('admin.hrm.employees.edit', $employee->id) }}" class="w-8 h-8 flex items-center justify-center rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors" title="Edit">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </a>
+                            @endif
+
+                            @if(has_permission('employees.delete'))
+                                <button @click="confirmDelete({{ $employee->id }}, '{{ addslashes($empName) }}')" class="w-8 h-8 flex items-center justify-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
             </div>
 
             {{-- Pagination ── --}}

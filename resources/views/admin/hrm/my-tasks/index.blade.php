@@ -91,7 +91,9 @@
     {{-- ══════════════ LIST VIEW ══════════════ --}}
     <div x-show="view === 'list'" x-cloak class="transition-opacity duration-300">
         <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
+            
+            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-50/50 border-b border-gray-100">
@@ -159,6 +161,67 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
+                @forelse($tasks as $task)
+                @php
+                    $pc = $priorityColors[$task->priority];
+                    $sc = $statusColors[$task->status];
+                @endphp
+                <div class="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer task-row" data-status="{{ $task->status }}" data-priority="{{ $task->priority }}" @click="openPanel({{ $task->id }})">
+                    
+                    {{-- Header: Priority & Due Date --}}
+                    <div class="flex justify-between items-start mb-2.5">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider" style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
+                            {{ $priorityLabels[$task->priority] }}
+                        </span>
+                        <span class="text-[11px] font-medium {{ $task->is_overdue ? 'text-red-600 font-bold' : 'text-gray-500' }} flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                            @if($task->due_date)
+                                {{ $task->due_date->format('d M Y') }}
+                                @if($task->is_overdue) <span class="text-[9px] uppercase bg-red-100 text-red-600 px-1 rounded ml-0.5">Late</span> @endif
+                            @else
+                                No Date
+                            @endif
+                        </span>
+                    </div>
+
+                    {{-- Task Title & Project --}}
+                    <div class="mb-3.5 pr-4">
+                        <p class="text-[13px] font-bold text-gray-900 leading-snug">{{ $task->title }}</p>
+                        @if($task->project)
+                            <p class="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                                <i data-lucide="folder" class="w-3 h-3"></i> {{ $task->project }}
+                            </p>
+                        @endif
+                    </div>
+
+                    {{-- Footer: Status & Progress --}}
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-50 mt-1">
+                        <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}; border-color: {{ $sc['dot'] }}40">
+                            {{ $statusLabels[$task->status] }}
+                        </span>
+                        
+                        <div class="flex items-center gap-2 w-32">
+                            <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-emerald-500" style="width: {{ $task->progress_percent }}%"></div>
+                            </div>
+                            <span class="text-[10px] font-bold text-gray-600 w-8 text-right">{{ $task->progress_percent }}%</span>
+                        </div>
+                    </div>
+
+                </div>
+                @empty
+                <div class="p-8 text-center text-sm text-gray-400">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3 border border-gray-100">
+                        <i data-lucide="check-circle" class="w-6 h-6 text-gray-300"></i>
+                    </div>
+                    <p class="font-bold text-gray-900 mb-1">You're all caught up!</p>
+                    <p class="text-xs text-gray-500">No tasks assigned to you right now.</p>
+                </div>
+                @endforelse
             </div>
         </div>
     </div>
