@@ -82,6 +82,11 @@ class ModuleSeeder extends Seeder
                 'slug' => 'bulk_import', // Includes: Delivery Challans, Returnable Challans, Job Work
                 'is_active' => 1,
             ],
+            [
+                'name' => 'OCR Scanner',
+                'slug' => 'ocr_scanner', // Includes: Document Scanning, Text Extraction, Image to Text, Auto Data Entry
+                'is_active' => 1,
+            ],
         ];
 
         DB::beginTransaction();

@@ -537,7 +537,17 @@
                                 Order Process
                             </span>
                         </a>
-                    @endif                
+                    @endif       
+                    
+                    @if (has_module('ocr_scanner'))
+                        <a href="{{ route('admin.ocr-scanner.index') }}"
+                        class="nav-item {{ $navCls(['admin.ocr-scanner.*']) }}">
+                            <span class="flex items-center gap-3">
+                                <i data-lucide="scan-line" class="nav-icon w-[18px] h-[18px]"></i>
+                                OCR Scanner
+                            </span>
+                        </a>
+                    @endif
                     
                     
                     @if(has_module('invoicing') && has_permission(['invoices.view', 'quotations.view']))
@@ -2174,6 +2184,20 @@
         </script>
 
         @stack('scripts')
+        @if (has_module('ocr_scanner'))
+            @php
+                $isOcrPage = request()->routeIs('admin.ocr-scanner.*');
+            @endphp
+
+            @unless($isOcrPage)
+                <a href="{{ route('admin.ocr-scanner.index') }}"
+                title="OCR Scanner"
+                class="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full text-white flex items-center justify-center shadow-xl transition-transform hover:scale-110"
+                style="background: var(--brand-500)">
+                    <i data-lucide="scan-line" class="w-5 h-5"></i>
+                </a>
+            @endunless
+        @endif
     </body>
 
     </html>

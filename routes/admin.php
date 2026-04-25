@@ -69,6 +69,8 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\OcrScannerController;
+
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Platform\OnboardingController;
 use Illuminate\Support\Facades\Route;
@@ -86,6 +88,33 @@ Route::middleware(['auth', 'subscription', 'store.session', 'announcements'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+
+
+    // ── OCR Scanner ──────────────────────────────────────────────────────────────
+Route::prefix('ocr-scanner')
+    ->middleware(['module:ocr_scanner'])
+    ->name('ocr-scanner.')
+    ->controller(OcrScannerController::class)
+    ->group(function () {
+
+        // Main scan page — camera / upload UI
+        Route::get('/', 'index')->name('index');
+
+        // AJAX: process uploaded image through OCR engine
+        Route::post('/process', 'process')->name('process');
+
+        // AJAX: save confirmed/edited extracted data
+        Route::post('/save', 'save')->name('save');
+
+        // History list page
+        Route::get('/history', 'history')->name('history');
+
+        // AJAX: get single scan detail (for history modal re-use)
+        Route::get('/{id}', 'show')->name('show');
+
+        // Archive (soft-delete) a scan
+        Route::delete('/{id}', 'destroy')->name('destroy');
+});
 
         // ════════════════════════════════════════════════
         // SETTINGS
