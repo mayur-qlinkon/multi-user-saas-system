@@ -123,13 +123,13 @@
                                 UPCA</option>
                         </select>
                     </div>
-                    <div>
+                    {{-- <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Max Qty per Order</label>
                         <input type="number" name="quantity_limitation"
                             value="{{ old('quantity_limitation', $product->quantity_limitation) }}" placeholder="No limit"
                             min="1"
                             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
-                    </div>
+                    </div> --}}
                     <div class="lg:col-span-3">
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Description (Optional)</label>
                         <textarea name="description" rows="3"
@@ -601,7 +601,7 @@
                     <div class="flex items-center gap-2.5 mb-5 border-b border-gray-100 pb-3">
                         <i data-lucide="leaf" class="w-5 h-5 text-green-600 shrink-0"></i>
                         <div>
-                            <h2 class="text-lg font-bold text-gray-800">5. Plant Education <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
+                            <h2 class="text-lg font-bold text-gray-800">5. Product Information <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
                             <p class="text-xs text-gray-500 mt-0.5">Provide sunlight and watering care info for this plant.</p>
                         </div>
                     </div>
@@ -649,10 +649,6 @@
                                 <p class="text-sm font-bold text-gray-700">Additional Info <span class="text-gray-400 text-xs font-normal">(Optional)</span></p>
                                 <p class="text-xs text-gray-500 mt-0.5">Add extra care tips, fertilizing notes, repotting info, etc.</p>
                             </div>
-                            <button type="button" @click="addGuide()"
-                                class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
-                                <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
-                            </button>
                         </div>
                         <div class="space-y-3">
                             <template x-for="(guide, index) in productGuides" :key="guide.id">
@@ -679,21 +675,22 @@
                                 </div>
                             </template>
                         </div>
+                        
+                        <button type="button" @click="addGuide()"
+                            class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors mt-4 w-fit">
+                            <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
+                        </button>
                     </div>
 
                 @else
 
                     <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-2">
                         <div>
-                            <h2 class="text-lg font-bold text-gray-800">5. Product Guidance <span
+                            <h2 class="text-lg font-bold text-gray-800">5. Product Information <span
                                     class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
                             <p class="text-xs text-gray-500 mt-1">Add care instructions, setup guides, or educational info for
                                 your customers.</p>
                         </div>
-                        <button type="button" @click="addGuide()"
-                            class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
-                            <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
-                        </button>
                     </div>
 
                     <div class="space-y-4">
@@ -725,6 +722,11 @@
                             </div>
                         </template>
                     </div>
+
+                    <button type="button" @click="addGuide()"
+                        class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors mt-4 w-fit">
+                        <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
+                    </button>
 
                 @endif
 

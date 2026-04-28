@@ -1,4 +1,4 @@
-@php
+<?php
     $primary = get_setting('primary_color', '#008a62');
     $hover = get_setting('primary_hover_color', '#007050');
     $currentStore = active_store(auth()->user());
@@ -21,51 +21,46 @@
         'time'    => $n->created_at->diffForHumans(),
     ])->values()->all();
     $notifLatestId = ! empty($notifItems) ? $notifItems[0]['id'] : null;
-@endphp
+?>
 
-{{-- ════════════════════════════════════════════════════════════
-     AJAX PARTIAL RESPONSE — only content zone returned
-     Child views work exactly the same — zero changes needed
-════════════════════════════════════════════════════════════ --}}
-@if (request()->ajax())
 
-    <title>@yield('title', 'Qlinkon')</title>
+<?php if(request()->ajax()): ?>
 
-    <script type="text/plain" id="ajax-styles">@stack('styles')</script>
+    <title><?php echo $__env->yieldContent('title', 'Qlinkon'); ?></title>
 
-    <div id="ajax-header-content">@yield('header-title')</div>
+    <script type="text/plain" id="ajax-styles"><?php echo $__env->yieldPushContent('styles'); ?></script>
+
+    <div id="ajax-header-content"><?php echo $__env->yieldContent('header-title'); ?></div>
 
     <div id="ajax-main-content">
-        @yield('content')
+        <?php echo $__env->yieldContent('content'); ?>
         <footer class="mt-auto py-6 text-center text-xs text-gray-400">
-            &copy; {{ date('Y') }} Powered by <span class="font-semibold text-gray-600">Qlinkon</span>
+            &copy; <?php echo e(date('Y')); ?> Powered by <span class="font-semibold text-gray-600">Qlinkon</span>
         </footer>
 
-        @stack('scripts')
+        <?php echo $__env->yieldPushContent('scripts'); ?>
     </div>
-@else
-    {{-- ════════════════════════════════════════════════════════════
-     FULL LAYOUT — first load only
-════════════════════════════════════════════════════════════ --}}
+<?php else: ?>
+    
     <!DOCTYPE html>
     <html lang="en">
 
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>@yield('title', 'Qlinkon')</title>
+        <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+        <title><?php echo $__env->yieldContent('title', 'Qlinkon'); ?></title>
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
             rel="stylesheet">
-        <link rel="icon" type="image/png" href="{{ get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : asset('assets/icons/favicon.png') }}">
+        <link rel="icon" type="image/png" href="<?php echo e(get_setting('favicon') ? asset('storage/' . get_setting('favicon')) : asset('assets/icons/favicon.png')); ?>">
 
-        {{-- 1. Load Tailwind FIRST --}}
-        <script src="{{ asset('assets/js/tailwind.min.js') }}"></script>
+        
+        <script src="<?php echo e(asset('assets/js/tailwind.min.js')); ?>"></script>
 
-        {{-- 2. Configure Tailwind SECOND --}}
+        
         <script>
             tailwind.config = {
                 theme: {
@@ -87,18 +82,18 @@
             }
         </script>
 
-        {{-- 3. Load other libraries --}}
-        <script src="{{ asset('assets/js/lucide.min.js') }}"></script>
-        <script src="{{ asset('assets/js/sweetalert2.js') }}"></script>
-        <script defer src="{{ asset('assets/js/alpinejs.min.js') }}"></script>
+        
+        <script src="<?php echo e(asset('assets/js/lucide.min.js')); ?>"></script>
+        <script src="<?php echo e(asset('assets/js/sweetalert2.js')); ?>"></script>
+        <script defer src="<?php echo e(asset('assets/js/alpinejs.min.js')); ?>"></script>
 
-        {{-- 4. CSS Variables --}}   
+           
         <style>   
             :root {
                 /* Core Brand Colors */
-                --brand-500: {{ $primary }};
-                --brand-600: {{ $hover }};
-                --brand-700: {{ $hover }};
+                --brand-500: <?php echo e($primary); ?>;
+                --brand-600: <?php echo e($hover); ?>;
+                --brand-700: <?php echo e($hover); ?>;
                 
                 /* Light Brand Variations (Calculated automatically by browser!) */
                 --color-brand-50: color-mix(in srgb, var(--brand-500) 10%, white);
@@ -426,8 +421,8 @@
             }
         </style>
 
-        @yield('styles')
-        @stack('styles')
+        <?php echo $__env->yieldContent('styles'); ?>
+        <?php echo $__env->yieldPushContent('styles'); ?>
     </head>
 
     <body class="bg-[#f4f6f9] text-gray-800 font-sans">
@@ -435,39 +430,39 @@
         <div id="nav-progress"></div>
         <div id="page-cover"></div>
 
-        @php
+        <?php
             $isActive = fn(string|array $r) => request()->routeIs($r);
             $navCls = fn(string|array $r) => $isActive($r) ? 'active' : '';
             $subCls = fn(string|array $r) => $isActive($r) ? 'active' : '';
             $accOpen = fn(string|array $r) => $isActive($r) ? 'true' : 'false';
-        @endphp
+        ?>
 
         <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
         <div class="flex h-screen w-full overflow-hidden">
 
-            {{-- ═══════════════ SIDEBAR ═══════════════ --}}
+            
             <aside id="main-sidebar" class="w-64 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
 
-                @php
+                <?php
                     $logo = get_setting('logo'); // returns path relative to storage, e.g. "logos/site-logo.png"
                     $siteName = get_setting('site_name', 'Qlinkon');
-                @endphp
+                ?>
 
                 <div class="h-[60px] flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0">
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5">
-                        {{-- Full Logo --}}
+                    <a href="<?php echo e(route('admin.dashboard')); ?>" class="flex items-center gap-2.5">
+                        
                         <img
-                            src="{{ asset('assets/images/logo.png') }}"
-                            alt="{{ $siteName }} logo"
+                            src="<?php echo e(asset('assets/images/logo.png')); ?>"
+                            alt="<?php echo e($siteName); ?> logo"
                             class="sidebar-logo-img h-7 md:h-8 lg:h-9 max-w-[150px] w-auto object-contain"
                         />
 
-                        {{-- Mini Logo --}}
+                        
                         <div class="sidebar-logo-mini w-10 h-10 rounded-lg text-white flex items-center justify-center shadow-sm overflow-hidden">
                             <img
-                                src="{{ asset('assets/icons/favicon.png') }}"
-                                alt="{{ $siteName }} mini logo"
+                                src="<?php echo e(asset('assets/icons/favicon.png')); ?>"
+                                alt="<?php echo e($siteName); ?> mini logo"
                                 class="w-full h-full object-contain p-1"
                             />
                         </div>
@@ -484,112 +479,112 @@
 
                     <div class="nav-section-label">Operations</div>
                     
-                    @if(has_permission('dashboard.view'))
-                        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ $navCls('admin.dashboard') }}">
+                    <?php if(has_permission('dashboard.view')): ?>
+                        <a href="<?php echo e(route('admin.dashboard')); ?>" class="nav-item <?php echo e($navCls('admin.dashboard')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="home"
                                     class="nav-icon w-[18px] h-[18px]"></i> Dashboard</span>
                         </a>
-                    @endif
+                    <?php endif; ?>
 
                     
-                    @if(has_module('hrm') && auth()->user()->employee)
-                        <a href="{{ route('admin.hrm.employee.dashboard') }}"
-                            class="nav-item {{ $navCls('admin.hrm.employee.dashboard') }}">
+                    <?php if(has_module('hrm') && auth()->user()->employee): ?>
+                        <a href="<?php echo e(route('admin.hrm.employee.dashboard')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.hrm.employee.dashboard')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="user-circle" class="nav-icon w-[18px] h-[18px]"></i></i> My Dashboard</span>
                         </a>
 
-                        {{-- Employee self-service links --}}
-                        <a href="{{ route('admin.hrm.my-leaves.index') }}"
-                            class="nav-item {{ $navCls('admin.hrm.my-leaves.*') }}">
+                        
+                        <a href="<?php echo e(route('admin.hrm.my-leaves.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.hrm.my-leaves.*')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="calendar-off"
                                     class="nav-icon w-[18px] h-[18px]"></i> My Leaves</span>
                         </a>
 
-                        <a href="{{ route('admin.hrm.my-attendance.index') }}"
-                            class="nav-item {{ $navCls('admin.hrm.my-attendance.*') }}">
+                        <a href="<?php echo e(route('admin.hrm.my-attendance.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.hrm.my-attendance.*')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="clock"
                                     class="nav-icon w-[18px] h-[18px]"></i> My Attendance</span>
                         </a>
 
-                        <a href="{{ route('admin.hrm.my-tasks.index') }}"
-                            class="nav-item {{ $navCls('admin.hrm.my-tasks.*') }}">
+                        <a href="<?php echo e(route('admin.hrm.my-tasks.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.hrm.my-tasks.*')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="check-square"
                                     class="nav-icon w-[18px] h-[18px]"></i> My Tasks</span>
                         </a>
 
-                        <a href="{{ route('admin.hrm.my-work-logs.index') }}"
-                            class="nav-item {{ $navCls('admin.hrm.my-work-logs.*') }}">
+                        <a href="<?php echo e(route('admin.hrm.my-work-logs.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.hrm.my-work-logs.*')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="clipboard-list"
                                     class="nav-icon w-[18px] h-[18px]"></i> My Work Logs</span>
                         </a>
 
-                        <a href="{{ route('admin.hrm.my-salary-slips.index') }}"
-                            class="nav-item {{ $navCls('admin.hrm.my-salary-slips.*') }}">
+                        <a href="<?php echo e(route('admin.hrm.my-salary-slips.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.hrm.my-salary-slips.*')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="banknote"
                                     class="nav-icon w-[18px] h-[18px]"></i> My Salary Slips</span>
                         </a>                                           
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_module('inquiry') && has_permission('inquiries.view'))
-                        <a href="{{ route('admin.orders.index') }}" class="nav-item {{ $navCls('admin.orders.*') }}">
+                    <?php if(has_module('inquiry') && has_permission('inquiries.view')): ?>
+                        <a href="<?php echo e(route('admin.orders.index')); ?>" class="nav-item <?php echo e($navCls('admin.orders.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="list-ordered" class="nav-icon w-[18px] h-[18px]"></i>
                                 Order Process
                             </span>
                         </a>
-                    @endif       
+                    <?php endif; ?>       
                     
-                    @if (has_module('ocr_scanner'))
-                        <a href="{{ route('admin.ocr-scanner.index') }}"
-                        class="nav-item {{ $navCls(['admin.ocr-scanner.*']) }}">
+                    <?php if(has_module('ocr_scanner')): ?>
+                        <a href="<?php echo e(route('admin.ocr-scanner.index')); ?>"
+                        class="nav-item <?php echo e($navCls(['admin.ocr-scanner.*'])); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="scan-line" class="nav-icon w-[18px] h-[18px]"></i>
                                 OCR Scanner
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                     
                     
-                    @if(has_module('invoicing') && has_permission(['invoices.view', 'quotations.view']))
+                    <?php if(has_module('invoicing') && has_permission(['invoices.view', 'quotations.view'])): ?>
                         <div class="nav-section-label">Sales & Finance</div>  
-                    @endif                                      
+                    <?php endif; ?>                                      
                     
-                    @if (has_module('pos') && has_permission('pos.access'))
-                        <a href="{{ url('/admin/pos') }}" class="nav-item" target="_blank" data-no-spa>
+                    <?php if(has_module('pos') && has_permission('pos.access')): ?>
+                        <a href="<?php echo e(url('/admin/pos')); ?>" class="nav-item" target="_blank" data-no-spa>
                             <span class="flex items-center gap-3"><i data-lucide="monitor"
                                     class="nav-icon w-[18px] h-[18px]"></i> POS</span>
                         </a>
-                    @endif                   
+                    <?php endif; ?>                   
                   
-                      {{-- Invoices --}}
-                    @if (has_module('invoicing') && has_permission('invoices.view'))
+                      
+                    <?php if(has_module('invoicing') && has_permission('invoices.view')): ?>
                         <div class="acc-group"
-                            data-open="{{ $accOpen(['admin.invoices.*', 'admin.invoice-returns.*']) }}">
+                            data-open="<?php echo e($accOpen(['admin.invoices.*', 'admin.invoice-returns.*'])); ?>">
                             <button
-                                class="nav-item acc-trigger {{ $navCls(['admin.invoices.*', 'admin.invoice-returns.*']) }}">
+                                class="nav-item acc-trigger <?php echo e($navCls(['admin.invoices.*', 'admin.invoice-returns.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="file-text"
                                         class="nav-icon w-[18px] h-[18px]"></i> Invoices</span>
                                 <i data-lucide="chevron-right" class="nav-chevron"></i>
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.invoices.index') }}"
-                                        class="sub-item {{ $subCls('admin.invoices.*') }}">
+                                    <a href="<?php echo e(route('admin.invoices.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.invoices.*')); ?>">
                                         <i data-lucide="list" class="w-4 h-4"></i>
                                         Sales</a>
-                                    <a href="{{ route('admin.invoice-returns.index') }}"
-                                        class="sub-item {{ $subCls('admin.invoice-returns.*') }}">
+                                    <a href="<?php echo e(route('admin.invoice-returns.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.invoice-returns.*')); ?>">
                                         <i data-lucide="corner-up-left" class="w-4 h-4"></i>
                                         Sales Returns</a>
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- Challans --}}
-                    @if (has_module('challan') && has_permission('challans.view'))
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.challans.*','admin.challan-returns.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls(['admin.challans.*','admin.challan-returns.*']) }}">
+                    
+                    <?php if(has_module('challan') && has_permission('challans.view')): ?>
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.challans.*','admin.challan-returns.*'])); ?>">
+                            <button class="nav-item acc-trigger <?php echo e($navCls(['admin.challans.*','admin.challan-returns.*'])); ?>">
                                 <span class="flex items-center gap-3">
                                     <i data-lucide="truck" class="nav-icon w-[18px] h-[18px]"></i> Delivery Challans
                                 </span>
@@ -598,60 +593,60 @@
 
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    {{-- All Challans --}}
-                                    <a href="{{ route('admin.challans.index') }}" class="sub-item {{ $subCls('admin.challans.*') }} flex items-center gap-2">
+                                    
+                                    <a href="<?php echo e(route('admin.challans.index')); ?>" class="sub-item <?php echo e($subCls('admin.challans.*')); ?> flex items-center gap-2">
                                         <i data-lucide="list" class="w-4 h-4"></i>
                                         All Challans
                                     </a>
-                                    {{-- Returns --}}                                    
-                                    <a href="{{ route('admin.challan-returns.index') }}" class="sub-item {{ $subCls('admin.challan-returns.*') }} flex items-center gap-2">
+                                                                        
+                                    <a href="<?php echo e(route('admin.challan-returns.index')); ?>" class="sub-item <?php echo e($subCls('admin.challan-returns.*')); ?> flex items-center gap-2">
                                         <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                                         Challan Returns
                                     </a>                                    
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_module('invoicing') && has_permission('quotations.view'))                    
-                        <a href="{{ route('admin.quotations.index') }}"
-                            class="nav-item {{ $navCls('admin.quotations.*') }}">
+                    <?php if(has_module('invoicing') && has_permission('quotations.view')): ?>                    
+                        <a href="<?php echo e(route('admin.quotations.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.quotations.*')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="quote"
                                 class="nav-icon w-[18px] h-[18px]"></i> 
                                 Quotations</span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                                   
-                    {{-- Purchases --}}
-                    @if (has_module('purchases') && has_permission(['purchases.view', 'purchase_returns.view']))
+                    
+                    <?php if(has_module('purchases') && has_permission(['purchases.view', 'purchase_returns.view'])): ?>
                         <div class="acc-group"
-                            data-open="{{ $accOpen(['admin.purchases.*', 'admin.purchase-returns.*']) }}">
+                            data-open="<?php echo e($accOpen(['admin.purchases.*', 'admin.purchase-returns.*'])); ?>">
                             <button
-                                class="nav-item acc-trigger {{ $navCls(['admin.purchases.*', 'admin.purchase-returns.*']) }}">
+                                class="nav-item acc-trigger <?php echo e($navCls(['admin.purchases.*', 'admin.purchase-returns.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="shopping-bag"
                                         class="nav-icon w-[18px] h-[18px]"></i> Purchases</span>
                                 <i data-lucide="chevron-right" class="nav-chevron"></i>
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.purchases.index') }}"
-                                        class="sub-item {{ $subCls('admin.purchases.*') }}">
+                                    <a href="<?php echo e(route('admin.purchases.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.purchases.*')); ?>">
                                         <i data-lucide="list" class="w-4 h-4"></i>
                                         Purchases</a>
-                                    <a href="{{ route('admin.purchase-returns.index') }}"
-                                        class="sub-item {{ $subCls('admin.purchase-returns.*') }}">
+                                    <a href="<?php echo e(route('admin.purchase-returns.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.purchase-returns.*')); ?>">
                                         <i data-lucide="corner-up-left" class="w-4 h-4"></i>
                                         Purchase Returns</a>
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                     @if (has_module('invoicing') &&
-                            has_permission(['expenses.view']))
-                        {{-- Expenses --}}
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.expenses.*', 'admin.expense-categories.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls('admin.expenses.*') }}">
+                     <?php if(has_module('invoicing') &&
+                            has_permission(['expenses.view'])): ?>
+                        
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.expenses.*', 'admin.expense-categories.*'])); ?>">
+                            <button class="nav-item acc-trigger <?php echo e($navCls('admin.expenses.*')); ?>">
                                 <span class="flex items-center gap-3">
                                     <i data-lucide="indian-rupee" class="nav-icon w-[18px] h-[18px]"></i>
                                     Expenses
@@ -661,41 +656,41 @@
 
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.expenses.index') }}"
-                                        class="sub-item {{ $subCls('admin.expenses.*') }} flex items-center gap-2">
+                                    <a href="<?php echo e(route('admin.expenses.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.expenses.*')); ?> flex items-center gap-2">
                                         <i data-lucide="clipboard-list" class="w-4 h-4"></i>
                                         All Expenses
                                     </a>
 
-                                    <a href="{{ route('admin.expense-categories.index') }}"
-                                        class="sub-item flex {{ $subCls('admin.expense-categories.*') }} items-center gap-2">
+                                    <a href="<?php echo e(route('admin.expense-categories.index')); ?>"
+                                        class="sub-item flex <?php echo e($subCls('admin.expense-categories.*')); ?> items-center gap-2">
                                         <i data-lucide="layers" class="w-4 h-4"></i>
                                         Categories
                                     </a>
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_module('reports') && has_permission('reports.view'))
-                         <a href="{{ route('admin.reports.index') }}"
-                             class="nav-item {{ $navCls('admin.reports.*') }}">
+                    <?php if(has_module('reports') && has_permission('reports.view')): ?>
+                         <a href="<?php echo e(route('admin.reports.index')); ?>"
+                             class="nav-item <?php echo e($navCls('admin.reports.*')); ?>">
                              <span class="flex items-center gap-3"><i data-lucide="bar-chart-2"
                                      class="nav-icon w-[18px] h-[18px]"></i> Analytics</span>
                          </a>
-                     @endif
+                     <?php endif; ?>
 
                       
                     
                     
-                    {{-- Products --}}
-                    @if (has_module('inventory') &&
-                            has_permission(['products.view', 'attributes.view', 'categories.view', 'units.view', 'labels.view']))
+                    
+                    <?php if(has_module('inventory') &&
+                            has_permission(['products.view', 'attributes.view', 'categories.view', 'units.view', 'labels.view'])): ?>
                     <div class="nav-section-label">Inventory</div>
                         <div class="acc-group"
-                            data-open="{{ $accOpen(['admin.products.*', 'admin.attributes.*', 'admin.categories.*', 'admin.units.*', 'admin.labels.*']) }}">
+                            data-open="<?php echo e($accOpen(['admin.products.*', 'admin.attributes.*', 'admin.categories.*', 'admin.units.*', 'admin.labels.*'])); ?>">
                             <button
-                                class="nav-item acc-trigger {{ $navCls(['admin.products.*', 'admin.attributes.*', 'admin.categories.*', 'admin.units.*', 'admin.labels.*']) }}">
+                                class="nav-item acc-trigger <?php echo e($navCls(['admin.products.*', 'admin.attributes.*', 'admin.categories.*', 'admin.units.*', 'admin.labels.*'])); ?>">
                                 <span class="flex items-center gap-3">
                                     <i data-lucide="package" class="nav-icon w-[18px] h-[18px]"></i> Products
                                 </span>
@@ -703,69 +698,69 @@
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    @if (has_permission('products.view'))
-                                        <a href="{{ route('admin.products.index') }}"
-                                            class="sub-item {{ $subCls('admin.products.*') }}">
+                                    <?php if(has_permission('products.view')): ?>
+                                        <a href="<?php echo e(route('admin.products.index')); ?>"
+                                            class="sub-item <?php echo e($subCls('admin.products.*')); ?>">
                                             <i data-lucide="list" class="w-4 h-4"></i>
                                             All Products</a>
-                                    @endif
-                                    @if (has_permission('attributes.view'))
-                                        <a href="{{ route('admin.attributes.index') }}"
-                                            class="sub-item {{ $subCls('admin.attributes.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('attributes.view')): ?>
+                                        <a href="<?php echo e(route('admin.attributes.index')); ?>"
+                                            class="sub-item <?php echo e($subCls('admin.attributes.*')); ?>">
                                             <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
                                             Attributes</a>
-                                    @endif
-                                    @if (has_permission('categories.view'))
-                                        <a href="{{ route('admin.categories.index') }}"
-                                            class="sub-item {{ $subCls('admin.categories.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('categories.view')): ?>
+                                        <a href="<?php echo e(route('admin.categories.index')); ?>"
+                                            class="sub-item <?php echo e($subCls('admin.categories.*')); ?>">
                                             <i data-lucide="folder" class="w-4 h-4"></i>
                                             Categories</a>
-                                    @endif
-                                    @if (has_permission('units.view'))
-                                        <a href="{{ route('admin.units.index') }}"
-                                            class="sub-item {{ $subCls('admin.units.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('units.view')): ?>
+                                        <a href="<?php echo e(route('admin.units.index')); ?>"
+                                            class="sub-item <?php echo e($subCls('admin.units.*')); ?>">
                                             <i data-lucide="ruler" class="w-4 h-4"></i>
                                             Units</a>
-                                    @endif
-                                    @if (has_permission('labels.view'))
-                                        <a href="{{ route('admin.labels.index') }}"
-                                            class="sub-item {{ $subCls('admin.labels.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('labels.view')): ?>
+                                        <a href="<?php echo e(route('admin.labels.index')); ?>"
+                                            class="sub-item <?php echo e($subCls('admin.labels.*')); ?>">
                                             <i data-lucide="barcode" class="w-4 h-4"></i>
                                             Print Barcode</a>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
-                    @endif
-                    {{-- 🌟 NEW: Inventory Report Link --}}                    
-                    @if (has_module('inventory') && has_permission('reports.view'))
-                        <a href="{{ route('admin.inventory.reports.index') }}"
-                            class="nav-item {{ $navCls('admin.inventory.reports.*') }}">
+                    <?php endif; ?>
+                                        
+                    <?php if(has_module('inventory') && has_permission('reports.view')): ?>
+                        <a href="<?php echo e(route('admin.inventory.reports.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.inventory.reports.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="clipboard-list" class="nav-icon w-[18px] h-[18px]"></i>
                                 Inventory Report
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_module('inventory') && has_permission('warehouses.view'))
-                        <a href="{{ route('admin.warehouses.index') }}"
-                            class="nav-item {{ $navCls('admin.warehouses.*') }}">
+                    <?php if(has_module('inventory') && has_permission('warehouses.view')): ?>
+                        <a href="<?php echo e(route('admin.warehouses.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.warehouses.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="warehouse" class="nav-icon w-[18px] h-[18px]"></i>
                                 Warehouses
                             </span>
                         </a>
-                    @endif                   
+                    <?php endif; ?>                   
                       
 
                     
-                    {{-- CRM --}}
-                    @if (has_module('crm') && has_permission(['crm_leads.view', 'crm_sources.view', 'crm_tags.view']))
+                    
+                    <?php if(has_module('crm') && has_permission(['crm_leads.view', 'crm_sources.view', 'crm_tags.view'])): ?>
                         <div class="nav-section-label">Relationships</div>                        
                         
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.crm.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls(['admin.crm.*']) }}">
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.crm.*'])); ?>">
+                            <button class="nav-item acc-trigger <?php echo e($navCls(['admin.crm.*'])); ?>">
                                 <span class="flex items-center gap-3">
                                     <i data-lucide="contact" class="nav-icon w-[18px] h-[18px]"></i>
                                     CRM
@@ -774,324 +769,324 @@
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    @if(has_permission('crm_dashboard.view'))
-                                     <a href="{{ route('admin.crm.dashboard') }}"
-                                        class="sub-item {{ $subCls('admin.crm.dashboard') }}">
+                                    <?php if(has_permission('crm_dashboard.view')): ?>
+                                     <a href="<?php echo e(route('admin.crm.dashboard')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.crm.dashboard')); ?>">
                                         <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                                         Dashboard</a>
-                                    @endif
-                                    <a href="{{ route('admin.crm.leads.index') }}"
-                                        class="sub-item {{ $subCls('admin.crm.leads.*') }}">
+                                    <?php endif; ?>
+                                    <a href="<?php echo e(route('admin.crm.leads.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.crm.leads.*')); ?>">
                                         <i data-lucide="users" class="w-4 h-4"></i>
                                         All Leads</a>
-                                    @if(has_permission('crm_pipelines.view'))
-                                    <a href="{{ route('admin.crm.pipelines.index') }}"
-                                        class="sub-item {{ $subCls(['admin.crm.pipelines.*','admin.crm.stages.*']) }}">
+                                    <?php if(has_permission('crm_pipelines.view')): ?>
+                                    <a href="<?php echo e(route('admin.crm.pipelines.index')); ?>"
+                                        class="sub-item <?php echo e($subCls(['admin.crm.pipelines.*','admin.crm.stages.*'])); ?>">
                                         <i data-lucide="git-branch" class="w-4 h-4"></i>
                                         Pipelines</a>
-                                    @endif
-                                    <a href="{{ route('admin.crm.sources.index') }}"
-                                        class="sub-item {{ $subCls('admin.crm.sources.*') }}">
+                                    <?php endif; ?>
+                                    <a href="<?php echo e(route('admin.crm.sources.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.crm.sources.*')); ?>">
                                         <i data-lucide="target" class="w-4 h-4"></i>
                                         Lead Sources</a>
-                                    <a href="{{ route('admin.crm.tags.index') }}?tab=tags"
-                                        class="sub-item {{ $subCls('admin.crm.tags.*') }}">
+                                    <a href="<?php echo e(route('admin.crm.tags.index')); ?>?tab=tags"
+                                        class="sub-item <?php echo e($subCls('admin.crm.tags.*')); ?>">
                                         <i data-lucide="tag" class="w-4 h-4"></i>
                                         Tags</a>
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- Peoples --}}                    
+                                        
                     <div class="acc-group"
-                        data-open="{{ $accOpen(['admin.clients.*', 'admin.suppliers.*']) }}">
-                        @if(has_permission('clients.view')||has_permission('suppliers.view'))
+                        data-open="<?php echo e($accOpen(['admin.clients.*', 'admin.suppliers.*'])); ?>">
+                        <?php if(has_permission('clients.view')||has_permission('suppliers.view')): ?>
                         <button
-                            class="nav-item acc-trigger {{ $navCls(['admin.clients.*', 'admin.suppliers.*']) }}">
+                            class="nav-item acc-trigger <?php echo e($navCls(['admin.clients.*', 'admin.suppliers.*'])); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Contacts
                             </span>
                             <i data-lucide="chevron-right" class="nav-chevron"></i>
                         </button>
-                        @endif
+                        <?php endif; ?>
                         <div class="acc-wrap">
                             <div class="sub-menu">
-                                @if (has_permission('clients.view'))
-                                    <a href="{{ route('admin.clients.index') }}"
-                                        class="sub-item {{ $subCls('admin.clients.*') }}">
+                                <?php if(has_permission('clients.view')): ?>
+                                    <a href="<?php echo e(route('admin.clients.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.clients.*')); ?>">
                                         <i data-lucide="briefcase" class="w-4 h-4"></i>
                                         Clients</a>
-                                @endif
-                                @if (has_permission('suppliers.view'))
-                                    <a href="{{ route('admin.suppliers.index') }}"
-                                        class="sub-item {{ $subCls('admin.suppliers.*') }}">
+                                <?php endif; ?>
+                                <?php if(has_permission('suppliers.view')): ?>
+                                    <a href="<?php echo e(route('admin.suppliers.index')); ?>"
+                                        class="sub-item <?php echo e($subCls('admin.suppliers.*')); ?>">
                                         <i data-lucide="building-2" class="w-4 h-4"></i>
                                         Suppliers</a>
-                                @endif                                    
+                                <?php endif; ?>                                    
                             </div>
                         </div>
                     </div>                    
                     
                     
-                    {{-- HRM --}}
-                    @if (has_module('hrm') && has_permission('hrm.view'))                    
+                    
+                    <?php if(has_module('hrm') && has_permission('hrm.view')): ?>                    
                     <div class="nav-section-label">Team</div>
                     
-                         {{-- Announcements --}}
-                         @if(has_permission('announcements.view'))
-                            <a href="{{ route('admin.hrm.announcements.index') }}" class="nav-item {{ $navCls('admin.hrm.announcements.*') }}">
+                         
+                         <?php if(has_permission('announcements.view')): ?>
+                            <a href="<?php echo e(route('admin.hrm.announcements.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.announcements.*')); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="megaphone" class="nav-icon w-[18px] h-[18px]"></i> Announcements</span>
                             </a> 
-                        @endif
+                        <?php endif; ?>
                         
-                        {{-- Attendance --}}
-                        @if(has_permission('attendance.view'))
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*']) }}">
+                        
+                        <?php if(has_permission('attendance.view')): ?>
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*'])); ?>">
+                            <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.attendance.*', 'admin.hrm.office-locations.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="clock" class="nav-icon w-[18px] h-[18px]"></i> Attendance</span>
                                 <i data-lucide="chevron-right" class="nav-chevron"></i>
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.hrm.attendance.today') }}" class="sub-item {{ $subCls('admin.hrm.attendance.today') }}">
+                                    <a href="<?php echo e(route('admin.hrm.attendance.today')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.attendance.today')); ?>">
                                         <i data-lucide="calendar-check" class="w-4 h-4"></i>
                                         Today</a>
-                                    @if(has_permission('attendance.report'))
-                                        <a href="{{ route('admin.hrm.attendance.report') }}" class="sub-item {{ $subCls('admin.hrm.attendance.report') }}">
+                                    <?php if(has_permission('attendance.report')): ?>
+                                        <a href="<?php echo e(route('admin.hrm.attendance.report')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.attendance.report')); ?>">
                                             <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
                                             Report</a>
-                                    @endif
-                                    @if(has_permission('office_locations.view'))
-                                        <a href="{{ route('admin.hrm.office-locations.index') }}" class="sub-item {{ $subCls('admin.hrm.office-locations.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('office_locations.view')): ?>
+                                        <a href="<?php echo e(route('admin.hrm.office-locations.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.office-locations.*')); ?>">
                                             <i data-lucide="map-pin" class="w-4 h-4"></i>
                                             Office Locations</a>                                    
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
                         
-                        {{-- Tasks --}}
-                        @if(has_permission('hrm_tasks.view'))
-                            <a href="{{ route('admin.hrm.tasks.index') }}" class="nav-item {{ $navCls('admin.hrm.tasks.*') }}">
+                        
+                        <?php if(has_permission('hrm_tasks.view')): ?>
+                            <a href="<?php echo e(route('admin.hrm.tasks.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.tasks.*')); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="check-square" class="nav-icon w-[18px] h-[18px]"></i> Tasks</span>
                             </a>
-                        @endif
-                         {{-- Work Logs --}}
-                        @if(has_permission('work_logs.view'))
-                            <a href="{{ route('admin.hrm.work-logs.index') }}" class="nav-item {{ $navCls('admin.hrm.work-logs.*') }}">
+                        <?php endif; ?>
+                         
+                        <?php if(has_permission('work_logs.view')): ?>
+                            <a href="<?php echo e(route('admin.hrm.work-logs.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.work-logs.*')); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="timer" class="nav-icon w-[18px] h-[18px]"></i> Work Logs</span>
                             </a>  
-                        @endif
+                        <?php endif; ?>
 
-                        {{-- Leaves --}}
-                        @if(has_permission('leaves.view'))
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*']) }}">
+                        
+                        <?php if(has_permission('leaves.view')): ?>
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*'])); ?>">
+                            <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.leaves.*', 'admin.hrm.leave-types.*', 'admin.hrm.leave-balances.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="calendar-off" class="nav-icon w-[18px] h-[18px]"></i> Leaves</span>
                                 <i data-lucide="chevron-right" class="nav-chevron"></i>
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    <a href="{{ route('admin.hrm.leaves.index') }}" class="sub-item {{ $subCls('admin.hrm.leaves.*') }}">
+                                    <a href="<?php echo e(route('admin.hrm.leaves.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.leaves.*')); ?>">
                                         <i data-lucide="calendar-clock" class="w-4 h-4"></i>
                                         All Requests</a>
-                                    <a href="{{ route('admin.hrm.leave-types.index') }}" class="sub-item {{ $subCls('admin.hrm.leave-types.*') }}">
+                                    <a href="<?php echo e(route('admin.hrm.leave-types.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.leave-types.*')); ?>">
                                         <i data-lucide="layers" class="w-4 h-4"></i>
                                         Leave Types</a>
-                                    <a href="{{ route('admin.hrm.leave-balances.index') }}" class="sub-item {{ $subCls('admin.hrm.leave-balances.*') }}">
+                                    <a href="<?php echo e(route('admin.hrm.leave-balances.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.leave-balances.*')); ?>">
                                         <i data-lucide="pie-chart" class="w-4 h-4"></i>
                                         Leave Balances</a>
                                 </div>
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
-                        {{-- Payroll --}}
-                        @if(has_permission('salary_slips.view'))
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*']) }}">
-                             <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*']) }}">
+                        
+                        <?php if(has_permission('salary_slips.view')): ?>
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*'])); ?>">
+                             <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.salary-slips.*', 'admin.hrm.salary-components.*'])); ?>">
                                  <span class="flex items-center gap-3"><i data-lucide="banknote" class="nav-icon w-[18px] h-[18px]"></i> Payroll</span>
                                  <i data-lucide="chevron-right" class="nav-chevron"></i>
                                 </button>
                                 <div class="acc-wrap">
                                     <div class="sub-menu">                                        
-                                            <a href="{{ route('admin.hrm.salary-slips.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-slips.*') }}">
+                                            <a href="<?php echo e(route('admin.hrm.salary-slips.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.salary-slips.*')); ?>">
                                                 <i data-lucide="file-text" class="w-4 h-4"></i> 
                                                 Salary Slips</a>                                        
-                                        @if(has_permission('salary_components.view'))
-                                            <a href="{{ route('admin.hrm.salary-components.index') }}" class="sub-item {{ $subCls('admin.hrm.salary-components.*') }}">
+                                        <?php if(has_permission('salary_components.view')): ?>
+                                            <a href="<?php echo e(route('admin.hrm.salary-components.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.salary-components.*')); ?>">
                                                 <i data-lucide="list-checks" class="w-4 h-4"></i>
 
 
                                                 Components</a>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
-                        {{-- Employees --}}
-                        @if(has_permission('employees.view'))
-                        <a href="{{ route('admin.hrm.employees.index') }}" class="nav-item {{ $navCls('admin.hrm.employees.*') }}">
+                        
+                        <?php if(has_permission('employees.view')): ?>
+                        <a href="<?php echo e(route('admin.hrm.employees.index')); ?>" class="nav-item <?php echo e($navCls('admin.hrm.employees.*')); ?>">
                             <span class="flex items-center gap-3"><i data-lucide="users" class="nav-icon w-[18px] h-[18px]"></i> Employees</span>
                         </a>
-                        @endif
+                        <?php endif; ?>
                                                                  
-                        {{-- Setup --}}
-                        <div class="acc-group" data-open="{{ $accOpen(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*']) }}">
-                            <button class="nav-item acc-trigger {{ $navCls(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*']) }}">
+                        
+                        <div class="acc-group" data-open="<?php echo e($accOpen(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*'])); ?>">
+                            <button class="nav-item acc-trigger <?php echo e($navCls(['admin.hrm.departments.*', 'admin.hrm.designations.*', 'admin.hrm.shifts.*', 'admin.hrm.holidays.*', 'admin.hrm.attendance-rules.*'])); ?>">
                                 <span class="flex items-center gap-3"><i data-lucide="settings-2" class="nav-icon w-[18px] h-[18px]"></i> HRM Setup</span>
                                 <i data-lucide="chevron-right" class="nav-chevron"></i>
                             </button>
                             <div class="acc-wrap">
                                 <div class="sub-menu">
-                                    @if(has_permission('departments.view'))
-                                        <a href="{{ route('admin.hrm.departments.index') }}" class="sub-item {{ $subCls('admin.hrm.departments.*') }}">
+                                    <?php if(has_permission('departments.view')): ?>
+                                        <a href="<?php echo e(route('admin.hrm.departments.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.departments.*')); ?>">
                                             <i data-lucide="building-2" class="w-4 h-4"></i>
                                             Departments</a>
-                                    @endif
-                                    @if(has_permission('designations.view'))
-                                        <a href="{{ route('admin.hrm.designations.index') }}" class="sub-item {{ $subCls('admin.hrm.designations.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('designations.view')): ?>
+                                        <a href="<?php echo e(route('admin.hrm.designations.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.designations.*')); ?>">
                                             <i data-lucide="id-card" class="w-4 h-4"></i> 
                                             Designations</a>
-                                    @endif
-                                    @if(has_permission('shifts.view'))
-                                        <a href="{{ route('admin.hrm.shifts.index') }}" class="sub-item {{ $subCls('admin.hrm.shifts.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('shifts.view')): ?>
+                                        <a href="<?php echo e(route('admin.hrm.shifts.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.shifts.*')); ?>">
                                             <i data-lucide="clock-8" class="w-4 h-4"></i> 
                                             Shifts</a>
-                                    @endif
-                                    @if(has_permission('holidays.view'))
-                                        <a href="{{ route('admin.hrm.holidays.index') }}" class="sub-item {{ $subCls('admin.hrm.holidays.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('holidays.view')): ?>
+                                        <a href="<?php echo e(route('admin.hrm.holidays.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.holidays.*')); ?>">
                                             <i data-lucide="calendar-days" class="w-4 h-4"></i>
                                             Holidays</a>
-                                    @endif
-                                    @if(has_permission('attendance_rules.view'))
-                                        <a href="{{ route('admin.hrm.attendance-rules.index') }}" class="sub-item {{ $subCls('admin.hrm.attendance-rules.*') }}">
+                                    <?php endif; ?>
+                                    <?php if(has_permission('attendance_rules.view')): ?>
+                                        <a href="<?php echo e(route('admin.hrm.attendance-rules.index')); ?>" class="sub-item <?php echo e($subCls('admin.hrm.attendance-rules.*')); ?>">
                                             <i data-lucide="check-square" class="w-4 h-4"></i>
                                             Attendance Rules</a>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>                                               
-                    @endif                    
+                    <?php endif; ?>                    
 
 
                     
-                    @if (has_permission('stores.view'))
+                    <?php if(has_permission('stores.view')): ?>
                         <div class="nav-section-label">Store Management</div>
                         
-                        <a href="{{ route('admin.stores.index') }}"
-                            class="nav-item {{ $navCls('admin.stores.*') }}">
+                        <a href="<?php echo e(route('admin.stores.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.stores.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="store" class="nav-icon w-[18px] h-[18px]"></i>
                                 Stores
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                                      
                     
-                    @if (has_module('storefront') && has_permission('storefront_sections.view'))
-                        <a href="{{ route('admin.merchandising.index') }}"
-                            class="nav-item {{ $navCls('admin.merchandising.*') }}">
+                    <?php if(has_module('storefront') && has_permission('storefront_sections.view')): ?>
+                        <a href="<?php echo e(route('admin.merchandising.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.merchandising.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="layout-grid" class="nav-icon w-[18px] h-[18px]"></i>
                                 Merchandising
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                    
                     
-                    @if (has_module('storefront') && has_permission('storefront_sections.view'))
-                        <a href="{{ route('admin.storefront-sections.index') }}"
-                            class="nav-item {{ $navCls('admin.storefront-sections.*') }}">
+                    <?php if(has_module('storefront') && has_permission('storefront_sections.view')): ?>
+                        <a href="<?php echo e(route('admin.storefront-sections.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.storefront-sections.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="layout-dashboard" class="nav-icon w-[18px] h-[18px]"></i>
                                 Storefront Sections
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                         
-                    @if (has_module('storefront') && has_permission('pages.view'))
-                        <a href="{{ route('admin.pages.index') }}"
-                            class="nav-item {{ $navCls('admin.pages.*') }}">
+                    <?php if(has_module('storefront') && has_permission('pages.view')): ?>
+                        <a href="<?php echo e(route('admin.pages.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.pages.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="layout-grid" class="nav-icon w-[18px] h-[18px]"></i>
                                 Storefront Pages
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_module('storefront') && has_permission('banners.view'))
-                        <a href="{{ route('admin.banners.index') }}"
-                            class="nav-item {{ $navCls('admin.banners.*') }}">
+                    <?php if(has_module('storefront') && has_permission('banners.view')): ?>
+                        <a href="<?php echo e(route('admin.banners.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.banners.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="paint-roller" class="nav-icon w-[18px] h-[18px]"></i>
                                 Storefront Banners
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                     
                     <div class="nav-section-label">System</div>
 
 
-                    @if (has_permission('payment_methods.view'))
-                        <a href="{{ route('admin.payment-methods.index') }}"
-                            class="nav-item {{ $navCls('admin.payment-methods.*') }}">
+                    <?php if(has_permission('payment_methods.view')): ?>
+                        <a href="<?php echo e(route('admin.payment-methods.index')); ?>"
+                            class="nav-item <?php echo e($navCls('admin.payment-methods.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="credit-card" class="nav-icon w-[18px] h-[18px]"></i>
                                 Payment Methods
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_permission('roles.view'))
-                        <a href="{{ route('admin.roles.index') }}" class="nav-item {{ $navCls('admin.roles.*') }}">
+                    <?php if(has_permission('roles.view')): ?>
+                        <a href="<?php echo e(route('admin.roles.index')); ?>" class="nav-item <?php echo e($navCls('admin.roles.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="shield-check" class="nav-icon w-[18px] h-[18px]"></i>
                                 Roles & Permissions
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
                         
-                    @if (has_permission('users.view'))
-                        <a href="{{ route('admin.users.index') }}" class="nav-item {{ $navCls('admin.users.*') }}">
+                    <?php if(has_permission('users.view')): ?>
+                        <a href="<?php echo e(route('admin.users.index')); ?>" class="nav-item <?php echo e($navCls('admin.users.*')); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="shield-user" class="nav-icon w-[18px] h-[18px]"></i>
                                 Users
                             </span>
                         </a>                                        
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_module('bulk_import') && has_permission('bulk_import.view'))
-                        <a href="{{ route('admin.bulk-import.index') }}"
-                            class="nav-item {{ $navCls(['admin.bulk-import.*']) }}">
+                    <?php if(has_module('bulk_import') && has_permission('bulk_import.view')): ?>
+                        <a href="<?php echo e(route('admin.bulk-import.index')); ?>"
+                            class="nav-item <?php echo e($navCls(['admin.bulk-import.*'])); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="pickaxe" class="nav-icon w-[18px] h-[18px]"></i>
                                 Bulk Import
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
 
-                    @if (has_permission('settings.view'))
-                        <a href="{{ route('admin.settings.index') }}"
-                            class="nav-item {{ $navCls(['admin.settings.*']) }}">
+                    <?php if(has_permission('settings.view')): ?>
+                        <a href="<?php echo e(route('admin.settings.index')); ?>"
+                            class="nav-item <?php echo e($navCls(['admin.settings.*'])); ?>">
                             <span class="flex items-center gap-3">
                                 <i data-lucide="settings" class="nav-icon w-[18px] h-[18px]"></i>
                                 Settings
                             </span>
                         </a>
-                    @endif
+                    <?php endif; ?>
 
-                    <a href="{{ route('help') }}" class="nav-item {{ $navCls('help') }}">
+                    <a href="<?php echo e(route('help')); ?>" class="nav-item <?php echo e($navCls('help')); ?>">
                         <span class="flex items-center gap-3"><i data-lucide="help-circle"
                                 class="nav-icon w-[18px] h-[18px]"></i> Help Center</span>
                     </a>
 
-                    @if (has_module('storefront') && $companySlug)
-                            <a href="{{ route('storefront.index', ['slug' => $companySlug]) }}"
+                    <?php if(has_module('storefront') && $companySlug): ?>
+                            <a href="<?php echo e(route('storefront.index', ['slug' => $companySlug])); ?>"
                             target="_blank"
                             data-no-spa
                             class="nav-item">
@@ -1100,35 +1095,35 @@
                                     Visit Site
                                 </span>
                             </a>
-                    @endif
+                    <?php endif; ?>
 
                 </nav>
 
-                @if ($subscription && is_owner())
+                <?php if($subscription && is_owner()): ?>
                     <div class="px-3 py-3 flex-shrink-0 subscription-box">
                         <div class="bg-[#fff4ed] border border-[#fce4d6] rounded-xl p-3.5 text-center">
-                            @if ($isLifetime)
+                            <?php if($isLifetime): ?>
                                 <p class="text-[11px] font-semibold text-gray-600">Plan: <span
-                                        class="uppercase tracking-wider">{{ $subscription->plan->name ?? 'Lifetime' }}</span>
+                                        class="uppercase tracking-wider"><?php echo e($subscription->plan->name ?? 'Lifetime'); ?></span>
                                 </p>
                                 <p class="text-sm font-bold text-[#e06623] mt-0.5">Never Expires</p>
-                            @else
+                            <?php else: ?>
                                 <p class="text-[11px] font-semibold text-gray-600">Expires:
-                                    {{ \Carbon\Carbon::parse($expiresAt)->format('d M, Y') }}</p>
-                                <p class="text-sm font-bold text-[#e06623] mt-0.5">{{ $daysLeft }} days left</p>
-                            @endif
+                                    <?php echo e(\Carbon\Carbon::parse($expiresAt)->format('d M, Y')); ?></p>
+                                <p class="text-sm font-bold text-[#e06623] mt-0.5"><?php echo e($daysLeft); ?> days left</p>
+                            <?php endif; ?>
                         </div>
                     </div>
-                @endif
+                <?php endif; ?>
             </aside>
 
-  {{-- ═══════════════ MAIN AREA ═══════════════ --}}
+  
             <div class="flex-1 flex flex-col overflow-hidden relative min-w-0">
 
                 <header
                     class="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-5 z-30 sticky top-0">
                     
-                    {{-- 🟢 LEFT SIDE: Menu Toggle & Title --}}
+                    
                     <div class="flex items-center gap-3">
                         <button id="hamburger-btn" onclick="toggleSidebar()"
                             class="lg:hidden flex flex-col gap-[5px] items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none"
@@ -1137,56 +1132,57 @@
                             <span class="hb-line"></span>
                             <span class="hb-line"></span>
                         </button>
-                        {{-- 🌟 NEW: Desktop Minimize Toggle --}}
+                        
                         <button onclick="toggleDesktopSidebar()" 
                             class="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors">
                             <i data-lucide="menu" class="w-5 h-5"></i>
                         </button>
-                        <div id="page-header-title" class="hidden sm:block">@yield('header-title')</div>
+                        <div id="page-header-title" class="hidden sm:block"><?php echo $__env->yieldContent('header-title'); ?></div>
                     </div>
 
-                    {{-- 🟢 RIGHT SIDE: Action Buttons Group --}}
+                    
                     <div class="flex items-center gap-2 sm:gap-4 ml-auto">
 
-                        {{-- 1. Store Switcher (Hidden on Mobile, Visible on iPad/PC) --}}
-                        @if ($canSwitchStore)
+                        
+                        <?php if($canSwitchStore): ?>
                             <div x-data="{ open: false }" class="relative sm:block">
                                 <button @click="open = !open" type="button"
                                     class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-sm font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-100 text-gray-700 rounded-lg transition-colors">
                                     <i data-lucide="store" class="w-3 h-3 sm:w-[15px] sm:h-[15px] text-gray-400"></i>
-                                    <span class="truncate max-w-[80px] sm:max-w-none">{{ $currentStore->name ?? 'Select Store' }}</span>
+                                    <span class="truncate max-w-[80px] sm:max-w-none"><?php echo e($currentStore->name ?? 'Select Store'); ?></span>
                                     <i data-lucide="chevron-down" class="w-3 h-3 sm:w-4 sm:h-4 text-gray-400"></i>
                                 </button>
                                 <div x-cloak x-show="open" @click.away="open = false" x-transition
                                     class="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-lg shadow-xl z-50 overflow-hidden">
-                                    @foreach ($stores as $store)
-                                        <form method="POST" action="{{ route('admin.store.switch') }}">
-                                            @csrf
-                                            <input type="hidden" name="store_id" value="{{ $store->id }}">
+                                    <?php $__currentLoopData = $stores; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $store): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <form method="POST" action="<?php echo e(route('admin.store.switch')); ?>">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="store_id" value="<?php echo e($store->id); ?>">
                                             <button type="submit"
-                                                class="w-full text-left px-4 py-2.5 text-[13px] hover:bg-gray-50 {{ $currentStore && $currentStore->id == $store->id ? 'bg-brand-50/50 text-brand-700 font-bold border-l-2 border-brand-500' : 'text-gray-700 font-medium' }}">
-                                                {{ $store->name }}
+                                                class="w-full text-left px-4 py-2.5 text-[13px] hover:bg-gray-50 <?php echo e($currentStore && $currentStore->id == $store->id ? 'bg-brand-50/50 text-brand-700 font-bold border-l-2 border-brand-500' : 'text-gray-700 font-medium'); ?>">
+                                                <?php echo e($store->name); ?>
+
                                             </button>
                                         </form>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
                             </div>
-                        @elseif ($currentStore)
+                        <?php elseif($currentStore): ?>
                             <div class="hidden sm:flex px-3 py-1.5 text-sm font-semibold bg-gray-50 border border-gray-100 text-gray-600 rounded-lg items-center gap-2">
                                 <i data-lucide="store" class="w-[15px] h-[15px] text-gray-400"></i>
-                                <span>{{ $currentStore->name }}</span>
+                                <span><?php echo e($currentStore->name); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        {{-- 2. Notification Bell (AJAX + Alpine) --}}
+                        
                         <div x-data="notificationBell()" x-init="init()" @click.outside="open = false" class="relative flex items-center">
 
-                            {{-- Bell trigger --}}
+                            
                             <button @click="open = !open" type="button"
                                 class="relative flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors focus:outline-none">
                                 <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
 
-                                {{-- Pulsing badge --}}
+                                
                                 <span x-show="unreadCount > 0" x-cloak class="absolute -top-1 -right-1 flex h-4 w-4">
                                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                     <span x-text="unreadCount > 9 ? '9+' : unreadCount"
@@ -1194,7 +1190,7 @@
                                 </span>
                             </button>
 
-                            {{-- Dropdown --}}
+                            
                             <div x-cloak x-show="open"
                                 x-transition:enter="transition ease-out duration-150"
                                 x-transition:enter-start="opacity-0 translate-y-1 scale-95"
@@ -1204,7 +1200,7 @@
                                 x-transition:leave-end="opacity-0 translate-y-1 scale-95"
                                 class="absolute right-0 top-full mt-2.5 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 origin-top-right">
 
-                                {{-- Header --}}
+                                
                                 <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                                     <h3 class="text-[11px] font-black text-gray-500 uppercase tracking-wider">Notifications</h3>
                                     <span x-show="unreadCount > 0" x-cloak
@@ -1212,17 +1208,17 @@
                                         x-text="unreadCount + ' New'"></span>
                                 </div>
 
-                                {{-- List --}}
+                                
                                 <div id="notif-list" class="max-h-[320px] overflow-y-auto nav-scroll">
 
-                                    {{-- Items --}}
+                                    
                                     <template x-for="item in notifications" :key="item.id">
                                         <a href="javascript:void(0)"
                                             @click="markAsRead(item.id, item.link)"
                                             class="block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
                                             <div class="flex gap-3">
 
-                                                {{-- Icon cell: Alpine manages wrapper attrs; x-ignore keeps <i> safe from Alpine --}}
+                                                
                                                 <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
                                                     :class="`bg-${item.color}-50`"
                                                     :data-lucide-icon="item.icon"
@@ -1244,7 +1240,7 @@
                                         </a>
                                     </template>
 
-                                    {{-- Empty state --}}
+                                    
                                     <div x-show="notifications.length === 0" x-cloak class="py-10 text-center">
                                         <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-2">
                                             <i data-lucide="check-circle" class="w-5 h-5 text-gray-300"></i>
@@ -1253,21 +1249,22 @@
                                     </div>
                                 </div>
 
-                                <a href="{{ route('admin.notifications.index') }}" @click="open = false"
+                                <a href="<?php echo e(route('admin.notifications.index')); ?>" @click="open = false"
                                     class="block px-4 py-2.5 border-t border-gray-100 text-center bg-gray-50/50 hover:bg-gray-100 transition-colors">
                                     <span class="text-[11px] font-bold text-gray-600">View All History</span>
                                 </a>
                             </div>
                         </div>
 
-                        {{-- 3. Profile Dropdown --}}
+                        
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" @click.away="open = false"
                                 class="flex items-center focus:outline-none group">
                                 <div
                                     class="w-9 h-9 rounded-full text-white flex items-center justify-center shadow-sm relative ring-2 ring-transparent group-hover:ring-[#82c43c]/30 transition-all duration-200 text-sm font-bold select-none"
                                     style="background: var(--brand-600)">
-                                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                    <?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?>
+
                                     <span
                                         class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#4ade80] border-2 border-white rounded-full"></span>
                                 </div>
@@ -1283,18 +1280,20 @@
                                     <div
                                         class="w-9 h-9 rounded-full text-white flex items-center justify-center flex-shrink-0 text-sm font-bold select-none"
                                         style="background: var(--brand-600)">
-                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                        <?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?>
+
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="text-sm font-bold text-gray-900 truncate">{{ auth()->user()->name }}
+                                        <p class="text-sm font-bold text-gray-900 truncate"><?php echo e(auth()->user()->name); ?>
+
                                         </p>
                                         <p class="text-xs text-gray-500 font-medium">
-                                            {{ auth()->user()->roles->first()->name ?? 'User' }}</p>
+                                            <?php echo e(auth()->user()->roles->first()->name ?? 'User'); ?></p>
                                     </div>
                                 </div>
                                 <div class="py-1.5">                                
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
+                                    <form method="POST" action="<?php echo e(route('logout')); ?>">
+                                        <?php echo csrf_field(); ?>
                                         <button type="submit"
                                             class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#ef4444] hover:bg-red-50 transition-colors">
                                             <i data-lucide="power" class="w-4 h-4"></i> Log Out
@@ -1308,9 +1307,9 @@
                 </header>
 
                 <main id="page-content" class="flex-1 overflow-x-hidden overflow-y-auto p-5 flex flex-col">
-                    @yield('content')
+                    <?php echo $__env->yieldContent('content'); ?>
                     <footer class="mt-auto py-6 text-center text-xs text-gray-400">
-                        &copy; {{ date('Y') }} Powered by <span
+                        &copy; <?php echo e(date('Y')); ?> Powered by <span
                             class="font-semibold text-gray-600">Qlinkon</span>
                     </footer>
                 </main>
@@ -1318,24 +1317,22 @@
 
 
         
-        {{-- ══════════════════════════════════════════════════════
-            ANNOUNCEMENT POPUP — auto-loads on page ready
-        ══════════════════════════════════════════════════════ --}}
+        
         <div x-data="announcementPopup()" x-init="init()" x-cloak>
             <template x-if="announcements.length > 0">
                 <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
                      @keydown.escape.window="dismissCurrent()">
-                    {{-- Backdrop --}}
+                    
                     <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
                          :class="currentAnnouncement?.requires_acknowledgement ? '' : 'cursor-pointer'"
                          @click="!currentAnnouncement?.requires_acknowledgement && dismissCurrent()"></div>
-                    {{-- Modal Card --}}
+                    
                     <div class="relative w-full max-w-[520px] bg-white rounded-[24px] shadow-2xl overflow-hidden animate-[slideUp_0.3s_ease-out] flex flex-col"
                          style="max-height: 90vh;">
-                        {{-- Header / Category Ribbon --}}
+                        
                         <div class="px-6 py-5 border-b border-gray-50 flex items-center justify-between shrink-0 bg-gray-50/30">
                             <div class="flex items-center gap-3">
-                                {{-- Icon Box --}}
+                                
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                                      :style="'background:' + (currentAnnouncement?.type_color?.text || '#4b5563') + '15; color:' + (currentAnnouncement?.type_color?.text || '#4b5563')">
                                     <svg x-show="currentAnnouncement?.requires_acknowledgement" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1348,7 +1345,7 @@
                                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                     </svg>
                                 </div>
-                                {{-- Labels --}}
+                                
                                 <div class="flex items-center gap-2 flex-wrap mt-0.5">
                                     <span class="text-[11px] font-black uppercase tracking-widest"
                                           :style="'color:' + (currentAnnouncement?.type_color?.text || '#4b5563')"
@@ -1359,23 +1356,23 @@
                                     </span>
                                 </div>
                             </div>
-                            {{-- Counter (if multiple) --}}
+                            
                             <div x-show="announcements.length > 1" class="text-[11px] font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full shrink-0">
                                 <span x-text="currentIndex + 1"></span> / <span x-text="announcements.length"></span>
                             </div>
                         </div>
-                        {{-- Scrollable Content Body --}}
+                        
                         <div class="px-6 py-6 overflow-y-auto no-scrollbar flex-1">
-                            {{-- Title & Time --}}
+                            
                             <div class="mb-5">
                                 <h2 class="text-[20px] font-black text-gray-900 leading-tight tracking-tight mb-1"
                                     x-text="currentAnnouncement?.title"></h2>
                                 <p class="text-[13px] font-medium text-gray-400" x-text="currentAnnouncement?.published_at"></p>
                             </div>
-                            {{-- HTML Content --}}
+                            
                             <div class="prose prose-sm sm:prose-base max-w-none text-[#4b5563] leading-relaxed"
                                  x-html="currentAnnouncement?.content"></div>
-                            {{-- Attachment Button --}}
+                            
                             <template x-if="currentAnnouncement?.attachment_url">
                                 <a :href="currentAnnouncement.attachment_url" target="_blank"
                                    class="mt-5 inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all group">
@@ -1385,7 +1382,7 @@
                                     <span x-text="currentAnnouncement.attachment_name || 'View Attachment'"></span>
                                 </a>
                             </template>
-                            {{-- Priority Alert Box (Matches Screenshot exactly) --}}
+                            
                             <template x-if="currentAnnouncement?.priority === 'critical' || currentAnnouncement?.priority === 'high'">
                                 <div class="mt-6 p-3.5 rounded-xl flex items-center gap-2.5 font-bold text-sm"
                                      :class="currentAnnouncement.priority === 'critical' ? 'bg-[#fdf2f2] text-[#d32f2f]' : 'bg-amber-50 text-amber-700'">
@@ -1398,17 +1395,17 @@
                                 </div>
                             </template>
                         </div>
-                        {{-- Footer Actions --}}
+                        
                         <div class="px-6 py-5 border-t border-gray-100 bg-white shrink-0 flex items-center gap-3"
                              :class="currentAnnouncement?.requires_acknowledgement ? 'justify-center' : 'justify-end'">
-                            {{-- Dismiss Button (Hidden if Mandatory) --}}
+                            
                             <button x-show="!currentAnnouncement?.requires_acknowledgement"
                                     @click="dismissCurrent()"
                                     :disabled="processing"
                                     class="px-5 py-3 text-[14px] font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-[14px] transition-colors active:scale-95 disabled:opacity-50">
                                 Dismiss
                             </button>
-                            {{-- Action Button (Accept / Got It) --}}
+                            
                             <button @click="acknowledgeCurrent()"
                                     :disabled="processing"
                                     class="px-8 py-3.5 rounded-[14px] text-[15px] font-extrabold text-white transition-all active:scale-95 flex items-center justify-center"
@@ -1829,9 +1826,9 @@
             
         </script>
                               
-        <script src="{{ asset('assets/js/swal.js') }}"></script>
+        <script src="<?php echo e(asset('assets/js/swal.js')); ?>"></script>
         
-        <audio id="qlinkon-notif-audio" src="{{ asset('assets/audio/notification.mp3') }}" preload="auto" style="display:none;"></audio>
+        <audio id="qlinkon-notif-audio" src="<?php echo e(asset('assets/audio/notification.mp3')); ?>" preload="auto" style="display:none;"></audio>
         <script>
         window.announcementPopup = function() {
             return {
@@ -1865,7 +1862,7 @@
 
                 async fetchPending() {
                     try {
-                        const res = await fetch('{{ url("admin/announcements-popup/pending") }}', {
+                        const res = await fetch('<?php echo e(url("admin/announcements-popup/pending")); ?>', {
                             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                         });
                         if (!res.ok) return;
@@ -1883,7 +1880,7 @@
 
                 async markRead(id) {
                     try {
-                        await fetch(`{{ url("admin/announcements-popup") }}/${id}/read`, {
+                        await fetch(`<?php echo e(url("admin/announcements-popup")); ?>/${id}/read`, {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1901,7 +1898,7 @@
                     this.processing = true;
                     try {
                         const endpoint = ann.requires_acknowledgement ? 'acknowledge' : 'dismiss';
-                        const res = await fetch(`{{ url("admin/announcements-popup") }}/${ann.id}/${endpoint}`, {
+                        const res = await fetch(`<?php echo e(url("admin/announcements-popup")); ?>/${ann.id}/${endpoint}`, {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1929,7 +1926,7 @@
 
                     this.processing = true;
                     try {
-                        const res = await fetch(`{{ url("admin/announcements-popup") }}/${ann.id}/dismiss`, {
+                        const res = await fetch(`<?php echo e(url("admin/announcements-popup")); ?>/${ann.id}/dismiss`, {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1994,16 +1991,16 @@
                     open:          false,
                     _timer:        null,
                     audioPlayer:   null,
-                    unreadCount:   @json($unreadCount),
-                    notifications: @json($notifItems),
-                    latestId:      @json($notifLatestId),
-                    allowedNotify: @json(get_setting('notify_new_order')),
-                    userRole: @json(auth()->user()->roles->pluck('name')),
-                    userId: @json(auth()->id()),                    
+                    unreadCount:   <?php echo json_encode($unreadCount, 15, 512) ?>,
+                    notifications: <?php echo json_encode($notifItems, 15, 512) ?>,
+                    latestId:      <?php echo json_encode($notifLatestId, 15, 512) ?>,
+                    allowedNotify: <?php echo json_encode(get_setting('notify_new_order'), 15, 512) ?>,
+                    userRole: <?php echo json_encode(auth()->user()->roles->pluck('name'), 15, 512) ?>,
+                    userId: <?php echo json_encode(auth()->id(), 15, 512) ?>,                    
 
                     init() {
                             this._renderIcons();
-                            this.audioPlayer = new Audio('{{ asset('assets/audio/notification.mp3') }}');
+                            this.audioPlayer = new Audio('<?php echo e(asset('assets/audio/notification.mp3')); ?>');
                             this.audioPlayer.preload = 'auto';
 
                             // 🌟 ROOT FIX: Browser Autoplay Policy Audio Unlocker
@@ -2037,7 +2034,7 @@
                     // ── Polling ──────────────────────────────────────────────
                     async _poll() {
                         try {
-                            const res = await fetch('{{ route('admin.notifications.fetch-recent') }}', {
+                            const res = await fetch('<?php echo e(route('admin.notifications.fetch-recent')); ?>', {
                                 headers: {
                                     'X-Requested-With': 'XMLHttpRequest',
                                     'Accept': 'application/json',
@@ -2171,7 +2168,7 @@
                             await fetch(`/admin/notifications/${id}/read`, {
                                 method:  'POST',
                                 headers: {
-                                    'X-CSRF-TOKEN':      '{{ csrf_token() }}',
+                                    'X-CSRF-TOKEN':      '<?php echo e(csrf_token()); ?>',
                                     'X-Requested-With':  'XMLHttpRequest',
                                 },
                             });
@@ -2183,22 +2180,23 @@
             };
         </script>
 
-        @stack('scripts')
-        @if (has_module('ocr_scanner'))
-            @php
+        <?php echo $__env->yieldPushContent('scripts'); ?>
+        <?php if(has_module('ocr_scanner')): ?>
+            <?php
                 $isOcrPage = request()->routeIs('admin.ocr-scanner.*');
-            @endphp
+            ?>
 
-            @unless($isOcrPage)
-                <a href="{{ route('admin.ocr-scanner.index') }}"
+            <?php if (! ($isOcrPage)): ?>
+                <a href="<?php echo e(route('admin.ocr-scanner.index')); ?>"
                 title="OCR Scanner"
                 class="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full text-white flex items-center justify-center shadow-xl transition-transform hover:scale-110"
                 style="background: var(--brand-500)">
                     <i data-lucide="scan-line" class="w-5 h-5"></i>
                 </a>
-            @endunless
-        @endif
+            <?php endif; ?>
+        <?php endif; ?>
     </body>
 
     </html>
-@endif
+<?php endif; ?>
+<?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlink-saas - Slug Based\resources\views/layouts/admin.blade.php ENDPATH**/ ?>

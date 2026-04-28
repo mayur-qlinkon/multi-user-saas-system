@@ -4,6 +4,7 @@ namespace App\Services\Hrm;
 
 use App\Models\Hrm\Attendance;
 use App\Models\Hrm\AttendanceLog;
+use App\Models\Hrm\AttendanceRule;
 use App\Models\Hrm\Employee;
 use App\Models\Hrm\Holiday;
 use App\Models\Hrm\Shift;
@@ -101,6 +102,14 @@ class AttendanceService
                     $type = $holidayResult['status'] === Attendance::STATUS_PENDING ? 'warning' : 'success';
                 } else {
                     [$status, $message, $type] = $this->determineCheckInStatus($now, $shiftWindow);
+                    [$status, $message, $type] = $this->applyAttendanceRules(
+                        $companyId,
+                        $now,
+                        $shiftWindow['shift_start'],
+                        $status,
+                        $message,
+                        $type
+                    );
                     $attendanceData['status'] = $status;
                 }
 
@@ -261,7 +270,7 @@ class AttendanceService
         });
     }
 
-   /**
+    /**
      * Evaluate the configured holiday attendance policy for a given employee and date.
      *
      * Detection covers: single-day holidays, multi-day ranges (date→end_date), and
@@ -269,6 +278,7 @@ class AttendanceService
      * multi-day ranges (safely handling cross-year ranges like Dec 25 - Jan 5).
      *
      * @return array{is_holiday: bool, working_on_holiday: bool, status: string}|null
+     *
      * @throws DomainException when policy is `block`.
      */
     public function evaluateHolidayPolicy(Employee $employee, $date): ?array
@@ -292,14 +302,14 @@ class AttendanceService
         // Database dialect formatting
         $dateMd = match ($driver) {
             'sqlite' => "strftime('%m-%d', date)",
-            'pgsql'  => "to_char(date, 'MM-DD')",
-            default  => "DATE_FORMAT(date, '%m-%d')", // MySQL/MariaDB
+            'pgsql' => "to_char(date, 'MM-DD')",
+            default => "DATE_FORMAT(date, '%m-%d')", // MySQL/MariaDB
         };
 
         $endOrDateMd = match ($driver) {
             'sqlite' => "strftime('%m-%d', COALESCE(end_date, date))",
-            'pgsql'  => "to_char(COALESCE(end_date, date), 'MM-DD')",
-            default  => "DATE_FORMAT(COALESCE(end_date, date), '%m-%d')", // MySQL/MariaDB
+            'pgsql' => "to_char(COALESCE(end_date, date), 'MM-DD')",
+            default => "DATE_FORMAT(COALESCE(end_date, date), '%m-%d')", // MySQL/MariaDB
         };
 
         // Existing robust holiday detection logic remains untouched
@@ -307,40 +317,40 @@ class AttendanceService
             ->where('company_id', $employee->company_id)
             ->where('is_active', true)
             ->where(function ($query) use ($targetDate, $targetMonthDay, $dateMd, $endOrDateMd) {
-                
+
                 // Scenario A: Non-recurring (exact date match)
                 $query->where(function ($q) use ($targetDate) {
                     $q->where('is_recurring', false)
                         ->whereDate('date', '<=', $targetDate)
                         ->where(function ($q2) use ($targetDate) {
                             $q2->whereDate('date', $targetDate)
-                               ->orWhereDate('end_date', '>=', $targetDate);
+                                ->orWhereDate('end_date', '>=', $targetDate);
                         });
                 })
-                
-                // Scenario B: Recurring holidays (annual match ignoring year)
-                ->orWhere(function ($q) use ($targetMonthDay, $dateMd, $endOrDateMd) {
-                    $q->where('is_recurring', true)
-                      ->where(function ($sub) use ($targetMonthDay, $dateMd, $endOrDateMd) {
-                          
-                          // B1: Normal range (e.g., Mar 1 to Mar 5) -> Start <= End
-                          $sub->where(function ($normal) use ($targetMonthDay, $dateMd, $endOrDateMd) {
-                              $normal->whereRaw("{$dateMd} <= {$endOrDateMd}")
-                                     ->whereRaw("{$dateMd} <= ?", [$targetMonthDay])
-                                     ->whereRaw("{$endOrDateMd} >= ?", [$targetMonthDay]);
-                          })
-                          
-                          // B2: Cross-year range (e.g., Dec 25 to Jan 5) -> Start > End
-                          ->orWhere(function ($crossYear) use ($targetMonthDay, $dateMd, $endOrDateMd) {
-                              $crossYear->whereRaw("{$dateMd} > {$endOrDateMd}")
-                                        ->where(function ($orTarget) use ($targetMonthDay, $dateMd, $endOrDateMd) {
-                                            $orTarget->whereRaw("{$dateMd} <= ?", [$targetMonthDay])
-                                                     ->orWhereRaw("{$endOrDateMd} >= ?", [$targetMonthDay]);
-                                        });
-                          });
 
-                      });
-                });
+                // Scenario B: Recurring holidays (annual match ignoring year)
+                    ->orWhere(function ($q) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                        $q->where('is_recurring', true)
+                            ->where(function ($sub) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+
+                                // B1: Normal range (e.g., Mar 1 to Mar 5) -> Start <= End
+                                $sub->where(function ($normal) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                                    $normal->whereRaw("{$dateMd} <= {$endOrDateMd}")
+                                        ->whereRaw("{$dateMd} <= ?", [$targetMonthDay])
+                                        ->whereRaw("{$endOrDateMd} >= ?", [$targetMonthDay]);
+                                })
+
+                                // B2: Cross-year range (e.g., Dec 25 to Jan 5) -> Start > End
+                                    ->orWhere(function ($crossYear) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                                        $crossYear->whereRaw("{$dateMd} > {$endOrDateMd}")
+                                            ->where(function ($orTarget) use ($targetMonthDay, $dateMd, $endOrDateMd) {
+                                                $orTarget->whereRaw("{$dateMd} <= ?", [$targetMonthDay])
+                                                    ->orWhereRaw("{$endOrDateMd} >= ?", [$targetMonthDay]);
+                                            });
+                                    });
+
+                            });
+                    });
             })
             ->exists();
 
@@ -351,7 +361,7 @@ class AttendanceService
         $policy = (string) get_setting('attendance.holiday_policy', 'block', $employee->company_id);
 
         if ($policy === 'block') {
-            throw new \DomainException('Today is a holiday. Attendance is not allowed.');
+            throw new DomainException('Today is a holiday. Attendance is not allowed.');
         }
 
         if ($policy === 'approval') {
@@ -592,6 +602,91 @@ class AttendanceService
         }
 
         return [Attendance::STATUS_PRESENT, 'Check-in recorded successfully.', 'success'];
+    }
+
+    /**
+     * Apply auto-applied attendance rules that can override the per-shift check-in status
+     * based on minutes-late from the shift start.
+     *
+     * Rule types evaluated:
+     *   - late_to_half_day → ACTION_MARK_HALF_DAY when minutes_late ≥ threshold_count
+     *   - late_to_absent   → ACTION_MARK_ABSENT  when minutes_late ≥ threshold_count
+     *
+     * The most severe outcome wins (absent > half_day > late > present), so multiple
+     * matching rules are safe. Cumulative-period rules (weekly/monthly counts) are
+     * not handled here and remain a separate concern.
+     *
+     * @return array{0:string,1:string,2:string} [status, message, type]
+     */
+    public function applyAttendanceRules(
+        int $companyId,
+        Carbon $checkInTime,
+        Carbon $shiftStart,
+        string $defaultStatus,
+        string $defaultMessage,
+        string $defaultType,
+    ): array {
+        $rules = AttendanceRule::query()
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->where('auto_apply', true)
+            ->whereIn('rule_type', [
+                AttendanceRule::TYPE_LATE_TO_HALF_DAY,
+                AttendanceRule::TYPE_LATE_TO_ABSENT,
+            ])
+            ->orderBy('threshold_count')
+            ->get();
+
+        if ($rules->isEmpty()) {
+            return [$defaultStatus, $defaultMessage, $defaultType];
+        }
+
+        $minutesLate = (int) max(0, $shiftStart->diffInMinutes($checkInTime, false));
+
+        if ($minutesLate <= 0) {
+            return [$defaultStatus, $defaultMessage, $defaultType];
+        }
+
+        $severity = [
+            Attendance::STATUS_PRESENT => 0,
+            Attendance::STATUS_LATE => 1,
+            Attendance::STATUS_HALF_DAY => 2,
+            Attendance::STATUS_ABSENT => 3,
+        ];
+
+        $resolvedStatus = $defaultStatus;
+        $matchedRule = null;
+
+        foreach ($rules as $rule) {
+            if ($minutesLate < (int) $rule->threshold_count) {
+                continue;
+            }
+
+            $candidate = match ($rule->action) {
+                AttendanceRule::ACTION_MARK_HALF_DAY => Attendance::STATUS_HALF_DAY,
+                AttendanceRule::ACTION_MARK_ABSENT => Attendance::STATUS_ABSENT,
+                default => null,
+            };
+
+            if ($candidate === null) {
+                continue;
+            }
+
+            if (($severity[$candidate] ?? 0) > ($severity[$resolvedStatus] ?? 0)) {
+                $resolvedStatus = $candidate;
+                $matchedRule = $rule;
+            }
+        }
+
+        if ($resolvedStatus === $defaultStatus || $matchedRule === null) {
+            return [$defaultStatus, $defaultMessage, $defaultType];
+        }
+
+        $statusLabel = Attendance::STATUS_LABELS[$resolvedStatus] ?? $resolvedStatus;
+        $message = "Check-in recorded. Marked as {$statusLabel} by rule \"{$matchedRule->name}\" ({$minutesLate} min late).";
+        $type = $resolvedStatus === Attendance::STATUS_ABSENT ? 'error' : 'warning';
+
+        return [$resolvedStatus, $message, $type];
     }
 
     protected function calculateOvertimeHours(int $workedMinutes, array $shiftWindow): float

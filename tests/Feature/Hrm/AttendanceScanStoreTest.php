@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureValidStoreSession;
 use App\Models\Company;
 use App\Models\Hrm\Attendance;
 use App\Models\Hrm\AttendanceLog;
+use App\Models\Hrm\AttendanceRule;
 use App\Models\Hrm\Employee;
 use App\Models\Hrm\Holiday;
 use App\Models\Hrm\Shift;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Services\Hrm\AnnouncementService;
 use App\Services\Hrm\AttendanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
@@ -689,4 +691,212 @@ test('evaluateHolidayPolicy ignores non-recurring holidays in other years', func
 
     expect($service->evaluateHolidayPolicy($ctx['employee'], '2026-06-15'))->not->toBeNull()
         ->and($service->evaluateHolidayPolicy($ctx['employee'], '2027-06-15'))->toBeNull();
+});
+
+function makeAttendanceRule(int $companyId, string $type, int $thresholdMinutes, string $action, array $overrides = []): AttendanceRule
+{
+    return AttendanceRule::create(array_merge([
+        'company_id' => $companyId,
+        'name' => 'Rule '.$type,
+        'rule_type' => $type,
+        'threshold_count' => $thresholdMinutes,
+        'threshold_period' => 'monthly',
+        'action' => $action,
+        'auto_apply' => true,
+        'is_active' => true,
+    ], $overrides));
+}
+
+test('applyAttendanceRules upgrades late status to absent when threshold passed', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_ABSENT, 15, AttendanceRule::ACTION_MARK_ABSENT);
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 16:00:00');
+    $checkIn = Carbon::parse('2026-04-25 16:20:00');
+
+    [$status, $message, $type] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_LATE,
+        'Default late.',
+        'warning',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_ABSENT)
+        ->and($type)->toBe('error')
+        ->and($message)->toContain('Absent')
+        ->and($message)->toContain('20 min late');
+});
+
+test('applyAttendanceRules marks half day when only late_to_half_day rule matches', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_HALF_DAY, 30, AttendanceRule::ACTION_MARK_HALF_DAY);
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 09:00:00');
+    $checkIn = Carbon::parse('2026-04-25 09:35:00');
+
+    [$status] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_LATE,
+        'Default.',
+        'warning',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_HALF_DAY);
+});
+
+test('applyAttendanceRules picks the most severe matching rule', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_HALF_DAY, 10, AttendanceRule::ACTION_MARK_HALF_DAY);
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_ABSENT, 30, AttendanceRule::ACTION_MARK_ABSENT);
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 09:00:00');
+    $checkIn = Carbon::parse('2026-04-25 09:35:00');
+
+    [$status] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_LATE,
+        'Default.',
+        'warning',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_ABSENT);
+});
+
+test('applyAttendanceRules leaves status unchanged when minutes-late below threshold', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_ABSENT, 30, AttendanceRule::ACTION_MARK_ABSENT);
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 09:00:00');
+    $checkIn = Carbon::parse('2026-04-25 09:10:00');
+
+    [$status, $message, $type] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_LATE,
+        'Default late message.',
+        'warning',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_LATE)
+        ->and($message)->toBe('Default late message.')
+        ->and($type)->toBe('warning');
+});
+
+test('applyAttendanceRules ignores rules with auto_apply disabled', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_ABSENT, 5, AttendanceRule::ACTION_MARK_ABSENT, [
+        'auto_apply' => false,
+    ]);
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 09:00:00');
+    $checkIn = Carbon::parse('2026-04-25 09:30:00');
+
+    [$status] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_LATE,
+        'Default.',
+        'warning',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_LATE);
+});
+
+test('applyAttendanceRules ignores inactive rules', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_ABSENT, 5, AttendanceRule::ACTION_MARK_ABSENT, [
+        'is_active' => false,
+    ]);
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 09:00:00');
+    $checkIn = Carbon::parse('2026-04-25 09:30:00');
+
+    [$status] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_PRESENT,
+        'Default.',
+        'success',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_PRESENT);
+});
+
+test('applyAttendanceRules does not downgrade an already-absent default status', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    makeAttendanceRule($companyId, AttendanceRule::TYPE_LATE_TO_HALF_DAY, 5, AttendanceRule::ACTION_MARK_HALF_DAY);
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 09:00:00');
+    $checkIn = Carbon::parse('2026-04-25 09:30:00');
+
+    [$status] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_ABSENT,
+        'Already absent.',
+        'error',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_ABSENT);
+});
+
+test('applyAttendanceRules returns default when no rules exist', function () {
+    $ctx = seedAttendanceContext();
+    $companyId = $ctx['company']->id;
+
+    $service = app(AttendanceService::class);
+
+    $shiftStart = Carbon::parse('2026-04-25 09:00:00');
+    $checkIn = Carbon::parse('2026-04-25 09:30:00');
+
+    [$status, $message, $type] = $service->applyAttendanceRules(
+        $companyId,
+        $checkIn,
+        $shiftStart,
+        Attendance::STATUS_LATE,
+        'Default late message.',
+        'warning',
+    );
+
+    expect($status)->toBe(Attendance::STATUS_LATE)
+        ->and($message)->toBe('Default late message.')
+        ->and($type)->toBe('warning');
 });

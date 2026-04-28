@@ -130,12 +130,12 @@
                             <option value="UPCA" {{ old('barcode_symbology') == 'UPCA' ? 'selected' : '' }}>UPCA</option>
                         </select>
                     </div>
-                    <div>
+                    {{-- <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Max Qty per Order (Optional)</label>
                         <input type="number" name="quantity_limitation" value="{{ old('quantity_limitation') }}"
                             placeholder="No limit" min="1"
                             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
-                    </div>
+                    </div> --}}
                     <div class="lg:col-span-3">
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Description (Optional)</label>
                         <textarea name="description" rows="3"
@@ -719,15 +719,11 @@
 
                     {{-- Additional Info sections (optional) — indices start at 2 after Sunlight+Watering --}}
                     <div class="mt-5 pt-4 border-t border-gray-100">
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="mb-4">
                             <div>
                                 <p class="text-sm font-bold text-gray-700">Additional Info <span class="text-gray-400 text-xs font-normal">(Optional)</span></p>
                                 <p class="text-xs text-gray-500 mt-0.5">Add extra care tips, fertilizing notes, repotting info, etc.</p>
-                            </div>
-                            <button type="button" @click="addGuide()"
-                                class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
-                                <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
-                            </button>
+                            </div>                            
                         </div>
                         <div class="space-y-3">
                             <template x-for="(guide, index) in productGuides" :key="guide.id">
@@ -754,6 +750,12 @@
                                 </div>
                             </template>
                         </div>
+                        <div class="mt-4">
+                            <button type="button" @click="addGuide()"
+                                class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+                                <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
+                            </button>
+                        </div>
                     </div>
 
                 @else
@@ -763,11 +765,7 @@
                         <div>
                             <h2 class="text-lg font-bold text-gray-800">5. Product Information <span class="text-gray-400 text-sm font-normal">(Optional)</span></h2>
                             <p class="text-xs text-gray-500 mt-1">Add care instructions, setup guides, or educational info for your customers.</p>
-                        </div>
-                        <button type="button" @click="addGuide()"
-                            class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
-                            <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
-                        </button>
+                        </div>                        
                     </div>
 
                     <div class="space-y-4">
@@ -800,6 +798,12 @@
                             <i data-lucide="book-open" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
                             <p class="text-sm text-gray-500 font-medium">No guidance sections added.</p>
                             <p class="text-xs text-gray-400 mt-1">Click "Add Section" to provide helpful product information.</p>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" @click="addGuide()"
+                                class="text-xs font-bold bg-[#108c2a]/10 hover:bg-[#108c2a]/20 text-[#108c2a] px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+                                <i data-lucide="plus-circle" class="w-3 h-3"></i> Add Section
+                            </button>
                         </div>
                     </div>
 
