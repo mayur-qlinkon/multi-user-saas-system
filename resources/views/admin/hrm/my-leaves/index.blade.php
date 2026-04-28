@@ -113,6 +113,8 @@
 
         {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
         <div class="hidden md:block overflow-x-auto">
+        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+        <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left whitespace-nowrap">
                 <thead>
                     <tr class="border-b border-gray-50">
