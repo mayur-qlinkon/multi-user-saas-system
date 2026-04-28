@@ -130,12 +130,12 @@
                             <option value="UPCA" {{ old('barcode_symbology') == 'UPCA' ? 'selected' : '' }}>UPCA</option>
                         </select>
                     </div>
-                    <div>
+                    {{-- <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Max Qty per Order (Optional)</label>
                         <input type="number" name="quantity_limitation" value="{{ old('quantity_limitation') }}"
                             placeholder="No limit" min="1"
                             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 text-sm focus:border-[#108c2a] outline-none transition-all">
-                    </div>
+                    </div> --}}
                     <div class="lg:col-span-3">
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">Description (Optional)</label>
                         <textarea name="description" rows="3"
