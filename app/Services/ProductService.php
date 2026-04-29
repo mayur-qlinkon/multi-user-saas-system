@@ -12,6 +12,7 @@ use App\Models\StockMovement;
 use App\Models\Unit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class ProductService
@@ -105,16 +106,21 @@ class ProductService
 
             // ── Clone SKUs ──
             foreach ($product->skus as $sku) {
-                $newSku = $sku->replicate(['created_at', 'updated_at']);
+                $newSku = $sku->replicate(['created_at', 'updated_at', 'deleted_at']);
                 $newSku->product_id = $newProduct->id;
 
-                // Make SKU unique — append -COPY suffix
-                $newSku->sku = $sku->sku.'-COPY';
-                if (ProductSku::where('company_id', $product->company_id)
-                    ->where('sku', $newSku->sku)->exists()) {
-                    $newSku->sku .= '-'.strtoupper(Str::random(3));
+                // Make SKU unique and immune to double-click race conditions
+                $baseSku = $sku->sku . '-COPY';
+                $newSkuString = $baseSku;
+                
+                // Use a while loop to guarantee absolute uniqueness
+                while (ProductSku::where('company_id', $product->company_id)->where('sku', $newSkuString)->exists()) {
+                    $newSkuString = $baseSku . '-' . strtoupper(Str::random(4));
                 }
+                
+                $newSku->sku = $newSkuString;
                 $newSku->barcode = null;
+                $newSku->total_sold = 0; // CRITICAL: Reset sales metrics for the new clone!
                 $newSku->save();
 
                 // ── Clone SKU attribute values ──
@@ -356,7 +362,7 @@ class ProductService
                 // If they changed from Variable to Single, delete old variations
                 $product->skus()->where('sku', '!=', $data['single_sku'])->delete();
 
-                $product->skus()->updateOrCreate(
+                $sku = $product->skus()->updateOrCreate(
                     ['product_id' => $product->id], // Find existing
                     [
                         'sku' => $data['single_sku'],
@@ -365,9 +371,15 @@ class ProductService
                         'cost' => $data['single_cost'],
                         'mrp' => $data['single_mrp'] ?? 0,
                         'stock_alert' => $data['single_stock_alert'] ?? 0,
+                        'order_tax' => $data['single_order_tax'] ?? 0, // 🌟 FIX: Added Missing Tax
+                        'tax_type' => $data['single_tax_type'] ?? 'exclusive', // 🌟 FIX: Added Missing Tax Type
                         'hsn_code' => ($data['single_hsn_code'] ?? '') !== '' ? $data['single_hsn_code'] : null,
                     ]
                 );
+
+                if (!empty($data['single_stock'])) {
+                    $this->processInitialStock($sku, $data['single_stock']);
+                }
             }
 
             // 3. Handle Variable Product Sync
@@ -403,6 +415,8 @@ class ProductService
                             'cost' => $varData['cost'],
                             'mrp' => $varData['mrp'] ?? 0,
                             'stock_alert' => $varData['stock_alert'] ?? 0,
+                            'order_tax' => $varData['order_tax'] ?? 0, // 🌟 FIX: Added Missing Tax
+                            'tax_type' => $varData['tax_type'] ?? 'exclusive', // 🌟 FIX: Added Missing Tax Type
                             'hsn_code' => ($varData['hsn_code'] ?? '') !== '' ? $varData['hsn_code'] : null,
                         ]
                     );
@@ -592,16 +606,24 @@ class ProductService
      */
     private function processInitialStock($sku, array $stockData): void
     {
-        $storeId = session('store_id') ?? auth()->user()->store_id;
+        $storeId = session('store_id') ?? Auth::user()->store_id;
         foreach ($stockData as $stock) {
             $qty = (int) $stock['qty'];
 
             if ($qty > 0) {
-                // Add physical stock to the warehouse
-                $sku->stocks()->create([
-                    'warehouse_id' => $stock['warehouse_id'],
-                    'qty' => $qty,
-                ]);
+                // Safely add or increment physical stock
+                $existingStock = $sku->stocks()->where('warehouse_id', $stock['warehouse_id'])->first();
+                
+                if ($existingStock) {
+                    $existingStock->increment('qty', $qty);
+                    $balanceAfter = $existingStock->fresh()->qty;
+                } else {
+                    $newStock = $sku->stocks()->create([
+                        'warehouse_id' => $stock['warehouse_id'],
+                        'qty' => $qty,
+                    ]);
+                    $balanceAfter = $newStock->qty;
+                }
 
                 // Log it in the Immutable Ledger
                 StockMovement::create([
@@ -613,7 +635,7 @@ class ProductService
                     'movement_type' => 'adjustment', // 'adjustment' is standard for initial opening stock
                     'reference_type' => Product::class,
                     'reference_id' => $sku->product_id,
-                    'balance_after'  => $stock['qty'],
+                    'balance_after'  => $balanceAfter, // Uses the true total after addition
                 ]);
             }
         }

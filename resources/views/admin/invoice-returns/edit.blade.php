@@ -36,16 +36,6 @@
                     <strong>{{ $invoice->invoice_number }}</strong>
                 </p>
             </div>
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
-                <a href="{{ route('admin.invoice-returns.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-2 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
-                    Cancel
-                </a>
-                <button type="submit" form="returnForm"
-                    class="w-full sm:w-auto bg-[#212538] hover:bg-black text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-2">
-                    <i data-lucide="save" class="w-4 h-4"></i> Update Draft
-                </button>
-            </div>
         </div>
 
         @if ($errors->any())
@@ -322,6 +312,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm">
+                <a href="{{ route('admin.invoice-returns.index') }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
+                <button type="submit"
+                    class="bg-[#212538] hover:bg-black text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Update Draft
+                </button>
             </div>
         </form>
     </div>

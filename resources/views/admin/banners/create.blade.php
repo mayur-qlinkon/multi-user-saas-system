@@ -375,11 +375,11 @@
                             </div>
                         </div>
 
-                        {{-- Type selector ── --}}
+                        {{-- Type selector ── 'promo' => 'Promo Offer', 'ad' => 'Advertisement', 'popup' => 'Popup' Removed--}}
                         <div class="mb-4">
                             <label class="field-label">Banner Type <span class="text-red-500">*</span></label>
                             <div class="flex flex-wrap gap-2 mt-1">
-                                @foreach (['hero' => 'Hero Slider', 'promo' => 'Promo Offer', 'ad' => 'Advertisement', 'category' => 'Category', 'popup' => 'Popup'] as $val => $label)
+                                @foreach (['hero' => 'Hero Slider', 'category' => 'Category'] as $val => $label) 
                                     <label class="type-pill {{ old('type', 'hero') === $val ? 'selected' : '' }}"
                                         @click="selectType('{{ $val }}')">
                                         <input type="radio" name="type" value="{{ $val }}"
@@ -399,12 +399,11 @@
                             <select name="position" class="field-input {{ $errors->has('position') ? 'error' : '' }}">
                                 <option value="">Select where to display</option>
                                 @foreach ([
-            'home_top' => 'Home — Top (Hero area)',
-            'home_middle' => 'Home — Middle section',
-            'home_bottom' => 'Home — Bottom section',
-            'category_page' => 'Category Page',
-            'product_page' => 'Product Page',
-        ] as $val => $label)
+                                    'home_top' => 'Home — Top (Hero area)',
+                                    'home_middle' => 'Home — Middle section',
+                                    'home_bottom' => 'Home — Bottom section',
+                                    'category_page' => 'Category Page',            
+                                ] as $val => $label)
                                     <option value="{{ $val }}" {{ old('position') === $val ? 'selected' : '' }}>
                                         {{ $label }}
                                     </option>
@@ -555,7 +554,7 @@
                             <i data-lucide="target" class="w-4 h-4"></i>
                             Targeting
                             <span class="text-gray-400 normal-case font-normal text-[11px] font-medium ml-1">Link to a
-                                specific product or category</span>
+                                specific category</span>
                         </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -571,18 +570,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div>
-                                <label class="field-label">Target Product</label>
-                                <select name="product_id" class="field-input">
-                                    <option value="">No specific product</option>
-                                    @foreach ($products as $prod)
-                                        <option value="{{ $prod->id }}"
-                                            {{ old('product_id') == $prod->id ? 'selected' : '' }}>
-                                            {{ $prod->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                           
                         </div>
                     </div>
 

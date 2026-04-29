@@ -23,7 +23,10 @@ class ExpenseController extends Controller
     // ════════════════════════════════════════════════════
     public function index(Request $request): View
     {
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
+
         $query = Expense::with(['category', 'user', 'approver', 'media'])
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
             ->latest('expense_date')
             ->latest('id');
 

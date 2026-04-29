@@ -305,27 +305,60 @@
                         </button>
                     </div>
 
-                    {{-- ── Inquiry Form ── --}}
-                    <div x-show="showInquiry" x-cloak x-transition class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <form method="POST" action="{{ route('storefront.inquiry', ['slug' => $company->slug]) }}">
-                            @csrf
-                            <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <input type="hidden" name="product_name" value="{{ $product->name }}">
-                            <div class="space-y-3">
-                                <input type="text" name="customer_name" placeholder="Your Name *" required
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
-                                <input type="email" name="customer_email" placeholder="Email Address *" required
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
-                                <input type="tel" name="customer_phone" placeholder="Phone Number"
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
-                                <textarea name="customer_notes" rows="3" placeholder="Your message or inquiry..."
-                                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none resize-none"></textarea>
-                                <button type="submit"
-                                    class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-lg text-sm font-bold transition-colors">
-                                    Submit Inquiry
+                   {{-- ── Inquiry Section ── --}}
+                    <div x-show="showInquiry" 
+                        x-cloak 
+                        x-transition 
+                        class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        
+                        @if(session('success'))
+                            {{-- Success State UI: Clean and Professional --}}
+                            <div class="py-6 px-4 text-center">
+                                <div class="w-16 h-16 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                    <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+                                </div>
+                                <h4 class="text-lg font-bold text-gray-900 mb-2">Inquiry Sent!</h4>
+                                <p class="text-sm text-gray-600 leading-relaxed">
+                                    {{ session('success') }}
+                                </p>
+                                <button @click="showInquiry = false" class="mt-5 text-sm font-bold text-teal-600 hover:text-teal-700 underline decoration-2 underline-offset-4">
+                                    Close
                                 </button>
                             </div>
-                        </form>
+                        @else
+                            {{-- Standard Inquiry Form --}}
+                            <form method="POST" action="{{ route('storefront.inquiry', ['slug' => $company->slug]) }}">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <input type="hidden" name="product_name" value="{{ $product->name }}">
+                                
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <input type="text" name="customer_name" placeholder="Your Name *" required
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
+                                        <input type="email" name="customer_email" placeholder="Email Address *" required
+                                            class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none">
+                                    </div>
+                                    <input
+                                        type="text"
+                                        name="customer_phone"
+                                        placeholder="Phone Number (10 Digits)"
+                                        inputmode="numeric"
+                                        maxlength="10"
+                                        pattern="[0-9]{10}"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);"
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none"
+                                    />
+                                    <textarea name="customer_notes" rows="3" placeholder="Your message or inquiry..."
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-teal-500 outline-none resize-none"></textarea>
+                                    
+                                    <button type="submit"
+                                        class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-[0.98]">
+                                        Submit Inquiry
+                                    </button>
+                                </div>
+                            </form>
+                        @endif
                     </div>
                 @else
                     {{-- ── Sellable: Cart buttons ── --}}
@@ -697,6 +730,10 @@
                 attrOrder: @json($attributes->keys()->values()),
 
                 init() {
+                    // Check if there is a flash message from the server
+                    @if(session('success'))
+                        this.showInquiry = true;
+                    @endif
                     // Seed selectedAttrs from the initial SKU (first in-stock, else first).
                     // Falls back to per-attribute first value if the product has no SKU
                     // linkage at all (legacy/edge data).
@@ -1083,4 +1120,5 @@
             }
         }
     </script>
+    
 @endpush

@@ -560,59 +560,7 @@
                             </div>
                         </div>
 
-                        <p class="section-title"><i data-lucide="layout-template" class="w-4 h-4"></i> Banners &
-                            Promotions</p>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <a href="<?php echo e(route('admin.banners.index')); ?>" class="banner-link-card group">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="image" class="w-5 h-5"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-gray-800">Hero Banners</p>
-                                        <p class="text-[11px] text-gray-400">Homepage slider images</p>
-                                    </div>
-                                </div>
-                                <i data-lucide="arrow-right"
-                                    class="w-4 h-4 text-gray-300 group-hover:text-brand-600 transition-colors"></i>
-                            </a>
-                            <a href="<?php echo e(route('admin.banners.index', ['type' => 'promo'])); ?>"
-                                class="banner-link-card group">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="tag" class="w-5 h-5"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-gray-800">Promo Banners</p>
-                                        <p class="text-[11px] text-gray-400">Sale & offer banners</p>
-                                    </div>
-                                </div>
-                                <i data-lucide="arrow-right"
-                                    class="w-4 h-4 text-gray-300 group-hover:text-brand-600 transition-colors"></i>
-                            </a>
-                            <a href="<?php echo e(route('admin.banners.index', ['type' => 'popup'])); ?>"
-                                class="banner-link-card group">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
-                                        <i data-lucide="layers" class="w-5 h-5"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-gray-800">Popup Banners</p>
-                                        <p class="text-[11px] text-gray-400">Overlay popups</p>
-                                    </div>
-                                </div>
-                                <i data-lucide="arrow-right"
-                                    class="w-4 h-4 text-gray-300 group-hover:text-brand-600 transition-colors"></i>
-                            </a>
-                        </div>
-                        <p class="text-[11px] text-gray-400 flex items-center gap-1.5">
-                            <i data-lucide="info" class="w-3.5 h-3.5"></i>
-                            Banners are managed separately for flexible scheduling, targeting and ordering.
-                        </p>
+                       
                     </div>
 
                     
@@ -796,6 +744,7 @@
                             </div>
                             <div>
                                 <label class="field-label">Company Address (Public)</label>
+                                <input type="text" name="storefront_address" value="<?php echo e(get_setting('storefront_address')); ?>"
                                 <input type="text" name="storefront_address" value="<?php echo e(get_setting('storefront_address')); ?>"
                                     placeholder="Shown on contact page" class="field-input">
                             </div>

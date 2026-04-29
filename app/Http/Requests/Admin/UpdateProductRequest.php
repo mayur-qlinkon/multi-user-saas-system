@@ -39,8 +39,8 @@ class UpdateProductRequest extends FormRequest
             'show_in_storefront' => ['boolean'],
 
             'product_guide' => ['nullable', 'array', 'max:15'],
-            'product_guide.*.title' => ['required_with:product_guide', 'string'],
-            'product_guide.*.description' => ['required_with:product_guide', 'string'],
+            'product_guide.*.title' => ['nullable', 'string'],
+            'product_guide.*.description' => ['nullable', 'string'],
 
             'media' => ['nullable', 'array', 'max:10'],
             'media.*.id' => ['nullable', 'integer'],
@@ -54,7 +54,7 @@ class UpdateProductRequest extends FormRequest
                         $fail('An image file is required for new uploads.');
                     }
                 },
-                'image', 'mimes:jpeg,png,jpg,webp', 'max:5120',
+                'image', 'mimes:jpeg,png,jpg,webp', 'max:10240',
             ],
             'media.*.url' => ['nullable', 'url', 'max:255'],
             'media.*.sku_index' => ['nullable'],
@@ -147,5 +147,27 @@ class UpdateProductRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            // Media UX Messages
+            'media.*.file.max' => 'Image #:position is too large! Maximum allowed size is 10MB per image.',
+            'media.*.file.mimes' => 'Image #:position must be a valid format (JPEG, PNG, JPG, WEBP).',
+            'media.*.file.image' => 'File #:position must be an image.',
+            'media.*.url.url' => 'Please provide a valid YouTube URL for media #:position.',
+
+
+            // SKU & Barcode UX Messages
+            'single_sku.unique' => 'This SKU is already taken. Please generate a new one.',
+            'variations.*.sku.unique' => 'Variant #:position has a duplicate SKU. SKUs must be totally unique.',
+            'single_barcode.unique' => 'This Barcode is already registered to another product.',
+            'variations.*.barcode.unique' => 'Variant #:position has a duplicate Barcode.',
+
+            // Pricing UX Messages
+            'variations.*.price.required_with' => 'Please enter a selling price for all generated variants.',
+            'variations.*.cost.required_with' => 'Please enter a purchase cost for all generated variants.',
+        ];
     }
 }

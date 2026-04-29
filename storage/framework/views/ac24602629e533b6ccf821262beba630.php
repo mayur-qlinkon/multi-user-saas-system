@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'OCR Scan History'); ?>
 
 <?php $__env->startSection('header-title'); ?>

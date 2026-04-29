@@ -875,17 +875,96 @@
                     </ul>
                     
                     {{-- Social Icons (Left as-is) --}}
-                    <div class="flex items-center gap-3 mt-6">
-                        @if (get_setting('whatsapp'))
-                            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', get_setting('whatsapp')) }}" target="_blank"
+                    @php
+                        use Illuminate\Support\Str;
+
+                        $socialLinks = [
+                            [
+                                'key'   => 'whatsapp',
+                                'label' => 'WhatsApp',
+                                'icon'  => 'message-circle',
+                                'type'  => 'whatsapp',
+                            ],
+                            [
+                                'key'   => 'instagram',
+                                'label' => 'Instagram',
+                                'icon'  => 'instagram',
+                                'type'  => 'url',
+                            ],
+                            [
+                                'key'   => 'facebook',
+                                'label' => 'Facebook',
+                                'icon'  => 'facebook',
+                                'type'  => 'url',
+                            ],
+                            [
+                                'key'   => 'youtube',
+                                'label' => 'YouTube',
+                                'icon'  => 'youtube',
+                                'type'  => 'url',
+                            ],
+                            [
+                                'key'   => 'linkedin',
+                                'label' => 'LinkedIn',
+                                'icon'  => 'linkedin',
+                                'type'  => 'url',
+                            ],
+                            [
+                                'key'   => 'twitter',
+                                'label' => 'Twitter / X',
+                                'icon'  => 'twitter',
+                                'type'  => 'url',
+                            ],
+                            [
+                                'key'   => 'google',
+                                'label' => 'Google Maps',
+                                'icon'  => 'map-pin',
+                                'type'  => 'url',
+                            ],
+                        ];
+
+                        $normalizeUrl = function ($url) {
+                            $url = trim((string) $url);
+
+                            if ($url === '') {
+                                return null;
+                            }
+
+                            // Allow full URLs, and also convert plain domain text to https://
+                            if (!Str::startsWith($url, ['http://', 'https://', 'mailto:', 'tel:', '/', '#'])) {
+                                $url = 'https://' . $url;
+                            }
+
+                            return $url;
+                        };
+                    @endphp
+
+                    <div class="flex items-center gap-3 mt-6 flex-wrap">
+                        @foreach ($socialLinks as $item)
+                            @php
+                                $value = get_setting($item['key']);
+                                $href = null;
+
+                                if ($item['type'] === 'whatsapp' && !empty($value)) {
+                                    $phone = preg_replace('/[^0-9]/', '', $value);
+                                    if (!empty($phone)) {
+                                        $href = 'https://wa.me/' . $phone;
+                                    }
+                                } else {
+                                    $href = $normalizeUrl($value);
+                                }
+                            @endphp
+
+                            @if (!empty($href))
+                                <a href="{{ $href }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="{{ $item['label'] }}"
                                 class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-brand-500 hover:border-brand-500 transition-colors">
-                                <i data-lucide="message-circle" class="w-4 h-4"></i></a>
-                        @endif
-                        @if (get_setting('instagram'))
-                            <a href="{{ get_setting('instagram') }}" target="_blank"
-                                class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-brand-500 hover:border-brand-500 transition-colors">
-                                <i data-lucide="instagram" class="w-4 h-4"></i></a>
-                        @endif
+                                    <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+                        @endforeach
                     </div>
                 </div>
 
@@ -939,8 +1018,8 @@
             <div class="pt-6 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
                 <p class="text-[12px] text-gray-500 font-medium tracking-wide">
                     &copy; {{ date('Y') }},
-                    <span class="font-bold"
-                        style="color: var(--brand-600);">{{ $company->name ?? config('app.name') }}</span>
+                    <a class="font-bold" href="https://qlinkon.com/" target="_blank"
+                        style="color: var(--brand-600);">{{ config('app.name') }}</a>
                 </p>
                 <div class="flex items-center gap-4">
                     <div class="flex gap-2 opacity-80">

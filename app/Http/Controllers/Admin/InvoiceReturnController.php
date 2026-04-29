@@ -33,10 +33,12 @@ class InvoiceReturnController extends Controller
     public function index(Request $request)
     {
         $companyId = Auth::user()->company_id;
+        
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
 
-        // 1. Start the Base Query and lock it to the Company
         $query = InvoiceReturn::with(['customer', 'invoice'])
-            ->where('company_id', $companyId);
+            ->where('company_id', $companyId)
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds));
 
         // 2. Apply Search Logic (Safely Grouped!)
         if ($request->filled('search')) {
@@ -87,10 +89,10 @@ class InvoiceReturnController extends Controller
         // Per-line returnable capacity. `return_quantity` already reflects confirmed returns,
         // so remaining = quantity - return_quantity. Keyed by invoice_item.id for the blade.
         $returnableMap = $this->buildReturnableMap($invoice);
-
-        $companyId = Auth::user()->company_id;
-        $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
-        $warehouses = Warehouse::where('company_id', $companyId)->get();
+        
+        $stores = auth_stores()->get();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
         $states = State::where('is_active', true)->orderBy('name')->get();
         $companyState = Auth::user()->company->state->name ?? 'Unknown';
 
@@ -173,8 +175,9 @@ class InvoiceReturnController extends Controller
         $returnableMap = $this->buildReturnableMap($invoice, excludeReturn: $invoiceReturn);
 
         $companyId = Auth::user()->company_id;
-        $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
-        $warehouses = Warehouse::where('company_id', $companyId)->get();
+        $stores = auth_stores()->get();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
         $states = State::where('is_active', true)->orderBy('name')->get();
         $companyState = Auth::user()->company->state->name ?? 'Unknown';
 

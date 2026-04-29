@@ -59,7 +59,9 @@ class PosController extends Controller
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('sort_order')->get();
 
         // 2. Load branch-specific data
-        $warehouses = Warehouse::where('store_id', $storeId)->get();
+        // $warehouses = Warehouse::where('store_id', $storeId)->get();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
 
         // 3. Fetch specific single records
         $defaultClient = Client::where('name', 'Walk-in Customer')->first();
@@ -89,6 +91,9 @@ class PosController extends Controller
         $exactSku = ProductSku::with(['product.category', 'unit', 'product.saleUnit', 'product.productUnit'])
             ->where('company_id', $companyId)
             ->where('is_active', true)
+            ->whereHas('product', function ($pq) {
+                $pq->where('product_type', 'sellable'); // 🛡️ Block Catalog Items from Barcode Scanners
+            })
             ->where(function ($query) use ($term) {
                 $query->where('barcode', $term)->orWhere('sku', $term);
             })->first();
@@ -108,7 +113,8 @@ class PosController extends Controller
             ->where('is_active', true)
             ->whereHas('product', function ($query) use ($term) {
                 $query->where('name', 'like', "%{$term}%")
-                    ->where('is_active', true);
+                    ->where('is_active', true)
+                    ->where('product_type', 'sellable'); // 🛡️ Block Catalog Items
             })
             ->limit(15) // Keep it fast
             ->get();
@@ -151,7 +157,8 @@ class PosController extends Controller
         ])
             ->where('product_skus.is_active', true)
             ->whereHas('product', function ($q) {
-                $q->where('is_active', true);
+                $q->where('is_active', true)
+                  ->where('product_type', 'sellable'); // 🛡️ IRON WALL: Block 'Catalog' items from visual POS grid!
             });
 
         // Unified Search
@@ -240,7 +247,9 @@ class PosController extends Controller
             'hsn_code' => $sku->product->hsn_code,
             'display_price' => (float) $sku->price,
             'unit_price' => (float) $sku->price,
+            'price' => (float) $sku->price, // 🌟 Safe fallback mapping
             'tax_percent' => (float) ($sku->order_tax ?? 0),
+            'order_tax' => (float) ($sku->order_tax ?? 0), // 🌟 Guarantee Dynamic Tax Key
             'tax_type' => $sku->tax_type,
             'stock' => $stock,
         ];

@@ -32,7 +32,11 @@ class PurchaseReturnController extends Controller
     public function index(Request $request)
     {
         // Tenantable trait automatically scopes this to the current company
-        $query = PurchaseReturn::with(['supplier', 'warehouse', 'purchase'])->latest();
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
+
+        $query = PurchaseReturn::with(['supplier', 'warehouse', 'purchase'])
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
+            ->latest();
 
         // -- Text Search --
         if ($request->filled('search')) {
@@ -73,7 +77,7 @@ class PurchaseReturnController extends Controller
         // a return inherits the supplier/warehouse of the original PO.
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
+        $stores = auth_stores()->orderBy('name')->get();
         $units = Unit::where('is_active', true)->get();
 
         // Optional: If user clicks "Return" from a specific Purchase Order view
@@ -189,7 +193,7 @@ class PurchaseReturnController extends Controller
 
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
+        $stores = auth_stores()->orderBy('name')->get();
         $units = Unit::where('is_active', true)->get();
 
         return view('admin.purchase-returns.edit', compact('purchaseReturn', 'suppliers', 'warehouses', 'stores', 'units'));

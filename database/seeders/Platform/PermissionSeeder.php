@@ -87,6 +87,7 @@ class PermissionSeeder extends Seeder
             'challans' => ['view', 'create', 'update', 'delete', 'change_status', 'download_pdf'],
             'challan_returns' => ['view', 'create', 'update', 'download_pdf'],
             'bulk_import' => ['view', 'products', 'images_import'],
+            'ocr_scanner' => ['access','view', 'history', 'delete'],
         ];
 
         DB::beginTransaction();

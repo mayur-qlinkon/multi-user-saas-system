@@ -45,7 +45,11 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Invoice::with(['client', 'creator', 'payments'])->latest();
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
+
+        $query = Invoice::with(['client', 'creator', 'payments'])
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
+            ->latest();
 
         if ($request->filled('search')) {
             $query->where('invoice_number', 'like', "%{$request->search}%")
@@ -73,8 +77,9 @@ class InvoiceController extends Controller
         $company = Company::first();
         $companyState = $company->state->name ?? 'Unknown';
         $clients = Client::where('is_active', true)->get();
-        $warehouses = Warehouse::all();
-        $stores = Store::all();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
+        $stores = auth_stores()->get();
         $units = Unit::all();
         $states = State::where('is_active', true)->orderBy('name')->get();
 
@@ -164,6 +169,7 @@ class InvoiceController extends Controller
             'items.sku.product',
             'client',
             'payments.paymentMethod',
+            'payments.creator',
             'returns',
             'stockMovements',
             'company',
@@ -189,14 +195,17 @@ class InvoiceController extends Controller
         $company = Company::first();
         $companyState = $company->state->name ?? 'Unknown';
         $clients = Client::where('is_active', true)->get();
-        $warehouses = Warehouse::all();
-        $stores = Store::all();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
+        $stores = auth_stores()->get();
         $units = Unit::all();
 
         $invoice->load(['items.sku', 'payments']);
 
         return view('admin.invoices.edit', compact('invoice', 'clients', 'warehouses', 'stores', 'units', 'companyState'));
     }
+
+    
 
     /**
      * Update the specified resource in storage.

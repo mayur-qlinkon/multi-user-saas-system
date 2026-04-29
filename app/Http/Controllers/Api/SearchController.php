@@ -26,9 +26,13 @@ class SearchController extends Controller
 
         try {
             // 1. Base Query: Fetch all active SKUs in the company matching the term
-            $query = ProductSku::with(['product'])
+            // 🌟 Eager load Units to prevent N+1 performance issues
+            $query = ProductSku::with(['product', 'unit', 'product.productUnit', 'product.saleUnit'])
                 ->where('company_id', $companyId)
                 ->where('is_active', true)
+                ->whereHas('product', function ($pq) {
+                    $pq->where('product_type', 'sellable'); // 🛡️ IRON WALL: Block 'Catalog' items from being searched in POS/Invoices!
+                })
                 ->where(function ($q) use ($term) {
                     $q->where('sku', 'like', "%{$term}%")
                         ->orWhere('barcode', 'like', "%{$term}%")
@@ -64,17 +68,26 @@ class SearchController extends Controller
                 $stockRecord = $stocks->get($sku->id);
                 $stockQty = $stockRecord ? $stockRecord->qty : 0;
 
+                // 🌟 Bulletproof Unit Resolution exactly like POS
+                $resolvedUnitId = $sku->unit_id ?? $sku->product?->sale_unit_id ?? $sku->product?->product_unit_id;
+                $resolvedUnitName = $sku->unit?->name ?? $sku->product?->saleUnit?->name ?? $sku->product?->productUnit?->name ?? 'Unit';
+
                 return [
                     'product_sku_id' => $sku->id,
                     'product_id' => $sku->product_id,
                     'product_name' => $sku->product ? $sku->product->name : 'Unknown Product',
                     'hsn_code' => $sku->product ? $sku->product->hsn_code : null,
                     'sku_code' => $sku->sku,
+                    'barcode' => $sku->display_barcode,
+                    'actual_barcode' => $sku->barcode,
                     'price' => (float) $sku->price,
+                    'unit_price' => (float) $sku->price,
                     'cost' => (float) ($sku->cost ?? 0),
                     'tax_percent' => (float) ($sku->order_tax ?? 0),
+                    'order_tax' => (float) ($sku->order_tax ?? 0), // 🌟 Guarantee Dynamic Tax Key
                     'tax_type' => $sku->tax_type ?? 'exclusive',
-                    'unit_id' => $sku->unit_id ?? $sku->product->product_unit_id ?? null,
+                    'unit_id' => $resolvedUnitId,
+                    'unit_name' => $resolvedUnitName,
                     'stock' => (float) $stockQty,
                 ];
             });

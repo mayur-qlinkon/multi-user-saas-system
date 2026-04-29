@@ -20,7 +20,7 @@ class CompanyStoreRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:companies,slug'],
             'phone' => ['nullable', 'string', 'max:20'],
             'city' => ['nullable', 'string', 'max:100'],
-            'state_id' => ['required', 'exists:states,id'],
+            'state_id' => ['nullable', 'exists:states,id'],
             'gst_number' => ['nullable', 'string', 'max:15'],
             'is_active' => ['boolean'],
 

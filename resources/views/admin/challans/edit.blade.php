@@ -36,15 +36,6 @@
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Edit Challan</h1>
             </div>
-            {{-- UI Fix: Make buttons full width on mobile, auto width on screens sm+ --}}
-            <div class="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 justify-end">
-                <a href="{{ route('admin.challans.show', $challan->id) }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2">Cancel</a>
-                <button type="submit" form="mainChallanForm"
-                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i> Update Challan
-                </button>
-            </div>
         </div>
 
         {{-- STATUS WARNING --}}
@@ -468,6 +459,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm">
+                <a href="{{ route('admin.challans.show', $challan->id) }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
+                <button type="submit"
+                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Update Challan
+                </button>
             </div>
         </form>
     </div>

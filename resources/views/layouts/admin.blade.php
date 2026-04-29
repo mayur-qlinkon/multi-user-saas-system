@@ -2184,7 +2184,7 @@
         </script>
 
         @stack('scripts')
-        @if (has_module('ocr_scanner'))
+        {{-- @if (has_module('ocr_scanner'))
             @php
                 $isOcrPage = request()->routeIs('admin.ocr-scanner.*');
             @endphp
@@ -2197,7 +2197,7 @@
                     <i data-lucide="scan-line" class="w-5 h-5"></i>
                 </a>
             @endunless
-        @endif
+        @endif --}}
     </body>
 
     </html>

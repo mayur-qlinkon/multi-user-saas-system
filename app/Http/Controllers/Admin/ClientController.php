@@ -17,8 +17,16 @@ class ClientController extends Controller
         $status = $request->input('status'); // 'active' | 'inactive' | null
         $registrationType = $request->input('registration_type'); // 'registered' | 'composition' | 'unregistered' | 'overseas' | 'sez' | null
 
-        // Tenantable trait automatically restricts this to the owner's company!
-        $query = Client::query();
+        // Non-owners only see clients linked to their assigned store(s).
+        // Clients with store_id = null are company-wide and visible to all users.
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all)
+
+        $query = Client::query()
+            ->when($storeIds, fn ($q) => $q->where(function ($sq) use ($storeIds) {
+                $sq->whereIn('store_id', $storeIds)
+                   ->orWhereNull('store_id'); // company-wide clients visible to everyone
+            }));
+
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {

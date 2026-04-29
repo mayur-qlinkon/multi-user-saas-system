@@ -33,15 +33,6 @@
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Process Goods Return</h1>
                 <p class="text-sm text-gray-500 font-medium">Returning goods against {{ $challan->type_label }} #<strong class="text-gray-800">{{ $challan->challan_number }}</strong></p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.challans.show', $challan->id) }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
-                <button type="submit" form="mainReturnForm" :disabled="items.length === 0"
-                    :class="items.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-md'"
-                    class="text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2">
-                    <i data-lucide="undo-2" class="w-4 h-4"></i> Confirm Return
-                </button>
-            </div>
         </div>
 
         {{-- VALIDATION ERRORS --}}
@@ -248,6 +239,19 @@
                         <span class="text-xl font-black" x-text="totals.total_clean"></span>
                     </div>
                 </div>
+            </div>
+
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm mb-6">
+                <a href="{{ route('admin.challans.show', $challan->id) }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
+                <button type="submit" :disabled="items.length === 0"
+                    :class="items.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-md'"
+                    class="text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="undo-2" class="w-4 h-4"></i> Confirm Return
+                </button>
             </div>
 
         </form>

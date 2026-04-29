@@ -1,0 +1,11 @@
+name,slug,category_slug,unit,product_type,description,product_guide
+Snake Plant,snake-plant,indoor-plants,pot,simple,A hardy indoor plant known for air purification.,Watering:Once every 2 weeks|Light:Low to bright indirect sunlight|Care Level:Easy
+Aloe Vera,aloe-vera,medicinal-plants,pot,simple,A succulent plant with medicinal benefits.,Watering:Once every 2 weeks|Light:Bright sunlight|Care Level:Easy
+Rose Plant,rose-plant,flowering-plants,pot,variable,Popular flowering plant with fragrant blooms.,Watering:2-3 times per week|Light:Full sunlight|Care Level:Medium
+Mango Plant,mango-plant,fruit-plants,pot,simple,A tropical fruit plant that grows into a tree.,Watering:3 times per week|Light:Full sunlight|Care Level:Medium
+Tulsi Plant,tulsi-plant,herbs-kitchen-plants,pot,simple,A sacred herb widely used in Ayurveda.,Watering:Daily|Light:Full sunlight|Care Level:Easy
+Money Plant,money-plant,indoor-plants,pot,variable,A popular indoor vine believed to bring prosperity.,Watering:Once a week|Light:Indirect sunlight|Care Level:Easy
+Neem Tree,neem-tree,shade-trees,pot,simple,A medicinal tree known for its antibacterial properties.,Watering:2 times per week|Light:Full sunlight|Care Level:Medium
+Jade Plant,jade-plant,succulents-cactus,pot,simple,A small succulent with thick leaves.,Watering:Once every 2 weeks|Light:Bright sunlight|Care Level:Easy
+Bougainvillea,bougainvillea,climbers-creepers,pot,variable,A vibrant flowering climber plant.,Watering:2 times per week|Light:Full sunlight|Care Level:Medium
+Areca Palm,areca-palm,air-purifying-plants,pot,simple,A decorative indoor palm known for air purification.,Watering:2 times per week|Light:Indirect sunlight|Care Level:Easy

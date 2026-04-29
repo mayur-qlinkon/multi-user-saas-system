@@ -6,16 +6,22 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Company;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\StorefrontSection;
+
 use App\Services\BannerService;
 use App\Services\EmailService;
 use App\Services\StorefrontSectionService;
+
+use App\Events\Orders\OrderPlaced;
+
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class StorefrontController extends Controller
 {
@@ -418,25 +424,47 @@ class StorefrontController extends Controller
 
         $company = Company::where('slug', $slug)->firstOrFail();
 
-        $order = Order::create([
-            'company_id' => $company->id,
-            'order_type' => 'inquiry',
-            'source' => 'storefront',
-            'status' => 'inquiry',
-            'payment_status' => 'pending',
-            'customer_name' => $request->customer_name,
-            'customer_email' => $request->customer_email,
-            'customer_phone' => $request->customer_phone,
-            'customer_notes' => $request->customer_notes,
-            'admin_notes' => 'Product Inquiry: '.$request->product_name.' (ID: '.$request->product_id.')',
-            'subtotal' => 0,
-            'total_amount' => 0,
-            'items_count' => 0,
-            'items_qty' => 0,
-        ]);
+        // 🛠️ Wrap in transaction to ensure both Order and OrderItem are created
+        $order = DB::transaction(function() use ($company, $request) {
+            // Fetch product and its first active SKU for the snapshot
+            $product = Product::where('id', $request->product_id)->firstOrFail();
+            $sku = $product->skus()->where('is_active', true)->first();
 
+            $order = Order::create([
+                'company_id'      => $company->id,
+                'order_type'      => 'inquiry', // Essential for conditional display
+                'source'          => 'storefront',
+                'status'          => 'inquiry',
+                'payment_status'  => 'pending',
+                'customer_name'   => $request->customer_name,
+                'customer_email'  => $request->customer_email,
+                'customer_phone'  => $request->customer_phone,
+                'customer_notes'  => $request->customer_notes,
+                'admin_notes'     => 'Inquiry received for product: ' . $product->name,
+                'subtotal'        => 0,
+                'total_amount'    => 0,
+                'items_count'     => 1,
+                'items_qty'       => 1,
+            ]);
+
+            OrderItem::create([
+                'order_id'      => $order->id,
+                'product_id'    => $product->id,
+                'sku_id'        => $sku?->id,
+                'product_name'  => $product->name,
+                'sku_code'      => $sku?->sku ?? $sku?->sku_code,
+                'product_image' => $product->primary_image_url,
+                'unit_price'    => 0, // Inquiries don't have fixed transaction prices
+                'qty'           => 1,
+                'line_total'    => 0,
+            ]);
+
+            return $order;
+        });
+
+        event(new OrderPlaced($order));
         app(EmailService::class)->sendOrderInquiryEmails($order, $company, $request->product_name);
 
-        return redirect()->back()->with('success', 'Your inquiry has been submitted successfully! We will get back to you soon.');
+        return redirect()->back()->with('success', 'Your inquiry has been submitted successfully!');
     }
 }

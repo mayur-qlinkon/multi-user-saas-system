@@ -379,6 +379,10 @@ Route::prefix('ocr-scanner')
             Route::get('/', 'index')->name('index');
             Route::get('/sample/{type}', 'downloadSample')->name('sample');
             Route::get('/errors/{import}', 'downloadErrors')->name('errors');
+            Route::get('/export/{type}', 'exportExistingData')
+            ->name('export');
+            Route::get('/export-all', 'exportAllData')
+            ->name('export-all');
             // Categories
             Route::post('/categories/upload', 'uploadCategories')->name('categories.upload');
             Route::post('/categories/process', 'processCategories')->name('categories.process');

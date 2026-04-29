@@ -3,7 +3,7 @@
 @section('title', 'Edit Product - Qlinkon BIZNESS')
 
 @section('header-title')
-    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit / Product</h1>
+    <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Product</h1>
 @endsection
 
 
@@ -325,271 +325,509 @@
                             <p class="text-[11px] text-gray-400 mt-1">Leave empty to use product HSN</p>
                         </div>
                     </div>
-                </div>
 
-                <div x-show="productType === 'variable' && catalogMode !== 'catalog'" x-cloak>
-                    <div class="mb-6 bg-blue-50/50 border border-blue-100 p-4 rounded-lg flex items-start gap-3">
-                        <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5"></i>
-                        <div>
-                            <p class="text-sm font-bold text-blue-900">Managing Variations</p>
-                            <p class="text-[13px] text-blue-700 mt-1">If you delete a variation here, it will be
-                                soft-deleted to preserve sales history. Stock cannot be added here and must be managed via
-                                Purchases or Stock Adjustments.</p>
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                                <i data-lucide="package-plus" class="w-4 h-4 text-[#108c2a]"></i> Add Additional Stock (Optional)
+                            </h4>
+                            <button type="button" @click="addSingleStock()"
+                                class="text-xs font-bold text-[#108c2a] hover:underline flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Add Warehouse
+                            </button>
+                        </div>
+
+                        <div class="space-y-2">
+                            <template x-for="(stock, stockIndex) in singleStocks" :key="stock.id">
+                                <div class="flex items-center gap-2">
+                                    <select :name="'single_stock[' + stockIndex + '][warehouse_id]'"
+                                        x-model="stock.warehouse_id" required
+                                        class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
+                                        <option value="">Select Warehouse...</option>
+                                        @foreach ($warehouses ?? [] as $wh)
+                                            <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                                        @endforeach
+                                    </select>
+
+                                    <input type="number" :name="'single_stock[' + stockIndex + '][qty]'"
+                                        x-model="stock.qty" required placeholder="Qty" min="1"
+                                        class="w-24 border border-gray-300 rounded px-3 py-2 text-sm text-center focus:border-[#108c2a] outline-none">
+
+                                    <button type="button" @click="removeSingleStock(stockIndex)" title="Remove"
+                                        class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </template>
+                            <p x-show="singleStocks.length === 0" class="text-xs text-gray-400 italic">Add stock here to immediately increase warehouse inventory.</p>
                         </div>
                     </div>
+                </div>
 
-                    <div class="space-y-4">
-                        <template x-for="(variant, index) in variations" :key="variant.id">
-                            <div class="relative bg-gray-50 border border-gray-200 rounded-xl p-4 pt-8">
+                
+                <div x-show="productType === 'variable' && catalogMode !== 'catalog'" x-cloak>
+                    <div class="mb-6 bg-[#108c2a]/5 border border-[#108c2a]/20 p-4 rounded-xl flex items-start gap-3">
+                        <i data-lucide="layers" class="w-5 h-5 text-[#108c2a] mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Variant Generator</p>
+                            <p class="text-[13px] text-gray-600 mt-1">Select the attributes below and click generate. We will automatically append new combinations to your existing variants without overwriting them.</p>
+                        </div>
+                    </div>
+                    
+                    {{-- STEP 1: Attribute Selection --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 mb-5 shadow-sm">
+                        <h3 class="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-4">Step 1: Select Attributes</h3>
 
-                                <template x-if="variant.is_existing">
-                                    <input type="hidden" :name="'variations[' + index + '][id]'" :value="variant.id">
-                                </template>
-
-                                <button type="button" @click="removeVariation(index)"
-                                    class="absolute top-2 right-2 text-red-400 hover:text-red-600 bg-white rounded p-1 shadow-sm border border-red-100">
-                                    <i data-lucide="x" class="w-4 h-4"></i>
-                                </button>
-
-                                <div
-                                    class="absolute top-2 left-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                    Variation <span x-text="index + 1"></span>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">SKU</label>
-                                        <div class="flex items-center gap-2">
-                                            <div class="relative w-full">
-                                                <input type="text" :name="'variations[' + index + '][sku]'"
-                                                    x-model="variant.sku" placeholder="Auto-generated if empty"
-                                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#108c2a] focus:ring-2 focus:ring-[#108c2a]/20 outline-none uppercase transition-all pr-9">
-                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300">
-                                                    <i data-lucide="barcode" class="w-4 h-4"></i>
-                                                </span>
-                                            </div>
-                                            <button type="button" @click="variant.sku = generateSKU()"
-                                                title="Generate SKU"
-                                                class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg border border-gray-200 flex items-center justify-center transition-colors active:scale-95">
-                                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            @foreach ($attributes as $attr)
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <p class="text-sm font-bold text-gray-800">{{ $attr->name }}</p>
                                     </div>
-                                    {{-- 🌟 NEW: Variation Barcode with Generate Button --}}
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Barcode <span class="text-gray-400 font-normal text-[10px]">(Optional)</span></label>
-                                        
-                                        <div class="flex items-center gap-2">
-                                            <div class="relative w-full">
-                                                <input type="text" :name="'variations[' + index + '][barcode]'"
-                                                    x-model="variant.barcode" placeholder="Scan or generate"
-                                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-[#108c2a] focus:ring-2 focus:ring-[#108c2a]/20 outline-none uppercase transition-all pr-9">
-                                                
-                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300">
-                                                    <i data-lucide="barcode" class="w-4 h-4"></i>
-                                                </span>
-                                            </div>
-                                            
-                                            <button type="button" @click="variant.barcode = generateBarcode()"
-                                                title="Generate Barcode"
-                                                class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg border border-gray-200 flex items-center justify-center transition-colors active:scale-95">
-                                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {{-- 🌟 NEW: MRP Field --}}
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">MRP (₹)</label>
-                                        <input type="number" step="0.01" :name="'variations[' + index + '][mrp]'"
-                                            x-model="variant.mrp" placeholder="Optional"
-                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Selling Price (₹) <span
-                                    class="text-red-500">*</span></label>
-                                        <input type="number" step="0.01" :name="'variations[' + index + '][price]'"
-                                            x-model="variant.price" :required="productType === 'variable' && catalogMode !== 'catalog'"
-                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Cost (₹) <span
-                                    class="text-red-500">*</span></label>
-                                        <input type="number" step="0.01" :name="'variations[' + index + '][cost]'"
-                                            x-model="variant.cost" :required="productType === 'variable' && catalogMode !== 'catalog'"
-                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Tax Type <span
-                                    class="text-red-500">*</span></label>
-                                        <select :name="'variations[' + index + '][tax_type]'" x-model="variant.tax_type"
-                                            :required="productType === 'variable' && catalogMode !== 'catalog'"
-                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none bg-white">
-                                            <option value="exclusive">Exclusive</option>
-                                            <option value="inclusive">Inclusive</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Tax (%)</label>
-                                        <input type="number" step="0.01"
-                                            :name="'variations[' + index + '][order_tax]'" x-model="variant.order_tax"
-                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">Stock Alert</label>
-                                        <input type="number" :name="'variations[' + index + '][stock_alert]'"
-                                            x-model="variant.alert"
-                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[12px] font-bold text-gray-600 mb-1">HSN Override</label>
-                                        <input type="text" :name="'variations[' + index + '][hsn_code]'"
-                                            x-model="variant.hsn_code"
-                                            placeholder="Leave empty to use product HSN"
-                                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-[#108c2a] outline-none uppercase">
-                                    </div>
-                                </div>
-
-                                <div class="bg-white p-3 rounded border border-gray-200">
-                                    <label
-                                        class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Select
-                                        Attributes</label>
-                                    <div class="flex flex-wrap gap-4">
-                                        @foreach ($attributes as $attr)
-                                            <div class="flex-1 min-w-[150px]">
-                                                <label
-                                                    class="block text-[12px] font-bold text-gray-700 mb-1">{{ $attr->name }}</label>
-                                                <select :name="'variations[' + index + '][attrs][{{ $attr->id }}]'"
-                                                    x-model="variant.attrs[{{ $attr->id }}]"
-                                                    class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:border-[#108c2a] outline-none">
-                                                    <option value="">Select {{ $attr->name }}</option>
-                                                    @foreach ($attr->values as $val)
-                                                        <option value="{{ $val->id }}">{{ $val->value }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
+                                    <div class="flex flex-wrap gap-2.5">
+                                        @foreach ($attr->values as $val)
+                                            <label :class="(selectedValues[{{ $attr->id }}] || []).includes('{{ $val->id }}::{{ $val->value }}') ? 'bg-[#108c2a] border-[#108c2a] text-white shadow-sm' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'" 
+                                                   class="relative inline-flex items-center justify-center px-4 py-2 text-[13px] font-bold rounded-lg cursor-pointer transition-all select-none border">
+                                                <input type="checkbox"
+                                                       x-model="selectedValues[{{ $attr->id }}]"
+                                                       value="{{ $val->id }}::{{ $val->value }}"
+                                                       class="sr-only">
+                                                <span>{{ $val->value }}</span>
+                                            </label>
                                         @endforeach
                                     </div>
                                 </div>
-                            </div>
-                        </template>
+                            @endforeach
+                        </div>
 
-                        <button type="button" @click="addVariation()"
-                            class="w-full py-3 border-2 border-dashed border-[#108c2a]/30 text-[#108c2a] hover:bg-[#108c2a]/5 hover:border-[#108c2a] rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-colors">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Variation
-                        </button>
+                        <div class="flex flex-wrap gap-3 mt-6 pt-5 border-t border-gray-100">
+                            <button type="button" @click="confirmVariantGeneration()"
+                                class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i> Generate Missing Combinations
+                            </button>
+                            <button type="button" @click="clearSelections()"
+                                class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4 text-gray-400"></i> Clear Selections
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- STEP 2: Spreadsheet Table --}}
+                    <div x-show="variations.length > 0" x-cloak x-transition>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-[13px] font-bold text-gray-400 uppercase tracking-wider">Step 2: Pricing & Inventory</h3>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full" 
+                                      x-text="variations.length + ' Total Variants'"></span>
+                            </div>
+                        </div>
+
+                        {{-- 🌟 BULK EDIT PANEL --}}
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 shadow-inner">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="edit-3" class="w-4 h-4 text-gray-500"></i>
+                                <h4 class="text-[13px] font-bold text-gray-700">Quick Bulk Edit</h4>
+                                <span class="text-[11px] text-gray-400 ml-1">(Leaves empty fields unchanged)</span>
+                            </div>
+                            
+                            <div class="flex flex-wrap items-end gap-3">
+                                <div class="w-24">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Price (₹)</label>
+                                    <input type="number" step="0.01" x-model="bulk.price" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-[#108c2a]" placeholder="--">
+                                </div>
+                                <div class="w-24">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Cost (₹)</label>
+                                    <input type="number" step="0.01" x-model="bulk.cost" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-[#108c2a]" placeholder="--">
+                                </div>
+                                <div class="w-28">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tax Type</label>
+                                    <select x-model="bulk.tax_type" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-[#108c2a] bg-white">
+                                        <option value="">Leave As Is</option>
+                                        <option value="exclusive">Exclusive</option>
+                                        <option value="inclusive">Inclusive</option>
+                                    </select>
+                                </div>
+                                <div class="w-20">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tax (%)</label>
+                                    <input type="number" step="0.01" x-model="bulk.tax_percent" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-[#108c2a]" placeholder="--">
+                                </div>
+                                <div class="w-20">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Alert Qty</label>
+                                    <input type="number" x-model="bulk.alert" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none focus:border-[#108c2a]" placeholder="--">
+                                </div>
+                                
+                                <button type="button" @click="applyBulkEdit()" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-1.5 rounded text-sm font-bold transition-colors shadow-sm ml-auto sm:ml-0 h-[34px]">
+                                    Apply to All
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+                        <div class="hidden md:block overflow-x-auto border border-gray-200 rounded-xl shadow-sm bg-white">
+                            <table class="w-full text-left border-collapse whitespace-nowrap">
+                                <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-4 py-3 sticky left-0 bg-gray-50 z-10 border-r border-gray-200 shadow-[1px_0_0_0_#e5e7eb]">Variant Name</th>
+                                        <th class="px-4 py-3">SKU</th>
+                                        <th class="px-4 py-3">Barcode</th>
+                                        <th class="px-4 py-3">MRP (₹)</th>
+                                        <th class="px-4 py-3">Price (₹) <span class="text-red-500">*</span></th>
+                                        <th class="px-4 py-3">Cost (₹) <span class="text-red-500">*</span></th>
+                                        <th class="px-4 py-3">Tax Type</th>
+                                        <th class="px-4 py-3">Tax (%)</th>
+                                        <th class="px-4 py-3">HSN Code</th>
+                                        <th class="px-4 py-3">Alert Qty</th>
+                                        <th class="px-4 py-3 text-center">Stock (Whs)</th>
+                                        <th class="px-4 py-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="(variant, index) in variations" :key="variant.id">
+                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                            
+                                            <td class="px-4 py-2 font-bold text-[13px] text-gray-800 sticky left-0 bg-white shadow-[1px_0_0_0_#f3f4f6] z-10 border-r border-gray-100">
+                                                <span x-text="variant.label || ('Variation ' + (index + 1))"></span>
+                                                <template x-if="variant.is_existing">
+                                                    <span class="ml-2 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] uppercase tracking-wider">Saved</span>
+                                                </template>
+                                            </td>
+                                            
+                                            <td class="px-2 py-2">
+                                                <input type="text" :name="'variations['+index+'][sku]'" x-model="variant.sku"
+                                                       class="w-32 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none uppercase bg-gray-50 focus:bg-white transition-colors" placeholder="Auto">
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <input type="text" :name="'variations['+index+'][barcode]'" x-model="variant.barcode"
+                                                       class="w-32 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="Barcode">
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <input type="number" step="0.01" :name="'variations['+index+'][mrp]'" x-model="variant.mrp"
+                                                       class="w-24 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0.00">
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <input type="number" step="0.01" :name="'variations['+index+'][price]'" x-model="variant.price" required
+                                                       class="w-24 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none font-bold text-gray-800 bg-gray-50 focus:bg-white transition-colors" placeholder="0.00">
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <input type="number" step="0.01" :name="'variations['+index+'][cost]'" x-model="variant.cost" required
+                                                       class="w-24 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0.00">
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <select :name="'variations['+index+'][tax_type]'" x-model="variant.tax_type"
+                                                        class="w-24 border border-gray-300 rounded px-2 py-2 text-xs focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors">
+                                                    <option value="exclusive">Exclusive</option>
+                                                    <option value="inclusive">Inclusive</option>
+                                                </select>
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <input type="number" step="0.01" :name="'variations['+index+'][order_tax]'" x-model="variant.order_tax"
+                                                       class="w-20 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0">
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <input type="text" :name="'variations['+index+'][hsn_code]'" x-model="variant.hsn_code"
+                                                       class="w-24 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="HSN">
+                                            </td>
+
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="'variations['+index+'][stock_alert]'" x-model="variant.alert"
+                                                       class="w-20 border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0">
+                                            </td>
+
+                                            {{-- 🌟 NEW: Stock Management Cell (Only editable for new variations) --}}
+                                            <td class="px-2 py-2 text-center">
+                                                <template x-if="!variant.is_existing">
+                                                    <div>
+                                                        <button type="button" @click="openStockModal(index)"
+                                                            class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
+                                                            <span x-text="calculateTotalStock(variant) > 0 ? calculateTotalStock(variant) + ' Units' : '+ Add Stock'"></span>
+                                                        </button>
+
+                                                        {{-- Hidden Payload for Laravel's processInitialStock --}}
+                                                        <template x-for="(stock, stockIdx) in variant.stocks" :key="stock.id">
+                                                            <div>
+                                                                <input type="hidden" :name="'variations['+index+'][stock]['+stockIdx+'][warehouse_id]'" :value="stock.warehouse_id">
+                                                                <input type="hidden" :name="'variations['+index+'][stock]['+stockIdx+'][qty]'" :value="stock.qty">
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <template x-if="variant.is_existing">
+                                                    <span class="text-[10px] text-gray-400 font-bold uppercase whitespace-nowrap" title="Manage via Purchases or Adjustments">Locked</span>
+                                                </template>
+                                            </td>
+
+                                            <td class="px-3 py-2 text-center">
+                                                <button type="button" @click="removeVariation(index)" title="Remove Variant"
+                                                        class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </td>
+
+                                            <template x-if="variant.is_existing">
+                                                <input type="hidden" :name="'variations[' + index + '][id]'" :value="variant.id">
+                                            </template>
+                                            
+                                            <template x-for="(valueId, attrId) in variant.attrs" :key="attrId">
+                                                <input type="hidden" :name="'variations['+index+'][attrs]['+attrId+']'" :value="valueId">
+                                            </template>
+                                      </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- 📱 MOBILE VIEW (CARDS) --}}
+                        <div class="md:hidden space-y-4 mt-4">
+                            <template x-for="(variant, index) in variations" :key="variant.id">
+                                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative flex flex-col gap-3">
+                                    
+                                    {{-- Header --}}
+                                    <div class="flex justify-between items-start pr-8">
+                                        <div>
+                                            <div class="font-bold text-[14px] text-gray-800" x-text="variant.label || ('Variation ' + (index + 1))"></div>
+                                            <template x-if="variant.is_existing">
+                                                <span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[9px] uppercase tracking-wider">Saved</span>
+                                            </template>
+                                        </div>
+                                        <button type="button" @click="typeof removeGeneratedVariant === 'function' ? removeGeneratedVariant(index) : removeVariation(index)" title="Remove Variant"
+                                                class="absolute top-4 right-4 text-red-400 hover:text-red-600 bg-red-50 p-1.5 rounded transition-colors">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+
+                                    {{-- Grid for Inputs --}}
+                                    <div class="grid grid-cols-2 gap-3 mt-1">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">SKU</label>
+                                            <input type="text" :name="'variations['+index+'][sku]'" x-model="variant.sku"
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none uppercase bg-gray-50 focus:bg-white transition-colors" placeholder="Auto">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Barcode</label>
+                                            <input type="text" :name="'variations['+index+'][barcode]'" x-model="variant.barcode"
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="Barcode">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Cost (₹) <span class="text-red-500">*</span></label>
+                                            <input type="number" step="0.01" :name="'variations['+index+'][cost]'" x-model="variant.cost" required
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0.00">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Price (₹) <span class="text-red-500">*</span></label>
+                                            <input type="number" step="0.01" :name="'variations['+index+'][price]'" x-model="variant.price" required
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none font-bold text-gray-800 bg-gray-50 focus:bg-white transition-colors" placeholder="0.00">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">MRP (₹)</label>
+                                            <input type="number" step="0.01" :name="'variations['+index+'][mrp]'" x-model="variant.mrp"
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0.00">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tax Type</label>
+                                            <select :name="'variations['+index+'][tax_type]'" x-model="variant.tax_type"
+                                                    class="w-full border border-gray-300 rounded px-2 py-2 text-xs focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors">
+                                                <option value="exclusive">Exclusive</option>
+                                                <option value="inclusive">Inclusive</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tax (%)</label>
+                                            <input type="number" step="0.01" :name="'variations['+index+'][order_tax]'" x-model="variant.order_tax"
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Alert Qty</label>
+                                            <input type="number" :name="'variations['+index+'][stock_alert]'" x-model="variant.alert"
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="0">
+                                        </div>
+                                        <div class="col-span-2">
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">HSN Code</label>
+                                            <input type="text" :name="'variations['+index+'][hsn_code]'" x-model="variant.hsn_code"
+                                                   class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm focus:border-[#108c2a] outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="HSN">
+                                        </div>
+                                    </div>
+
+                                    {{-- Stock Button & Logic (Edit specific) --}}
+                                    <div class="mt-2 border-t border-gray-100 pt-3 flex justify-between items-center">
+                                        <span class="text-[11px] font-bold text-gray-500 uppercase">Stock (Whs)</span>
+                                        <template x-if="!variant.is_existing">
+                                            <div>
+                                                <button type="button" @click="openStockModal(index)"
+                                                    class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap">
+                                                    <span x-text="calculateTotalStock(variant) > 0 ? calculateTotalStock(variant) + ' Units' : '+ Add Stock'"></span>
+                                                </button>
+                                                <template x-for="(stock, stockIdx) in variant.stocks" :key="stock.id">
+                                                    <div>
+                                                        <input type="hidden" :name="'variations['+index+'][stock]['+stockIdx+'][warehouse_id]'" :value="stock.warehouse_id">
+                                                        <input type="hidden" :name="'variations['+index+'][stock]['+stockIdx+'][qty]'" :value="stock.qty">
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <template x-if="variant.is_existing">
+                                            <span class="text-[10px] text-gray-400 font-bold uppercase whitespace-nowrap bg-gray-100 px-2 py-1 rounded" title="Manage via Purchases or Adjustments">Locked</span>
+                                        </template>
+                                    </div>
+
+                                    {{-- Hidden Inputs --}}
+                                    <template x-if="variant.is_existing">
+                                        <input type="hidden" :name="'variations[' + index + '][id]'" :value="variant.id">
+                                    </template>
+                                    <template x-for="(valueId, attrId) in variant.attrs" :key="attrId">
+                                        <input type="hidden" :name="'variations['+index+'][attrs]['+attrId+']'" :value="valueId">
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-2">
+            
+           <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="mb-5 border-b border-gray-100 pb-3">
                     <h2 class="text-lg font-bold text-gray-800">4. Product Media</h2>
-                    <div class="flex gap-2">
-                        <button type="button" @click="addMedia('image')"
-                            class="text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
-                            <i data-lucide="image" class="w-3 h-3"></i> Add Image
-                        </button>
-                        <button type="button" @click="addMedia('youtube')"
-                            class="text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
-                            <i data-lucide="youtube" class="w-3 h-3"></i> Add YouTube
-                        </button>
-                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Add images or YouTube videos. Drag to reorder, and click 'Set Main' for your primary thumbnail.</p>
                 </div>
 
-                <input type="hidden" name="primary_media_index"
-                    :value="mediaList.findIndex(m => m.id == primaryMediaId)">
+                <input type="hidden" name="primary_media_index" :value="mediaList.findIndex(m => m.id == primaryMediaId)">
 
-                <div class="space-y-3">
+                {{-- 🌟 NEW: Responsive Grid Container --}}
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    
                     <template x-for="(media, index) in mediaList" :key="media.id">
-                        <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 relative transition-all duration-200"
-                            draggable="true" @dragstart="dragStart(index, $event)" @dragend="dragEnd()"
-                            @dragover="dragOver($event)" @drop="drop(index)"
-                            :class="{ 'opacity-40 border-dashed border-gray-400': draggedIndex === index }">
+                        <div class="relative flex flex-col bg-gray-50 rounded-xl border-2 transition-all duration-200 group overflow-hidden shadow-sm"
+                             :class="primaryMediaId == media.id ? 'border-[#108c2a] ring-2 ring-[#108c2a]/20' : 'border-gray-200 hover:border-gray-300'"
+                             draggable="true" @dragstart="dragStart(index, $event)" @dragend="dragEnd()"
+                             @dragover="dragOver($event)" @drop="drop(index)">
 
-                            <div class="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
-                                title="Drag to reorder">
-                                <i data-lucide="grip-vertical" class="w-5 h-5"></i>
-                            </div>
-
+                            {{-- Hidden Inputs --}}
                             <input type="hidden" :name="'media[' + index + '][type]'" :value="media.type">
                             <template x-if="media.is_existing">
                                 <input type="hidden" :name="'media[' + index + '][id]'" :value="media.id">
                             </template>
 
-                            <div
-                                class="w-10 h-10 flex items-center justify-center rounded bg-white border border-gray-200 flex-shrink-0 overflow-hidden">
-                                <template x-if="media.type === 'image'">
-                                    <template x-if="media.preview">
-                                        <img :src="media.preview" class="w-full h-full object-cover">
-                                    </template>
-                                </template>
-                                <template x-if="media.type === 'image' && !media.preview">
-                                    <i data-lucide="image" class="w-5 h-5 text-gray-400"></i>
-                                </template>
-                                <template x-if="media.type === 'youtube'">
-                                    <i data-lucide="youtube" class="w-5 h-5 text-red-500"></i>
-                                </template>
-                            </div>
+                            {{-- 🌟 Visual Main Image Badge --}}
+                            <label x-show="media.type === 'image'" class="absolute top-2 left-2 z-20 cursor-pointer transition-opacity" :class="primaryMediaId == media.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'">
+                                <input type="radio" :value="media.id" x-model="primaryMediaId" class="hidden">
+                                <div :class="primaryMediaId == media.id ? 'bg-[#108c2a] text-white shadow-md' : 'bg-white text-gray-600 shadow border border-gray-200 hover:bg-gray-50'" 
+                                     class="px-2 py-1 rounded-md text-[10px] font-bold tracking-wide flex items-center gap-1 transition-colors">
+                                    <i data-lucide="star" class="w-3 h-3" :class="primaryMediaId == media.id ? 'fill-current' : ''"></i>
+                                    <span x-text="primaryMediaId == media.id ? 'Main' : 'Set Main'"></span>
+                                </div>
+                            </label>
 
-                            <div class="flex-1">
-                                <template x-if="media.type === 'image'">
-                                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full">
+                            {{-- Delete Button Overlay --}}
+                            <button type="button" @click="removeMedia(index)"
+                                class="absolute top-2 right-2 z-20 bg-white text-red-500 hover:bg-red-50 p-1.5 rounded-md shadow border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
 
+                            {{-- Media Preview Area (Perfectly Square) --}}
+                            <div class="relative aspect-square w-full bg-gray-100 flex items-center justify-center border-b border-gray-200 overflow-hidden">
+                                
+                                {{-- Drag Handle (Overlay on hover) --}}
+                                <div class="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/5">
+                                    <div class="bg-white/90 p-1.5 rounded shadow-sm backdrop-blur-sm">
+                                        <i data-lucide="grip" class="w-4 h-4 text-gray-500"></i>
+                                    </div>
+                                </div>
+
+                                {{-- Image Logic --}}
+                                <template x-if="media.type === 'image'">
+                                    <div class="w-full h-full relative">
+                                        {{-- Invisible file input overlaid ONLY for new images --}}
                                         <template x-if="!media.is_existing">
-                                            <input type="file" :name="'media[' + index + '][file]'" accept="image/*"
-                                                required
-                                                class="text-sm w-full text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-white file:border-gray-200 file:border cursor-pointer">
-                                        </template>
-                                        <template x-if="media.is_existing">
-                                            <span class="text-sm font-medium text-gray-600 flex-1">Saved Image (ID: <span
-                                                    x-text="media.id"></span>)</span>
+                                            <input type="file" :name="'media[' + index + '][file]'" accept="image/*" required
+                                                @change="
+                                                    if($event.target.files.length > 0) {
+                                                        media.preview = URL.createObjectURL($event.target.files[0]);
+                                                    }
+                                                "
+                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                                         </template>
 
-                                        <label
-                                            class="flex items-center gap-1.5 cursor-pointer flex-shrink-0 text-sm font-bold text-gray-600">
-                                            <input type="radio" :value="media.id" x-model="primaryMediaId"
-                                                class="text-[#108c2a] focus:ring-[#108c2a]">
-                                            Main Image
-                                        </label>
+                                        {{-- Instant Preview Image (Works for both existing saved images and newly uploaded blobs) --}}
+                                        <template x-if="media.preview">
+                                            <img :src="media.preview" class="w-full h-full object-cover">
+                                        </template>
+                                        {{-- Placeholder before selection --}}
+                                        <template x-if="!media.preview">
+                                            <div class="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+                                                <i data-lucide="image-plus" class="w-6 h-6"></i>
+                                                <span class="text-[10px] font-bold uppercase tracking-wider">Click to Browse</span>
+                                            </div>
+                                        </template>
+                                        
+                                        {{-- 🌟 Saved Image Indicator Overlay --}}
+                                        <template x-if="media.is_existing">
+                                            <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] px-2 py-1 flex justify-between items-center z-10">
+                                                <span>Saved in DB</span>
+                                                <span x-text="'ID: ' + media.id"></span>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
 
+                                {{-- YouTube Logo --}}
                                 <template x-if="media.type === 'youtube'">
-                                    <input type="url" :name="'media[' + index + '][url]'" x-model="media.url"
-                                        placeholder="https://www.youtube.com/watch?v=..." required
-                                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-red-400 outline-none bg-white">
+                                    <div class="w-full h-full flex flex-col items-center justify-center text-red-500 gap-2 bg-red-50/50">
+                                        <i data-lucide="youtube" class="w-8 h-8"></i>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-red-700">Video</span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Footer Controls (Inputs nested cleanly at bottom of card) --}}
+                            <div class="p-2.5 flex flex-col gap-2 bg-white flex-1 justify-end relative z-20">
+                                
+                                {{-- YouTube URL Input --}}
+                                <template x-if="media.type === 'youtube'">
+                                    <div>
+                                        <input type="url" :name="'media[' + index + '][url]'" x-model="media.url" placeholder="Paste YouTube URL..." required
+                                            class="w-full border border-gray-300 rounded px-2 py-1.5 text-[11px] focus:border-red-400 outline-none transition-colors">
+                                    </div>
                                 </template>
 
+                                {{-- Unified Variant Dropdown (edit.blade uses variant.id) --}}
                                 <template x-if="productType === 'variable'">
-                                    <div class="mt-2">
-                                        <label class="text-[11px] font-bold text-gray-500">Assign to SKU</label>
-
+                                    <div>
                                         <select :name="'media[' + index + '][sku_index]'" x-model="media.sku_index"
-                                            class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs bg-white">
-                                            <option value="">Product Default</option>
-
+                                            class="w-full border border-gray-200 rounded px-2 py-1.5 text-[10px] text-gray-600 bg-gray-50 focus:bg-white outline-none focus:border-[#108c2a] transition-colors">
+                                            <option value="">All Variants</option>
                                             <template x-for="(variant, vIndex) in variations" :key="variant.id">
                                                 <option :value="variant.id"
-                                                    x-text="'SKU: ' + (variant.sku || ('Variant ' + (vIndex + 1)))"></option>
+                                                    x-text="variant.sku ? 'SKU: ' + variant.sku : 'Variant ' + (vIndex + 1)"></option>
                                             </template>
                                         </select>
                                     </div>
                                 </template>
                             </div>
-
-                            <button type="button" @click="removeMedia(index)"
-                                class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors flex-shrink-0">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
                         </div>
                     </template>
 
-                    <div x-show="mediaList.length === 0"
-                        class="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-                        <i data-lucide="film" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
-                        <p class="text-sm text-gray-500 font-medium">No media added yet.</p>
-                        <p class="text-xs text-gray-400 mt-1">Add images or YouTube videos to showcase your product.</p>
-                    </div>
+                    {{-- 🌟 The "Add Media" Action Cards --}}
+                    <button type="button" @click="addMedia('image')"
+                        class="relative aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl hover:bg-[#108c2a]/5 hover:border-[#108c2a] transition-colors text-gray-400 hover:text-[#108c2a] group">
+                        <div class="bg-gray-100 group-hover:bg-[#108c2a]/10 p-3 rounded-full mb-2 transition-colors">
+                            <i data-lucide="image-plus" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Add Image</span>
+                    </button>
+
+                    <button type="button" @click="addMedia('youtube')"
+                        class="relative aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl hover:bg-red-50 hover:border-red-400 transition-colors text-gray-400 hover:text-red-500 group">
+                        <div class="bg-gray-100 group-hover:bg-red-100 p-3 rounded-full mb-2 transition-colors">
+                            <i data-lucide="youtube" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider">Add Video</span>
+                    </button>
                 </div>
             </div>
 
@@ -738,6 +976,58 @@
                     <i data-lucide="save" class="w-4 h-4"></i> Update Product
                 </button>
             </div>
+
+            {{-- 🌟 VARIANT STOCK MODAL --}}
+            <div x-show="isStockModalOpen" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="closeStockModal()">
+                <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden" x-show="isStockModalOpen" x-transition.scale.origin.bottom>
+                    
+                    {{-- Modal Header --}}
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <div>
+                            <h3 class="text-[15px] font-bold text-gray-800">Adjust Opening Stock</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Assign physical stock to warehouses</p>
+                        </div>
+                        <button type="button" @click="closeStockModal()" class="text-gray-400 hover:text-red-500 bg-white rounded-md p-1 shadow-sm border border-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+
+                    {{-- Modal Body --}}
+                    <div class="p-6 overflow-y-auto max-h-[60vh] bg-white">
+                        <template x-if="activeVariantIndex !== null && getActiveVariant()">
+                            <div class="space-y-3">
+                                <template x-for="(stock, stockIndex) in getActiveVariant().stocks" :key="stock.id">
+                                    <div class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                        <select x-model="stock.warehouse_id" class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-[#108c2a] outline-none bg-white">
+                                            <option value="">Select Warehouse...</option>
+                                            @foreach ($warehouses ?? [] as $wh)
+                                                <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                                            @endforeach
+                                        </select>
+
+                                        <input type="number" x-model="stock.qty" placeholder="Qty" min="1"
+                                            class="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm text-center font-bold text-gray-800 focus:border-[#108c2a] outline-none">
+
+                                        <button type="button" @click="removeActiveVariantStock(stockIndex)" title="Remove" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                                
+                                <div class="pt-2">
+                                    <button type="button" @click="addActiveVariantStock()" class="text-xs font-bold text-[#108c2a] hover:bg-[#108c2a]/10 px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors border border-[#108c2a]/20 border-dashed w-full justify-center">
+                                        <i data-lucide="plus" class="w-4 h-4"></i> Add Warehouse Allocation
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Modal Footer --}}
+                    <div class="p-5 border-t border-gray-100 bg-gray-50 flex justify-end">
+                        <button type="button" @click="closeStockModal()" class="bg-[#108c2a] text-white font-bold text-sm px-8 py-2.5 rounded-xl shadow-sm hover:bg-[#0c6b1f] transition-all">Done</button>
+                    </div>
+                </div>
+            </div>
+
         </form>
     </div>
 @endsection
@@ -934,31 +1224,143 @@
                     this.draggedIndex = null;
                 },
 
-                generateSKU() {
-                    return `PRD-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
-                },
-                generateBarcode() {
-                    return Math.floor(100000000000 + Math.random() * 900000000000).toString();
+                // 🌟 Intelligent Formatting for Attributes
+                formatSkuAttribute(val) {
+                    let cleanVal = val.toUpperCase().trim();
+                    const sizeMap = { 'SMALL': 'S', 'MEDIUM': 'M', 'LARGE': 'L', 'EXTRA LARGE': 'XL', 'EXTRA SMALL': 'XS' };
+                    if (sizeMap[cleanVal]) return sizeMap[cleanVal];
+                    return cleanVal.substring(0, 3);
                 },
 
-                addVariation() {
-                    this.variations.push({
-                        id: Date.now(),
-                        is_existing: false,
-                        sku: '',
-                        barcode: '',
-                        price: '',
-                        cost: '',
-                        mrp: '',
-                        tax_type: 'exclusive',
-                        order_tax: 0,
-                        alert: 0,
-                        attrs: {}
+                // 🌟 New Intelligent SKU Builder
+                generateIntelligentSku(comboNames, usedSkus) {
+                    let nameInput = document.querySelector('input[name="name"]');
+                    let pName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'PRD';
+                    let prefix = pName.substring(0, 3).toUpperCase();
+                    let attrCodes = comboNames.map(name => this.formatSkuAttribute(name));
+                    let baseSku = [prefix, ...attrCodes].join('-');
+                    let finalSku = baseSku;
+                    let counter = 1;
+                    
+                    while (usedSkus.has(finalSku.toUpperCase())) {
+                        finalSku = `${baseSku}-${counter.toString().padStart(2, '0')}`;
+                        counter++;
+                    }
+                    usedSkus.add(finalSku.toUpperCase());
+                    return finalSku;
+                },
+
+                calculateCombinations() {
+                    let total = 1;
+                    let hasSelection = false;
+                    for (const key in this.selectedValues) {
+                        if (this.selectedValues[key] && this.selectedValues[key].length > 0) {
+                            total *= this.selectedValues[key].length;
+                            hasSelection = true;
+                        }
+                    }
+                    return hasSelection ? total : 0;
+                },
+
+                confirmVariantGeneration() {
+                    const total = this.calculateCombinations();
+                    if (total === 0) {
+                        return BizAlert.toast('Please select at least one attribute.', 'error');
+                    }
+                    if (total > 100) {
+                        return BizAlert.toast(`Blocked: Attempting to generate ${total} variants. Maximum allowed is 100.`, 'error');
+                    }
+                    if (total > 50) {
+                        if (!confirm(`Warning: You are about to generate ${total} variants. Continue?`)) return;
+                    }
+                    this.generateVariants();
+                },
+
+                applyBulkEdit() {
+                    if(this.variations.length === 0) return;
+                    let applied = false;
+                    this.variations.forEach(variant => {
+                        if (this.bulk.price !== '') { variant.price = this.bulk.price; applied = true; }
+                        if (this.bulk.cost !== '') { variant.cost = this.bulk.cost; applied = true; }
+                        if (this.bulk.tax_type !== '') { variant.tax_type = this.bulk.tax_type; applied = true; }
+                        if (this.bulk.tax_percent !== '') { variant.order_tax = this.bulk.tax_percent; applied = true; }
+                        if (this.bulk.alert !== '') { variant.alert = this.bulk.alert; applied = true; }
+                    });
+                    if(applied) BizAlert.toast(`Bulk updated ${this.variations.length} variants successfully!`, 'success');
+                    this.bulk = { price: '', cost: '', tax_type: '', tax_percent: '', alert: '' };
+                },
+
+                generateVariants() {
+                    let arraysToCombine = [];
+                    let attrKeys = [];
+
+                    for (const [attrId, values] of Object.entries(this.selectedValues)) {
+                        if (values && values.length > 0) {
+                            arraysToCombine.push(values);
+                            attrKeys.push(attrId);
+                        }
+                    }
+
+                    const combine = (arrs) => arrs.reduce((a, b) => a.flatMap(d => b.map(e => [...d, e])), [[]]);
+                    const combinations = combine(arraysToCombine);
+
+                    let usedSkus = new Set();
+                    let existingSignatures = new Set();
+
+                    // Track existing items so we don't accidentally overwrite or duplicate them
+                    this.variations.forEach(v => {
+                        if (v.sku) usedSkus.add(v.sku.toUpperCase());
+                        if (v.attrs) existingSignatures.add(JSON.stringify(v.attrs));
                     });
 
-                    setTimeout(() => {
-                        if (typeof lucide !== 'undefined') lucide.createIcons();
-                    }, 50);
+                    let addedCount = 0;
+
+                    combinations.forEach((combo) => {
+                        let labelParts = [];
+                        let attrsPayload = {};
+
+                        combo.forEach((valString, index) => {
+                            let [valId, valName] = valString.split('::');
+                            labelParts.push(valName);
+                            attrsPayload[attrKeys[index]] = valId;
+                        });
+
+                        // Only push to the table if this exact attribute combination doesn't already exist
+                        if (!existingSignatures.has(JSON.stringify(attrsPayload))) {
+                            this.variations.push({
+                                id: Date.now() + Math.random().toString(36).substr(2, 9),
+                                is_existing: false,
+                                label: labelParts.join(' / '),
+                                attrs: attrsPayload,
+                                sku: this.generateIntelligentSku(labelParts, usedSkus),
+                                barcode: '',
+                                mrp: this.singleMrp || '',
+                                price: '',
+                                cost: '',
+                                tax_type: 'exclusive',
+                                order_tax: '',
+                                hsn_code: '',
+                                alert: 0,
+                                stocks: [] // 🌟 CRITICAL: Init empty stock array
+                            });
+                            addedCount++;
+                            existingSignatures.add(JSON.stringify(attrsPayload));
+                        }
+                    });
+
+                    if (addedCount > 0) {
+                        BizAlert.toast(`${addedCount} new variants added!`, 'success');
+                    } else {
+                        BizAlert.toast(`Combinations already exist. No new variants added.`, 'info');
+                    }
+                    
+                    setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+                },
+
+                clearSelections() {
+                    for (let key in this.selectedValues) {
+                        this.selectedValues[key] = [];
+                    }
                 },
 
                 removeVariation(index) {
@@ -967,6 +1369,91 @@
                     } else {
                         BizAlert.toast('You must have at least one variation.', 'error');
                     }
+                },
+
+                // 🌟 Initialize array for every attribute ID on page load
+                selectedValues: {
+                    @foreach ($attributes as $attr)
+                        '{{ $attr->id }}': [],
+                    @endforeach
+                },
+                
+                // 🌟 Bulk Edit Tracker
+                bulk: {
+                    price: '',
+                    cost: '',
+                    tax_type: '',
+                    tax_percent: '',
+                    alert: ''
+                },
+
+                singleStocks: [],
+                
+                addSingleStock() {
+                    this.singleStocks.push({
+                        id: Date.now() + Math.random(),
+                        warehouse_id: '',
+                        qty: ''
+                    });
+                    setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+                },
+                removeSingleStock(index) {
+                    this.singleStocks.splice(index, 1);
+                },
+
+                // 🌟 NEW: Advanced Modal Stock Management
+                isStockModalOpen: false,
+                activeVariantIndex: null,
+
+                getActiveVariant() {
+                    return this.variations[this.activeVariantIndex];
+                },
+
+                openStockModal(index) {
+                    this.activeVariantIndex = index;
+                    let variant = this.getActiveVariant();
+                    
+                    if (!variant.stocks) {
+                        variant.stocks = [];
+                    }
+                    
+                    // Auto-add first row if empty to save a click
+                    if(variant.stocks.length === 0) {
+                        this.addActiveVariantStock();
+                    }
+                    
+                    this.isStockModalOpen = true;
+                },
+
+                closeStockModal() {
+                    // Filter out any blank rows before closing
+                    let variant = this.getActiveVariant();
+                    if (variant && variant.stocks) {
+                        variant.stocks = variant.stocks.filter(s => s.warehouse_id !== '' && s.qty !== '');
+                    }
+                    
+                    this.isStockModalOpen = false;
+                    this.activeVariantIndex = null;
+                },
+
+                addActiveVariantStock() {
+                    let variant = this.getActiveVariant();
+                    if (!variant.stocks) variant.stocks = [];
+                    variant.stocks.push({
+                        id: Date.now() + Math.random(),
+                        warehouse_id: '',
+                        qty: ''
+                    });
+                    setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+                },
+
+                removeActiveVariantStock(stockIndex) {
+                    this.getActiveVariant().stocks.splice(stockIndex, 1);
+                },
+
+                calculateTotalStock(variant) {
+                    if(!variant || !variant.stocks) return 0;
+                    return variant.stocks.reduce((sum, stock) => sum + (parseFloat(stock.qty) || 0), 0);
                 }
             }
         }

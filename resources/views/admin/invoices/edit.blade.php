@@ -36,19 +36,6 @@
                 <h1 class="text-[1.5rem] font-bold text-gray-500 uppercase tracking-widest">Edit Invoice:
                     {{ $invoice->invoice_number }}</h1>
             </div>
-            {{-- UI Fix: Make buttons full width on mobile, auto width on screens sm+ --}}
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 sm:justify-end">
-                <a href="{{ route('admin.invoices.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2 self-center sm:self-auto">Cancel</a>
-                <button type="submit" form="mainInvoiceForm" name="status" value="draft"
-                    class="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2">
-                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
-                </button>
-                <button type="submit" form="mainInvoiceForm" name="status" value="confirmed"
-                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i> Save &amp; Confirm
-                </button>
-            </div>
         </div>
 
         @if ($invoice->status === 'draft')
@@ -321,6 +308,12 @@
                                                 :value="item.discount_type">
                                             <input type="hidden" :name="'items[' + index + '][discount_value]'"
                                                 :value="item.discount_value">
+                                            <input type="hidden" :name="'items[' + index + '][product_id]'" 
+                                                :value="item.product_id">
+                                            <input type="hidden" :name="'items[' + index + '][product_name]'" 
+                                                :value="item.product_name">
+                                            <input type="hidden" :name="'items[' + index + '][sku_code]'" 
+                                                :value="item.sku_code">
                                             <input type="hidden" :name="'items[' + index + '][product_sku_id]'"
                                                 :value="item.product_sku_id">
                                             <input type="hidden" :name="'items[' + index + '][unit_id]'"
@@ -559,6 +552,22 @@
                     </div>
                 </div>
             </div>
+
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm">
+                <a href="{{ route('admin.invoices.index') }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
+                <button type="submit" name="status" value="draft"
+                    class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
+                </button>
+                <button type="submit" name="status" value="confirmed"
+                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Save &amp; Confirm
+                </button>
+            </div>
         </form>
 
         {{-- ITEM SETTINGS MODAL --}}
@@ -658,6 +667,28 @@
                 }));
             }
 
+            // 🌟 Inject Old Data if Validation Failed (Overrides the DB items above)
+            let oldItems = @json(old('items', []));
+            if (oldItems && Object.keys(oldItems).length > 0) {
+                let itemsArray = Array.isArray(oldItems) ? oldItems : Object.values(oldItems);
+                initialItems = itemsArray.map((item, index) => ({
+                    key: index,
+                    product_id: item.product_id,
+                    product_sku_id: item.product_sku_id,
+                    unit_id: item.unit_id,
+                    product_name: item.product_name || 'Restored Item',
+                    sku_code: item.sku_code || '-',
+                    hsn_code: item.hsn_code || '',
+                    quantity: parseFloat(item.quantity) || 1,
+                    unit_price: parseFloat(item.unit_price) || 0,
+                    tax_percent: parseFloat(item.tax_percent) || 0,
+                    tax_type: item.tax_type || 'exclusive',
+                    discount_type: item.discount_type || 'fixed',
+                    discount_value: parseFloat(item.discount_value) || 0,
+                    line_total: 0,
+                }));
+            }
+
             return {
                 units: allUnits,
                 company_state: companyState,
@@ -685,30 +716,23 @@
                 isGuest: invoiceData ? !invoiceData.customer_id : false,
 
                 formData: {
-                    customer_id: invoiceData ? (invoiceData.customer_id || '') : '',
-                    customer_name: invoiceData ? (invoiceData.customer_name || '') : '',
-                    customer_gstin: invoiceData && invoiceData.client ? (invoiceData.client.gst_number || '') :
-                    '', // 🌟 Track GSTIN
-                    gst_treatment: invoiceData ? (invoiceData.gst_treatment || 'unregistered') :
-                    'unregistered', // 🌟 Track Treatment
-                    supply_state: invoiceData ? invoiceData.supply_state : companyState,
-                    payment_method_id: initialPayment ? initialPayment.payment_method_id : '',
-                    invoice_date: invoiceData ? invoiceData.invoice_date.split('T')[0] : new Date().toISOString().split(
-                        'T')[0],
-                    due_date: invoiceData && invoiceData.due_date ? invoiceData.due_date.split('T')[0] : new Date(new Date()
-                        .setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
-                    store_id: invoiceData ? invoiceData.store_id : "{{ auth()->user()->store_id ?? '' }}",
-                    warehouse_id: invoiceData ? invoiceData.warehouse_id : '',
+                    customer_id: @json(old('customer_id')) || (invoiceData ? (invoiceData.customer_id || '') : ''),
+                    customer_name: @json(old('customer_name')) || (invoiceData ? (invoiceData.customer_name || '') : ''),
+                    customer_gstin: invoiceData && invoiceData.client ? (invoiceData.client.gst_number || '') : '',
+                    gst_treatment: @json(old('gst_treatment')) || (invoiceData ? (invoiceData.gst_treatment || 'unregistered') : 'unregistered'),
+                    supply_state: @json(old('supply_state')) || (invoiceData ? invoiceData.supply_state : companyState),
+                    payment_method_id: @json(old('payment_method_id')) || (initialPayment ? initialPayment.payment_method_id : ''),
+                    invoice_date: @json(old('invoice_date')) || (invoiceData ? invoiceData.invoice_date.split('T')[0] : new Date().toISOString().split('T')[0]),
+                    due_date: @json(old('due_date')) || (invoiceData && invoiceData.due_date ? invoiceData.due_date.split('T')[0] : new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0]),
+                    store_id: @json(old('store_id')) || (invoiceData ? invoiceData.store_id : "{{ auth()->user()->store_id ?? '' }}"),
+                    warehouse_id: @json(old('warehouse_id')) || (invoiceData ? invoiceData.warehouse_id : ''),
                 },
 
                 global: {
-                    shipping: invoiceData ? parseFloat(invoiceData.shipping_charge) || 0 : 0,
-                    // 🌟 Map to amount_received so the cashier sees the physical cash handed over
-                    amount_paid: initialPayment ? parseFloat(initialPayment.amount_received || initialPayment.amount) : 0,
-                    // 🌟 Fix global discount mapping too
-                    discount_type: (invoiceData && invoiceData.discount_type) ? (invoiceData.discount_type ===
-                        'percentage' ? 'percent' : invoiceData.discount_type) : 'fixed',
-                    discount_value: invoiceData ? parseFloat(invoiceData.discount_amount) || 0 : 0,
+                    shipping: parseFloat(@json(old('shipping_charge'))) || (invoiceData ? parseFloat(invoiceData.shipping_charge) || 0 : 0),
+                    amount_paid: parseFloat(@json(old('amount_paid'))) || (initialPayment ? parseFloat(initialPayment.amount_received || initialPayment.amount) : 0),
+                    discount_type: @json(old('discount_type')) || ((invoiceData && invoiceData.discount_type) ? (invoiceData.discount_type === 'percentage' ? 'percent' : invoiceData.discount_type) : 'fixed'),
+                    discount_value: parseFloat(@json(old('discount_value'))) || (invoiceData ? parseFloat(invoiceData.discount_amount) || 0 : 0),
                     round_off: invoiceData ? invoiceData.round_off : '0.00'
                 },
                 totals: {

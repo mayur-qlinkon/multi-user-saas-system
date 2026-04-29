@@ -52,6 +52,54 @@
             background-color: #4b5563;
             width: 24px;
         }
+
+        /* 1. Added: Responsive Banner Content & Gradients */
+        .banner-content-wrapper {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 6%;
+            padding-right: 45%; 
+            pointer-events: none; /* Let clicks pass through to the slide */
+            /* background: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0) 100%); */
+        }
+
+        @media (max-width: 640px) {
+            .banner-content-wrapper {
+                padding: 1.25rem;
+                padding-right: 1.25rem;
+                justify-content: flex-end; /* Text sits at the bottom on mobile */
+                /* background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%); */
+            }
+        }
+    
+        .banner-title {
+            font-size: clamp(1.1rem, 4.5vw, 2.5rem); 
+            font-weight: 800;
+            line-height: 1.2; 
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+            max-width: 100%;
+        }
+    
+        .banner-subtitle {
+            font-size: clamp(0.7rem, 2.8vw, 1.1rem);
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 500;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+            line-height: 1.3;
+            max-width: 100%;
+        }
+
+        @media (max-width: 640px) {
+            .banner-title, .banner-subtitle {
+                width: 75%;
+            }
+        }
     </style>
 @endpush
 
@@ -123,18 +171,25 @@
             <div class="swiper hero-swiper rounded-2xl overflow-hidden mb-6 shadow-sm relative group">
                 <div class="swiper-wrapper">
                     @forelse($heroBanners as $banner)
-                        <div class="swiper-slide relative bg-gray-100 aspect-[21/9] md:aspect-[3/1] w-full overflow-hidden">
+                        {{-- 2. Updated: 16/9 mobile, 21/9 desktop, slide is fully clickable --}}
+                        <div class="swiper-slide relative bg-gray-100 aspect-[16/9] md:aspect-[21/9] w-full overflow-hidden cursor-pointer"
+                             @if($banner->link) onclick="window.open('{{ $banner->link }}', '{{ $banner->target === '_blank' ? '_blank' : '_self' }}')" @endif>
                             
-                            {{-- Clickable image only --}}
-                            @if ($banner->link)
-                                <a href="{{ $banner->link }}" {{ $banner->target === '_blank' ? 'target=_blank rel=noopener' : '' }} class="absolute inset-0 z-10"></a>
-                            @endif
-
                             <img src="{{ asset('storage/' . $banner->image) }}"
                                 alt="{{ $banner->alt_text ?? 'Banner' }}"
                                 class="absolute inset-0 w-full h-full object-cover" 
                                 loading="eager"
                                 onerror="this.onerror=null; this.src='{{ asset('assets/images/placeholder.webp') }}'">
+                                
+                            {{-- 3. Added: Title and Subtitle Overlay with Gradient --}}
+                            <div class="banner-content-wrapper">
+                                @if (!empty($banner->title))
+                                    <h2 class="banner-title">{!! nl2br(e($banner->title)) !!}</h2>
+                                @endif
+                                @if (!empty($banner->subtitle))
+                                    <p class="banner-subtitle">{{ $banner->subtitle }}</p>
+                                @endif
+                            </div>
                         </div>
                     @empty
                         <div class="swiper-slide bg-gray-100 aspect-[21/9] md:aspect-[3/1] flex items-center justify-center">

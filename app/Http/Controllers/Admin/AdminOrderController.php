@@ -405,6 +405,35 @@ class AdminOrderController extends Controller
     {
         $this->authorizeOrder($order);
 
+        // 1. Calculate remaining balance before processing
+        $alreadyPaid = $order->payments()->where('status', 'completed')->sum('amount');
+        $remainingBalance = round($order->total_amount - $alreadyPaid, 2);
+
+        // 🛑 CRITICAL BUG FIX: Prevent payment on zero-value or already settled orders
+        if ($order->total_amount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot record payment for an order with zero total value.',
+            ], 422);
+        }
+
+        if ($remainingBalance <= 0 || $order->payment_status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This order is already fully paid.',
+            ], 422);
+        }
+
+        $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01', 'max:' . $remainingBalance], // 🌟 Cap at balance
+            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
+            'reference' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'payment_date' => ['nullable', 'date'],
+        ], [
+            'amount.max' => 'The amount cannot exceed the remaining balance of ₹' . number_format($remainingBalance, 2),
+        ]);
+
         if ($order->payment_status === 'paid') {
             return response()->json([
                 'success' => false,
@@ -487,7 +516,7 @@ class AdminOrderController extends Controller
         $order->load(['items', 'payments', 'company']);
 
         $pdf = Pdf::loadView(
-            'public.receipt',
+            'storefront.receipt',
             ['company' => $order->company, 'order' => $order]
         )
             ->setPaper('A4', 'portrait')

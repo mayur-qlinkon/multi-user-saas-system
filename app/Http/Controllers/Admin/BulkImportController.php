@@ -266,6 +266,7 @@ class BulkImportController extends Controller
         }
 
         $companyId = $request->user()->company_id;
+        $storeId = session('store_id') ?? $request->user()->store_id; // Extracted safely in the HTTP context
         $offset = (int) $request->input('offset', 0);
 
         $filePath = Storage::disk('local')->path($import->file_path);
@@ -345,6 +346,9 @@ class BulkImportController extends Controller
                 $remainingSlots = max(0, $productLimit - $existingCount - $dryRunOffset);
 
                 $result = $importer->processChunk($import, $rowsToProcess, $rows['start_row'], $companyId, $remainingSlots);
+            } elseif ($type === 'skus') {
+                // Pass the extracted store_id to the SkuImporter
+                $result = $importer->processChunk($import, $rowsToProcess, $rows['start_row'], $companyId, $storeId);
             } else {
                 $result = $importer->processChunk($import, $rowsToProcess, $rows['start_row'], $companyId);
             }
@@ -792,11 +796,11 @@ class BulkImportController extends Controller
                 ],
             ],
             'skus' => [
-                'headers' => ['product_slug', 'sku', 'price', 'cost', 'mrp', 'barcode', 'stock_alert', 'attribute_1_name', 'attribute_1_value', 'attribute_2_name', 'attribute_2_value'],
+                'headers' => ['product_slug', 'sku', 'price', 'cost', 'mrp', 'barcode', 'stock_alert', 'warehouse_name', 'stock_qty', 'attribute_1_name', 'attribute_1_value', 'attribute_2_name', 'attribute_2_value'],
                 'rows' => [
-                    ['aloe-vera', '', '299', '150', '349', '', '5', 'Size', 'Small', 'Pot', 'Plastic'],
-                    ['aloe-vera', '', '499', '250', '599', '', '3', 'Size', 'Large', 'Pot', 'Ceramic'],
-                    ['aloe-vera', 'ALO-RED-M', '399', '200', '449', '', '4', 'Size', 'Medium', 'Pot', 'Clay'],
+                    ['aloe-vera', '', '299', '150', '349', '', '5', 'Main Warehouse', '50', 'Size', 'Small', 'Pot', 'Plastic'],
+                    ['aloe-vera', '', '499', '250', '599', '', '3', 'Secondary Store', '25', 'Size', 'Large', 'Pot', 'Ceramic'],
+                    ['aloe-vera', 'ALO-RED-M', '399', '200', '449', '', '4', '', '', 'Size', 'Medium', 'Pot', 'Clay'],
                 ],
             ],
             'clients' => [
@@ -861,4 +865,177 @@ class BulkImportController extends Controller
 
         return Excel::download($export, $filename);
     }
+
+     public function exportExistingData(string $type)
+    {
+        $companyId = Auth::user()->company_id;
+
+        $exports = [
+            'products' => [
+                'filename' => 'existing-product-slugs.csv',
+                'headers'  => ['Product Name', 'slug'],
+                'query'    => Product::withoutGlobalScopes()
+                    ->where('company_id', $companyId)
+                    ->select(['name', 'slug'])
+                    ->orderBy('name'),
+                'map'      => function ($row) {
+                    return [
+                        $row->name ?? '',
+                        $row->slug ?? '',
+                    ];
+                },
+            ],
+
+            'categories' => [
+                'filename' => 'existing-category-slugs.csv',
+                'headers'  => ['Category Name', 'slug'],
+                'query'    => \App\Models\Category::withoutGlobalScopes()
+                    ->where('company_id', $companyId)
+                    ->select(['name', 'slug'])
+                    ->orderBy('name'),
+                'map'      => function ($row) {
+                    return [
+                        $row->name ?? '',
+                        $row->slug ?? '',
+                    ];
+                },
+            ],
+
+            'units' => [
+                'filename' => 'existing-unit-codes.csv',
+                'headers'  => ['Unit Name', 'short_name'],
+                'query'    => \App\Models\Unit::withoutGlobalScopes()
+                    ->where('company_id', $companyId)
+                    ->select(['name', 'short_name'])
+                    ->orderBy('name'),
+                'map'      => function ($row) {
+                    return [
+                        $row->name ?? '',
+                        $row->short_name ?? '',
+                    ];
+                },
+            ],
+
+            'warehouses' => [
+                'filename' => 'existing-warehouses.csv',
+                'headers'  => ['Warehouse Name'],
+                'query'    => \App\Models\Warehouse::where('company_id', $companyId)
+                    ->select(['name'])
+                    ->orderBy('name'),
+                'map'      => function ($row) {
+                    return [
+                        $row->name ?? '',
+                    ];
+                },
+            ],
+        ];
+
+        if (! isset($exports[$type])) {
+            abort(404);
+        }
+
+        $export = $exports[$type];
+
+        return response()->streamDownload(function () use ($export) {
+            $handle = fopen('php://output', 'w');
+
+            if ($handle === false) {
+                return;
+            }
+
+            // UTF-8 BOM for Excel compatibility
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            // Header row
+            fputcsv($handle, $export['headers']);
+
+            // Chunked export for production safety
+            $export['query']->chunk(500, function ($rows) use ($handle, $export) {
+                foreach ($rows as $row) {
+                    fputcsv($handle, ($export['map'])($row));
+                }
+            });
+
+            fclose($handle);
+        }, $export['filename'], [
+            'Content-Type'  => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma'        => 'no-cache',
+            'Expires'       => '0',
+        ]);
+    }
+    public function exportAllData()
+{
+    $companyId = Auth::user()->company_id;
+
+    $zip = new \ZipArchive();
+    $fileName = 'existing-data.zip';
+    $filePath = storage_path($fileName);
+
+    if ($zip->open($filePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+
+        // Products
+        $products = Product::where('company_id', $companyId)
+            ->select('name', 'slug')->get();
+
+        $productsCsv = $this->arrayToCsv([
+            ['Product Name', 'slug'],
+            ...$products->map(fn($p) => [$p->name, $p->slug])->toArray()
+        ]);
+
+        $zip->addFromString('products.csv', $productsCsv);
+
+        // Categories
+        $categories = \App\Models\Category::where('company_id', $companyId)
+            ->select('name', 'slug')->get();
+
+        $categoriesCsv = $this->arrayToCsv([
+            ['Category Name', 'slug'],
+            ...$categories->map(fn($c) => [$c->name, $c->slug])->toArray()
+        ]);
+
+        $zip->addFromString('categories.csv', $categoriesCsv);
+
+        // Units
+        $units = \App\Models\Unit::where('company_id', $companyId)
+            ->select('name', 'short_name')->get();
+
+        $unitsCsv = $this->arrayToCsv([
+            ['Unit Name', 'short_name'],
+            ...$units->map(fn($u) => [$u->name, $u->short_name])->toArray()
+        ]);
+
+        $zip->addFromString('units.csv', $unitsCsv);
+
+        // Warehouses
+        $warehouses = \App\Models\Warehouse::where('company_id', $companyId)
+            ->select('name')->get();
+
+        $warehousesCsv = $this->arrayToCsv([
+            ['Warehouse Name'],
+            ...$warehouses->map(fn($w) => [$w->name])->toArray()
+        ]);
+
+        $zip->addFromString('warehouses.csv', $warehousesCsv);
+
+        $zip->close();
+    }
+
+    return response()->download($filePath)->deleteFileAfterSend(true);
+}
+private function arrayToCsv(array $data)
+{
+    $handle = fopen('php://temp', 'r+');
+
+    foreach ($data as $row) {
+        fputcsv($handle, $row);
+    }
+
+    rewind($handle);
+    $csv = stream_get_contents($handle);
+    fclose($handle);
+
+    return "\xEF\xBB\xBF" . $csv;
+}
+    
 }

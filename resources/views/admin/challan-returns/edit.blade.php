@@ -23,14 +23,6 @@
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Edit Goods Return</h1>
                 <p class="text-sm text-gray-500 font-medium">Against {{ $challanReturn->challan->type_label }} #<strong class="text-gray-800">{{ $challanReturn->challan->challan_number }}</strong></p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.challan-returns.show', $challanReturn->id) }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">Cancel</a>
-                <button type="submit" form="mainReturnEditForm"
-                    class="bg-brand-500 hover:bg-brand-600 text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center gap-2">
-                    <i data-lucide="save" class="w-4 h-4"></i> Save Updates
-                </button>
-            </div>
         </div>
 
         {{-- IMMUTABILITY WARNING --}}
@@ -187,6 +179,18 @@
                         <span class="text-xl font-black">{{ (float) $challanReturn->total_qty_clean }}</span>
                     </div>
                 </div>
+            </div>
+
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm mb-6">
+                <a href="{{ route('admin.challan-returns.show', $challanReturn->id) }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
+                <button type="submit"
+                    class="bg-brand-500 hover:bg-brand-600 text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save Updates
+                </button>
             </div>
 
         </form>

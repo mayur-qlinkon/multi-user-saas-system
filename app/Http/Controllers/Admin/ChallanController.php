@@ -33,7 +33,11 @@ class ChallanController extends Controller
     public function index(Request $request)
     {
         // Tenantable trait automatically restricts this to the current company's data
-        $query = Challan::with(['store', 'client', 'supplier', 'branchStore'])->latest();
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
+
+        $query = Challan::with(['store', 'client', 'supplier', 'branchStore'])
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
+            ->latest();
 
         // 1. Text Search (Challan Number, Party Name)
         if ($request->filled('search')) {
@@ -71,8 +75,9 @@ class ChallanController extends Controller
         // Fetch active masters for the dropdowns
         $clients = Client::where('is_active', true)->orderBy('name')->get();
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        $stores = auth_stores()->orderBy('name')->get();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
         $units = Unit::where('is_active', true)->get();
         $states = State::orderBy('name')->get();
 
@@ -156,8 +161,9 @@ class ChallanController extends Controller
 
         $clients = Client::where('is_active', true)->orderBy('name')->get();
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        $stores = auth_stores()->orderBy('name')->get();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
         $units = Unit::where('is_active', true)->get();
         $states = State::orderBy('name')->get();
 

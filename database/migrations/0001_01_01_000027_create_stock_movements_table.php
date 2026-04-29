@@ -25,7 +25,7 @@ return new class extends Migration
             $table->enum('direction', ['in', 'out']);
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->decimal('quantity', 15, 4);
-            $table->decimal('balance_after', 15, 2)->comment('Total stock in warehouse AFTER this move');
+            $table->decimal('balance_after', 15, 4)->comment('Total stock in warehouse AFTER this move');
             $table->enum('movement_type', [
                 'purchase', 'sale', 'purchase_return', 'sale_return',
                 'adjustment', 'transfer_in', 'transfer_out', 'opening_stock',
@@ -36,6 +36,7 @@ return new class extends Migration
             $table->timestamps();
             $table->index(['product_sku_id', 'warehouse_id']);
             $table->index(['company_id', 'movement_type']);
+            $table->index(['reference_type', 'reference_id'], 'stock_movement_reference_index');
         });
     }
 

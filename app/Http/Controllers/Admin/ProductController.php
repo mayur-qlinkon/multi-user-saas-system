@@ -144,9 +144,10 @@ class ProductController extends Controller
         $units = Unit::where('is_active', true)->get();
         $suppliers = Supplier::where('is_active', true)->get();
         $attributes = Attribute::with('values')->where('is_active', true)->get();
+        $warehouses = Warehouse::where('is_active', true)->get();
 
         return view('admin.products.edit', compact(
-            'product', 'categories', 'units', 'suppliers', 'attributes'
+            'product', 'categories', 'units', 'suppliers', 'attributes','warehouses'
         ));
     }
 

@@ -72,10 +72,17 @@ class EmployeeController extends Controller
         $stores = Store::where('is_active', true)->get();
         $managers = Employee::active()->with('user')->get();
 
-        // Users not yet linked as employees
+        // Users not yet linked as employees (include old value on validation redirect)
         $availableUsers = User::query()
             ->internal()
-            ->whereDoesntHave('employee')
+            ->where(function ($query) {
+                $query->whereDoesntHave('employee');
+                
+                // Keep the selected user in the list if validation fails
+                if (old('user_id')) {
+                    $query->orWhere('id', old('user_id'));
+                }
+            })
             ->where('status', 'active')
             ->orderBy('name')
             ->get();

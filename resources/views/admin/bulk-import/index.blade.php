@@ -369,17 +369,31 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
             <div class="p-6" x-show="!importId">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <h2 class="text-[15px] font-black text-gray-800">Import Products</h2>
-                        <p class="text-xs text-gray-500 mt-0.5">Upload a CSV with columns: <code class="bg-gray-100 px-1 py-0.5 rounded text-[11px]">name, slug, category_slug, unit, product_type, description</code></p>
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                        <div>
+                            <h2 class="text-[15px] font-black text-gray-800">Import Products</h2>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                Upload a CSV with columns:
+                                <code class="bg-gray-100 px-1 py-0.5 rounded text-[11px]">name, slug, category_slug, unit, product_type, description</code>
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <a href="{{ route('admin.bulk-import.sample', 'products') }}"
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                <i data-lucide="download" class="w-3 h-3"></i>
+                                Sample CSV
+                            </a>
+
+                            <a href="{{ route('admin.bulk-import.export-all') }}"
+                                target="_blank"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors">
+                                <i data-lucide="database" class="w-3 h-3"></i>
+                                Existing Data
+                            </a>
+                        </div>
                     </div>
-                    <a href="{{ route('admin.bulk-import.sample', 'products') }}"
-                        target="_blank"
-                        class="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5">
-                        <i data-lucide="download" class="w-3 h-3"></i> Sample CSV
-                    </a>
-                </div>
 
                 <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-[12px] text-amber-800 mb-4 flex items-center gap-2">
                     <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
@@ -582,6 +596,21 @@
                         target="_blank"
                         class="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5">
                         <i data-lucide="download" class="w-3 h-3"></i> Sample CSV
+                    </a>
+                     <!-- Existing Products (IMPORTANT) -->
+                    <a href="{{ route('admin.bulk-import.export', 'products') }}"
+                        target="_blank"
+                        class="text-xs font-bold px-3 py-1.5 rounded-lg border border-green-200 text-green-600 bg-green-50 hover:bg-green-100 transition-colors flex items-center gap-1.5">
+                        <i data-lucide="package" class="w-3 h-3"></i>
+                        Product Slugs
+                    </a>
+
+                    <!-- Existing Warehouses -->
+                    <a href="{{ route('admin.bulk-import.export', 'warehouses') }}"
+                        target="_blank"
+                        class="text-xs font-bold px-3 py-1.5 rounded-lg border border-purple-200 text-purple-600 bg-purple-50 hover:bg-purple-100 transition-colors flex items-center gap-1.5">
+                        <i data-lucide="warehouse" class="w-3 h-3"></i>
+                        Warehouses
                     </a>
                 </div>
 

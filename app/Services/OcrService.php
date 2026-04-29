@@ -51,7 +51,7 @@ class OcrService
             }
 
             // 2. Call OCR.space
-            $rawText = $this->callOcrSpaceApi($file);
+            $rawText = $this->callOcrSpaceApi($file, $scanType);
 
             if ($rawText === null) {
                 return $this->error('OCR provider returned no text. Try a clearer image.');
@@ -92,7 +92,7 @@ class OcrService
     //  OCR PROVIDER
     // ═══════════════════════════════════════════════════════════════════════
 
-    private function callOcrSpaceApi(UploadedFile $file): ?string
+    private function callOcrSpaceApi(UploadedFile $file, string $scanType): ?string
     {
         $apiKey   = config('ocr.api_key', 'helloworld');
         $endpoint = config('ocr.endpoint', 'https://api.ocr.space/parse/image');
@@ -103,31 +103,44 @@ class OcrService
             Log::warning('[OCR] Using default "helloworld" API key. OCR.space will rate limit quickly.');
         }
 
-        $response = Http::timeout(30)
+        // Engine 3 is state-of-the-art for tabular data (receipts/invoices).
+        // Engine 2 is best for standard text (business cards/general).
+        $ocrEngine = '1';
+
+        $response = Http::timeout(45) // Increased timeout, Engine 3 is slightly slower but more accurate
+            ->withHeaders(['apikey' => $apiKey])
             ->attach('file', $file->getContent(), $file->getClientOriginalName())
             ->post($endpoint, [
-                'apikey'                       => $apiKey,
                 'language'                     => $language,
                 'isOverlayRequired'            => 'false',
                 'detectOrientation'            => 'true',
                 'scale'                        => 'true',
-                'OCREngine'                    => '2', // Engine 2 = more accurate
+                'OCREngine'                    => $ocrEngine,
                 'isCreateSearchablePdf'        => 'false',
                 'isSearchablePdfHideTextLayer' => 'false',
             ]);
 
         if (! $response->successful()) {
-            Log::warning('OCR.space HTTP error', ['status' => $response->status()]);
-
+            Log::error('OCR.space HTTP error', [
+                'status' => $response->status(), 
+                'body' => $response->body()
+            ]);
             return null;
         }
 
         $body = $response->json();
 
-        // OCR.space error codes
-        if (($body['OCRExitCode'] ?? 0) >= 4) {
-            Log::warning('OCR.space returned error exit code', ['body' => $body]);
+        // Catch provider-specific error arrays (e.g., bad API key, rate limits)
+        if (!empty($body['IsErroredOnProcessing'])) {
+            Log::error('OCR.space processing failed', [
+                'errors' => $body['ErrorMessage'] ?? ['Unknown Error']
+            ]);
+            return null;
+        }
 
+        // Catch OCR.space fatal exit codes
+        if (($body['OCRExitCode'] ?? 0) >= 4) {
+            Log::error('OCR.space returned fatal exit code', ['body' => $body]);
             return null;
         }
 

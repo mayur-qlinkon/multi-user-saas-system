@@ -87,6 +87,11 @@
                         </a>
                     <?php endif; ?>
                 <?php endif; ?>
+                <?php if(has_module('ocr_scanner') && has_permission('ocr_scanner.access')): ?>
+                    <a href="<?php echo e(route('admin.ocr-scanner.index')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
+                        <i data-lucide="scan" class="w-4 h-4 text-brand-600"></i> OCR
+                    </a>
+                <?php endif; ?>
                 <?php if(has_module('challan') && has_permission('challans.create')): ?>
                     <a href="<?php echo e(route('admin.challans.create')); ?>" class="whitespace-nowrap bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shrink-0">
                         <i data-lucide="file-plus-2" class="w-4 h-4 text-brand-600"></i> Challan

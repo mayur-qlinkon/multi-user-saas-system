@@ -35,11 +35,11 @@ class BannerController extends Controller
         );
 
         // Available filter options for the blade
-        $types = ['hero', 'promo', 'ad', 'category', 'popup'];
+        $types = ['hero','category'];
 
         $positions = [
             'home_top', 'home_middle', 'home_bottom',
-            'category_page', 'product_page',
+            'category_page',
         ];
 
         return view('admin.banners.index', compact('logs', 'types', 'positions', 'type', 'position'));

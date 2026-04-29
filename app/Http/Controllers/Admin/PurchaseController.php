@@ -33,7 +33,11 @@ class PurchaseController extends Controller
     public function index(Request $request)
     {
         // Tenantable trait automatically restricts this to the current company
-        $query = Purchase::with(['supplier', 'warehouse', 'store'])->latest();
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
+
+        $query = Purchase::with(['supplier', 'warehouse', 'store'])
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
+            ->latest();
 
         // 1. Text Search (PO Number, Invoice, Supplier Name)
         if ($request->filled('search')) {
@@ -70,7 +74,7 @@ class PurchaseController extends Controller
     {
         // Fetch active masters for the dropdowns
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
+        $stores = auth_stores()->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
         $units = Unit::where('is_active', true)->get();
 
@@ -167,7 +171,7 @@ class PurchaseController extends Controller
         });
 
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
+        $stores = auth_stores()->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
 
         $units = Unit::where('is_active', true)->get();

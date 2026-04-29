@@ -87,35 +87,7 @@
                     </div>
                     <p class="text-xs text-gray-400 mt-1.5">Lowercase letters, numbers and hyphens only. Leave blank to auto-generate.</p>
                     @error('slug') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
-
-                {{-- Phone --}}
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Phone</label>
-                    <input type="text" name="phone" value="{{ old('phone') }}"
-                        maxlength="10"
-                        minlength="10"
-                        pattern="[0-9]{10}"
-                        inputmode="numeric"
-                        class="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-500"
-                        placeholder="+91 98765 43210">
-                </div>
-
-                {{-- GST --}}
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">GST Number</label>
-                    <input type="text" name="gst_number" value="{{ old('gst_number') }}" maxlength="15"
-                        class="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm font-mono uppercase focus:outline-none focus:border-brand-500"
-                        placeholder="22AAAAA0000A1Z5">
-                </div>
-
-                {{-- City --}}
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
-                    <input type="text" name="city" value="{{ old('city') }}"
-                        class="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-500"
-                        placeholder="Mumbai">
-                </div>
+                </div>            
 
                 {{-- State --}}
                 <div>

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Auth;
 class PaymentMethodController extends Controller
 {
     /**
@@ -15,6 +15,7 @@ class PaymentMethodController extends Controller
     public function index()
     {
         $paymentMethods = PaymentMethod::orderBy('sort_order', 'asc')
+            ->orderBy('sort_order', 'asc')
             ->orderBy('id', 'desc')
             ->get();
 
@@ -28,7 +29,12 @@ class PaymentMethodController extends Controller
     {
         $validated = $request->validate([
             'label' => 'required|string|max:100',
-            'slug' => 'nullable|string|max:50|unique:payment_methods,slug',
+            'slug' => [
+                'nullable', 
+                'string', 
+                'max:50', 
+                \Illuminate\Validation\Rule::unique('payment_methods')->where('company_id',Auth::user()->company_id)
+            ],
             'gateway' => 'nullable|string|max:50',
             'sort_order' => 'nullable|integer|min:0',
         ]);
@@ -40,6 +46,7 @@ class PaymentMethodController extends Controller
         $validated['is_online'] = $request->boolean('is_online');
         $validated['is_active'] = $request->boolean('is_active');
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['company_id'] =Auth::user()->company_id;
 
         $paymentMethod = PaymentMethod::create($validated);
 
@@ -61,7 +68,12 @@ class PaymentMethodController extends Controller
     {
         $validated = $request->validate([
             'label' => 'required|string|max:100',
-            'slug' => 'required|string|max:50|unique:payment_methods,slug,'.$paymentMethod->id,
+            'slug' => [
+                'required', 
+                'string', 
+                'max:50', 
+                \Illuminate\Validation\Rule::unique('payment_methods')->where('company_id', Auth::user()->company_id)->ignore($paymentMethod->id)
+            ],
             'gateway' => 'nullable|string|max:50',
             'sort_order' => 'nullable|integer|min:0',
         ]);
@@ -70,6 +82,7 @@ class PaymentMethodController extends Controller
         $validated['is_online'] = $request->boolean('is_online');
         $validated['is_active'] = $request->boolean('is_active');
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
+        $validated['company_id'] =Auth::user()->company_id;
 
         $paymentMethod->update($validated);
 

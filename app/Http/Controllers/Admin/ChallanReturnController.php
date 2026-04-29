@@ -24,7 +24,15 @@ class ChallanReturnController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ChallanReturn::with(['challan', 'createdBy'])->latest();
+        // ChallanReturn has no direct store_id — scope via its parent Challan's store
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
+
+        $query = ChallanReturn::with(['challan', 'createdBy'])
+            ->when($storeIds, fn ($q) => $q->whereHas('challan', fn ($cq) =>
+                $cq->whereIn('store_id', $storeIds)
+            ))
+            ->latest();
+
 
         // Basic Search
         if ($request->filled('search')) {

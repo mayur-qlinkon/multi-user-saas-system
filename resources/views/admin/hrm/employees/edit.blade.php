@@ -131,12 +131,16 @@
         @method('PUT')
 
         {{-- ── Validation error banner ── --}}
-        @if($errors->any())
-            <div class="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
-                <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <div>
-                    <p class="text-sm font-semibold text-red-700">Please fix the errors below.</p>
+        @if ($errors->any())
+            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl shadow-sm text-sm">
+                <div class="font-bold flex items-center gap-2 mb-1">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Please fix the following errors:
                 </div>
+                <ul class="list-disc list-inside ml-6 space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
@@ -438,10 +442,10 @@
                     {{-- Account Number --}}
                     <div>
                         <label class="field-label">Account Number</label>
-                        <input type="text" name="account_number" value="{{ old('account_number', $employee->account_number) }}"
+                        <input type="text" name="bank_account_number" value="{{ old('bank_account_number', $employee->bank_account_number) }}"
                             placeholder="Account number"
-                            class="field-input {{ $errors->has('account_number') ? 'has-error' : '' }}">
-                        @error('account_number')
+                            class="field-input {{ $errors->has('bank_account_number') ? 'has-error' : '' }}">
+                        @error('bank_account_number')
                             <p class="field-error">{{ $message }}</p>
                         @enderror
                     </div>
@@ -449,10 +453,10 @@
                     {{-- IFSC Code --}}
                     <div>
                         <label class="field-label">IFSC Code</label>
-                        <input type="text" name="ifsc_code" value="{{ old('ifsc_code', $employee->ifsc_code) }}"
+                        <input type="text" name="bank_ifsc" value="{{ old('bank_ifsc', $employee->bank_ifsc) }}"
                             placeholder="IFSC code"
-                            class="field-input {{ $errors->has('ifsc_code') ? 'has-error' : '' }}">
-                        @error('ifsc_code')
+                            class="field-input {{ $errors->has('bank_ifsc') ? 'has-error' : '' }}">
+                        @error('bank_ifsc')
                             <p class="field-error">{{ $message }}</p>
                         @enderror
                     </div>

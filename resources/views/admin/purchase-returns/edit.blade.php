@@ -33,14 +33,10 @@
 
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">Edit Purchase Return</h1>
+                <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Edit Purchase Return</h1>
                 <p class="text-[13px] text-gray-500 font-medium">Update return quantities and reasons for PO: <span
                         class="font-bold text-gray-700">{{ $purchaseReturn->purchase->purchase_number }}</span></p>
             </div>
-            <a href="{{ route('admin.purchase-returns.index') }}"
-                class="bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm">
-                Cancel
-            </a>
         </div>
 
         @if ($errors->any())
@@ -343,11 +339,16 @@
                 </div>
             </div>
 
-            <div class="bg-white border border-gray-200 p-5 rounded-lg flex justify-end gap-4 shadow-sm"
-                x-show="items.length > 0" x-cloak>
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm mb-6" 
+                 x-show="items.length > 0" x-cloak>
+                <a href="{{ route('admin.purchase-returns.index') }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
                 <button type="submit"
-                    class="bg-gray-800 text-white px-8 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-900 shadow-md transition-all active:scale-95">
-                    UPDATE
+                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Update Return
                 </button>
             </div>
 

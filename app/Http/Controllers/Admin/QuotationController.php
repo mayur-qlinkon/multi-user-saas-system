@@ -29,8 +29,11 @@ class QuotationController extends Controller
     {
         $companyId = Auth::user()->company_id;
 
+        $storeIds = auth_store_ids(); // null = owner/super-admin (sees all stores)
+
         $quotations = Quotation::with(['customer', 'creator'])
             ->where('company_id', $companyId)
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
             ->latest('quotation_date')
             ->latest('id')
             ->paginate(15);
@@ -45,7 +48,7 @@ class QuotationController extends Controller
     {
         $companyId = Auth::user()->company_id;
 
-        $stores = Store::where('company_id', $companyId)->where('is_active', true)->get();
+        $stores = auth_stores()->get();
         $clients = Client::with('state')->where('company_id', $companyId)->where('is_active', true)->get();
         $warehouses = Warehouse::where('company_id', $companyId)->get();
         $states = State::where('is_active', true)->orderBy('name')->get();
@@ -69,7 +72,7 @@ class QuotationController extends Controller
 
         $quotation->load('items');
 
-        $stores = Store::where('company_id', $quotation->company_id)->where('is_active', true)->get();
+        $stores = auth_stores()->get();
         $clients = Client::with('state')->where('company_id', $quotation->company_id)->where('is_active', true)->get();
         $warehouses = Warehouse::where('company_id', $quotation->company_id)->get();
         $units = Unit::where('is_active', true)->get();

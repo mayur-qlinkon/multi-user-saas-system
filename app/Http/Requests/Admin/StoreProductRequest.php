@@ -31,12 +31,12 @@ class StoreProductRequest extends FormRequest
             'show_in_storefront' => ['boolean'],
 
             'product_guide' => ['nullable', 'array', 'max:15'],
-            'product_guide.*.title' => ['required_with:product_guide', 'string', 'max:255'],
-            'product_guide.*.description' => ['required_with:product_guide', 'string'],
+            'product_guide.*.title' => ['nullable', 'string', 'max:255'],
+            'product_guide.*.description' => ['nullable', 'string'],
 
             'media' => ['nullable', 'array', 'max:10'],
             'media.*.type' => ['required', 'in:image,youtube'],
-            'media.*.file' => ['exclude_if:media.*.type,youtube', 'required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'media.*.file' => ['exclude_if:media.*.type,youtube', 'required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
             'media.*.url' => ['exclude_if:media.*.type,image', 'required', 'url', 'max:255'],
             'media.*.sku_index' => ['nullable', 'integer', 'min:0'],
             'primary_media_index' => ['nullable', 'integer'],
@@ -97,11 +97,22 @@ class StoreProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'single_sku.unique' => 'This SKU is already in use in your inventory.',
-            'single_barcode.unique' => 'This Barcode is already assigned to another product.',
-            'variations.*.sku.unique' => 'One of your variation SKUs is already in use.',
-            'variations.*.barcode.unique' => 'One of your variation Barcodes is already in use.',
-            'variations.*.price.min' => 'Variation prices cannot be negative.',
+            // Media UX Messages
+            'media.*.file.max' => 'Image #:position is too large! Maximum allowed size is 10MB per image.',
+            'media.*.file.mimes' => 'Image #:position must be a valid format (JPEG, PNG, JPG, WEBP).',
+            'media.*.file.image' => 'File #:position must be an image.',
+            'media.*.url.url' => 'Please provide a valid YouTube URL for media #:position.',
+
+
+            // SKU & Barcode UX Messages
+            'single_sku.unique' => 'This SKU is already taken. Please generate a new one.',
+            'variations.*.sku.unique' => 'Variant #:position has a duplicate SKU. SKUs must be totally unique.',
+            'single_barcode.unique' => 'This Barcode is already registered to another product.',
+            'variations.*.barcode.unique' => 'Variant #:position has a duplicate Barcode.',
+
+            // Pricing UX Messages
+            'variations.*.price.required_with' => 'Please enter a selling price for all generated variants.',
+            'variations.*.cost.required_with' => 'Please enter a purchase cost for all generated variants.',
         ];
     }
 }

@@ -2181,20 +2181,7 @@
         </script>
 
         <?php echo $__env->yieldPushContent('scripts'); ?>
-        <?php if(has_module('ocr_scanner')): ?>
-            <?php
-                $isOcrPage = request()->routeIs('admin.ocr-scanner.*');
-            ?>
-
-            <?php if (! ($isOcrPage)): ?>
-                <a href="<?php echo e(route('admin.ocr-scanner.index')); ?>"
-                title="OCR Scanner"
-                class="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full text-white flex items-center justify-center shadow-xl transition-transform hover:scale-110"
-                style="background: var(--brand-500)">
-                    <i data-lucide="scan-line" class="w-5 h-5"></i>
-                </a>
-            <?php endif; ?>
-        <?php endif; ?>
+        
     </body>
 
     </html>

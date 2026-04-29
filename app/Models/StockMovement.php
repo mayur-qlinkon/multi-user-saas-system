@@ -33,7 +33,7 @@ class StockMovement extends Model
     protected $casts = [
         'unit_cost' => 'decimal:4',
         'quantity' => 'decimal:4',
-        'balance_after' => 'decimal:2',
+        'balance_after' => 'decimal:4',
     ];
 
     public function store(): BelongsTo

@@ -33,20 +33,7 @@
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-[1.5rem] font-bold text-gray-500 uppercase tracking-widest">Create Invoice</h1>
-            </div>
-            {{-- UI Fix: Make buttons full width on mobile, auto width on screens sm+ --}}
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0 sm:justify-end">
-                <a href="{{ route('admin.invoices.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors px-2 self-center sm:self-auto">Cancel</a>
-                <button type="submit" form="mainInvoiceForm" name="status" value="draft"
-                    class="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2">
-                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
-                </button>
-                <button type="submit" form="mainInvoiceForm" name="status" value="confirmed"
-                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i> Save &amp; Confirm
-                </button>
-            </div>
+            </div>           
         </div>
         {{-- 🚨 ADD THIS: Validation Error Display --}}
         @if ($errors->any())
@@ -357,6 +344,12 @@
                                         :value="item.discount_type">
                                     <input type="hidden" :name="'items[' + index + '][discount_value]'"
                                         :value="item.discount_value">
+                                    <input type="hidden" :name="'items[' + index + '][product_id]'" 
+                                        :value="item.product_id">
+                                    <input type="hidden" :name="'items[' + index + '][product_name]'" 
+                                        :value="item.product_name">
+                                    <input type="hidden" :name="'items[' + index + '][sku_code]'" 
+                                        :value="item.sku_code">
                                     <input type="hidden" :name="'items[' + index + '][product_sku_id]'"
                                         :value="item.product_sku_id">
                                     <input type="hidden" :name="'items[' + index + '][unit_id]'" :value="item.unit_id">
@@ -636,21 +629,37 @@
                 </div>
 
                 {{-- Final Totals --}}
-                <div class="flex justify-between items-end pt-2">
-                    <div>
-                        <div class="text-[11px] font-bold text-gray-500 uppercase">Auto Round Off</div>
-                        <div class="text-sm font-bold text-gray-600 mt-1" x-text="global.round_off"></div>
-                        <input type="hidden" name="round_off" :value="global.round_off">
-                    </div>
-                    <div class="text-right">
-                        <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Net Payable</div>
-                        <div class="text-2xl font-black text-[#108c2a]" x-text="formatCurrency(totals.grand_total)"></div>
+                 <div class="flex justify-between items-end pt-2">
+                            <div>
+                                <div class="text-[11px] font-bold text-gray-500 uppercase">Auto Round Off</div>
+                                <div class="text-sm font-bold text-gray-600 mt-1" x-text="global.round_off"></div>
+                                <input type="hidden" name="round_off" :value="global.round_off">
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Net Payable</div>
+                                <div class="text-2xl font-black text-[#108c2a]" x-text="formatCurrency(totals.grand_total)"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    </form>
+
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm">
+                <a href="{{ route('admin.invoices.index') }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
+                <button type="submit" name="status" value="draft"
+                    class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
+                </button>
+                <button type="submit" name="status" value="confirmed"
+                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Save &amp; Confirm
+                </button>
+            </div>
+        </form>
 
     {{-- ITEM SETTINGS MODAL (一致性 with Purchase Order) --}}
     <div x-show="isItemModalOpen" x-cloak
@@ -741,25 +750,23 @@
                 storeDefaults: @json($warehouses->where('is_default', 1)->pluck('id', 'store_id')),
 
                 formData: {
-                    customer_id: '',
-                    customer_name: '',
+                    customer_id: @json(old('customer_id')) || '',
+                    customer_name: @json(old('customer_name')) || '',
                     customer_gstin: '', // 🌟 Track GSTIN
-                    gst_treatment: 'unregistered', // 🌟 Track GST Treatment
-                    supply_state: companyState,
-                    payment_method_id: '',
-                    invoice_date: new Date().toISOString().split('T')[0],
-                    due_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[
-                        0], // 🌟 Auto +7 Days
-                    store_id: "{{ session('store_id', auth()->user()->store_id ?? '') }}",
-                    // 🌟 2. Only use old() so we don't overwrite validation errors
+                    gst_treatment: @json(old('gst_treatment')) || 'unregistered',
+                    supply_state: @json(old('supply_state')) || companyState,
+                    payment_method_id: @json(old('payment_method_id')) || '',
+                    invoice_date: @json(old('invoice_date')) || new Date().toISOString().split('T')[0],
+                    due_date: @json(old('due_date')) || new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
+                    store_id: @json(old('store_id')) || "{{ session('store_id', auth()->user()->store_id ?? '') }}",
                     warehouse_id: "{{ old('warehouse_id') }}",
                 },
 
                 global: {
-                    shipping: 0,
-                    amount_paid: 0,
-                    discount_type: 'fixed', // 🌟 Default to flat amount
-                    discount_value: 0, // 🌟 Default to 0
+                    shipping: parseFloat(@json(old('shipping_charge'))) || 0,
+                    amount_paid: parseFloat(@json(old('amount_paid'))) || 0,
+                    discount_type: @json(old('discount_type')) || 'fixed',
+                    discount_value: parseFloat(@json(old('discount_value'))) || 0,
                     round_off: '0.00'
                 },
                 totals: {
@@ -792,8 +799,34 @@
 
                 // 🌟 ADD THIS INIT BLOCK
                 init() {
-                    // Pre-populate items from Challan conversion
-                    if (challanItems && challanItems.length > 0) {
+                    let oldItems = @json(old('items', []));
+                    
+                    // 1. Recover items if validation failed
+                    if (oldItems && Object.keys(oldItems).length > 0) {
+                        let itemsArray = Array.isArray(oldItems) ? oldItems : Object.values(oldItems);
+                        this.items = itemsArray.map(item => ({
+                            key: this.itemCounter++,
+                            challan_item_id: item.challan_item_id || null,
+                            batch_id:        item.batch_id || null,
+                            batch_number:    item.batch_number || '',
+                            product_id:      item.product_id,
+                            product_sku_id:  item.product_sku_id,
+                            unit_id:         item.unit_id,
+                            product_name:    item.product_name || 'Restored Item',
+                            sku_code:        item.sku_code || '-',
+                            hsn_code:        item.hsn_code || '',
+                            quantity:        parseFloat(item.quantity) || 1,
+                            unit_price:      parseFloat(item.unit_price) || 0,
+                            tax_percent:     parseFloat(item.tax_percent) || 0,
+                            tax_type:        item.tax_type || 'exclusive',
+                            discount_type:   item.discount_type || 'fixed',
+                            discount_value:  parseFloat(item.discount_value) || 0,
+                            line_total:      0
+                        }));
+                        this.calculate();
+                    }
+                    // 2. Pre-populate items from Challan conversion
+                    else if (challanItems && challanItems.length > 0) {
                         this.items = challanItems.map(item => ({
                             key: this.itemCounter++,
                             challan_item_id: item.challan_item_id,
@@ -1011,6 +1044,14 @@
                 },
 
                 addSkuToTable(result) {
+                    // Check if SKU already exists in the items array
+                    if (this.items.some(item => item.product_sku_id === result.product_sku_id)) {
+                        BizAlert.toast('This product is already added!', 'error');
+                        this.globalSearch = '';
+                        this.showResults = false;
+                        return;
+                    }
+
                     this.items.push({
                         key: this.itemCounter++,
                         challan_item_id: null,
@@ -1024,7 +1065,9 @@
                         hsn_code:        result.hsn_code || '',
                         quantity:        1,
                         unit_price:      parseFloat(result.price) || 0,
-                        tax_percent:     parseFloat(result.tax_percent) || 18,
+                        // Safely parse the dynamic tax. Use ?? so 0% tax doesn't trigger a fallback.
+                        // We check result.order_tax (based on your schema) and fallback to result.tax_percent if your API aliases it.
+                        tax_percent:     parseFloat(result.order_tax ?? result.tax_percent ?? 0),
                         tax_type:        result.tax_type || 'exclusive',
                         discount_type:   'fixed',
                         discount_value:  0,

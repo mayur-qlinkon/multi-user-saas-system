@@ -266,7 +266,7 @@ class StoreController extends Controller
      * Validates the store belongs to the user (not just the company)
      * and that the user has the stores.switch permission.
      */
-    public function switch(Request $request)
+     public function switch(Request $request)
     {
         $user = Auth::user();
 
@@ -277,10 +277,17 @@ class StoreController extends Controller
 
         $storeId = (int) $request->store_id;
 
-        // Validate the store belongs to this user's assigned stores
-        $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+        // Owners can switch to ANY store in their company.
+        // Non-owners can only switch to their pivot-assigned stores.
+        if (is_owner() || is_super_admin()) {
+            $valid = Store::where('id', $storeId)
+                ->where('company_id', $user->company_id)
+                ->exists();
+        } else {
+            $valid = $user->stores()->where('stores.id', $storeId)->exists();
+        }
 
-        if (! in_array($storeId, $userStoreIds)) {
+        if (! $valid) {
             abort(403, 'You are not assigned to this store.');
         }
 

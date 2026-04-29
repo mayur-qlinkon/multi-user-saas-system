@@ -42,7 +42,8 @@
                 <div
                     class="w-full aspect-square rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center mb-4 relative group">
                     <template x-if="mainType === 'image'">
-                        <img :src="mainMedia" class="w-full h-full object-contain p-2">
+                        <img :src="mainMedia" class="w-full h-full object-contain p-2" loading="eager"
+                                onerror="this.onerror=null; this.src='{{ asset('assets/images/placeholder.webp') }}'">
                     </template>
                     <template x-if="mainType === 'youtube'">
                         <div class="flex flex-col items-center text-red-500">

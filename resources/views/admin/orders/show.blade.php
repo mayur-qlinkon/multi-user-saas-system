@@ -270,13 +270,18 @@
 
                     {{-- Mark as Paid ── --}}
                     @if(has_permission('orders.record_payment'))
-                        @if($order->payment_status !== 'paid')
+                        @if($order->payment_status !== 'paid' && $order->total_amount > 0)
                             <button @click="paymentModal = true"
                                 class="action-btn action-btn-outline"
                                 style="color: #15803d; border-color: #86efac;">
                                 <i data-lucide="indian-rupee" class="w-4 h-4"></i>
                                 Record Payment
                             </button>
+                        @elseif($order->total_amount <= 0)
+                             <span class="action-btn text-gray-400 bg-gray-50 border border-gray-200 cursor-not-allowed">
+                                <i data-lucide="slash" class="w-4 h-4"></i>
+                                No Payment Required
+                            </span>
                         @else
                             <span class="action-btn text-green-700 bg-green-50 border border-green-200 cursor-default">
                                 <i data-lucide="check-circle" class="w-4 h-4"></i>
@@ -306,39 +311,50 @@
                     </p>
                 </div>
 
-                {{-- Table header ── --}}
-                <div class="items-table-header text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                {{-- Table header ── --}}                
+                <div class="items-table-header text-[10px] font-black text-gray-400 uppercase tracking-widest"
+                    style="{{ $order->order_type === 'inquiry' ? 'grid-template-columns: 3fr 1fr;' : '' }}">
                     <span>Product</span>
-                    <span>Unit Price</span>
+                    @if($order->order_type !== 'inquiry')
+                        <span>Unit Price</span>
+                    @endif
                     <span class="text-center">Qty</span>
-                    <span class="text-right">Total</span>
+                    @if($order->order_type !== 'inquiry')
+                        <span class="text-right">Total</span>
+                    @endif
                 </div>
 
                 {{-- Items ── --}}
                 @foreach($order->items as $item)
-                    <div class="items-table-row border-b border-gray-50">
+                    <div class="items-table-row border-b border-gray-50"
+                        style="{{ $order->order_type === 'inquiry' ? 'grid-template-columns: 3fr 1fr;' : '' }}">
                         <div class="col-product min-w-0">
                             <p class="text-[13px] font-semibold text-gray-800 truncate">{{ $item->product_name }}</p>
-                            @if($item->sku_label)
-                                <p class="text-[11px] text-gray-400 font-medium">{{ $item->sku_label }}</p>
-                            @endif
                             @if($item->sku_code)
                                 <p class="text-[10px] text-gray-300 font-mono">{{ $item->sku_code }}</p>
                             @endif
                         </div>
-                        <div class="col-price text-[13px] text-gray-600 font-medium">
-                            ₹{{ number_format($item->unit_price, 2) }}
-                        </div>
+                        
+                        @if($order->order_type !== 'inquiry')
+                            <div class="col-price text-[13px] text-gray-600 font-medium">
+                                ₹{{ number_format($item->unit_price, 2) }}
+                            </div>
+                        @endif
+
                         <div class="col-qty text-[13px] font-bold text-gray-900 sm:text-center">
                             {{ $item->qty }}
                         </div>
-                        <div class="col-total text-[13px] font-bold text-gray-900 sm:text-right">
-                            ₹{{ number_format($item->line_total, 2) }}
-                        </div>
+
+                        @if($order->order_type !== 'inquiry')
+                            <div class="col-total text-[13px] font-bold text-gray-900 sm:text-right">
+                                ₹{{ number_format($item->line_total, 2) }}
+                            </div>
+                        @endif
                     </div>
                 @endforeach
 
                 {{-- Totals ── --}}
+                @if($order->order_type !== 'inquiry')
                 <div class="px-5 py-4 bg-gray-50/50 space-y-2">
                     <div class="flex justify-between text-[13px] text-gray-500">
                         <span>Subtotal</span>
@@ -380,6 +396,7 @@
                         <span class="font-mono" style="color: var(--brand-600)">₹{{ number_format($order->total_amount, 2) }}</span>
                     </div>
                 </div>
+                @endif
             </div>
 
             {{-- ── Customer Notes ── --}}
@@ -884,7 +901,9 @@ function orderShow() {
         cancelModal:   false,
         cancelReason:  '',
         paymentModal:  false,
-        payAmount:     '{{ number_format($order->total_amount, 2) }}',
+        // 🌟 Calculate actual remaining balance for the frontend
+        payAmount:     '{{ number_format(max(0, $order->total_amount - $order->payments()->where("status", "completed")->sum("amount")), 2, ".", "") }}',
+        maxAmount:     {{ max(0, $order->total_amount - $order->payments()->where("status", "completed")->sum("amount")) }},
         payMethodId:   '',
         payReference:  '',
         payNotes:      '',
@@ -981,7 +1000,13 @@ function orderShow() {
             }
         },
         async recordPayment() {
-                if (!this.payAmount || !this.payMethodId || this.loading) return;
+                const amt = parseFloat(this.payAmount);
+                if (!amt || amt <= 0 || amt > this.maxAmount) {
+                    BizAlert.toast('Please enter a valid amount (Max: ₹' + this.maxAmount.toFixed(2) + ')');
+                    return;
+                }
+                if (!this.payMethodId || this.loading) return;               
+                
                 this.loading = true;
 
                 try {

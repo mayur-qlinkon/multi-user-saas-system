@@ -44,8 +44,8 @@ return new class extends Migration
             $table->string('bank_branch', 100)->nullable();
 
             // Indian Statutory
-            $table->string('pan_number', 10)->nullable();
-            $table->string('aadhaar_number', 12)->nullable();
+            $table->text('pan_number')->nullable();
+            $table->text('aadhaar_number')->nullable();
             $table->string('uan_number', 20)->nullable();
             $table->string('esi_number', 20)->nullable();
             $table->string('pf_number', 30)->nullable();

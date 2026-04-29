@@ -393,3 +393,70 @@ if (! function_exists('active_store')) {
         return null;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  STORE SCOPE HELPERS  (added for multi-store access control)
+// ─────────────────────────────────────────────────────────────────────────
+
+if (! function_exists('auth_store_ids')) {
+    /**
+     * Returns the store IDs the current user may access.
+     * null  → no restriction (owner / super admin sees all company stores)
+     * array → only these store IDs (regular users see their assigned stores)
+     *
+     * Usage in controller index():
+     *   $storeIds = auth_store_ids();
+     *   $query->when($storeIds, fn($q) => $q->whereIn('store_id', $storeIds));
+     */
+    function auth_store_ids(): ?array
+    {
+        if (is_super_admin()) {
+            return null;
+        }
+
+        $user = Auth::user();
+        if (! $user) {
+            return [];
+        }
+
+        // Owners see every store in their company (Tenantable already scopes company)
+        if ($user->roles->contains('slug', 'owner')) {
+            return null;
+        }
+
+        // Cache per-request to avoid repeated DB hits (helpers called many times per page)
+        static $cache = [];
+        $userId = $user->id;
+
+        if (! array_key_exists($userId, $cache)) {
+            $cache[$userId] = $user->stores()->pluck('stores.id')->toArray();
+        }
+
+        return $cache[$userId];
+    }
+}
+
+if (! function_exists('auth_stores')) {
+    /**
+     * Returns an Eloquent query builder for the stores the current user
+     * is allowed to see — use this for ALL dropdown/select queries.
+     *
+     * Usage:
+     *   $stores = auth_stores()->get();
+     *   $stores = auth_stores()->orderBy('name')->get();
+     */
+    function auth_stores(): \Illuminate\Database\Eloquent\Builder
+    {
+        $storeIds = auth_store_ids();
+
+        $query = \App\Models\Store::where('is_active', true);
+
+        if ($storeIds !== null) {
+            // Non-owner: restrict to assigned stores only.
+            // [0] guard prevents an accidental "no stores = see everything" leak.
+            $query->whereIn('id', empty($storeIds) ? [0] : $storeIds);
+        }
+
+        return $query;
+    }
+}

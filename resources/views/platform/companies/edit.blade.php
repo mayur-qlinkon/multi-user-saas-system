@@ -85,32 +85,7 @@
                     </div>
                     <p class="text-xs text-gray-400 mt-1.5">Changing the slug will break existing storefront URLs that use it.</p>
                     @error('slug') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
-
-                {{-- Phone --}}
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Phone</label>
-                    <input type="text" name="phone" value="{{ old('phone', $company->phone) }}"
-                        maxlength="10"
-                        minlength="10"
-                        pattern="[0-9]{10}"
-                        inputmode="numeric"
-                        class="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-500">
-                </div>
-
-                {{-- GST --}}
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">GST Number</label>
-                    <input type="text" name="gst_number" value="{{ old('gst_number', $company->gst_number) }}" maxlength="15"
-                        class="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm font-mono uppercase focus:outline-none focus:border-brand-500">
-                </div>
-
-                {{-- City --}}
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
-                    <input type="text" name="city" value="{{ old('city', $company->city) }}"
-                        class="w-full border border-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-brand-500">
-                </div>
+                </div>           
 
                 {{-- State --}}
                 <div>

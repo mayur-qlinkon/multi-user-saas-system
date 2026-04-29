@@ -351,10 +351,16 @@
                 </div>
 
                 {{-- Total ── --}}
-                <div>
-                    <p class="text-[14px] font-bold text-gray-900">₹{{ number_format($order->total_amount, 2) }}</p>
-                    <p class="text-[11px] text-gray-400 font-medium uppercase">{{ $order->payment_method ?? 'COD' }}</p>
-                </div>
+                @if($order->order_type !== 'inquiry')
+                    <div>
+                        <p class="text-[14px] font-bold text-gray-900">₹{{ number_format($order->total_amount, 2) }}</p>
+                        <p class="text-[11px] text-gray-400 font-medium uppercase">{{ $order->payment_method ?? 'COD' }}</p>
+                    </div>                
+                @else
+                    <div>
+                        <p class="text-[14px] font-bold text-gray-900">-</p>                        
+                    </div>  
+                @endif
 
                 {{-- Status badge ── --}}
                 <div>

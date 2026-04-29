@@ -59,4 +59,17 @@ class UpdateInvoiceRequest extends FormRequest
             'items.*.discount_value' => ['required', 'numeric', 'min:0'],
         ];
     }
+    
+    /**
+     * Custom error messages for better UX
+     */
+    public function messages(): array
+    {
+        return [
+            'items.required' => 'You must add at least one product to the invoice.',
+            'items.*.unit_price.min' => 'The unit price cannot be negative.',
+            'items.*.quantity.min' => 'The quantity must be greater than zero.',
+            'customer_id.required_without' => 'Please select a customer or provide a guest name.',
+        ];
+    }
 }

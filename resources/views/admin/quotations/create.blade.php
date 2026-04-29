@@ -34,21 +34,6 @@
             <div>
                 <h1 class="text-[1.5rem] font-bold text-[#212538] tracking-tight mb-1">Create Quotation / Estimate</h1>
             </div>
-            {{-- UI Fix: Stack on mobile, side-by-side on md+ --}}
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
-                <a href="{{ route('admin.quotations.index') }}"
-                    class="text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors order-3 sm:order-1 px-2 py-2 sm:py-0 text-center w-full sm:w-auto">
-                    Cancel
-                </a>
-                <button type="submit" form="mainQuotationForm" name="status" value="draft"
-                    class="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 order-2 sm:order-2">
-                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
-                </button>
-                <button type="submit" form="mainQuotationForm" name="status" value="sent"
-                    class="w-full sm:w-auto bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-6 py-3 sm:py-2.5 rounded-lg text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 order-1 sm:order-3">
-                    <i data-lucide="send" class="w-4 h-4"></i> Save &amp; Mark as Sent
-                </button>
-            </div>
         </div>
 
         {{-- Validation Error Display --}}
@@ -479,6 +464,22 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {{-- 🌟 BOTTOM ACTION BUTTONS --}}
+            <div class="bg-white border border-gray-200 p-5 rounded-lg flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 shadow-sm mb-6">
+                <a href="{{ route('admin.quotations.index') }}"
+                    class="bg-white border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors text-center">
+                    CANCEL
+                </a>
+                <button type="submit" name="status" value="draft"
+                    class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save as Draft
+                </button>
+                <button type="submit" name="status" value="sent"
+                    class="bg-[#108c2a] hover:bg-[#0c6b1f] text-white px-8 py-2.5 rounded-lg text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i> Save &amp; Mark as Sent
+                </button>
             </div>
         </form>
 

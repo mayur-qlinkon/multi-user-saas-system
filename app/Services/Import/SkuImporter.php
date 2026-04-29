@@ -9,6 +9,9 @@ use App\Models\ImportLog;
 use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\ProductSkuValue;
+use App\Models\StockMovement;
+use App\Models\Warehouse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -39,8 +42,11 @@ class SkuImporter
 
     private const MAX_VARIANTS_PER_PRODUCT = 100;
 
-    /** @var array<string, array{id:int,is_variable:bool}> Slug (lower) => product meta */
+    /** @var array<string, array{id:int,is_variable:bool,unit_id:int|null}> Slug (lower) => product meta */
     private array $productBySlug = [];
+
+    /** @var array<string, int> Lowercase Warehouse Name => ID */
+    private array $warehousesByName = [];
 
     /** @var array<string, int> SKU code (lower) => sku id */
     private array $existingSkuCodes = [];
@@ -111,12 +117,12 @@ class SkuImporter
             }
         }
 
-        if (! $hasAnyAttribute) {
-            return [
-                'valid' => false,
-                'message' => 'At least one attribute column pair is required (e.g. attribute_1_name, attribute_1_value).',
-            ];
-        }
+        // if (! $hasAnyAttribute) {
+        //     return [
+        //         'valid' => false,
+        //         'message' => 'At least one attribute column pair is required (e.g. attribute_1_name, attribute_1_value).',
+        //     ];
+        // }
 
         return ['valid' => true, 'message' => 'Headers valid'];
     }
@@ -125,7 +131,7 @@ class SkuImporter
      * @param  array<int, array<string, string>>  $rows
      * @return array{success:int, failed:int, skipped:int, created:int, updated:int}
      */
-    public function processChunk(Import $import, array $rows, int $startRow, int $companyId): array
+    public function processChunk(Import $import, array $rows, int $startRow, int $companyId, int $storeId): array
     {
         $success = 0;
         $failed = 0;
@@ -155,7 +161,7 @@ class SkuImporter
                 $rowError = null;
 
                 try {
-                    DB::transaction(function () use ($row, $companyId, $importMode, $isDryRun, &$rowSkipped, &$rowAction, &$rowError) {
+                    DB::transaction(function () use ($import, $row, $companyId, $storeId, $importMode, $isDryRun, &$rowSkipped, &$rowAction, &$rowError) {
                         $slug = strtolower(trim($row['product_slug']));
                         $product = $this->productBySlug[$slug] ?? null;
 
@@ -168,11 +174,11 @@ class SkuImporter
                         $productId = $product['id'];
                         $pairs = $this->extractAttributePairs($row);
 
-                        if (empty($pairs)) {
-                            $rowError = 'At least one attribute_N_name + attribute_N_value pair is required.';
+                        // if (empty($pairs)) {
+                        //     $rowError = 'At least one attribute_N_name + attribute_N_value pair is required.';
 
-                            return;
-                        }
+                        //     return;
+                        // }
 
                         // Resolve each attribute + value (auto-create missing ones, company scoped).
                         $attributeValueIds = [];
@@ -187,7 +193,8 @@ class SkuImporter
                         // Canonical combo key: sorted attribute_value ids joined.
                         $sortedIds = $attributeValueIds;
                         sort($sortedIds);
-                        $comboKey = implode('-', $sortedIds);
+                        // If no attributes exist, mark this as the 'default' base SKU
+                        $comboKey = empty($sortedIds) ? 'default' : implode('-', $sortedIds);
 
                         $existingSkuId = $this->existingCombosByProduct[$productId][$comboKey] ?? null;
 
@@ -283,52 +290,95 @@ class SkuImporter
                                 ]);
                             }
 
+                            // 🌟 NEW: Optional Warehouse Stock Adjustment
+                            $warehouseName = trim($row['warehouse_name'] ?? '');
+                            $stockQty = (int) ($row['stock_qty'] ?? 0);
+
+                            if ($warehouseName !== '' && $stockQty > 0) {
+                                $warehouseKey = strtolower($warehouseName);
+                                if (isset($this->warehousesByName[$warehouseKey])) {
+                                    $warehouseId = $this->warehousesByName[$warehouseKey];
+
+                                    // 1. Update Physical Stock Record
+                                    $stockRecord = $sku->stocks()->firstOrCreate(
+                                        ['warehouse_id' => $warehouseId],
+                                        ['company_id' => $companyId, 'qty' => 0]
+                                    );
+                                    $stockRecord->increment('qty', $stockQty);
+
+                                    // 2. Log to Immutable Stock Ledger
+                                    StockMovement::create([
+                                        'store_id' => $storeId,
+                                        'product_sku_id' => $sku->id,
+                                        'unit_id' => $product['unit_id'] ?? null,
+                                        'warehouse_id' => $warehouseId,
+                                        'quantity' => $stockQty,
+                                        'movement_type' => 'adjustment',
+                                        'reference_type' => Import::class,
+                                        'reference_id' => $import->id,
+                                        'balance_after' => $stockRecord->fresh()->qty,
+                                    ]);
+                                } else {
+                                    // Log soft warning for non-existent warehouse
+                                    $this->logError($import, $rowNumber, $row, "Warning: Warehouse '{$warehouseName}' not found. Stock allocation skipped.");
+                                }
+                            }
+
                             $this->existingSkuCodes[strtolower($skuCode)] = $sku->id;
                             $this->existingCombosByProduct[$productId][$comboKey] = $sku->id;
                             $this->variantCountByProduct[$productId] = ($this->variantCountByProduct[$productId] ?? 0) + 1;
 
                             $rowAction = 'created';
 
-                            // Auto-convert product to 'variable' when it has more than one SKU.
-                            // Runs only AFTER a successful create. Dry-run rolls back with the transaction.
+                            // 1. Clean up older default SKUs if we have multiple, but NEVER delete the one we just worked on.
                             $totalSkus = ProductSku::withoutGlobalScopes()
                                 ->where('product_id', $productId)
                                 ->count();
 
                             if ($totalSkus > 1) {
-                                $productModel = Product::withoutGlobalScopes()->find($productId);
-                                if ($productModel && $productModel->type !== 'variable') {
-                                    $productModel->type = 'variable';
+                                $defaultSkuIds = ProductSku::withoutGlobalScopes()
+                                    ->where('product_id', $productId)
+                                    ->where('id', '!=', $sku->id) // Protect the SKU we just imported
+                                    ->whereNotIn('id', function ($q) {
+                                        $q->select('product_sku_id')->from('product_sku_values');
+                                    })
+                                    ->pluck('id')
+                                    ->all();
+
+                                if (! empty($defaultSkuIds)) {
+                                    ProductSku::withoutGlobalScopes()
+                                        ->whereIn('id', $defaultSkuIds)
+                                        ->delete();
+
+                                    foreach ($defaultSkuIds as $deletedId) {
+                                        $codeKey = array_search($deletedId, $this->existingSkuCodes, true);
+                                        if ($codeKey !== false) {
+                                            unset($this->existingSkuCodes[$codeKey]);
+                                        }
+                                    }
+                                    $this->variantCountByProduct[$productId] = max(
+                                        0,
+                                        ($this->variantCountByProduct[$productId] ?? 0) - count($defaultSkuIds)
+                                    );
+                                }
+                            }
+
+                            // 2. Finally, check the real final SKU count to correctly set single vs variable.
+                            $finalSkuCount = ProductSku::withoutGlobalScopes()
+                                ->where('product_id', $productId)
+                                ->count();
+
+                            $productModel = Product::withoutGlobalScopes()->find($productId);
+                            if ($productModel) {
+                                // It is variable IF it has more than 1 SKU -OR- the single SKU has attributes attached
+                                $correctType = ($finalSkuCount > 1 || !empty($attributeValueIds)) ? 'variable' : 'single';
+                                
+                                if ($productModel->type !== $correctType) {
+                                    $productModel->type = $correctType;
                                     $productModel->save();
 
-                                    // Soft-delete the initial default SKU (the one with no attribute values).
-                                    $defaultSkuIds = ProductSku::withoutGlobalScopes()
-                                        ->where('product_id', $productId)
-                                        ->whereNotIn('id', function ($q) {
-                                            $q->select('product_sku_id')->from('product_sku_values');
-                                        })
-                                        ->pluck('id')
-                                        ->all();
-
-                                    if (! empty($defaultSkuIds)) {
-                                        ProductSku::withoutGlobalScopes()
-                                            ->whereIn('id', $defaultSkuIds)
-                                            ->delete();
-
-                                        foreach ($defaultSkuIds as $deletedId) {
-                                            $codeKey = array_search($deletedId, $this->existingSkuCodes, true);
-                                            if ($codeKey !== false) {
-                                                unset($this->existingSkuCodes[$codeKey]);
-                                            }
-                                        }
-                                        $this->variantCountByProduct[$productId] = max(
-                                            0,
-                                            ($this->variantCountByProduct[$productId] ?? 0) - count($defaultSkuIds)
-                                        );
-                                    }
-
                                     if (isset($this->productBySlug[$slug])) {
-                                        $this->productBySlug[$slug]['is_variable'] = true;
+                                        $this->productBySlug[$slug]['is_variable'] = ($correctType === 'variable');
                                     }
                                 }
                             }
@@ -395,6 +445,10 @@ class SkuImporter
 
         if (! empty($row['mrp']) && (! is_numeric($row['mrp']) || (float) $row['mrp'] < 0)) {
             $errors[] = "Invalid MRP: '{$row['mrp']}'";
+        }
+
+        if (! empty($row['stock_qty']) && ! is_numeric($row['stock_qty'])) {
+            $errors[] = "Stock quantity must be a number: '{$row['stock_qty']}'";
         }
 
         // Attribute column pair sanity: if one side of a pair is filled, the other must be too.
@@ -539,13 +593,20 @@ class SkuImporter
         $this->existingCombosByProduct = [];
         $this->variantCountByProduct = [];
 
+        // Preload Warehouses
+        $this->warehousesByName = Warehouse::where('company_id', $companyId)
+            ->pluck('id', 'name')
+            ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+            ->toArray();
+
         Product::withoutGlobalScopes()
             ->where('company_id', $companyId)
-            ->get(['id', 'slug', 'type'])
+            ->get(['id', 'slug', 'type', 'product_unit_id'])
             ->each(function ($p) {
                 $this->productBySlug[strtolower($p->slug)] = [
                     'id' => $p->id,
                     'is_variable' => $p->type === 'variable',
+                    'unit_id' => $p->product_unit_id,
                 ];
             });
 
