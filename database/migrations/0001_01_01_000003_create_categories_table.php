@@ -15,6 +15,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained()
                 ->cascadeOnDelete();
+            $table->foreignId('store_id')->nullable()->constrained()->nullOnDelete();
+            
             $table->string('name');
             $table->text('image')->nullable();
             $table->string('slug')->nullable();

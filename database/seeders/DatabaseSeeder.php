@@ -15,10 +15,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            Platform\SuperAdminSeeder::class,
-            Platform\ModuleSeeder::class,
-            Platform\StateSeeder::class,
-            Platform\PermissionSeeder::class,                        
+            // Platform\SuperAdminSeeder::class,
+            // Platform\ModuleSeeder::class,
+            // Platform\StateSeeder::class,
+            // Platform\PermissionSeeder::class,      
+            
+            // HRM\DepartmentSeeder::class,
+            // HRM\DesignationSeeder::class,
+            // HRM\RoleSeeder::class,
+            HRM\LeaveTypeSeeder::class,
         ]);
     }
 }

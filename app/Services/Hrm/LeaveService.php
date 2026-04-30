@@ -6,6 +6,9 @@ use App\Models\Hrm\Employee;
 use App\Models\Hrm\Leave;
 use App\Models\Hrm\LeaveBalance;
 use App\Models\Hrm\LeaveType;
+
+use App\Notifications\Hrm\LeaveStatusNotification;
+
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -105,7 +108,12 @@ class LeaveService
 
             $balance->increment('used', $leave->total_days);
 
-            return $leave->fresh();
+            $updatedLeave = $leave->fresh(['employee.user']);
+            if ($updatedLeave->employee?->user) {
+                $updatedLeave->employee->user->notify(new LeaveStatusNotification($updatedLeave));
+            }
+
+            return $updatedLeave;
         });
     }
 
@@ -125,7 +133,12 @@ class LeaveService
             'admin_remarks' => $remarks,
         ]);
 
-        return $leave->fresh();
+        $updatedLeave = $leave->fresh(['employee.user']);
+        if ($updatedLeave->employee?->user) {
+            $updatedLeave->employee->user->notify(new LeaveStatusNotification($updatedLeave));
+        }
+
+        return $updatedLeave;
     }
 
     /**

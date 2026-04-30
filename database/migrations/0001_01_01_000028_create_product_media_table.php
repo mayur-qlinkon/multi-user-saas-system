@@ -16,6 +16,7 @@ return new class extends Migration
 
             // 🛡️ 1. The Iron Wall (For Tenantable trait security)
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('store_id')->nullable()->constrained()->nullOnDelete();
 
             // 2. Parent Link
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();

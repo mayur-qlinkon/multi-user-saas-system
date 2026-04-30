@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('product_skus', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete(); // Iron Wall
+            $table->foreignId('store_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('unit_id')->nullable()->constrained('units');
 
