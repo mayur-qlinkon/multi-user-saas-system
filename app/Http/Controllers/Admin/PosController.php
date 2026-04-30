@@ -301,7 +301,7 @@ class PosController extends Controller
             'tax_percent' => 'nullable|numeric|min:0',
             'tax_type' => 'required|in:inclusive,exclusive',
             'sku' => 'nullable|string|max:100',
-            'barcode' => 'nullable|string|max:100',
+            'hsn_code' => 'nullable|string|max:20',
             'opening_stock' => 'nullable|numeric|min:0',
             'warehouse_id' => 'required|exists:warehouses,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
@@ -334,7 +334,7 @@ class PosController extends Controller
                     'product_id' => $product->id,
                     'unit_id' => $request->unit_id,
                     'sku' => $skuCode,
-                    'barcode' => $request->barcode,
+                    'hsn_code' => $request->hsn_code,
                     'cost' => $request->cost,
                     'price' => $request->price,
                     'order_tax' => $request->tax_percent ?? 0,
@@ -386,9 +386,9 @@ class PosController extends Controller
             ]);
 
         } catch (Exception $e) {
-            // Catch unique constraint violations (e.g., duplicate barcode)
+            // Catch unique constraint violations (e.g., duplicate SKU)
             if ($e->getCode() == 23000) {
-                return response()->json(['status' => 'error', 'message' => 'SKU or Barcode already exists in your company.'], 422);
+                return response()->json(['status' => 'error', 'message' => 'This SKU already exists in your company.'], 422);
             }
 
             return response()->json(['status' => 'error', 'message' => 'Failed to create product. '.$e->getMessage()], 500);

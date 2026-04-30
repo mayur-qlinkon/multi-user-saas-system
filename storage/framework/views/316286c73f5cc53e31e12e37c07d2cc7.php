@@ -1,4 +1,32 @@
-@props(['categories', 'units'])
+<?php $attributes ??= new \Illuminate\View\ComponentAttributeBag;
+
+$__newAttributes = [];
+$__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames((['categories', 'units']));
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (in_array($__key, $__propNames)) {
+        $$__key = $$__key ?? $__value;
+    } else {
+        $__newAttributes[$__key] = $__value;
+    }
+}
+
+$attributes = new \Illuminate\View\ComponentAttributeBag($__newAttributes);
+
+unset($__propNames);
+unset($__newAttributes);
+
+foreach (array_filter((['categories', 'units']), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
+    $$__key = $$__key ?? $__value;
+}
+
+$__defined_vars = get_defined_vars();
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (array_key_exists($__key, $__defined_vars)) unset($$__key);
+}
+
+unset($__defined_vars, $__key, $__value); ?>
 
 <div x-show="isProductModalOpen" style="display: none;"
     class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-gray-900/70 backdrop-blur-sm sm:p-4"
@@ -9,19 +37,19 @@
     x-transition:leave-start="opacity-100" 
     x-transition:leave-end="opacity-0">
 
-    {{-- The Modal / Bottom Sheet --}}
+    
     <div class="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]"
         x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-full sm:translate-y-8 sm:scale-95"
         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
         @click.away="isProductModalOpen = false">
 
-        {{-- Mobile Pull Indicator (Only visible on small screens) --}}
+        
         <div class="w-full flex justify-center pt-3 pb-1 sm:hidden shrink-0 bg-white">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full"></div>
         </div>
 
-        {{-- Header --}}
+        
         <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0">
             <div>
                 <h3 class="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -36,11 +64,11 @@
             </button>
         </div>
 
-        {{-- Scrollable Body --}}
+        
         <div class="p-5 sm:p-6 overflow-y-auto no-scrollbar flex-1 bg-gray-50/30">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
 
-                {{-- Product Name --}}
+                
                 <div class="col-span-1 sm:col-span-2">
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Product Name <span class="text-red-500">*</span></label>
                     <input type="text" x-model="newProduct.name"
@@ -48,31 +76,31 @@
                         placeholder="e.g., Ficus Plant">
                 </div>
 
-                {{-- Category --}}
+                
                 <div class="col-span-1">
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Category <span class="text-red-500">*</span></label>
                     <select x-model="newProduct.category_id"
                         class="w-full border border-gray-200 rounded-xl px-4 py-3 sm:py-2.5 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none bg-white appearance-none cursor-pointer">
                         <option value="">Select Category</option>
-                        @foreach ($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($category->id); ?>"><?php echo e($category->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
-                {{-- Unit --}}
+                
                 <div class="col-span-1">
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Unit <span class="text-red-500">*</span></label>
                     <select x-model="newProduct.unit_id"
                         class="w-full border border-gray-200 rounded-xl px-4 py-3 sm:py-2.5 text-sm focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none bg-white appearance-none cursor-pointer">
                         <option value="">Select Unit</option>
-                        @foreach ($units as $unit)
-                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = $units; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $unit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($unit->id); ?>"><?php echo e($unit->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
-                {{-- Opening Stock & HSN Code --}}
+                
                 <div class="col-span-1">
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Opening Stock</label>
                     <input type="number" x-model.number="newProduct.opening_stock"
@@ -87,10 +115,10 @@
                         placeholder="e.g., 123456">
                 </div>
 
-                {{-- Divider for Mobile --}}
+                
                 <div class="col-span-1 sm:col-span-2 h-px bg-gray-200/60 my-1"></div>
 
-                {{-- Cost & Price --}}
+                
                 <div class="col-span-1">
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Cost Price <span class="text-red-500">*</span></label>
                     <div class="relative">
@@ -111,7 +139,7 @@
                     </div>
                 </div>
 
-                {{-- Tax Settings --}}
+                
                 <div class="col-span-1">
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Tax Percent (%)</label>
                     <input type="number" step="0.01" x-model.number="newProduct.tax_percent"
@@ -128,7 +156,7 @@
                     </select>
                 </div>
 
-                {{-- Image --}}
+                
                 <div class="col-span-1 sm:col-span-2 mt-2">
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Product Image <span class="text-[9px] font-medium text-gray-400">(Optional)</span></label>
                     <input type="file" x-ref="productImageFile" accept="image/*"
@@ -138,7 +166,7 @@
             </div>
         </div>
 
-        {{-- Footer --}}
+        
         <div class="p-4 sm:p-5 border-t border-gray-100 bg-white flex flex-col sm:flex-row justify-end gap-3 shrink-0">
             <button @click="isProductModalOpen = false"
                 class="w-full sm:w-auto px-6 py-3 sm:py-2.5 text-sm font-bold text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-xl transition-colors order-2 sm:order-1">
@@ -151,4 +179,4 @@
         </div>
 
     </div>
-</div>
+</div><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlink-saas - Slug Based\resources\views/components/quick-product-modal.blade.php ENDPATH**/ ?>

@@ -5,29 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    {{-- 🌟 CRITICAL: Needed for the checkout and quick-client AJAX requests --}}
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
 
     <title>POS Terminal - Qlinkon BIZNESS</title>
     
-    <link rel="icon" type="image/x-icon" href="{{ asset('storage/' . get_setting('favicon')) }}">
+    <link rel="icon" type="image/x-icon" href="<?php echo e(asset('storage/' . get_setting('favicon'))); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="{{ asset('assets/js/tailwind.min.js') }}"></script>
+    <script src="<?php echo e(asset('assets/js/tailwind.min.js')); ?>"></script>
 
-    {{-- 🌟 CRITICAL: Alpine.js for the posEngine --}}
-        <script src="{{ asset('assets/js/lucide.min.js') }}"></script>
-        <script src="{{ asset('assets/js/sweetalert2.js') }}"></script>
-        <script defer src="{{ asset('assets/js/alpinejs.min.js') }}"></script>
+    
+        <script src="<?php echo e(asset('assets/js/lucide.min.js')); ?>"></script>
+        <script src="<?php echo e(asset('assets/js/sweetalert2.js')); ?>"></script>
+        <script defer src="<?php echo e(asset('assets/js/alpinejs.min.js')); ?>"></script>
 
-    @php
+    <?php
         $primary = get_setting('primary_color', '#008a62');
         $hover = get_setting('primary_hover_color', '#007050');
         $stores = auth()->user()->stores ?? collect();
         $currentStoreId = session('store_id');
         $currentStore = $currentStoreId ? $stores->firstWhere('id', $currentStoreId) : $stores->first();
-    @endphp
+    ?>
     <script>
         tailwind.config = {
             theme: {
@@ -37,9 +37,9 @@
                     },
                     colors: {
                         brand: {
-                            500: '{{ $primary }}', // Main Primary Color
-                            600: '{{ $hover }}', // Hover State Color
-                            700: '{{ $hover }}' // Deepest state
+                            500: '<?php echo e($primary); ?>', // Main Primary Color
+                            600: '<?php echo e($hover); ?>', // Hover State Color
+                            700: '<?php echo e($hover); ?>' // Deepest state
                         }
                     }
                 }
@@ -51,9 +51,9 @@
            THEME VARIABLES
         ═══════════════════════════════════════════════ */
         :root {
-            --brand-50: {{ $primary }}1A;
-            --brand-100: {{ $primary }}33;
-            --brand-600: {{ $hover }};
+            --brand-50: <?php echo e($primary); ?>1A;
+            --brand-100: <?php echo e($primary); ?>33;
+            --brand-600: <?php echo e($hover); ?>;
             --bg-page: #f4f6f9;
             --ease: cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -79,37 +79,37 @@
 
 <body class="bg-white text-gray-800 font-sans h-[100dvh] flex overflow-hidden select-none">
 
-    {{-- 🌟 MAIN ALPINE.JS WRAPPER: This wraps everything so the left and right panes can talk to each other --}}
-    {{-- 🌟 Pass clients and payment methods into the engine --}}
-    <div x-data="posEngine('{{ $companyState ?? '' }}', {{ $storeId ?? 0 }}, @js($clients ?? []), @js($paymentMethods ?? []))" @keydown.window="handleGlobalScan($event)"
+    
+    
+    <div x-data="posEngine('<?php echo e($companyState ?? ''); ?>', <?php echo e($storeId ?? 0); ?>, <?php echo \Illuminate\Support\Js::from($clients ?? [])->toHtml() ?>, <?php echo \Illuminate\Support\Js::from($paymentMethods ?? [])->toHtml() ?>)" @keydown.window="handleGlobalScan($event)"
         class="flex-1 flex h-full overflow-hidden w-full">
 
-        {{-- ========================================== --}}
-        {{-- LEFT PANE: PRODUCTS & SEARCH (~70%)        --}}
-        {{-- ========================================== --}}
+        
+        
+        
         <div class="flex-1 flex flex-col h-full overflow-hidden bg-white">
 
-            {{-- 1. Search Header --}}
+            
             <header class="h-[64px] border-b border-gray-100 flex items-center justify-between px-5 shrink-0">
                 <div class="flex items-center gap-2 w-full lg:w-1/2">
                     <div class="relative w-full max-w-md">
                         <i data-lucide="search"
                             class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        {{-- 🌟 Alpine Binding: x-model and @input.debounce --}}
+                        
                         <input type="text" x-model="searchQuery" @input.debounce.300ms="handleSearch()"
                             x-ref="searchInput" placeholder="Search your plants or scan barcode..."
                             class="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-gray-400">
                     </div>
-                    @if(has_permission('pos.create_quick_product'))
+                    <?php if(has_permission('pos.create_quick_product')): ?>
                     <button @click="isProductModalOpen = true" title="Quick Add Product" style="margin-right: 10px;"
                         class="p-2 bg-brand-500 hover:bg-brand-600 text-white rounded flex items-center justify-center transition-colors shadow-sm">
                         <i data-lucide="plus" class="w-5 h-5"></i>
                     </button>
-                    @endif
+                    <?php endif; ?>
                 </div>
 
                 <div class="flex items-center gap-2 lg:gap-4 shrink-0">
-                    {{-- Loading Indicator --}}
+                    
                     <div x-show="isLoading" x-cloak class="flex items-center gap-2 text-brand-500 text-xs font-bold">
                         <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24">
@@ -123,13 +123,13 @@
                     </div>
                     <div
                         class="flex items-center rounded border border-brand-700 overflow-hidden bg-brand-700 text-white shadow-sm">
-                        {{-- 🌟 Forces focus back to the search bar for barcode scanning --}}
+                        
                         <button @click="openScanner()" title="Camera Scanner"
                             class="p-2 hover:bg-brand-600 transition-colors border-r border-brand-600">
                             <i data-lucide="scan-barcode" class="w-5 h-5"></i>
                         </button>
-                        {{-- 🌟 Links back to the Invoices list to view POS history --}}
-                        <a href="{{ route('admin.invoices.index') }}" title="POS History"
+                        
+                        <a href="<?php echo e(route('admin.invoices.index')); ?>" title="POS History"
                             class="p-2 hover:bg-brand-600 transition-colors block">
                             <i data-lucide="clock" class="w-5 h-5"></i>
                         </a>
@@ -137,7 +137,7 @@
                 </div>
             </header>
 
-            {{-- 2. Category Filter Bar --}}
+            
             <div class="py-3 border-b border-gray-100 flex items-center px-4 gap-2.5 overflow-x-auto no-scrollbar shrink-0 scroll-smooth">
                 <button @click="setCategory('')"
                     :class="activeCategory === '' ? 'bg-brand-500 text-white shadow-md border-brand-500' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'"
@@ -145,20 +145,21 @@
                     <i data-lucide="layout-grid" class="w-4 h-4"></i> All
                 </button>
 
-                @foreach ($categories as $category)
-                    <button @click="setCategory({{ $category->id }})"
-                        :class="activeCategory === {{ $category->id }} ? 'bg-brand-500 text-white shadow-md border-brand-500' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'"
+                <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <button @click="setCategory(<?php echo e($category->id); ?>)"
+                        :class="activeCategory === <?php echo e($category->id); ?> ? 'bg-brand-500 text-white shadow-md border-brand-500' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'"
                         class="px-4 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-all border">
-                        {{ $category->name }}
+                        <?php echo e($category->name); ?>
+
                     </button>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
 
-            {{-- 3. Product Grid & Infinite Scroll --}}
+            
             <div class="flex-1 overflow-y-auto p-5 no-scrollbar relative"
                 @scroll="if ($event.target.scrollHeight - $event.target.scrollTop - $event.target.clientHeight < 300) loadMore()">
 
-                {{-- Empty State (No Products Found) --}}
+                
                 <div x-show="!isLoading && products.length === 0" x-cloak
                     class="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
                     <i data-lucide="package-x" class="w-12 h-12 mb-3 opacity-20"></i>
@@ -167,33 +168,33 @@
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 pb-28 lg:pb-6 transition-all duration-300"
                     :class="(isLoading && page === 1) ? 'opacity-50 blur-[2px] pointer-events-none' : 'opacity-100 blur-0'">
-                    {{-- 🌟 Sleek POS Card Template --}}
+                    
                     <template x-for="product in products" :key="product.product_sku_id">
                         <div @click="product.stock > 0 ? addToCart(product) : null"
                             class="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col hover:border-brand-500 hover:shadow-md transition-all cursor-pointer group relative">
 
-                            {{-- Image Section with Overlays --}}
+                            
                             <div class="aspect-[4/3] sm:aspect-[3/2] w-full bg-gray-50 relative overflow-hidden shrink-0">
                                 <img :src="product.image_url || '/assets/images/placeholder.webp'" :alt="product.product_name"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
 
-                                {{-- Top Left Overlay: Price (Matches your reference image) --}}
+                                
                                 <div class="absolute top-0 left-0 bg-[#5b61f4] text-white text-[12px] font-black px-2.5 py-1 rounded-br-xl z-10 shadow-sm"
                                      x-text="'₹' + parseFloat(product.display_price).toFixed(2)">
                                 </div>
 
-                                {{-- Top Right Overlay: Stock & Unit (Matches your reference image) --}}
+                                
                                 <div class="absolute top-0 right-0 bg-[#0ea5e9] text-white text-[10px] font-bold px-2 py-1 rounded-bl-xl z-10 shadow-sm uppercase tracking-wide"
                                      x-text="product.stock + ' ' + (product.unit_name || '')">
                                 </div>
 
-                                {{-- Out of Stock Blocker (Faded overlay so you can't click it) --}}
+                                
                                 <div x-show="product.stock <= 0" class="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-20">
                                     <span class="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-sm">Out of Stock</span>
                                 </div>
                             </div>
 
-                            {{-- Info Section (Bottom) --}}
+                            
                             <div class="p-3 flex flex-col justify-center bg-white border-t border-gray-50 flex-1">
                                 <h3 class="font-bold text-gray-800 text-[13px] leading-tight truncate mb-0.5 group-hover:text-brand-600 transition-colors" x-text="product.product_name"></h3>
                                 <div class="flex items-center gap-1.5 opacity-70">
@@ -207,27 +208,27 @@
                     </template>
                 </div>
 
-                {{-- Infinite scroll is handled by @scroll on the container above --}}
+                
 
             </div>
         </div>
 
 
 
-        {{-- ========================================== --}}
-        {{-- RIGHT PANE: CART & CHECKOUT (~30%)         --}}
-        {{-- ========================================== --}}
-        {{-- Mobile Overlay Backdrop --}}
+        
+        
+        
+        
         <div x-show="isMobileCartOpen" x-transition.opacity
             @click="isMobileCartOpen = false"
             class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 lg:hidden" x-cloak>
         </div>
 
 <div :class="isMobileCartOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'"
-            {{-- 🌟 Tuned widths: w-[340px] for iPad (lg), w-[400px] for PC (xl) --}}
+            
             class="fixed inset-y-0 right-0 z-50 w-full sm:max-w-[400px] lg:relative lg:w-[340px] xl:w-[400px] bg-[#fdfdfd] border-l border-gray-100 flex flex-col h-full shrink-0 shadow-2xl lg:shadow-[-5px_0_15px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out">
 
-            {{-- 1. Customer Selection --}}
+            
             <div class="p-5 border-b border-gray-100 bg-white shrink-0">
                 <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
@@ -236,17 +237,17 @@
                         </button>
                         <h2 class="font-bold text-gray-800 text-[15px]">Customer</h2>
                     </div>
-                    {{-- 🌟 Optional: Warehouse selector if you have multiple --}}
+                    
                     <select x-model="warehouse_id" @change="changeWarehouse()"
                         class="text-xs border-none bg-gray-50 rounded text-gray-500 font-bold outline-none cursor-pointer">
-                        @foreach ($warehouses as $wh)
-                            <option value="{{ $wh->id }}">{{ $wh->name }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = $warehouses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wh): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($wh->id); ?>"><?php echo e($wh->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
 
                <div class="flex items-center gap-2 mb-3">
-                    {{-- Searchable Input --}}
+                    
                     <div class="relative flex-1" @click.away="isClientDropdownOpen = false">
                         <input type="text" x-model="clientSearchTerm" 
                             @focus="isClientDropdownOpen = true"
@@ -255,11 +256,11 @@
                             class="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-all">
                         <i data-lucide="chevron-down" class="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
 
-                        {{-- Floating Dropdown List --}}
+                        
                         <ul x-show="isClientDropdownOpen" x-cloak x-transition
                             class="absolute z-[60] w-full bg-white border border-gray-200 rounded-lg shadow-2xl mt-1 max-h-60 overflow-y-auto top-full left-0 custom-scrollbar">
                             
-                            {{-- Permanent Walk-in Guest Option --}}
+                            
                             <li @click="selectCustomer(null)"
                                 class="px-4 py-3 hover:bg-brand-50 cursor-pointer border-b border-gray-100 transition-colors">
                                 <div class="font-bold text-[13px] text-brand-600">Walk-in Guest</div>
@@ -282,13 +283,13 @@
                         </ul>
                     </div>
 
-                    {{-- Quick Add Button --}}
-                    @if(has_permission('pos.create_quick_client'))
+                    
+                    <?php if(has_permission('pos.create_quick_client')): ?>
                         <button type="button" @click="isClientModalOpen = true"
                             class="w-[36px] h-[36px] bg-brand-500 hover:bg-brand-600 text-white rounded-xl flex items-center justify-center shadow-md transition-all focus:ring-2 focus:ring-brand-500 focus:outline-none shrink-0">
                             <i data-lucide="plus" class="w-4 h-4"></i>
                         </button>
-                    @endif
+                    <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-2 text-xs text-gray-500">
                     <i data-lucide="user" class="w-3.5 h-3.5"></i>
@@ -297,24 +298,24 @@
                 </div>
             </div>
 
-            {{-- 2 & 3. SCROLLABLE BODY (Cart Items + Payment Math) --}}
+            
             <div class="flex-1 overflow-y-auto bg-gray-50/30 custom-scrollbar pb-6">
 
-                {{-- Cart Items Ledger --}}
+                
                 <div class="bg-white min-h-[150px]">
-                    {{-- Empty State --}}
+                    
                     <div x-show="cart.length === 0" x-cloak class="flex flex-col items-center justify-center text-gray-400 p-8">
                         <i data-lucide="shopping-bag" class="w-12 h-12 mb-3 text-gray-300 stroke-1"></i>
                         <p class="font-medium text-sm text-gray-500">Order is empty</p>
                         <p class="text-xs mt-1">Scan or add items to get started.</p>
                     </div>
 
-                    {{-- Filled State --}}
+                    
                     <ul x-show="cart.length > 0" x-cloak class="divide-y divide-gray-50 border-b border-gray-100">
                         <template x-for="(item, index) in cart" :key="item.product_sku_id">
                             <li class="p-4 hover:bg-gray-50/50 transition-colors group">
                                 <div class="flex justify-between items-start mb-2 gap-3">
-                                    {{-- Product Thumbnail --}}
+                                    
                                     <div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
                                         <img :src="item.image_url || '/assets/images/placeholder.webp'" class="w-full h-full object-cover">
                                     </div>
@@ -329,7 +330,7 @@
                                 </div>
 
                                 <div class="flex justify-between items-center mt-3">
-                                    {{-- Qty Controls (Using RAW SVGs so they never disappear) --}}
+                                    
                                     <div class="flex items-center bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden h-9">
                                         <button @click="updateQty(index, -1)" class="w-10 h-full flex items-center justify-center text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
@@ -340,7 +341,7 @@
                                         </button>
                                     </div>
 
-                                    {{-- Remove Button (Using RAW SVG) --}}
+                                    
                                     <button @click="updateQty(index, -item.quantity)" class="w-9 h-9 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 rounded-lg transition-all active:scale-95">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                                     </button>
@@ -350,12 +351,31 @@
                     </ul>
                 </div>
 
-                {{-- Detail Payment & Math --}}
+                
                 <div class="p-5 bg-[#fafafa] border-t border-gray-200">
                     <h2 class="mb-3 text-[14px] font-bold text-gray-800 uppercase tracking-widest">Payment Details</h2>
 
                     <div class="mb-4">
-                        <x-payment-method-select name="payment_method_id" label="Payment Type" required="true" showIcons="true" class="!border-brand-500 focus:!ring-brand-500" x-model="payment.method_id" @change="handlePaymentChange($event)" data-payment-selector="true" />
+                        <?php if (isset($component)) { $__componentOriginal6074b4137b8006ef4d1b8340d0976388 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal6074b4137b8006ef4d1b8340d0976388 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.payment-method-select','data' => ['name' => 'payment_method_id','label' => 'Payment Type','required' => 'true','showIcons' => 'true','class' => '!border-brand-500 focus:!ring-brand-500','xModel' => 'payment.method_id','@change' => 'handlePaymentChange($event)','dataPaymentSelector' => 'true']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('payment-method-select'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'payment_method_id','label' => 'Payment Type','required' => 'true','showIcons' => 'true','class' => '!border-brand-500 focus:!ring-brand-500','x-model' => 'payment.method_id','@change' => 'handlePaymentChange($event)','data-payment-selector' => 'true']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal6074b4137b8006ef4d1b8340d0976388)): ?>
+<?php $attributes = $__attributesOriginal6074b4137b8006ef4d1b8340d0976388; ?>
+<?php unset($__attributesOriginal6074b4137b8006ef4d1b8340d0976388); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal6074b4137b8006ef4d1b8340d0976388)): ?>
+<?php $component = $__componentOriginal6074b4137b8006ef4d1b8340d0976388; ?>
+<?php unset($__componentOriginal6074b4137b8006ef4d1b8340d0976388); ?>
+<?php endif; ?>
                     </div>
 
                     <div class="space-y-3 text-[13px] font-medium text-gray-500">
@@ -381,7 +401,7 @@
                             <span class="font-bold text-gray-800" x-text="formatCurrency(totals.subtotal)"></span>
                         </div>
 
-                        @if(has_permission('pos.apply_discount'))
+                        <?php if(has_permission('pos.apply_discount')): ?>
                         <div class="flex items-center justify-between">
                             <span class="px-1">Discount</span>
                             <div class="flex overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
@@ -392,7 +412,7 @@
                                 <input type="number" step="0.01" placeholder="0.00" x-model.number="totals.discount_value" @input="calculateCart()" class="w-16 px-2 py-1.5 text-right text-xs font-bold text-red-500 placeholder-gray-300 focus:outline-none">
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
                         <div class="flex items-center justify-between px-1">
                             <span>Tax Amount</span>
@@ -402,7 +422,7 @@
                 </div>
             </div>
 
-            {{-- 4. STICKY CHECKOUT FOOTER --}}
+            
             <div class="p-4 bg-white border-t border-gray-100 shrink-0 shadow-[0_-5px_15px_rgba(0,0,0,0.03)] z-20">
                 <div class="flex items-end justify-between mb-3 px-1">
                     <div>
@@ -412,7 +432,7 @@
                     <span class="text-2xl font-black text-brand-600" x-text="formatCurrency(totals.payable)"></span>
                 </div>
 
-                @if(has_permission('pos.create_sale'))
+                <?php if(has_permission('pos.create_sale')): ?>
                 <button @click="placeOrder()" :disabled="cart.length === 0 || isProcessing"
                     :class="(cart.length === 0) ? 'bg-[#cbd5e1] cursor-not-allowed' : 'bg-brand-500 hover:bg-brand-600 shadow-lg hover:shadow-brand-500/30 active:scale-95'"
                     class="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold tracking-wide text-white transition-all">
@@ -422,22 +442,79 @@
                         <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...
                     </span>
                 </button>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
 
 
 
-        {{-- ======================================================= --}}
-        {{-- 🟢 QUICK CLIENT MODAL COMPONENT                         --}}
-        {{-- ======================================================= --}}
-        <x-quick-client-modal :states="$states" />
-        {{-- 🟢 CAMERA BARCODE SCANNER MODAL --}}
-        <x-barcode-scanner-modal />
-        {{-- 🌟 🟢 QUICK PRODUCT MODAL --}}
-        <x-quick-product-modal :categories="$categories" :units="$units" />
+        
+        
+        
+        <?php if (isset($component)) { $__componentOriginal1f6a6ca48a47bbfcbda88f54d38a7e39 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal1f6a6ca48a47bbfcbda88f54d38a7e39 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.quick-client-modal','data' => ['states' => $states]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('quick-client-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['states' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($states)]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal1f6a6ca48a47bbfcbda88f54d38a7e39)): ?>
+<?php $attributes = $__attributesOriginal1f6a6ca48a47bbfcbda88f54d38a7e39; ?>
+<?php unset($__attributesOriginal1f6a6ca48a47bbfcbda88f54d38a7e39); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal1f6a6ca48a47bbfcbda88f54d38a7e39)): ?>
+<?php $component = $__componentOriginal1f6a6ca48a47bbfcbda88f54d38a7e39; ?>
+<?php unset($__componentOriginal1f6a6ca48a47bbfcbda88f54d38a7e39); ?>
+<?php endif; ?>
+        
+        <?php if (isset($component)) { $__componentOriginal8e2471bb2f79b9b8fe1b95971e64a834 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal8e2471bb2f79b9b8fe1b95971e64a834 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.barcode-scanner-modal','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('barcode-scanner-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal8e2471bb2f79b9b8fe1b95971e64a834)): ?>
+<?php $attributes = $__attributesOriginal8e2471bb2f79b9b8fe1b95971e64a834; ?>
+<?php unset($__attributesOriginal8e2471bb2f79b9b8fe1b95971e64a834); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal8e2471bb2f79b9b8fe1b95971e64a834)): ?>
+<?php $component = $__componentOriginal8e2471bb2f79b9b8fe1b95971e64a834; ?>
+<?php unset($__componentOriginal8e2471bb2f79b9b8fe1b95971e64a834); ?>
+<?php endif; ?>
+        
+        <?php if (isset($component)) { $__componentOriginalac73e84a9dafab6ef2709f25d74f7f80 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalac73e84a9dafab6ef2709f25d74f7f80 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.quick-product-modal','data' => ['categories' => $categories,'units' => $units]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('quick-product-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['categories' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($categories),'units' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($units)]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalac73e84a9dafab6ef2709f25d74f7f80)): ?>
+<?php $attributes = $__attributesOriginalac73e84a9dafab6ef2709f25d74f7f80; ?>
+<?php unset($__attributesOriginalac73e84a9dafab6ef2709f25d74f7f80); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalac73e84a9dafab6ef2709f25d74f7f80)): ?>
+<?php $component = $__componentOriginalac73e84a9dafab6ef2709f25d74f7f80; ?>
+<?php unset($__componentOriginalac73e84a9dafab6ef2709f25d74f7f80); ?>
+<?php endif; ?>
 
-        {{-- 🌟 🟢 RECEIPT PREVIEW MODAL --}}
+        
         <div x-show="isReceiptModalOpen" style="display: none;"
             class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-900/80 backdrop-blur-sm px-4"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95"
@@ -447,7 +524,7 @@
             <div
                 class="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[85vh] border border-gray-100">
 
-                {{-- Header --}}
+                
                 <div class="flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 shrink-0">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full bg-brand-50 flex items-center justify-center">
@@ -464,18 +541,16 @@
                     </button>
                 </div>
 
-                {{-- Iframe Container (Simulates the POS Printer Machine) --}}
+                
                 <div class="flex-1 overflow-hidden flex flex-col bg-[#e5e7eb] relative items-center py-6 shadow-inner">
 
-                    {{-- Realistic Printer Slot Visual --}}
-                    {{-- <div
-                        class="absolute top-0 left-1/2 -translate-x-1/2 w-[86mm] h-3 bg-gradient-to-b from-gray-800 to-gray-600 rounded-b-lg shadow-md z-10 border-b border-gray-900">
-                    </div> --}}
+                    
+                    
 
-                    {{-- The actual receipt paper --}}
+                    
                     <div
                         class="w-[80mm] h-full bg-white shadow-[0_10px_25px_rgba(0,0,0,0.15)] relative flex flex-col overflow-hidden transition-all">
-                        {{-- Jagged paper tear effect at the bottom (Optional but looks great) --}}
+                        
                         <div
                             class="absolute bottom-0 left-0 w-full h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cG9seWdvbiBwb2ludHM9IjAsOCA0LDAgOCw4IiBmaWxsPSIjZTVlN2ViIi8+Cjwvc3ZnPg==')] z-10 rotate-180">
                         </div>
@@ -485,7 +560,7 @@
                     </div>
                 </div>
 
-                {{-- Footer Action Buttons --}}
+                
                 <div class="p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0">
                     <button @click="closeReceiptModal()"
                         class="flex-1 py-2.5 text-sm font-bold text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-all focus:ring-2 focus:ring-gray-200 active:scale-95">
@@ -500,7 +575,7 @@
         </div>
 
 
-        {{-- Floating Mobile Cart Button --}}
+        
         <div class="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] sm:w-[400px] z-[45]">
             <button @click="isMobileCartOpen = true" 
                 class="w-full bg-brand-500 hover:bg-brand-600 text-white shadow-xl shadow-brand-500/30 rounded-2xl py-3.5 px-5 flex items-center justify-between transition-transform active:scale-95">
@@ -523,8 +598,8 @@
     </div>
 
     
-    <script src="{{ asset('assets/js/sweetalert2.js') }}"></script>
-    <script src="{{ asset('assets/js/swal.js') }}"></script>
+    <script src="<?php echo e(asset('assets/js/sweetalert2.js')); ?>"></script>
+    <script src="<?php echo e(asset('assets/js/swal.js')); ?>"></script>
     <script>
         document.addEventListener('alpine:init', () => {
             lucide.createIcons();
@@ -584,8 +659,8 @@
                 // Scanner State
                 scanBuffer: '',
                 lastScanTime: 0,
-                warehouse_id: "{{ $warehouses->where('store_id', session('store_id'))->where('is_default', 1)->first()?->id ?? $warehouses->where('store_id', session('store_id'))->first()?->id ?? '' }}",
-                previous_warehouse_id: "{{ $warehouses->where('store_id', session('store_id'))->where('is_default', 1)->first()?->id ?? $warehouses->where('store_id', session('store_id'))->first()?->id ?? '' }}",
+                warehouse_id: "<?php echo e($warehouses->where('store_id', session('store_id'))->where('is_default', 1)->first()?->id ?? $warehouses->where('store_id', session('store_id'))->first()?->id ?? ''); ?>",
+                previous_warehouse_id: "<?php echo e($warehouses->where('store_id', session('store_id'))->where('is_default', 1)->first()?->id ?? $warehouses->where('store_id', session('store_id'))->first()?->id ?? ''); ?>",
 
                 // 🌟 CAMERA SCANNER STATE
                 isScannerModalOpen: false,
@@ -1216,3 +1291,4 @@
 </body>
 
 </html>
+<?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlink-saas - Slug Based\resources\views/admin/pos/index.blade.php ENDPATH**/ ?>

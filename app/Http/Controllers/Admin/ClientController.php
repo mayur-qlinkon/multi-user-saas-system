@@ -66,6 +66,8 @@ class ClientController extends Controller
         // Retrieve the safely validated data
         $validated = $request->validated();
 
+        $validated['registration_type'] = $validated['registration_type'] ?? 'unregistered';
+
         // Handle the store-only scope logic
         $validated['store_id'] = $request->boolean('store_only') ? session('store_id') : null;
 

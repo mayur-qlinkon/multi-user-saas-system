@@ -30,7 +30,7 @@ class StoreClientRequest extends FormRequest
 
             // 🌟 STRICT PHONE VALIDATION: Unique per company, ignoring deleted records
             'phone' => [
-                'nullable',
+                'required',
                 'string',
                 'max:20',
                 Rule::unique('clients', 'phone')
@@ -39,7 +39,7 @@ class StoreClientRequest extends FormRequest
             ],
 
             'gst_number' => ['nullable', 'string', 'max:30'],
-            'registration_type' => ['required', Rule::in(['registered', 'unregistered', 'composition', 'overseas', 'sez'])],
+            'registration_type' => ['nullable', Rule::in(['registered', 'unregistered', 'composition', 'overseas', 'sez'])],
             'address' => ['nullable', 'string'],
             'city' => ['nullable', 'string', 'max:100'],
             'state_id' => ['nullable', 'exists:states,id'],

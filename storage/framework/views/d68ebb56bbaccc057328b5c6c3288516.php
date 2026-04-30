@@ -41,7 +41,26 @@
             </div>
 
             <div class="col-span-2 sm:col-span-1">
-                <x-state-select x-model="newClient.state" label="State (Optional)" />
+                <?php if (isset($component)) { $__componentOriginal25028d1e070da787b324eb3ef2d05d03 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal25028d1e070da787b324eb3ef2d05d03 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.state-select','data' => ['xModel' => 'newClient.state','label' => 'State (Optional)']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('state-select'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['x-model' => 'newClient.state','label' => 'State (Optional)']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal25028d1e070da787b324eb3ef2d05d03)): ?>
+<?php $attributes = $__attributesOriginal25028d1e070da787b324eb3ef2d05d03; ?>
+<?php unset($__attributesOriginal25028d1e070da787b324eb3ef2d05d03); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal25028d1e070da787b324eb3ef2d05d03)): ?>
+<?php $component = $__componentOriginal25028d1e070da787b324eb3ef2d05d03; ?>
+<?php unset($__componentOriginal25028d1e070da787b324eb3ef2d05d03); ?>
+<?php endif; ?>
             </div>
 
             <div class="col-span-2">
@@ -70,4 +89,4 @@
             </button>
         </div>
     </div>
-</div>
+</div><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlink-saas - Slug Based\resources\views/components/quick-client-modal.blade.php ENDPATH**/ ?>
