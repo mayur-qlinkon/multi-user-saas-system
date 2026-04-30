@@ -155,7 +155,6 @@
 @section('content')
 @php
     $sc = $order->status_color;
-    $pc = $order->payment_status_color;
 @endphp
 
 <div class="pb-10" x-data="orderShow()">
@@ -209,10 +208,15 @@
                             <span class="status-dot" style="background: {{ $sc['dot'] }}"></span>
                             <span>{{ $order->status_label }}</span>
                         </span>
-                        <span class="status-badge"
-                            style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
-                            {{ ucfirst($order->payment_status) }}
-                        </span>
+                        {{-- Invoice status reference (read-only — payment managed in Invoice module) --}}
+                        @if($order->invoice)
+                            <a href="{{ route('admin.invoices.show', $order->invoice->id) }}"
+                                class="status-badge text-[11px] font-bold"
+                                style="background: #f0fdf4; color: #15803d; text-decoration: none;">
+                                <i data-lucide="file-text" class="w-3 h-3"></i>
+                                {{ $order->invoice->invoice_number }}
+                            </a>
+                        @endif
                     </div>
                 </div>
 
@@ -259,35 +263,14 @@
                         </button>
                     @endif
 
-                    @if(has_permission('orders.download_receipt'))
-                   <a href="{{ route('admin.orders.receipt', $order->id) }}"
-                        target="_blank"
-                        class="action-btn action-btn-outline">
-                        <i data-lucide="file-down" class="w-4 h-4 text-gray-500"></i>
-                        Download Receipt
-                    </a>
-                    @endif
-
-                    {{-- Mark as Paid ── --}}
-                    @if(has_permission('orders.record_payment'))
-                        @if($order->payment_status !== 'paid' && $order->total_amount > 0)
-                            <button @click="paymentModal = true"
-                                class="action-btn action-btn-outline"
-                                style="color: #15803d; border-color: #86efac;">
-                                <i data-lucide="indian-rupee" class="w-4 h-4"></i>
-                                Record Payment
-                            </button>
-                        @elseif($order->total_amount <= 0)
-                             <span class="action-btn text-gray-400 bg-gray-50 border border-gray-200 cursor-not-allowed">
-                                <i data-lucide="slash" class="w-4 h-4"></i>
-                                No Payment Required
-                            </span>
-                        @else
-                            <span class="action-btn text-green-700 bg-green-50 border border-green-200 cursor-default">
-                                <i data-lucide="check-circle" class="w-4 h-4"></i>
-                                Paid
-                            </span>
-                        @endif
+                    {{-- Create Invoice — primary billing action ── --}}
+                    @if(!$order->invoice_id && !in_array($order->status, ['cancelled', 'failed']) && has_permission('invoices.create'))
+                        <a href="{{ route('admin.invoices.create', ['order_id' => $order->id]) }}"
+                            class="action-btn action-btn-primary"
+                            style="background: #7c3aed;">
+                            <i data-lucide="file-plus" class="w-4 h-4"></i>
+                            Create Invoice
+                        </a>
                     @endif
 
                     {{-- Cancel ── --}}
@@ -601,39 +584,74 @@
                 </div>
             @endif
 
-            {{-- ── Payment Info ── --}}
+            {{-- ── Invoice Status (reference — billing managed in Invoice module) ── --}}
             <div class="detail-card">
                 <p class="card-title">
-                    <i data-lucide="credit-card" class="w-4 h-4"></i>
-                    Payment
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    Invoice
                 </p>
-                <div class="space-y-0">
-                    <div class="info-row">
-                        <span class="info-label">Method</span>
-                        <span class="info-value uppercase">{{ $order->payment_method ?? 'COD' }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Status</span>
-                        <span class="info-value">
-                            <span class="status-badge text-[11px] px-2 py-0.5"
-                                style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
-                                {{ ucfirst($order->payment_status) }}
+                @if($order->invoice)
+                    <div class="space-y-0">
+                        <div class="info-row">
+                            <span class="info-label">Invoice #</span>
+                            <a href="{{ route('admin.invoices.show', $order->invoice->id) }}"
+                                class="info-value font-mono text-xs"
+                                style="color: var(--brand-600)">
+                                {{ $order->invoice->invoice_number }}
+                            </a>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Status</span>
+                            <span class="info-value">
+                                @php
+                                    $invStatusColors = [
+                                        'draft'     => ['bg' => '#fefce8', 'text' => '#a16207'],
+                                        'confirmed' => ['bg' => '#f0fdf4', 'text' => '#15803d'],
+                                        'cancelled' => ['bg' => '#fef2f2', 'text' => '#dc2626'],
+                                    ];
+                                    $isc = $invStatusColors[$order->invoice->status] ?? ['bg' => '#f8fafc', 'text' => '#64748b'];
+                                @endphp
+                                <span class="status-badge text-[11px] px-2 py-0.5"
+                                    style="background: {{ $isc['bg'] }}; color: {{ $isc['text'] }}">
+                                    {{ ucfirst($order->invoice->status) }}
+                                </span>
                             </span>
-                        </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Payment</span>
+                            <span class="info-value capitalize text-xs text-gray-500">
+                                {{ ucfirst($order->invoice->payment_status) }}
+                            </span>
+                        </div>
+                        @if($order->invoice->grand_total > 0)
+                            <div class="info-row">
+                                <span class="info-label">Amount</span>
+                                <span class="info-value font-mono">₹{{ number_format($order->invoice->grand_total, 2) }}</span>
+                            </div>
+                        @endif
                     </div>
-                    @if($order->paid_at)
-                        <div class="info-row">
-                            <span class="info-label">Paid At</span>
-                            <span class="info-value text-xs">{{ $order->paid_at->format('d M Y, h:i A') }}</span>
+                    <a href="{{ route('admin.invoices.show', $order->invoice->id) }}"
+                        class="mt-3 flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-[12px] font-bold transition-colors"
+                        style="background: #f5f3ff; color: #7c3aed;">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        View Full Invoice
+                    </a>
+                @else
+                    <div class="flex flex-col items-center gap-3 py-3">
+                        <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <i data-lucide="file-x" class="w-5 h-5 text-gray-300"></i>
                         </div>
-                    @endif
-                    @if($order->razorpay_payment_id)
-                        <div class="info-row">
-                            <span class="info-label">Razorpay ID</span>
-                            <span class="info-value font-mono text-xs">{{ $order->razorpay_payment_id }}</span>
-                        </div>
-                    @endif
-                </div>
+                        <p class="text-[12px] text-gray-400 text-center">No invoice created yet.</p>
+                        @if(!in_array($order->status, ['cancelled', 'failed']) && has_permission('invoices.create'))
+                            <a href="{{ route('admin.invoices.create', ['order_id' => $order->id]) }}"
+                                class="action-btn w-full justify-center text-[12px]"
+                                style="background: #7c3aed; color: #fff;">
+                                <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+                                Create Invoice
+                            </a>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             {{-- ── Shipping / Tracking ── --}}
@@ -803,91 +821,6 @@
     </div>
 
 
-{{-- ════════ Payment Modal ════════ --}}
-<div x-show="paymentModal" x-cloak
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
-    style="background: rgba(0,0,0,0.45)">
-    <div @click.away="paymentModal = false"
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 scale-95"
-        x-transition:enter-end="opacity-100 scale-100">
-
-        <div class="flex items-center gap-3 mb-5">
-            <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i data-lucide="indian-rupee" class="w-5 h-5 text-green-600"></i>
-            </div>
-            <div>
-                <h3 class="text-base font-bold text-gray-900">Record Payment</h3>
-                <p class="text-xs text-gray-400">Order #{{ $order->order_number }} · Total ₹{{ number_format($order->total_amount, 2) }}</p>
-            </div>
-        </div>
-
-        <div class="space-y-4">
-            {{-- Amount ── --}}
-            <div>
-                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Amount Received <span class="text-red-500">*</span>
-                </label>
-                <div class="flex items-center border border-gray-200 rounded-xl overflow-hidden focus-within:border-brand-600 transition-colors"
-                    style="--tw-border-opacity:1;">
-                    <span class="px-3 py-2.5 bg-gray-50 border-r border-gray-200 text-gray-500 font-bold text-sm flex-shrink-0">₹</span>
-                    <input type="number" x-model="payAmount" step="0.01"
-                        placeholder="{{ number_format($order->total_amount, 2) }}"
-                        class="flex-1 px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none bg-white">
-                </div>
-                <p class="text-[11px] text-gray-400 mt-1">Default = order total. Enter less for partial payment.</p>
-            </div>
-            
-            {{-- Payment Method ── --}}
-            <x-payment-method-select
-                name="pay_method_id"
-                label="Payment Method"
-                x-model="payMethodId"
-                data-payment-selector
-                :required="true"
-            />
-
-            {{-- Reference ── --}}
-            <div>
-                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Transaction Reference <span class="text-gray-400 normal-case font-normal">(optional)</span>
-                </label>
-                <input type="text" x-model="payReference"
-                    placeholder="UPI ref, cheque no, cash memo..."
-                    class="field-input">
-            </div>
-
-            {{-- Notes ── --}}
-            <div>
-                <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Notes <span class="text-gray-400 normal-case font-normal">(optional)</span>
-                </label>
-                <textarea x-model="payNotes" rows="2"
-                    class="field-input resize-none"
-                    placeholder="Any additional payment notes..."></textarea>
-            </div>
-        </div>
-
-        <div class="flex gap-3 mt-5">
-            <button @click="paymentModal = false"
-                class="action-btn action-btn-outline flex-1 justify-center">
-                Cancel
-            </button>
-            <button @click="recordPayment()"
-                :disabled="!payAmount || !payMethodId || loading"
-                class="action-btn flex-1 justify-center text-white"
-                style="background: #16a34a;"
-                :class="(!payAmount || !payMethodId || loading) ? 'opacity-50 cursor-not-allowed' : ''">
-                <i data-lucide="loader-2" x-show="loading" class="w-4 h-4 animate-spin"></i>
-                <i data-lucide="check" x-show="!loading" class="w-4 h-4"></i>
-                <span x-text="loading ? 'Saving...' : 'Record Payment'"></span>
-            </button>
-        </div>
-    </div>
-</div>
-
-
 </div>
 @endsection
 
@@ -900,13 +833,6 @@ function orderShow() {
         statusNotes:   '',
         cancelModal:   false,
         cancelReason:  '',
-        paymentModal:  false,
-        // 🌟 Calculate actual remaining balance for the frontend
-        payAmount:     '{{ number_format(max(0, $order->total_amount - $order->payments()->where("status", "completed")->sum("amount")), 2, ".", "") }}',
-        maxAmount:     {{ max(0, $order->total_amount - $order->payments()->where("status", "completed")->sum("amount")) }},
-        payMethodId:   '',
-        payReference:  '',
-        payNotes:      '',
 
         // ── Update status via AJAX ──
         async updateStatus(status) {
@@ -999,51 +925,6 @@ function orderShow() {
                 this.loading = false;
             }
         },
-        async recordPayment() {
-                const amt = parseFloat(this.payAmount);
-                if (!amt || amt <= 0 || amt > this.maxAmount) {
-                    BizAlert.toast('Please enter a valid amount (Max: ₹' + this.maxAmount.toFixed(2) + ')');
-                    return;
-                }
-                if (!this.payMethodId || this.loading) return;               
-                
-                this.loading = true;
-
-                try {
-                    const res  = await fetch('{{ route('admin.orders.mark-paid', $order->id) }}', {
-                        method:  'POST',
-                        headers: {
-                            'Content-Type':     'application/json',
-                            'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: JSON.stringify({
-                            amount:            parseFloat(this.payAmount),
-                            payment_method_id: parseInt(this.payMethodId),
-                            reference:         this.payReference || null,
-                            notes:             this.payNotes     || null,
-                        }),
-                    });
-
-                    const data = await res.json();
-
-                    if (data.success) {
-                        this.paymentModal = false;
-                        if (typeof BizAlert !== 'undefined') {
-                            BizAlert.toast(data.message, 'success');
-                        }
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        alert(data.message || 'Failed to record payment.');
-                    }
-
-                } catch (e) {
-                    console.error('[Payment] Record error:', e);
-                    alert('Network error. Please try again.');
-                } finally {
-                    this.loading = false;
-                }
-            },
     }
 }
 

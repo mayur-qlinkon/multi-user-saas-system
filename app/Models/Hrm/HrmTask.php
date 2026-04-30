@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class HrmTask extends Model
 {
-    use LogsActivity, SoftDeletes, Tenantable;
+    use  SoftDeletes, Tenantable;
 
     protected $table = 'hrm_tasks';
 
@@ -102,14 +102,14 @@ class HrmTask extends Model
 
     // ── Activity Log ──
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logOnly(['status', 'priority', 'due_date', 'progress_percent'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $event) => "Task '{$this->title}' was {$event}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logOnly(['status', 'priority', 'due_date', 'progress_percent'])
+    //         ->logOnlyDirty()
+    //         ->dontSubmitEmptyLogs()
+    //         ->setDescriptionForEvent(fn (string $event) => "Task '{$this->title}' was {$event}");
+    // }
 
     // ── Relationships ──
 

@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class SalarySlip extends Model
 {
-    use LogsActivity, SoftDeletes, Tenantable;
+    use  SoftDeletes, Tenantable;
 
     // ── Constants ──
 
@@ -81,14 +81,14 @@ class SalarySlip extends Model
 
     // ── Activity Log ──
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logOnly(['status', 'net_salary', 'payment_mode', 'payment_date'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $event) => "Salary slip {$this->slip_number} was {$event}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logOnly(['status', 'net_salary', 'payment_mode', 'payment_date'])
+    //         ->logOnlyDirty()
+    //         ->dontSubmitEmptyLogs()
+    //         ->setDescriptionForEvent(fn (string $event) => "Salary slip {$this->slip_number} was {$event}");
+    // }
 
     // ── Boot ──
 

@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class Designation extends Model
 {
-    use LogsActivity, SoftDeletes, Tenantable;
+    use  SoftDeletes, Tenantable;
 
     protected $fillable = [
         'company_id',
@@ -29,14 +29,14 @@ class Designation extends Model
         'sort_order' => 'integer',
     ];
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logAll()
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $event) => "Designation {$this->name} was {$event}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logAll()
+    //         ->logOnlyDirty()
+    //         ->dontSubmitEmptyLogs()
+    //         ->setDescriptionForEvent(fn (string $event) => "Designation {$this->name} was {$event}");
+    // }
 
     // ── Relationships ──
 

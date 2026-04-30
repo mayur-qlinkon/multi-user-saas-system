@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class Client extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes,Tenantable;
+    use HasFactory, SoftDeletes,Tenantable;
 
     protected $fillable = [
         'company_id',
@@ -39,14 +39,14 @@ class Client extends Model
         'is_active' => 'boolean',
     ];
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logAll() // Logs every fillable attribute
-            ->logOnlyDirty() // ONLY logs attributes that actually changed
-            ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn (string $eventName) => "Client has been {$eventName}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logAll() // Logs every fillable attribute
+    //         ->logOnlyDirty() // ONLY logs attributes that actually changed
+    //         ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
+    //         ->setDescriptionForEvent(fn (string $eventName) => "Client has been {$eventName}");
+    // }
 
     /**
      * Get the company that owns this client.

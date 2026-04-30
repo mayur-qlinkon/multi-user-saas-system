@@ -299,7 +299,7 @@
                     ₹{{ number_format($invoice->discount_amount, 2) }}!</p>
             @endif
             <p class="font-bold" style="margin:5px 0;">Thank you for your visit!</p>
-            <p style="margin:0; font-size:10px;">Powered by Qlinkon BIZNESS</p>
+            <p style="margin:0; font-size:10px;">Powered by {{ config('app.name','Qlinkon.com') }}</p>
         </div>
     </div>
 </body>

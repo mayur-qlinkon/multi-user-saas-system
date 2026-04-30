@@ -8,14 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class Expense extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, LogsActivity, SoftDeletes, Tenantable;
+    use HasFactory, InteractsWithMedia, SoftDeletes, Tenantable;
 
     /**
      * The attributes that are mass assignable.
@@ -79,14 +79,14 @@ class Expense extends Model implements HasMedia
     //  ACTIVITY LOGGING (Audit Trail)
     // ════════════════════════════════════════════════════
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logFillable()
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $eventName) => "Expense has been {$eventName}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logFillable()
+    //         ->logOnlyDirty()
+    //         ->dontSubmitEmptyLogs()
+    //         ->setDescriptionForEvent(fn (string $eventName) => "Expense has been {$eventName}");
+    // }
 
     // ════════════════════════════════════════════════════
     //  MEDIA LIBRARY (Spatie)

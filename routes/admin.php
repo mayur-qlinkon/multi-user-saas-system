@@ -257,8 +257,7 @@ Route::prefix('ocr-scanner')
                     Route::patch('/{order}/logistics', 'updateLogistics')->name('logistics'); // 🌟 NEW: Quick Tracking Update
                     Route::post('/{order}/status', 'updateStatus')->name('status');
                     Route::post('/{order}/cancel', 'cancel')->name('cancel');
-                    Route::post('/{order}/note', 'addNote')->name('note');
-                    Route::post('/{order}/mark-paid', 'markPaid')->name('mark-paid');
+                    Route::post('/{order}/note', 'addNote')->name('note');                    
                     Route::get('/{order}/receipt', 'downloadReceipt')->name('receipt');
                 });
         });
@@ -665,6 +664,8 @@ Route::prefix('ocr-scanner')
                 Route::delete('/{task}', 'destroy')->name('destroy');
                 Route::patch('/{task}/status', 'updateStatus')->name('status');
                 Route::post('/{task}/comments', 'addComment')->name('comments.store');
+                // NEW GET route for polling
+                Route::get('/{task}/comments', 'getComments')->name('comments.get');
                 Route::post('/{task}/attachments', 'addAttachment')->name('attachments.store');
                 Route::get('/attachments/{attachment}/download', 'downloadAttachment')->name('attachments.download');
                 Route::delete('/attachments/{attachment}', 'deleteAttachment')->name('attachments.destroy');

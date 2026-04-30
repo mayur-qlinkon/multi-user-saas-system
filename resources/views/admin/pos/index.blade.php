@@ -468,9 +468,9 @@
                 <div class="flex-1 overflow-hidden flex flex-col bg-[#e5e7eb] relative items-center py-6 shadow-inner">
 
                     {{-- Realistic Printer Slot Visual --}}
-                    <div
+                    {{-- <div
                         class="absolute top-0 left-1/2 -translate-x-1/2 w-[86mm] h-3 bg-gradient-to-b from-gray-800 to-gray-600 rounded-b-lg shadow-md z-10 border-b border-gray-900">
-                    </div>
+                    </div> --}}
 
                     {{-- The actual receipt paper --}}
                     <div

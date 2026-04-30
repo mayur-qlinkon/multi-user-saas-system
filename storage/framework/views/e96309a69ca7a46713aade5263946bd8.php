@@ -1,15 +1,13 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'My Tasks'); ?>
 
-@section('title', 'My Tasks')
-
-@section('header-title')
+<?php $__env->startSection('header-title'); ?>
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">My Tasks</h1>
         <p class="text-xs text-gray-400 font-medium mt-0.5">Manage your assigned work and update progress</p>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     [x-cloak] { display: none !important; }
 
@@ -27,11 +25,11 @@
         width: 100%; height: 6px; cursor: pointer; background: #e5e7eb; border-radius: 99px;
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
-@php
+<?php
     $statusLabels = \App\Models\Hrm\HrmTask::STATUS_LABELS;
     $statusColors = \App\Models\Hrm\HrmTask::STATUS_COLORS;
     $priorityLabels = \App\Models\Hrm\HrmTask::PRIORITY_LABELS;
@@ -44,31 +42,31 @@
         'cancelled'   => ['label' => 'Rejected',    'hbg' => '#fef2f2', 'htxt' => '#991b1b', 'cbg' => '#fee2e2'],
         'on_hold'     => ['label' => 'On Hold',     'hbg' => '#f3f4f6', 'htxt' => '#374151', 'cbg' => '#e5e7eb'],
     ];
-@endphp
+?>
 
 <div x-data="myTasks()" x-init="init()" class="w-full pb-10 space-y-6">
 
-    {{-- ── Toolbar ── --}}
+    
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         
-        {{-- Filters --}}
+        
         <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <div class="relative w-full sm:w-auto flex-1 sm:flex-none">
                 <i data-lucide="filter" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                 <select x-model="filterStatus" @change="applyFilters()" class="w-full sm:w-auto pl-9 pr-8 py-2 text-sm font-semibold text-gray-600 bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl outline-none transition-all appearance-none cursor-pointer">
                     <option value="">All Statuses</option>
-                    @foreach($statusLabels as $val => $label)
-                        <option value="{{ $val }}">{{ $label }}</option>
-                    @endforeach
+                    <?php $__currentLoopData = $statusLabels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($val); ?>"><?php echo e($label); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
             <div class="relative w-full sm:w-auto flex-1 sm:flex-none">
                 <i data-lucide="flag" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                 <select x-model="filterPriority" @change="applyFilters()" class="w-full sm:w-auto pl-9 pr-8 py-2 text-sm font-semibold text-gray-600 bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl outline-none transition-all appearance-none cursor-pointer">
                     <option value="">All Priorities</option>
-                    @foreach($priorityLabels as $val => $label)
-                        <option value="{{ $val }}">{{ $label }}</option>
-                    @endforeach
+                    <?php $__currentLoopData = $priorityLabels; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($val); ?>"><?php echo e($label); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
             
@@ -77,7 +75,7 @@
             </button>
         </div>
 
-        {{-- View Toggle --}}
+        
         <div class="flex items-center bg-gray-100 p-1 rounded-xl w-full sm:w-auto">
             <button @click="view = 'list'" :class="view === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all">
                 <i data-lucide="list" class="w-4 h-4"></i> List
@@ -88,11 +86,11 @@
         </div>
     </div>
 
-    {{-- ══════════════ LIST VIEW ══════════════ --}}
+    
     <div x-show="view === 'list'" x-cloak class="transition-opacity duration-300">
         <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
             
-            {{-- 🖥️ DESKTOP VIEW (TABLE) --}}
+            
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left whitespace-nowrap">
                     <thead>
@@ -106,49 +104,52 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        @forelse($tasks as $task)
-                        @php
+                        <?php $__empty_1 = true; $__currentLoopData = $tasks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $task): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php
                             $pc = $priorityColors[$task->priority];
                             $sc = $statusColors[$task->status];
-                        @endphp
-                        <tr class="hover:bg-gray-50/80 transition-colors task-row cursor-pointer" data-status="{{ $task->status }}" data-priority="{{ $task->priority }}" @click="openPanel({{ $task->id }})">
+                        ?>
+                        <tr class="hover:bg-gray-50/80 transition-colors task-row cursor-pointer" data-status="<?php echo e($task->status); ?>" data-priority="<?php echo e($task->priority); ?>" @click="openPanel(<?php echo e($task->id); ?>)">
                             <td class="px-5 py-4">
-                                <p class="text-sm font-bold text-gray-900">{{ $task->title }}</p>
-                                @if($task->project)
-                                    <p class="text-xs text-gray-400 mt-1 flex items-center gap-1"><i data-lucide="folder" class="w-3 h-3"></i> {{ $task->project }}</p>
-                                @endif
+                                <p class="text-sm font-bold text-gray-900"><?php echo e($task->title); ?></p>
+                                <?php if($task->project): ?>
+                                    <p class="text-xs text-gray-400 mt-1 flex items-center gap-1"><i data-lucide="folder" class="w-3 h-3"></i> <?php echo e($task->project); ?></p>
+                                <?php endif; ?>
                             </td>
                             <td class="px-5 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
-                                    {{ $priorityLabels[$task->priority] }}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider" style="background: <?php echo e($pc['bg']); ?>; color: <?php echo e($pc['text']); ?>">
+                                    <?php echo e($priorityLabels[$task->priority]); ?>
+
                                 </span>
                             </td>
-                            <td class="px-5 py-4 text-sm font-medium {{ $task->is_overdue ? 'text-red-600 font-bold' : 'text-gray-600' }}">
-                                @if($task->due_date)
-                                    {{ $task->due_date->format('d M Y') }}
-                                    @if($task->is_overdue) <span class="ml-1 text-[10px] uppercase bg-red-100 px-1.5 py-0.5 rounded-md">Late</span> @endif
-                                @else
+                            <td class="px-5 py-4 text-sm font-medium <?php echo e($task->is_overdue ? 'text-red-600 font-bold' : 'text-gray-600'); ?>">
+                                <?php if($task->due_date): ?>
+                                    <?php echo e($task->due_date->format('d M Y')); ?>
+
+                                    <?php if($task->is_overdue): ?> <span class="ml-1 text-[10px] uppercase bg-red-100 px-1.5 py-0.5 rounded-md">Late</span> <?php endif; ?>
+                                <?php else: ?>
                                     <span class="text-gray-300">—</span>
-                                @endif
+                                <?php endif; ?>
                             </td>
                             <td class="px-5 py-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border" style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}; border-color: {{ $sc['dot'] }}40">
-                                    {{ $statusLabels[$task->status] }}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border" style="background: <?php echo e($sc['bg']); ?>; color: <?php echo e($sc['text']); ?>; border-color: <?php echo e($sc['dot']); ?>40">
+                                    <?php echo e($statusLabels[$task->status]); ?>
+
                                 </span>
                             </td>
                             <td class="px-5 py-4 min-w-[140px]">
                                 <div class="flex items-center gap-3">
                                     <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div class="h-full rounded-full bg-emerald-500 transition-all duration-500" style="width: {{ $task->progress_percent }}%"></div>
+                                        <div class="h-full rounded-full bg-emerald-500 transition-all duration-500" style="width: <?php echo e($task->progress_percent); ?>%"></div>
                                     </div>
-                                    <span class="text-xs font-bold text-gray-700 w-8">{{ $task->progress_percent }}%</span>
+                                    <span class="text-xs font-bold text-gray-700 w-8"><?php echo e($task->progress_percent); ?>%</span>
                                 </div>
                             </td>
                             <td class="px-5 py-4 text-right">
                                 <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
                             </td>
                         </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="6" class="px-5 py-16 text-center">
                                 <div class="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4 border border-gray-100">
@@ -158,62 +159,66 @@
                                 <p class="text-sm text-gray-500">No tasks assigned to you right now.</p>
                             </td>
                         </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
-            {{-- 📱 MOBILE VIEW (CARDS) --}}
+            
             <div class="md:hidden divide-y divide-gray-50 border-t border-gray-50">
-                @forelse($tasks as $task)
-                @php
+                <?php $__empty_1 = true; $__currentLoopData = $tasks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $task): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php
                     $pc = $priorityColors[$task->priority];
                     $sc = $statusColors[$task->status];
-                @endphp
-                <div class="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer task-row" data-status="{{ $task->status }}" data-priority="{{ $task->priority }}" @click="openPanel({{ $task->id }})">
+                ?>
+                <div class="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer task-row" data-status="<?php echo e($task->status); ?>" data-priority="<?php echo e($task->priority); ?>" @click="openPanel(<?php echo e($task->id); ?>)">
                     
-                    {{-- Header: Priority & Due Date --}}
+                    
                     <div class="flex justify-between items-start mb-2.5">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider" style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
-                            {{ $priorityLabels[$task->priority] }}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider" style="background: <?php echo e($pc['bg']); ?>; color: <?php echo e($pc['text']); ?>">
+                            <?php echo e($priorityLabels[$task->priority]); ?>
+
                         </span>
-                        <span class="text-[11px] font-medium {{ $task->is_overdue ? 'text-red-600 font-bold' : 'text-gray-500' }} flex items-center gap-1">
+                        <span class="text-[11px] font-medium <?php echo e($task->is_overdue ? 'text-red-600 font-bold' : 'text-gray-500'); ?> flex items-center gap-1">
                             <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                            @if($task->due_date)
-                                {{ $task->due_date->format('d M Y') }}
-                                @if($task->is_overdue) <span class="text-[9px] uppercase bg-red-100 text-red-600 px-1 rounded ml-0.5">Late</span> @endif
-                            @else
+                            <?php if($task->due_date): ?>
+                                <?php echo e($task->due_date->format('d M Y')); ?>
+
+                                <?php if($task->is_overdue): ?> <span class="text-[9px] uppercase bg-red-100 text-red-600 px-1 rounded ml-0.5">Late</span> <?php endif; ?>
+                            <?php else: ?>
                                 No Date
-                            @endif
+                            <?php endif; ?>
                         </span>
                     </div>
 
-                    {{-- Task Title & Project --}}
+                    
                     <div class="mb-3.5 pr-4">
-                        <p class="text-[13px] font-bold text-gray-900 leading-snug">{{ $task->title }}</p>
-                        @if($task->project)
+                        <p class="text-[13px] font-bold text-gray-900 leading-snug"><?php echo e($task->title); ?></p>
+                        <?php if($task->project): ?>
                             <p class="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
-                                <i data-lucide="folder" class="w-3 h-3"></i> {{ $task->project }}
+                                <i data-lucide="folder" class="w-3 h-3"></i> <?php echo e($task->project); ?>
+
                             </p>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
-                    {{-- Footer: Status & Progress --}}
+                    
                     <div class="flex items-center justify-between pt-3 border-t border-gray-50 mt-1">
-                        <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}; border-color: {{ $sc['dot'] }}40">
-                            {{ $statusLabels[$task->status] }}
+                        <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border" style="background: <?php echo e($sc['bg']); ?>; color: <?php echo e($sc['text']); ?>; border-color: <?php echo e($sc['dot']); ?>40">
+                            <?php echo e($statusLabels[$task->status]); ?>
+
                         </span>
                         
                         <div class="flex items-center gap-2 w-32">
                             <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full bg-emerald-500" style="width: {{ $task->progress_percent }}%"></div>
+                                <div class="h-full rounded-full bg-emerald-500" style="width: <?php echo e($task->progress_percent); ?>%"></div>
                             </div>
-                            <span class="text-[10px] font-bold text-gray-600 w-8 text-right">{{ $task->progress_percent }}%</span>
+                            <span class="text-[10px] font-bold text-gray-600 w-8 text-right"><?php echo e($task->progress_percent); ?>%</span>
                         </div>
                     </div>
 
                 </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <div class="p-8 text-center text-sm text-gray-400">
                     <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3 border border-gray-100">
                         <i data-lucide="check-circle" class="w-6 h-6 text-gray-300"></i>
@@ -221,84 +226,84 @@
                     <p class="font-bold text-gray-900 mb-1">You're all caught up!</p>
                     <p class="text-xs text-gray-500">No tasks assigned to you right now.</p>
                 </div>
-                @endforelse
+                <?php endif; ?>
             </div>
         </div>
     </div>
 
-    {{-- ══════════════ BOARD VIEW ══════════════ --}}
+    
     <div x-show="view === 'board'" x-cloak class="transition-opacity duration-300">
-        {{-- Mobile snap scrolling container --}}
+        
         <div class="flex gap-5 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-6 pt-2 w-full h-[calc(100vh-220px)] min-h-[500px] items-start">
-            @foreach($boardCols as $status => $col)
-            @php $colTasks = $board[$status] ?? collect(); @endphp
+            <?php $__currentLoopData = $boardCols; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $status => $col): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php $colTasks = $board[$status] ?? collect(); ?>
             
-            {{-- Column (Width optimized for swiping on mobile, normal on desktop) --}}
+            
             <div class="flex-shrink-0 w-[85vw] sm:w-[300px] snap-center flex flex-col h-full bg-gray-50/50 rounded-2xl border border-gray-100">
                 
-                {{-- Header --}}
+                
                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white/50 rounded-t-2xl">
-                    <h3 class="text-sm font-black tracking-wide" style="color: {{ $col['htxt'] }}">{{ $col['label'] }}</h3>
-                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full" style="background: {{ $col['cbg'] }}; color: {{ $col['htxt'] }}">{{ $colTasks->count() }}</span>
+                    <h3 class="text-sm font-black tracking-wide" style="color: <?php echo e($col['htxt']); ?>"><?php echo e($col['label']); ?></h3>
+                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full" style="background: <?php echo e($col['cbg']); ?>; color: <?php echo e($col['htxt']); ?>"><?php echo e($colTasks->count()); ?></span>
                 </div>
 
-                {{-- Cards Container --}}
-                <div class="p-3 space-y-3 overflow-y-auto flex-1 task-board-col" data-status="{{ $status }}">
-                    @forelse($colTasks as $task)
-                    @php $pc = $priorityColors[$task->priority]; @endphp
+                
+                <div class="p-3 space-y-3 overflow-y-auto flex-1 task-board-col" data-status="<?php echo e($status); ?>">
+                    <?php $__empty_1 = true; $__currentLoopData = $colTasks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $task): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php $pc = $priorityColors[$task->priority]; ?>
                     
-                    {{-- Card --}}
+                    
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-gray-300 hover:shadow-md transition-all cursor-pointer task-card"
-                         data-id="{{ $task->id }}" data-status="{{ $task->status }}" data-priority="{{ $task->priority }}"
-                         @click="openPanel({{ $task->id }})">
+                         data-id="<?php echo e($task->id); ?>" data-status="<?php echo e($task->status); ?>" data-priority="<?php echo e($task->priority); ?>"
+                         @click="openPanel(<?php echo e($task->id); ?>)">
                         
                         <div class="flex items-start justify-between mb-3 gap-2">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider" style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
-                                {{ $priorityLabels[$task->priority] }}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider" style="background: <?php echo e($pc['bg']); ?>; color: <?php echo e($pc['text']); ?>">
+                                <?php echo e($priorityLabels[$task->priority]); ?>
+
                             </span>
-                            @if($task->is_overdue)
+                            <?php if($task->is_overdue): ?>
                                 <i data-lucide="triangle-alert" class="w-4 h-4 text-red-500 flex-shrink-0" title="Overdue"></i>
-                            @endif
+                            <?php endif; ?>
                         </div>
                         
-                        <h4 class="text-sm font-bold text-gray-900 leading-snug mb-3 line-clamp-2">{{ $task->title }}</h4>
+                        <h4 class="text-sm font-bold text-gray-900 leading-snug mb-3 line-clamp-2"><?php echo e($task->title); ?></h4>
                         
                         <div class="flex items-center justify-between text-xs text-gray-500 font-medium">
-                            <div class="flex items-center gap-1.5 {{ $task->is_overdue ? 'text-red-500 font-bold' : '' }}">
+                            <div class="flex items-center gap-1.5 <?php echo e($task->is_overdue ? 'text-red-500 font-bold' : ''); ?>">
                                 <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                                {{ $task->due_date ? $task->due_date->format('d M') : 'No Date' }}
+                                <?php echo e($task->due_date ? $task->due_date->format('d M') : 'No Date'); ?>
+
                             </div>
-                            <span>{{ $task->progress_percent }}%</span>
+                            <span><?php echo e($task->progress_percent); ?>%</span>
                         </div>
                         
                         <div class="mt-2 w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-emerald-500 rounded-full" style="width: {{ $task->progress_percent }}%"></div>
+                            <div class="h-full bg-emerald-500 rounded-full" style="width: <?php echo e($task->progress_percent); ?>%"></div>
                         </div>
                     </div>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <div class="border-2 border-dashed border-gray-200/60 rounded-xl p-6 text-center h-24 flex items-center justify-center">
                         <p class="text-xs font-semibold text-gray-400">No tasks</p>
                     </div>
-                    @endforelse
+                    <?php endif; ?>
                 </div>
             </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
     </div>
 </div>
 
-{{-- ══════════════════════════════════════════
-     TASK DETAIL SLIDE PANEL
-══════════════════════════════════════════ --}}
+
 <div x-data="taskPanel()" x-init="init()">
-    {{-- Backdrop (Fades in) --}}
+    
     <div x-show="open" x-transition.opacity.duration.300ms class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40" @click="close()"></div>
 
-    {{-- Panel (Slides in securely using Tailwind classes) --}}
+    
     <div class="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out"
          :class="open ? 'translate-x-0' : 'translate-x-full'">
 
-        {{-- ── 1. FIXED HEADER ── --}}
+        
         <div class="flex-shrink-0 px-6 py-5 border-b border-gray-100 bg-white" x-show="task">
             <div class="flex items-start justify-between gap-4">
                 <div class="flex-1">
@@ -316,7 +321,7 @@
                 </button>
             </div>
 
-            {{-- Tabs --}}
+            
             <div class="flex items-center gap-6 mt-6 border-b border-gray-100">
                 <button @click="tab = 'overview'" class="pb-2.5 text-sm font-bold border-b-2 transition-colors" :class="tab === 'overview' ? 'text-blue-600 border-blue-600' : 'text-gray-400 border-transparent hover:text-gray-600'">Overview</button>
                 <button @click="tab = 'comments'" class="pb-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-1.5" :class="tab === 'comments' ? 'text-blue-600 border-blue-600' : 'text-gray-400 border-transparent hover:text-gray-600'">
@@ -328,15 +333,15 @@
             </div>
         </div>
 
-        {{-- Loading State --}}
+        
         <div x-show="loading" class="flex-1 flex items-center justify-center">
             <div class="w-8 h-8 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
         </div>
 
-        {{-- ── 2. SCROLLABLE BODY ── --}}
+        
         <div x-show="task && !loading" class="flex-1 overflow-y-auto bg-gray-50/30 p-6">
             
-            {{-- OVERVIEW TAB --}}
+            
             <div x-show="tab === 'overview'" class="space-y-6">
                 <div x-show="task?.description" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</p>
@@ -355,13 +360,13 @@
                 </div>
             </div>
 
-            {{-- COMMENTS TAB (Using Reusable Partial) --}}
+            
             <div x-show="tab === 'comments'" class="h-full pt-4">
-                {{-- By passing 'task?.id' as a string, Alpine evaluates it dynamically --}}
-                @include('admin.hrm.tasks.partials._comments', ['taskId' => 'task?.id'])
+                
+                <?php echo $__env->make('admin.hrm.tasks.partials._comments', ['taskId' => 'task?.id'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
             </div>
 
-            {{-- FILES TAB --}}
+            
             <div x-show="tab === 'files'" class="space-y-4">
                 <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
                     @click="$refs.fileInput.click()">
@@ -396,10 +401,10 @@
             </div>
         </div>
 
-        {{-- ── 3. STICKY FOOTER (ACTIONS) ── --}}
+        
         <div x-show="task && !loading" class="flex-shrink-0 bg-white border-t border-gray-200 p-5 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-10">
             
-            {{-- Overview Footer (Sliders) --}}
+            
             <div x-show="tab === 'overview'" class="space-y-4">
                 <div>
                     <div class="flex justify-between items-center mb-2">
@@ -427,9 +432,9 @@
                 </div>
             </div>
 
-            {{-- Comments Footer removed (Handled inside the reusable partial) --}}
             
-            {{-- Files Footer --}}
+            
+            
             <div x-show="tab === 'files'" class="text-center">
                 <p class="text-xs text-gray-400 font-medium">Use the upload box above to add files.</p>
             </div>
@@ -438,13 +443,13 @@
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
-const STATUS_LABELS = @json(\App\Models\Hrm\HrmTask::STATUS_LABELS);
-const STATUS_COLORS = @json(\App\Models\Hrm\HrmTask::STATUS_COLORS);
-const PRIORITY_COLORS = @json(\App\Models\Hrm\HrmTask::PRIORITY_COLORS);
+const STATUS_LABELS = <?php echo json_encode(\App\Models\Hrm\HrmTask::STATUS_LABELS, 15, 512) ?>;
+const STATUS_COLORS = <?php echo json_encode(\App\Models\Hrm\HrmTask::STATUS_COLORS, 15, 512) ?>;
+const PRIORITY_COLORS = <?php echo json_encode(\App\Models\Hrm\HrmTask::PRIORITY_COLORS, 15, 512) ?>;
 
 function myTasks() {
     return {
@@ -655,4 +660,5 @@ function taskPanel() {
     };
 }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlink-saas - Slug Based\resources\views/admin/hrm/my-tasks/index.blade.php ENDPATH**/ ?>

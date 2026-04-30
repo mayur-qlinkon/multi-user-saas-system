@@ -9,6 +9,7 @@ use App\Models\Challan;
 use App\Models\Client;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\State;
 use App\Models\Store;
 use App\Models\Unit;
@@ -114,9 +115,39 @@ class InvoiceController extends Controller
                 ->values();
         }
 
+        // Load order for pre-fill when converting from an Order
+        $orderPrefill    = null;
+        $orderPrefillJs  = null;
+        if ($request->filled('order_id')) {
+            $orderPrefill = Order::with(['items.sku.unit'])
+                ->where('company_id', Auth::user()->company_id)
+                ->findOrFail($request->order_id);
+
+            // Build a JS-safe array of items for Alpine.js pre-population.
+            // unit_price may be null for catalog/inquiry orders — defaults to 0
+            // so the user can fill in the price on the invoice form.
+            $orderPrefillJs = $orderPrefill->items->map(fn ($i) => [
+                'product_id'     => $i->product_id,
+                'product_sku_id' => $i->sku_id,
+                'unit_id'        => $i->sku?->unit_id,
+                'product_name'   => $i->product_name,
+                'sku_code'       => $i->sku_code ?? '',
+                'hsn_code'       => $i->sku?->hsn_code ?? '',
+                'quantity'       => (float) $i->qty,
+                'unit_price'     => (float) ($i->unit_price ?? 0),
+                'tax_percent'    => (float) ($i->tax_rate ?? 0),
+                'tax_type'       => 'exclusive',
+                'discount_type'  => 'fixed',
+                'discount_value' => 0,
+                'batch_id'       => null,
+                'batch_number'   => '',
+            ])->values();
+        }
+
         return view('admin.invoices.create', compact(
             'clients', 'warehouses', 'stores', 'units', 'companyState', 'states',
-            'challanPrefill', 'challanPrefillJs'
+            'challanPrefill', 'challanPrefillJs',
+            'orderPrefill', 'orderPrefillJs'
         ));
     }
 
@@ -145,6 +176,19 @@ class InvoiceController extends Controller
                         'payment_date' => now(),
                         'status' => 'completed',
                         'notes' => 'Initial payment received at invoice creation.',
+                    ]);
+                }
+
+                // 3. Link back to source order (if invoice was created from an order)
+                if (! empty($validated['order_id'])) {
+                    Order::where('id', $validated['order_id'])
+                        ->where('company_id', Auth::user()->company_id) // tenant safety
+                        ->update(['invoice_id' => $invoice->id]);
+
+                    Log::info('[Invoice] Linked to source order', [
+                        'invoice_id' => $invoice->id,
+                        'order_id'   => $validated['order_id'],
+                        'by'         => Auth::id(),
                     ]);
                 }
 

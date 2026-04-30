@@ -11,12 +11,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class Attendance extends Model
 {
-    use HasFactory,LogsActivity, SoftDeletes, Tenantable;
+    use HasFactory, SoftDeletes, Tenantable;
 
     // ── Constants ──
 
@@ -94,14 +94,14 @@ class Attendance extends Model
 
     // ── Activity Log ──
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logOnly(['status', 'check_in_time', 'check_out_time', 'is_overridden', 'override_reason'])
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $event) => "Attendance for {$this->date->format('d M Y')} was {$event}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logOnly(['status', 'check_in_time', 'check_out_time', 'is_overridden', 'override_reason'])
+    //         ->logOnlyDirty()
+    //         ->dontSubmitEmptyLogs()
+    //         ->setDescriptionForEvent(fn (string $event) => "Attendance for {$this->date->format('d M Y')} was {$event}");
+    // }
 
     // ── Relationships ──
 

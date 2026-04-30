@@ -49,6 +49,9 @@ class StoreInvoiceRequest extends FormRequest
             // Challan Conversion (optional)
             'challan_id' => ['nullable', 'exists:challans,id'],
 
+            // Order Conversion (optional) — prefill invoice from an existing order
+            'order_id' => ['nullable', 'exists:orders,id'],
+
             // Items Array Validation
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_sku_id' => ['required', 'exists:product_skus,id'],

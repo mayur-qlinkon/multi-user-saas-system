@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class Quotation extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -168,12 +168,12 @@ class Quotation extends Model
         return $this->customer ? $this->customer->name : ($this->customer_name ?? 'Walk-in / Unknown');
     }
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logAll() // Logs every fillable attribute
-            ->logOnlyDirty() // ONLY logs attributes that actually changed
-            ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn (string $eventName) => "Quotation has been {$eventName}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logAll() // Logs every fillable attribute
+    //         ->logOnlyDirty() // ONLY logs attributes that actually changed
+    //         ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
+    //         ->setDescriptionForEvent(fn (string $eventName) => "Quotation has been {$eventName}");
+    // }
 }

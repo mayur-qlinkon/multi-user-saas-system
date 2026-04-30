@@ -29,7 +29,7 @@
 
 @section('content')
     {{-- 🌟 Pass the clients into Alpine --}}
-    <div class="pb-20" x-data="invoiceForm(@js($units ?? []), @js($companyState), @js($clients ?? []), @js($challanPrefillJs ?? null))">
+    <div class="pb-20" x-data="invoiceForm(@js($units ?? []), @js($companyState), @js($clients ?? []), @js($challanPrefillJs ?? null), @js($orderPrefillJs ?? null))">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-[1.5rem] font-bold text-gray-500 uppercase tracking-widest">Create Invoice</h1>
@@ -84,6 +84,36 @@
                     <a href="{{ route('admin.challans.show', $challanPrefill->id) }}"
                         class="ml-auto text-xs text-blue-600 hover:underline font-bold flex-shrink-0">
                         View Challan →
+                    </a>
+                </div>
+            @endif
+
+            @if($orderPrefill)
+                {{-- Order Conversion: Pass order_id so store() links invoice back to order --}}
+                <input type="hidden" name="order_id" value="{{ $orderPrefill->id }}">
+
+                {{-- Order Conversion Banner --}}
+                <div class="bg-violet-50 border border-violet-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <div class="bg-violet-600 p-2 rounded-lg text-white flex-shrink-0">
+                        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-violet-800">Creating Invoice from Order</h4>
+                        <p class="text-xs text-violet-600 font-medium">
+                            Order <span class="font-black">{{ $orderPrefill->order_number }}</span> —
+                            {{ $orderPrefill->items->count() }} item(s) pre-loaded.
+                            Customer: <span class="font-black">{{ $orderPrefill->customer_name }}</span>
+                            @if($orderPrefill->customer_phone)
+                                · {{ $orderPrefill->customer_phone }}
+                            @endif
+                            @if($orderPrefill->order_type === 'inquiry')
+                                · <span class="text-amber-600 font-bold">Catalog order — please set prices below.</span>
+                            @endif
+                        </p>
+                    </div>
+                    <a href="{{ route('admin.orders.show', $orderPrefill->id) }}"
+                        class="ml-auto text-xs text-violet-600 hover:underline font-bold flex-shrink-0">
+                        View Order →
                     </a>
                 </div>
             @endif
@@ -731,7 +761,7 @@
 @push('scripts')
     <script>
         // 🌟 ADD allClients and challanItems to the signature
-        function invoiceForm(allUnits = [], companyState = '', allClients = [], challanItems = null) {
+        function invoiceForm(allUnits = [], companyState = '', allClients = [], challanItems = null, orderItems = null) {
             return {
                 clientsList: allClients, // 🌟 Store clients here for dynamic rendering
                 units: allUnits,
@@ -844,6 +874,30 @@
                             discount_value:  item.discount_value || 0,
                             batch_id:        item.batch_id || null,
                             batch_number:    item.batch_number || '',
+                            line_total:      0
+                        }));
+                        this.calculate();
+                    }
+
+                    // 3. Pre-populate items from Order conversion
+                    else if (orderItems && orderItems.length > 0) {
+                        this.items = orderItems.map(item => ({
+                            key:             this.itemCounter++,
+                            challan_item_id: null,
+                            product_id:      item.product_id,
+                            product_sku_id:  item.product_sku_id,
+                            unit_id:         item.unit_id,
+                            product_name:    item.product_name,
+                            sku_code:        item.sku_code  || '',
+                            hsn_code:        item.hsn_code  || '',
+                            quantity:        item.quantity,
+                            unit_price:      item.unit_price,   // 0 for inquiry/catalog orders
+                            tax_percent:     item.tax_percent,
+                            tax_type:        item.tax_type   || 'exclusive',
+                            discount_type:   'fixed',
+                            discount_value:  0,
+                            batch_id:        null,
+                            batch_number:    '',
                             line_total:      0
                         }));
                         this.calculate();

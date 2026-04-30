@@ -11,13 +11,11 @@ use App\Models\Client;
 use App\Models\Warehouse;
 
 use App\Services\OrderService;
-use App\Services\PaymentService;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -187,6 +185,7 @@ class AdminOrderController extends Controller
             'items',
             'statusHistory',
             'creator:id,name',
+            'invoice:id,invoice_number,status,payment_status,grand_total',
         ]);
 
         Log::info('[AdminOrder] Show viewed', [
@@ -396,118 +395,11 @@ class AdminOrderController extends Controller
             ], 500);
         }
     }
+
     // ════════════════════════════════════════════════════
-    //  MARK PAID — record payment against order
-    //  POST /admin/orders/{order}/mark-paid
+    //  DOWNLOAD RECEIPT — storefront-originated orders
+    //  GET /admin/orders/{order}/receipt
     // ════════════════════════════════════════════════════
-
-    public function markPaid(Request $request, Order $order): JsonResponse
-    {
-        $this->authorizeOrder($order);
-
-        // 1. Calculate remaining balance before processing
-        $alreadyPaid = $order->payments()->where('status', 'completed')->sum('amount');
-        $remainingBalance = round($order->total_amount - $alreadyPaid, 2);
-
-        // 🛑 CRITICAL BUG FIX: Prevent payment on zero-value or already settled orders
-        if ($order->total_amount <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot record payment for an order with zero total value.',
-            ], 422);
-        }
-
-        if ($remainingBalance <= 0 || $order->payment_status === 'paid') {
-            return response()->json([
-                'success' => false,
-                'message' => 'This order is already fully paid.',
-            ], 422);
-        }
-
-        $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01', 'max:' . $remainingBalance], // 🌟 Cap at balance
-            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:500'],
-            'payment_date' => ['nullable', 'date'],
-        ], [
-            'amount.max' => 'The amount cannot exceed the remaining balance of ₹' . number_format($remainingBalance, 2),
-        ]);
-
-        if ($order->payment_status === 'paid') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Order is already marked as paid.',
-            ], 422);
-        }
-
-        $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
-            'reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:500'],
-            'payment_date' => ['nullable', 'date'],
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            // ── Record payment via existing PaymentService ──
-            $payment = app(PaymentService::class)->recordPayment($order, [
-                'amount' => $request->amount,
-                'payment_method_id' => $request->payment_method_id,
-                'reference' => $request->reference,
-                'notes' => $request->notes,
-                'payment_date' => $request->payment_date ?? now(),
-                'status' => 'completed',
-            ]);
-
-            // ── Sync order payment status ──
-            $totalPaid = $order->payments()->where('status', 'completed')->sum('amount');
-            $newPaymentStatus = $totalPaid >= $order->total_amount ? 'paid' : 'partial';
-
-            $order->update([
-                'payment_status' => $newPaymentStatus,
-                'payment_id' => $payment->id,
-                'paid_at' => $newPaymentStatus === 'paid' ? now() : $order->paid_at,
-            ]);
-
-            // ── Auto-confirm if still inquiry ──
-            if ($order->status === 'inquiry' && $newPaymentStatus === 'paid') {
-                $order->transitionTo('confirmed', 'Auto-confirmed on payment received', 'admin');
-            }
-
-            DB::commit();
-
-            Log::info('[AdminOrder] Payment recorded', [
-                'order_id' => $order->id,
-                'amount' => $request->amount,
-                'payment_status' => $newPaymentStatus,
-                'payment_id' => $payment->id,
-                'by' => Auth::id(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment of ₹'.number_format($request->amount, 2).' recorded.',
-                'payment_status' => $newPaymentStatus,
-                'payment_number' => $payment->payment_number,
-            ]);
-
-        } catch (Throwable $e) {
-            DB::rollBack();
-
-            Log::error('[AdminOrder] Mark paid failed', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to record payment: '.$e->getMessage(),
-            ], 500);
-        }
-    }
 
     public function downloadReceipt(Order $order)
     {

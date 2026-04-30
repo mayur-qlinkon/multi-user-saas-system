@@ -11,12 +11,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes; // The Iron Wall
 use Illuminate\Support\Str;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class Product extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes,Tenantable;
+    use HasFactory, SoftDeletes,Tenantable;
 
     protected $fillable = [
         'company_id',
@@ -52,14 +52,14 @@ class Product extends Model
     // In Product model — add this property
     protected $appends = ['primary_image_url'];
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logAll() // Logs every fillable attribute
-            ->logOnlyDirty() // ONLY logs attributes that actually changed
-            ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
-            ->setDescriptionForEvent(fn (string $eventName) => "Product has been {$eventName}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logAll() // Logs every fillable attribute
+    //         ->logOnlyDirty() // ONLY logs attributes that actually changed
+    //         ->dontSubmitEmptyLogs() // Prevents logging if nothing was actually modified
+    //         ->setDescriptionForEvent(fn (string $eventName) => "Product has been {$eventName}");
+    // }
 
     protected static function boot()
     {

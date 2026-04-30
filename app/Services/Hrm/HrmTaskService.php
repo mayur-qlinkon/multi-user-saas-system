@@ -2,6 +2,9 @@
 
 namespace App\Services\Hrm;
 
+use App\Notifications\Hrm\TaskAssignedNotification;
+
+use App\Models\Hrm\Employee;
 use App\Models\Hrm\HrmTask;
 use App\Models\Hrm\HrmTaskAssignment;
 use App\Models\Hrm\HrmTaskAttachment;
@@ -10,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
@@ -116,16 +120,67 @@ class HrmTaskService
      */
     public function syncAssignees(HrmTask $task, array $employeeIds, ?int $primaryId = null): void
     {
+        // Capture existing state to prevent spamming notifications on task update
+        $existingPrimaryId = $task->assignments()->where('is_primary', true)->value('employee_id');
+        $existingEmployeeIds = $task->assignments()->pluck('employee_id')->toArray();
+
         // Remove existing assignments
         $task->assignments()->delete();
 
+        $newAssignees = [];
+
         foreach ($employeeIds as $employeeId) {
+            $isPrimary = ($employeeId == $primaryId);
+
             HrmTaskAssignment::create([
                 'hrm_task_id' => $task->id,
                 'employee_id' => $employeeId,
                 'assigned_by' => Auth::id(),
-                'is_primary' => $employeeId == $primaryId,
+                'is_primary' => $isPrimary,
             ]);
+
+            // Only notify if they are a brand-new assignee OR they were just upgraded to Primary
+            if (!in_array($employeeId, $existingEmployeeIds) || ($isPrimary && $employeeId != $existingPrimaryId)) {
+                $newAssignees[$employeeId] = $isPrimary;
+            }
+        }
+
+        // Fire notifications if there is anyone new to notify
+        if (!empty($newAssignees)) {
+            $this->notifyAssignees($task, $newAssignees);
+        }
+    }
+
+    /**
+     * Send database notifications to assigned employees.
+     */
+    protected function notifyAssignees(HrmTask $task, array $employeeData): void
+    {
+        $employees = Employee::whereIn('id', array_keys($employeeData))->with('user')->get();
+
+        foreach ($employees as $emp) {
+            if (! $emp->user) continue;
+
+            $isPrimary = $employeeData[$emp->id] ?? false;
+            Log::info('Sending notification', [
+                'employee_id' => $emp->id,
+                'user_id' => $emp->user->id,
+                'is_primary' => $isPrimary,
+            ]);
+
+             try {
+                $emp->user->notify(new TaskAssignedNotification($task, $isPrimary));
+
+                Log::info('Notification sent successfully', [
+                    'employee_id' => $emp->id,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send notification', [
+                    'employee_id' => $emp->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
         }
     }
 

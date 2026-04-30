@@ -1,42 +1,42 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', $task->title); ?>
 
-@section('title', $task->title)
-
-@section('header-title')
+<?php $__env->startSection('header-title'); ?>
     <div class="flex items-center gap-3">
-        <a href="{{ route('admin.hrm.tasks.index') }}"
+        <a href="<?php echo e(route('admin.hrm.tasks.index')); ?>"
             class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </a>
         <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">{{ $task->title }}</h1>
-            <a href="{{ route('admin.hrm.tasks.edit', $task) }}"
+            <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest"><?php echo e($task->title); ?></h1>
+            <a href="<?php echo e(route('admin.hrm.tasks.edit', $task)); ?>"
                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 Edit
             </a>
 
-            @php
+            <?php
                 $pc = \App\Models\Hrm\HrmTask::PRIORITY_COLORS[$task->priority] ?? \App\Models\Hrm\HrmTask::PRIORITY_COLORS['low'];
                 $sc = \App\Models\Hrm\HrmTask::STATUS_COLORS[$task->status]   ?? \App\Models\Hrm\HrmTask::STATUS_COLORS['pending'];
-            @endphp
+            ?>
 
             <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
-                style="background: {{ $pc['bg'] }}; color: {{ $pc['text'] }}">
-                <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $pc['dot'] ?? $pc['text'] }}"></span>
-                {{ \App\Models\Hrm\HrmTask::PRIORITY_LABELS[$task->priority] ?? $task->priority }}
+                style="background: <?php echo e($pc['bg']); ?>; color: <?php echo e($pc['text']); ?>">
+                <span class="w-1.5 h-1.5 rounded-full" style="background: <?php echo e($pc['dot'] ?? $pc['text']); ?>"></span>
+                <?php echo e(\App\Models\Hrm\HrmTask::PRIORITY_LABELS[$task->priority] ?? $task->priority); ?>
+
             </span>
 
             <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md"
-                style="background: {{ $sc['bg'] }}; color: {{ $sc['text'] }}">
-                <span class="w-1.5 h-1.5 rounded-full" style="background: {{ $sc['dot'] ?? $sc['text'] }}"></span>
-                {{ \App\Models\Hrm\HrmTask::STATUS_LABELS[$task->status] ?? $task->status }}
+                style="background: <?php echo e($sc['bg']); ?>; color: <?php echo e($sc['text']); ?>">
+                <span class="w-1.5 h-1.5 rounded-full" style="background: <?php echo e($sc['dot'] ?? $sc['text']); ?>"></span>
+                <?php echo e(\App\Models\Hrm\HrmTask::STATUS_LABELS[$task->status] ?? $task->status); ?>
+
             </span>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     [x-cloak] { display: none !important; }
 
@@ -186,24 +186,24 @@
         flex-shrink: 0;
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
-@php
+<?php
     $allowedTransitions = \App\Models\Hrm\HrmTask::STATUS_TRANSITIONS[$task->status] ?? [];
     $statusLabels       = \App\Models\Hrm\HrmTask::STATUS_LABELS;
     $statusColors       = \App\Models\Hrm\HrmTask::STATUS_COLORS;
-@endphp
+?>
 
 <div class="pb-10" x-data="taskShow()">
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {{-- ── Left / Main Column ── --}}
+        
         <div class="lg:col-span-2 space-y-4 order-2 lg:order-1">
 
-            {{-- Task Info Card --}}
+            
             <div class="info-card">
                 <div class="card-head">
                     <div class="card-icon" style="background: #eff6ff">
@@ -211,78 +211,79 @@
                     </div>
                     <span class="card-title">Task Information</span>
 
-                    <a href="{{ route('admin.hrm.tasks.index') }}?status={{ $task->status }}"
+                    <a href="<?php echo e(route('admin.hrm.tasks.index')); ?>?status=<?php echo e($task->status); ?>"
                         class="ml-auto text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors">
                         View all tasks
                     </a>
                 </div>
                 <div class="card-body">
 
-                    {{-- Progress --}}
-                    @if($task->progress_percent !== null)
+                    
+                    <?php if($task->progress_percent !== null): ?>
                         <div class="mb-5">
                             <div class="flex items-center justify-between mb-1.5">
                                 <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Progress</span>
-                                <span class="text-[13px] font-black text-gray-700">{{ $task->progress_percent }}%</span>
+                                <span class="text-[13px] font-black text-gray-700"><?php echo e($task->progress_percent); ?>%</span>
                             </div>
                             <div class="progress-track">
-                                <div class="progress-fill" style="width: {{ $task->progress_percent }}%"></div>
+                                <div class="progress-fill" style="width: <?php echo e($task->progress_percent); ?>%"></div>
                             </div>
                         </div>
-                    @endif
+                    <?php endif; ?>
 
                     <div class="divide-y divide-gray-50">
-                        @if($task->project)
+                        <?php if($task->project): ?>
                             <div class="meta-row">
                                 <span class="meta-label">Project</span>
-                                <span class="meta-value font-semibold">{{ $task->project }}</span>
+                                <span class="meta-value font-semibold"><?php echo e($task->project); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($task->category)
+                        <?php if($task->category): ?>
                             <div class="meta-row">
                                 <span class="meta-label">Category</span>
-                                <span class="meta-value">{{ $task->category }}</span>
+                                <span class="meta-value"><?php echo e($task->category); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
                         <div class="meta-row">
                             <span class="meta-label">Start Date</span>
-                            <span class="meta-value">{{ $task->start_date ? $task->start_date->format('d M Y') : '—' }}</span>
+                            <span class="meta-value"><?php echo e($task->start_date ? $task->start_date->format('d M Y') : '—'); ?></span>
                         </div>
 
                         <div class="meta-row">
                             <span class="meta-label">Due Date</span>
-                            <span class="meta-value {{ $task->is_overdue ? 'text-red-600 font-semibold' : '' }}">
-                                {{ $task->due_date ? $task->due_date->format('d M Y') : '—' }}
-                                @if($task->is_overdue)
+                            <span class="meta-value <?php echo e($task->is_overdue ? 'text-red-600 font-semibold' : ''); ?>">
+                                <?php echo e($task->due_date ? $task->due_date->format('d M Y') : '—'); ?>
+
+                                <?php if($task->is_overdue): ?>
                                     <span class="ml-1 text-[10px] font-extrabold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">OVERDUE</span>
-                                @endif
+                                <?php endif; ?>
                             </span>
                         </div>
 
-                        @if($task->completed_at)
+                        <?php if($task->completed_at): ?>
                             <div class="meta-row">
                                 <span class="meta-label">Completed</span>
-                                <span class="meta-value text-green-600 font-semibold">{{ $task->completed_at->format('d M Y, h:i A') }}</span>
+                                <span class="meta-value text-green-600 font-semibold"><?php echo e($task->completed_at->format('d M Y, h:i A')); ?></span>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
                         <div class="meta-row">
                             <span class="meta-label">Created By</span>
-                            <span class="meta-value">{{ $task->createdByUser?->name ?? '—' }}</span>
+                            <span class="meta-value"><?php echo e($task->createdByUser?->name ?? '—'); ?></span>
                         </div>
 
                         <div class="meta-row">
                             <span class="meta-label">Created At</span>
-                            <span class="meta-value">{{ $task->created_at->format('d M Y, h:i A') }}</span>
+                            <span class="meta-value"><?php echo e($task->created_at->format('d M Y, h:i A')); ?></span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Description Card --}}
-            @if($task->description)
+            
+            <?php if($task->description): ?>
                 <div class="info-card">
                     <div class="card-head">
                         <div class="card-icon" style="background: #f9fafb">
@@ -291,22 +292,22 @@
                         <span class="card-title">Description</span>
                     </div>
                     <div class="card-body">
-                        <div x-data="taskDescMd(@js($task->description))"
+                        <div x-data="taskDescMd(<?php echo \Illuminate\Support\Js::from($task->description)->toHtml() ?>)"
                              x-html="rendered"
                              class="text-[13px] text-gray-700 leading-relaxed">
                         </div>
                     </div>
                 </div>
-            @endif
+            <?php endif; ?>
             
-            {{-- Comments Section (Using Reusable Partial) --}}
+            
             <div class="info-card" id="comments-section">
                 <div class="card-body">
-                    @include('admin.hrm.tasks.partials._comments', ['taskId' => $task->id])
+                    <?php echo $__env->make('admin.hrm.tasks.partials._comments', ['taskId' => $task->id], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                 </div>
             </div>
 
-            {{-- Attachments Section --}}
+            
             <div class="info-card">
                 <div class="card-head">
                     <div class="card-icon" style="background: #f0fdf4">
@@ -314,61 +315,64 @@
                     </div>
                     <span class="card-title">Attachments</span>
                     <span class="ml-2 text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                        {{ $task->attachments->count() }}
+                        <?php echo e($task->attachments->count()); ?>
+
                     </span>
                 </div>
                 <div class="card-body">
 
-                    {{-- Attachment List --}}
+                    
                     <div id="attachmentsList">
-                        @if($task->attachments->count())
+                        <?php if($task->attachments->count()): ?>
                             <div class="mb-4">
-                                @foreach($task->attachments as $attachment)
-                                    <div class="attachment-row" id="att-{{ $attachment->id }}">
+                                <?php $__currentLoopData = $task->attachments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $attachment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="attachment-row" id="att-<?php echo e($attachment->id); ?>">
                                         <div class="file-icon-wrap">
                                             <i data-lucide="file" style="width:16px;height:16px;color:#3b82f6"></i>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-[12.5px] font-semibold text-gray-800 truncate">{{ $attachment->original_name ?? $attachment->file_name }}</p>
+                                            <p class="text-[12.5px] font-semibold text-gray-800 truncate"><?php echo e($attachment->original_name ?? $attachment->file_name); ?></p>
                                             <p class="text-[10px] text-gray-400">
-                                                {{ $attachment->uploadedByUser?->name ?? 'Unknown' }}
-                                                · {{ $attachment->created_at->format('d M Y') }}
-                                                @if($attachment->file_size)
-                                                    · {{ number_format($attachment->file_size / 1024, 1) }} KB
-                                                @endif
+                                                <?php echo e($attachment->uploadedByUser?->name ?? 'Unknown'); ?>
+
+                                                · <?php echo e($attachment->created_at->format('d M Y')); ?>
+
+                                                <?php if($attachment->file_size): ?>
+                                                    · <?php echo e(number_format($attachment->file_size / 1024, 1)); ?> KB
+                                                <?php endif; ?>
                                             </p>
                                         </div>
                                         <div class="flex items-center gap-1.5 flex-shrink-0">
-                                            @if(has_permission('hrm_tasks.download_attachment'))
-                                                <a href="{{ route('admin.hrm.tasks.attachments.download', $attachment) }}" target="_blank"
+                                            <?php if(has_permission('hrm_tasks.download_attachment')): ?>
+                                                <a href="<?php echo e(route('admin.hrm.tasks.attachments.download', $attachment)); ?>" target="_blank"
                                                     class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
                                                     title="Download">
                                                     <i data-lucide="download" class="w-3.5 h-3.5"></i>
                                                 </a>
-                                            @endif
-                                            @if(has_permission('hrm_tasks.delete_attachment'))
+                                            <?php endif; ?>
+                                            <?php if(has_permission('hrm_tasks.delete_attachment')): ?>
                                                 <button type="button"
-                                                    onclick="deleteAttachment({{ $attachment->id }}, '{{ addslashes($attachment->original_name ?? $attachment->file_name) }}')"
+                                                    onclick="deleteAttachment(<?php echo e($attachment->id); ?>, '<?php echo e(addslashes($attachment->original_name ?? $attachment->file_name)); ?>')"
                                                     class="w-[28px] h-[28px] rounded-lg flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
                                                     title="Delete">
                                                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                                 </button>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
-                        @else
+                        <?php else: ?>
                             <div id="noAttachments" class="text-center py-6 mb-4">
                                 <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-2">
                                     <i data-lucide="paperclip" class="w-5 h-5 text-gray-300"></i>
                                 </div>
                                 <p class="text-[12px] text-gray-400">No attachments yet.</p>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
 
-                   {{-- Upload Attachment --}}
+                   
                     <div class="border-t border-gray-100 pt-4" x-data="attachmentUpload()">
                         <label class="field-label block mb-2">Upload Attachment</label>
 
@@ -410,10 +414,10 @@
                                     Choose file
                                 </button>
 
-                                @if(has_permission('hrm_tasks.add_attachment'))
+                                <?php if(has_permission('hrm_tasks.add_attachment')): ?>
                                 <button
                                     type="button"
-                                    @click="upload({{ $task->id }})"
+                                    @click="upload(<?php echo e($task->id); ?>)"
                                     :disabled="!selectedFile || uploading"
                                     class="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                                     style="background: var(--brand-600)"
@@ -422,7 +426,7 @@
                                     <span x-show="!uploading">Upload</span>
                                     <span x-show="uploading">Uploading...</span>
                                 </button>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -432,11 +436,11 @@
 
         </div>
 
-        {{-- ── Right / Sidebar Column ── --}}
+        
         <div class="space-y-4 order-1 lg:order-2">
 
-            {{-- Status Update Card --}}
-            @if(count($allowedTransitions))
+            
+            <?php if(count($allowedTransitions)): ?>
                 <div class="info-card">
                     <div class="card-head">
                         <div class="card-icon" style="background: #fffbeb">
@@ -449,10 +453,10 @@
                             <label class="field-label">Move to</label>
                             <select x-model="newStatus" class="field-input">
                                 <option value="">Select new status</option>
-                                @foreach($allowedTransitions as $s)
-                                    @php $c = $statusColors[$s] ?? $statusColors['pending']; @endphp
-                                    <option value="{{ $s }}">{{ $statusLabels[$s] ?? $s }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = $allowedTransitions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $c = $statusColors[$s] ?? $statusColors['pending']; ?>
+                                    <option value="<?php echo e($s); ?>"><?php echo e($statusLabels[$s] ?? $s); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -462,7 +466,7 @@
                                 class="field-input resize-none !text-[12px]"></textarea>
                         </div>
                         <button type="button"
-                            @click="update({{ $task->id }})"
+                            @click="update(<?php echo e($task->id); ?>)"
                             :disabled="!newStatus || updating"
                             class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-bold text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
                             style="background: var(--brand-600)">
@@ -472,7 +476,7 @@
                         </button>
                     </div>
                 </div>
-            @else
+            <?php else: ?>
                 <div class="info-card">
                     <div class="card-head">
                         <div class="card-icon" style="background: #f9fafb">
@@ -482,13 +486,13 @@
                     </div>
                     <div class="card-body">
                         <p class="text-[12px] text-gray-400 text-center py-2">
-                            This task is <span class="font-bold text-gray-600">{{ $statusLabels[$task->status] }}</span> — no further transitions available.
+                            This task is <span class="font-bold text-gray-600"><?php echo e($statusLabels[$task->status]); ?></span> — no further transitions available.
                         </p>
                     </div>
                 </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Assignees Card --}}
+            
             <div class="info-card">
                 <div class="card-head">
                     <div class="card-icon" style="background: #faf5ff">
@@ -497,30 +501,31 @@
                     <span class="card-title">Assignees</span>
                 </div>
                 <div class="card-body">
-                    @if($task->assignees->count())
+                    <?php if($task->assignees->count()): ?>
                         <div class="space-y-2">
-                            @foreach($task->assignees as $emp)
+                            <?php $__currentLoopData = $task->assignees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $emp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <div class="flex items-center gap-3">
-                                    <div class="user-avatar">{{ strtoupper(substr($emp->user->name ?? '?', 0, 1)) }}</div>
+                                    <div class="user-avatar"><?php echo e(strtoupper(substr($emp->user->name ?? '?', 0, 1))); ?></div>
                                     <div>
-                                        <p class="text-[12.5px] font-semibold text-gray-800">{{ $emp->user->name }}</p>
+                                        <p class="text-[12.5px] font-semibold text-gray-800"><?php echo e($emp->user->name); ?></p>
                                         <p class="text-[10px] text-gray-400">
-                                            {{ $emp->employee_code }}
-                                            @if($emp->pivot->is_primary)
+                                            <?php echo e($emp->employee_code); ?>
+
+                                            <?php if($emp->pivot->is_primary): ?>
                                                 <span class="ml-1 text-[9px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">PRIMARY</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </p>
                                     </div>
                                 </div>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
-                    @else
+                    <?php else: ?>
                         <p class="text-[12px] text-gray-400 text-center py-3">No assignees yet.</p>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
-            {{-- Quick Info Summary --}}
+            
             <div class="info-card">
                 <div class="card-head">
                     <div class="card-icon" style="background: #f0fdfa">
@@ -532,22 +537,22 @@
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Comments</span>
-                            <span class="text-[13px] font-black text-gray-700">{{ $task->comments->count() }}</span>
+                            <span class="text-[13px] font-black text-gray-700"><?php echo e($task->comments->count()); ?></span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Attachments</span>
-                            <span class="text-[13px] font-black text-gray-700">{{ $task->attachments->count() }}</span>
+                            <span class="text-[13px] font-black text-gray-700"><?php echo e($task->attachments->count()); ?></span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Assignees</span>
-                            <span class="text-[13px] font-black text-gray-700">{{ $task->assignees->count() }}</span>
+                            <span class="text-[13px] font-black text-gray-700"><?php echo e($task->assignees->count()); ?></span>
                         </div>
-                        @if($task->progress_percent !== null)
+                        <?php if($task->progress_percent !== null): ?>
                             <div class="flex justify-between items-center">
                                 <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Progress</span>
-                                <span class="text-[13px] font-black text-gray-700">{{ $task->progress_percent }}%</span>
+                                <span class="text-[13px] font-black text-gray-700"><?php echo e($task->progress_percent); ?>%</span>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -557,9 +562,9 @@
 
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 window.taskShow = function() {
     return {
@@ -583,7 +588,7 @@ window.statusUpdate = function() {
             if (!this.newStatus) return;
             this.updating = true;
             try {
-                const res = await fetch(`{{ url('admin/hrm/tasks') }}/${taskId}/status`, {
+                const res = await fetch(`<?php echo e(url('admin/hrm/tasks')); ?>/${taskId}/status`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -623,7 +628,7 @@ window.attachmentUpload = function() {
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
             try {
-                const res = await fetch(`{{ url('admin/hrm/tasks') }}/${taskId}/attachments`, {
+                const res = await fetch(`<?php echo e(url('admin/hrm/tasks')); ?>/${taskId}/attachments`, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' },
                     body: formData,
@@ -646,7 +651,7 @@ function deleteAttachment(id, name) {
     BizAlert.confirm('Delete Attachment', `Remove "${name}" from this task?`, 'Delete').then(async (result) => {
         if (!result.isConfirmed) return;
         try {
-            const res = await fetch(`{{ url('admin/hrm/tasks/attachments') }}/${id}`, {
+            const res = await fetch(`<?php echo e(url('admin/hrm/tasks/attachments')); ?>/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -705,4 +710,6 @@ window.taskDescMd = function (raw) {
     };
 };
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlink-saas - Slug Based\resources\views/admin/hrm/tasks/show.blade.php ENDPATH**/ ?>

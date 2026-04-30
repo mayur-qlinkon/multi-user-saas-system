@@ -9,12 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
+// use Spatie\Activitylog\LogOptions;
+// use Spatie\Activitylog\Traits\LogsActivity;
 
 class ExpenseCategory extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes, Tenantable;
+    use HasFactory, SoftDeletes, Tenantable;
 
     /**
      * The attributes that are mass assignable.
@@ -48,14 +48,14 @@ class ExpenseCategory extends Model
     //  ACTIVITY LOGGING (Audit Trail)
     // ════════════════════════════════════════════════════
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logFillable()
-            ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $eventName) => "Expense category has been {$eventName}");
-    }
+    // public function getActivitylogOptions(): LogOptions
+    // {
+    //     return LogOptions::defaults()
+    //         ->logFillable()
+    //         ->logOnlyDirty()
+    //         ->dontSubmitEmptyLogs()
+    //         ->setDescriptionForEvent(fn (string $eventName) => "Expense category has been {$eventName}");
+    // }
 
     // ════════════════════════════════════════════════════
     //  RELATIONSHIPS

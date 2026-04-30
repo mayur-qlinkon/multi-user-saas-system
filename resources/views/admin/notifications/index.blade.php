@@ -63,41 +63,58 @@
                 <tbody>
                     @forelse($notifications as $notif)
                         @php $data = $notif->data; @endphp
-                        <tr class="notif-row flex flex-col lg:table-row p-4 lg:p-0 {{ !$notif->read_at ? 'bg-blue-50/10' : '' }}">
-                            <td class="px-0 lg:px-6 py-2 lg:py-4 border-none lg:border-b lg:border-gray-100">
+                        <tr class="notif-row flex flex-col lg:table-row p-5 lg:p-0 relative {{ !$notif->read_at ? 'bg-indigo-50/20' : '' }}">
+                            {{-- Category & Type --}}
+                            <td class="px-0 lg:px-6 py-1 lg:py-4 border-none lg:border-b lg:border-gray-100">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-{{ $data['color'] ?? 'blue' }}-50">
-                                        <i data-lucide="{{ $data['icon'] ?? 'bell' }}" class="w-4 h-4 text-{{ $data['color'] ?? 'blue' }}-600"></i>
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" 
+                                        style="background-color: color-mix(in srgb, {{ $data['color'] ?? '#3b82f6' }} 10%, white)">
+                                        <i data-lucide="{{ $data['icon'] ?? 'bell' }}" class="w-4 h-4" style="color: {{ $data['color'] ?? '#3b82f6' }}"></i>
                                     </div>
-                                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ str_replace('_', ' ', $data['type'] ?? 'System') }}</span>
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{{ str_replace('_', ' ', $data['type'] ?? 'System') }}</span>
+                                        <span class="lg:hidden text-[13px] font-bold text-gray-800">{{ $data['title'] ?? 'Alert' }}</span>
+                                    </div>
                                 </div>
                             </td>
+
+                            {{-- Notification Content --}}
                             <td class="px-0 lg:px-6 py-2 lg:py-4">
-                                <div class="max-w-md">
-                                    <p class="text-[14px] font-bold text-gray-800 mb-0.5">{{ $data['title'] }}</p>
-                                    <p class="text-[12px] text-gray-500 line-clamp-1">{{ $data['message'] }}</p>
+                                <div class="max-w-xl">
+                                    <p class="hidden lg:block text-[14px] font-bold text-gray-800 mb-0.5">{{ $data['title'] ?? 'No Title' }}</p>
+                                    <p class="text-[12px] text-gray-500 leading-relaxed">{{ $data['message'] ?? '' }}</p>
                                 </div>
                             </td>
+
+                            {{-- Status Badge --}}
                             <td class="px-0 lg:px-6 py-2 lg:py-4 flex lg:table-cell items-center justify-between lg:justify-start">
-                                <span class="lg:hidden text-[11px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
+                                <span class="lg:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</span>
                                 @if(!$notif->read_at)
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black bg-brand-50 text-brand-600 uppercase border border-brand-100">
-                                        <span class="unread-dot animate-pulse"></span> New
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black bg-indigo-100 text-indigo-700 uppercase border border-indigo-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></span> New
                                     </span>
                                 @else
-                                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Read</span>
+                                    <span class="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Seen</span>
                                 @endif
                             </td>
-                           <td class="px-0 lg:px-6 py-2 lg:py-4 flex lg:table-cell items-center justify-between lg:justify-start border-b border-gray-50 lg:border-none pb-4 lg:pb-4">
-                                <span class="lg:hidden text-[11px] font-bold text-gray-400 uppercase tracking-widest">Date</span>
+
+                            {{-- Time & Date --}}
+                            <td class="px-0 lg:px-6 py-2 lg:py-4 flex lg:table-cell items-center justify-between lg:justify-start border-b border-gray-50 lg:border-none pb-4 lg:pb-4">
+                                <span class="lg:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest">Received</span>
                                 <div class="text-right lg:text-left">
-                                    <p class="text-[13px] font-bold text-gray-700">{{ $notif->created_at->format('d M, Y') }}</p>
-                                    <p class="text-[11px] text-gray-400 font-medium">{{ $notif->created_at->diffForHumans() }}</p>
-                                </div> {{-- 🟢 Leak plugged! --}}
+                                    <p class="text-[12px] font-bold text-gray-700">{{ $notif->created_at->format('d M, Y') }}</p>
+                                    <p class="text-[10px] text-gray-400 font-medium">{{ $notif->created_at->diffForHumans() }}</p>
+                                </div>
                             </td>
+
+                            {{-- Action (The Crash Fix is here) --}}
                             <td class="px-0 lg:px-6 py-3 lg:py-4 text-right">
-                                <a href="{{ $data['link'] }}" @click="markRead('{{ $notif->id }}')" class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors">
-                                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                                @php $actionUrl = $data['link'] ?? $data['url'] ?? '#'; @endphp
+                                <a href="{{ $actionUrl }}" 
+                                @click="markRead('{{ $notif->id }}')" 
+                                class="w-full lg:w-9 lg:h-9 flex items-center justify-center gap-2 lg:gap-0 px-4 py-2 lg:p-0 rounded-xl bg-gray-50 lg:bg-transparent text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-gray-100 lg:border-none font-bold text-xs lg:text-base">
+                                    <span class="lg:hidden">View Details</span>
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
                                 </a>
                             </td>
                         </tr>

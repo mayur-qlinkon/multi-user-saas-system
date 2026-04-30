@@ -166,6 +166,53 @@ class HrmTaskController extends Controller
     }
 
     /**
+     * Fetch comments via AJAX for Alpine polling.
+     */
+    public function getComments(HrmTask $task)
+    {
+        $comments = $task->comments()
+            ->whereNull('parent_id')
+            ->reorder() // 🌟 STRIPS any default ascending order from the model
+            ->orderBy('id', 'desc') // 🌟 Forces newest at the top
+            ->with([
+                'user.employee', 
+                'replies' => fn($query) => $query->reorder()->orderBy('id', 'desc')->with('user.employee') 
+            ]) 
+            ->get()
+            ->map(function ($comment) {
+                return $this->formatCommentData($comment);
+            });
+
+        return response()->json([
+            'comments' => $comments,
+            'count'    => $task->comments()->count(),
+        ]);
+    }
+
+    /**
+     * Format the comment payload to keep the JSON lightweight.
+     */
+    protected function formatCommentData($comment)
+    {
+        $userName = $comment->user->name ?? 'Unknown User';
+        
+        // Use existing avatar or fallback to UI-Avatars
+        $avatarUrl = $comment->user->avatar_url 
+            ?? 'https://ui-avatars.com/api/?name='.urlencode($userName).'&color=1f2937&background=f3f4f6';
+
+        return [
+            'id'               => $comment->id,
+            'body'             => $comment->body,
+            'user_name'        => $userName,
+            'avatar_url'       => $avatarUrl,
+            'created_at_human' => $comment->created_at->diffForHumans(),
+            'replies'          => $comment->relationLoaded('replies')
+                                    ? $comment->replies->map(fn($r) => $this->formatCommentData($r))
+                                    : [],
+        ];
+    }
+
+    /**
      * Upload attachment to task.
      */
     public function addAttachment(Request $request, HrmTask $task)
