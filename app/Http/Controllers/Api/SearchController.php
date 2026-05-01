@@ -26,8 +26,8 @@ class SearchController extends Controller
 
         try {
             // 1. Base Query: Fetch all active SKUs in the company matching the term
-            // 🌟 Eager load Units to prevent N+1 performance issues
-            $query = ProductSku::with(['product', 'unit', 'product.productUnit', 'product.saleUnit'])
+            // 🌟 Eager load Units AND Variant Attributes to prevent N+1 performance issues
+            $query = ProductSku::with(['product', 'unit', 'product.productUnit', 'product.saleUnit', 'skuValues.attributeValue'])
                 ->where('company_id', $companyId)
                 ->where('is_active', true)
                 ->whereHas('product', function ($pq) {
@@ -38,6 +38,10 @@ class SearchController extends Controller
                         ->orWhere('barcode', 'like', "%{$term}%")
                         ->orWhereHas('product', function ($sq) use ($term) {
                             $sq->where('name', 'like', "%{$term}%");
+                        })
+                        // 🌟 FIX: Use correct relationship 'skuValues' and jump to 'attributeValue' for the string
+                        ->orWhereHas('skuValues.attributeValue', function ($vq) use ($term) {
+                            $vq->where('value', 'like', "%{$term}%");
                         });
                 });
 
@@ -72,10 +76,20 @@ class SearchController extends Controller
                 $resolvedUnitId = $sku->unit_id ?? $sku->product?->sale_unit_id ?? $sku->product?->product_unit_id;
                 $resolvedUnitName = $sku->unit?->name ?? $sku->product?->saleUnit?->name ?? $sku->product?->productUnit?->name ?? 'Unit';
 
+                // 🌟 FIX: Compute Variant String from skuValues -> attributeValue
+                $productName = $sku->product ? $sku->product->name : 'Unknown Product';
+                $variantValues = $sku->skuValues ? $sku->skuValues->map(function ($skuVal) {
+                    return $skuVal->attributeValue ? $skuVal->attributeValue->value : null;
+                })->filter()->implode(' - ') : '';
+                
+                $displayName = $variantValues ? "{$productName} – {$variantValues}" : $productName;
+
                 return [
                     'product_sku_id' => $sku->id,
                     'product_id' => $sku->product_id,
-                    'product_name' => $sku->product ? $sku->product->name : 'Unknown Product',
+                    'product_name' => $productName,
+                    'variant_values' => $variantValues,       // 🌟 Added for UI logic
+                    'display_name' => $displayName,           // 🌟 Main Title for POS
                     'hsn_code' => $sku->product ? $sku->product->hsn_code : null,
                     'sku_code' => $sku->sku,
                     'barcode' => $sku->display_barcode,

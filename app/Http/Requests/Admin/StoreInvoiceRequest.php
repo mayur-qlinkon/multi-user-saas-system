@@ -69,17 +69,53 @@ class StoreInvoiceRequest extends FormRequest
             'items.*.batch_number' => ['nullable', 'string', 'max:100'],
         ];
     }
-
-    /**
-     * Custom error messages for better UX
+/**
+     * Custom error messages for specific, complex rules.
      */
     public function messages(): array
     {
         return [
-            'items.required' => 'You must add at least one product to the invoice.',
-            'items.*.unit_price.min' => 'The unit price cannot be negative.',
+            // Header Messages
+            'customer_id.required_without' => 'Please select an existing customer or enter a guest name.',
+            'customer_name.required_without' => 'Please provide a customer name or select an existing customer.',
+            'due_date.after_or_equal' => 'The due date cannot be earlier than the invoice date.',
+            
+            // Payment Messages
+            'payment_method_id.required_if' => 'Please select a payment method since an amount is being paid.',
+            
+            // Item Array Messages
+            'items.required' => 'You must add at least one product to create an invoice.',
+            'items.min' => 'You must add at least one product to create an invoice.',
+            
+            // Specific Item Field Messages
             'items.*.quantity.min' => 'The quantity must be greater than zero.',
-            'customer_id.required_without' => 'Please select a customer or provide a guest name.',
+            'items.*.unit_price.min' => 'The unit price cannot be negative.',
+            'items.*.tax_percent.max' => 'The tax percentage cannot exceed 100%.',
+        ];
+    }
+
+    /**
+     * Map technical field names to friendly names.
+     * This makes Laravel's default error messages read perfectly.
+     */
+    public function attributes(): array
+    {
+        return [
+            'store_id' => 'store',
+            'warehouse_id' => 'warehouse',
+            'customer_id' => 'customer',
+            'payment_method_id' => 'payment method',
+            
+            // Array mappings
+            'items.*.product_sku_id' => 'product',
+            'items.*.unit_id' => 'unit',
+            'items.*.quantity' => 'quantity',
+            'items.*.unit_price' => 'price',
+            'items.*.tax_percent' => 'tax percentage',
+            'items.*.tax_type' => 'tax type',
+            'items.*.discount_type' => 'discount type',
+            'items.*.discount_value' => 'discount value',
+            'items.*.batch_number' => 'batch number',
         ];
     }
 }

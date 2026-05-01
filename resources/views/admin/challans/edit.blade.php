@@ -288,15 +288,15 @@
                             <template x-for="result in globalSearchResults" :key="result.product_sku_id">
                                 <li @click="addSkuToTable(result); showResults = false"
                                     class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <div class="text-[13px] font-bold text-gray-800" x-text="result.product_name"></div>
-                                            <div class="text-[10px] text-gray-400 font-mono mt-0.5" x-text="result.sku_code"></div>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-[12px] font-black text-[#108c2a]" x-text="result.price ? '₹' + parseFloat(result.price).toFixed(2) : '₹0.00'"></div>
-                                            <div class="text-[10px] text-gray-500" x-text="'Stock: ' + (result.stock || 0)"></div>
-                                        </div>
+                                    <div class="flex justify-between items-start gap-2">
+                                        <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="result.display_name || result.product_name"></div>
+                                        <div class="text-[12px] font-black text-[#108c2a] flex-shrink-0" x-text="result.price ? '₹' + parseFloat(result.price).toFixed(2) : '₹0.00'"></div>
+                                    </div>
+                                    <div class="text-[11px] text-gray-500 flex items-center flex-wrap gap-1.5 mt-1.5 font-medium">
+                                        <span>Code:</span>
+                                        <span class="bg-gray-100 border border-gray-200 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px] font-bold tracking-wide" x-text="result.sku_code"></span>
+                                        <span class="text-gray-300">&middot;</span>
+                                        <span x-text="'Stock: ' + (result.stock || 0)"></span>
                                     </div>
                                 </li>
                             </template>
@@ -326,11 +326,10 @@
                                 <tr class="hover:bg-gray-50/50 transition-colors">
                                     {{-- 1. Product Details --}}
                                     <td class="px-5 py-3 align-middle">
-                                        <div class="text-[13px] font-bold text-gray-800 flex items-center gap-2">
-                                            <span x-text="item.product_name"></span>
-                                        </div>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="text-[11px] text-gray-500 font-mono" x-text="'SKU: ' + item.sku_code"></span>
+                                        <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="item.display_name || item.product_name"></div>
+                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                            <span class="text-gray-500 text-[11px] font-medium">Code:</span>
+                                            <span class="bg-[#dcfce7] text-[#16a34a] text-[10px] px-1.5 py-0.5 rounded font-mono font-bold tracking-wide border border-green-200" x-text="item.sku_code"></span>
                                         </div>
 
                                         {{-- 🌟 CRITICAL: Pass existing Item ID to backend for updating --}}
@@ -342,6 +341,7 @@
                                         <input type="hidden" :name="'items[' + index + '][product_id]'" :value="item.product_id">
                                         <input type="hidden" :name="'items[' + index + '][unit_id]'" :value="item.unit_id">
                                         <input type="hidden" :name="'items[' + index + '][product_name]'" :value="item.product_name">
+                                        <input type="hidden" :name="'items[' + index + '][display_name]'" :value="item.display_name">
                                         <input type="hidden" :name="'items[' + index + '][sku_code]'" :value="item.sku_code">
                                         <input type="hidden" :name="'items[' + index + '][hsn_code]'" :value="item.hsn_code">
                                     </td>
@@ -370,7 +370,9 @@
                                     <td class="px-4 py-3 align-middle">
                                         <div class="relative w-full min-w-[100px]">
                                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">₹</span>
-                                            <input type="number" step="0.01" :name="'items[' + index + '][unit_price]'" x-model="item.unit_price" @input="calculate()"
+                                            <input type="number" min="0" step="0.01" :name="'items[' + index + '][unit_price]'" x-model="item.unit_price" 
+                                                @keydown="if(['-', 'e'].includes($event.key)) $event.preventDefault();"
+                                                @input="item.unit_price = Math.max(0, parseFloat($event.target.value) || 0); calculate()"
                                                 class="w-full h-10 md:h-9 border border-gray-300 rounded px-2 pl-7 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all bg-white">
                                         </div>
                                     </td>
@@ -380,7 +382,9 @@
                                         <div class="flex items-center justify-center min-w-[120px]">
                                             <button type="button" @click="item.qty_sent = Math.max(1, parseFloat(item.qty_sent || 0) - 1); calculate()"
                                                 class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-l flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">-</button>
-                                            <input type="number" step="0.0001" :name="'items[' + index + '][qty_sent]'" x-model="item.qty_sent" @input="calculate()"
+                                            <input type="number" min="0" step="0.0001" :name="'items[' + index + '][qty_sent]'" x-model="item.qty_sent" 
+                                                @keydown="if(['-', 'e'].includes($event.key)) $event.preventDefault();"
+                                                @input="item.qty_sent = Math.max(0, parseFloat($event.target.value) || 0); calculate()"
                                                 class="w-16 h-10 md:h-9 border-y border-x-0 border-gray-300 text-center text-sm font-bold focus:ring-0 focus:border-brand-500 outline-none p-0 text-gray-700 shadow-inner">
                                             <button type="button" @click="item.qty_sent = parseFloat(item.qty_sent || 0) + 1; calculate()"
                                                 class="w-10 h-10 md:w-8 md:h-9 border border-gray-300 rounded-r flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-600 active:bg-gray-200 transition-colors">+</button>
@@ -390,7 +394,7 @@
                                     {{-- 5. Tax Rate Input --}}
                                     <td class="px-4 py-3 align-middle text-right">
                                         <div class="relative inline-block w-full min-w-[80px]">
-                                            <input type="number" step="0.01" :name="'items[' + index + '][tax_rate]'" x-model="item.tax_rate" @input="calculate()"
+                                            <input type="number" :name="'items[' + index + '][tax_rate]'" x-model="item.tax_rate" @input="calculate()"  @keydown="if(['-', 'e'].includes($event.key)) $event.preventDefault();"
                                                 class="w-full h-10 md:h-9 border border-gray-300 rounded px-2 pr-6 text-sm focus:border-brand-500 outline-none font-bold text-gray-700 text-right shadow-sm transition-all bg-white">
                                             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">%</span>
                                         </div>
@@ -503,19 +507,19 @@
                 isPartyDropdownOpen: false,
 
                 formData: {
-                    // 🌟 Pre-fill formData with existing DB values
-                    challan_type: existingChallan ? existingChallan.challan_type : '',
-                    direction: existingChallan ? existingChallan.direction : 'outward',
-                    challan_date: existingChallan ? existingChallan.challan_date.substring(0, 10) : new Date().toISOString().split('T')[0],
-                    store_id: "{{ session('store_id', auth()->user()->store_id ?? '') }}",
-                    warehouse_id: existingChallan && existingChallan.warehouse_id ? String(existingChallan.warehouse_id) : "",
+                    // 🌟 Pre-fill formData with old() first, fallback to existing DB values
+                    challan_type: "{{ old('challan_type') }}" || (existingChallan ? existingChallan.challan_type : ''),
+                    direction: "{{ old('direction') }}" || (existingChallan ? existingChallan.direction : 'outward'),
+                    challan_date: "{{ old('challan_date') }}" || (existingChallan ? existingChallan.challan_date.substring(0, 10) : new Date().toISOString().split('T')[0]),
+                    store_id: "{{ old('store_id', session('store_id', auth()->user()->store_id ?? '')) }}",
+                    warehouse_id: "{{ old('warehouse_id') }}" || (existingChallan && existingChallan.warehouse_id ? String(existingChallan.warehouse_id) : ""),
                     
-                    party_id: existingChallan ? (existingChallan.client_id || existingChallan.supplier_id || existingChallan.branch_store_id || '') : '',
-                    party_name: existingChallan ? (existingChallan.party_name || '') : '',
-                    party_gst: existingChallan ? (existingChallan.party_gst || '') : '',
-                    to_state_id: existingChallan ? (existingChallan.to_state_id || '') : '',
+                    party_id: "{{ old('client_id') }}" || "{{ old('supplier_id') }}" || "{{ old('branch_store_id') }}" || (existingChallan ? (existingChallan.client_id || existingChallan.supplier_id || existingChallan.branch_store_id || '') : ''),
+                    party_name: "{{ old('party_name') }}" || (existingChallan ? (existingChallan.party_name || '') : ''),
+                    party_gst: "{{ old('party_gst') }}" || (existingChallan ? (existingChallan.party_gst || '') : ''),
+                    to_state_id: "{{ old('to_state_id') }}" || (existingChallan ? (existingChallan.to_state_id || '') : ''),
                     
-                    is_returnable: existingChallan ? !!existingChallan.is_returnable : false,
+                    is_returnable: "{{ old('is_returnable') }}" ? true : (existingChallan ? !!existingChallan.is_returnable : false),
                 },
 
                 totals: {
@@ -534,6 +538,7 @@
                             product_sku_id: item.sku_id, // Map DB sku_id to UI product_sku_id
                             unit_id: item.unit_id,
                             product_name: item.product_name,
+                            display_name: item.display_name || item.product_name, // Map variant name for existing items
                             sku_code: item.sku_code,
                             hsn_code: item.hsn_code || '',
                             batch_number: item.batch_number || '',
@@ -653,6 +658,14 @@
                 },
 
                 addSkuToTable(result) {
+                    // Prevent duplicate items in the table
+                    if (this.items.some(item => item.product_sku_id === result.product_sku_id)) {
+                        BizAlert.toast('This product is already added!', 'error');
+                        this.globalSearch = '';
+                        this.showResults = false;
+                        return;
+                    }
+
                     this.items.push({
                         key: this.itemCounter++,
                         id: null, // New items don't have an ID yet
@@ -660,6 +673,7 @@
                         product_sku_id: result.product_sku_id,
                         unit_id: result.unit_id,
                         product_name: result.product_name,
+                        display_name: result.display_name || result.product_name, // 🌟 Map the variant name
                         sku_code: result.sku_code,
                         hsn_code: result.hsn_code || '',
                         batch_number: '',

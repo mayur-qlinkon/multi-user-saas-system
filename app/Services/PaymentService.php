@@ -92,9 +92,8 @@ class PaymentService
             ]);
 
             // 3. Update the Parent Document (Invoice/Purchase) Balance/Status
-            if (method_exists($this, 'syncDocumentPaymentStatus')) {
-                $this->syncDocumentPaymentStatus($document);
-            }
+            $this->syncDocumentPaymentStatus($document);
+
 
             return $payment;
         });
@@ -143,9 +142,7 @@ class PaymentService
         }
 
         // 4. Update the Invoice status (Paid, Partial, Unpaid)
-        if (method_exists($this, 'syncDocumentPaymentStatus')) {
-            $this->syncDocumentPaymentStatus($document);
-        }
+        $this->syncDocumentPaymentStatus($document);
     }
 
     /**

@@ -32,6 +32,12 @@ class ProductService
         // Eager load relationships to prevent N+1 performance issues
         $query = Product::with(['category', 'media', 'skus.stocks']);
 
+        // Store-aware filtering: non-owner staff see only their branch's products
+        $storeIds = auth_store_ids();
+        if ($storeIds !== null) {
+            $query->whereIn('store_id', $storeIds);
+        }
+
         // 1. Search Filter (Search by Product Name, SKU, or Barcode)
         if (! empty($filters['search'])) {
             $search = $filters['search'];

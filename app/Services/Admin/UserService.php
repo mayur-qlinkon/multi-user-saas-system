@@ -3,6 +3,8 @@
 namespace App\Services\Admin;
 
 use App\Models\User;
+use App\Models\Role;
+
 use App\Services\ImageUploadService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -23,8 +25,7 @@ class UserService
      */
     public function getPaginatedUsers(int $companyId, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = User::internal()
-            ->where('company_id', $companyId)
+        $query = User::internal()            
             ->with(['roles', 'stores']); // Eager load relationships to prevent N+1
 
         // Apply Search Filter if provided
@@ -65,7 +66,14 @@ class UserService
                 // 1. Process Image Upload
                 $imagePath = $this->handleImageUpload($data['image'] ?? null);
 
-                // 2. Create the User Record
+                // 2. Determine user_type before creation.
+                // Employee-role users are 'employee' type and do not consume user_limit seats.
+                $assignedRole = ! empty($data['role_id'])
+                    ? Role::find($data['role_id'])
+                    : null;
+                $userType = ($assignedRole && $assignedRole->slug === 'employee') ? 'employee' : 'full';
+
+                // 3. Create the User Record
                 $user = User::create([
                     'company_id' => $companyId,
                     'name' => $data['name'],
@@ -79,11 +87,12 @@ class UserService
                     'zip_code' => $data['zip_code'] ?? null,
                     'status' => $data['status'] ?? 'active',
                     'image' => $imagePath,
+                    'user_type' => $userType,
                 ]);
 
-                // 3. Assign Role
-                if (! empty($data['role_id'])) {
-                    $user->roles()->attach($data['role_id']);
+                // 4. Assign Role
+                if ($assignedRole) {
+                    $user->roles()->attach($assignedRole->id);
                 }
 
                 // 4. Assign to Multiple Stores

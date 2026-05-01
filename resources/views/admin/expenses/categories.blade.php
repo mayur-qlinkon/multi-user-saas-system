@@ -244,8 +244,8 @@
                                             <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">GST Type</label>
                                             <select name="gst_type" x-model="formData.gst_type"
                                                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none bg-white shadow-sm">
-                                                <option value="taxable">Taxable</option>
                                                 <option value="non_taxable">Non-Taxable</option>
+                                                <option value="taxable">Taxable</option>
                                                 <option value="exempt">Exempt</option>
                                             </select>
                                         </div>
@@ -331,7 +331,7 @@
                     name: '',
                     parent_id: '',
                     type: 'indirect',
-                    gst_type: 'taxable',
+                    gst_type: 'non_taxable',
                     account_code: '',
                     hsn_sac_code: '',
                     default_tax_rate: '',
@@ -354,7 +354,7 @@
                         name: '',
                         parent_id: '',
                         type: 'indirect',
-                        gst_type: 'taxable',
+                        gst_type: 'non_taxable',
                         account_code: '',
                         hsn_sac_code: '',
                         default_tax_rate: '',
@@ -375,7 +375,7 @@
                         name: category.name,
                         parent_id: category.parent_id || '',
                         type: category.type || 'indirect',
-                        gst_type: category.gst_type || 'taxable',
+                        gst_type: category.gst_type || 'non_taxable',
                         account_code: category.account_code || '',
                         hsn_sac_code: category.hsn_sac_code || '',
                         default_tax_rate: category.default_tax_rate || '',

@@ -41,10 +41,10 @@ class UserController extends Controller
      */
     public function create()
     {
-        if (! check_plan_limit('users')) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'You have reached your subscription limit for users. Please upgrade your plan to add more staff.');
-        }
+        // if (! check_plan_limit('users')) {
+        //     return redirect()->route('admin.users.index')
+        //         ->with('error', 'You have reached your subscription limit for users. Please upgrade your plan to add more staff.');
+        // }
 
         $companyId = Auth::user()->company_id;
 
@@ -65,7 +65,12 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-        if (! check_plan_limit('users')) {
+        // Employee-role users do not consume user_limit seats — skip the check for them.
+        $roleId = $request->validated()['role_id'] ?? null;
+        $role   = $roleId ? Role::find($roleId) : null;
+        $isEmployeeRole = $role && $role->slug === 'employee';
+
+        if (! $isEmployeeRole && ! check_plan_limit('users')) {
             return back()->withInput()
                 ->with('error', 'User limit reached for your current plan. Please upgrade.');
         }

@@ -253,6 +253,46 @@ class CrmLeadController extends Controller
     }
 
     // ════════════════════════════════════════════════════
+    //  BULK DESTROY
+    //  POST /admin/crm/leads/bulk-delete
+    // ════════════════════════════════════════════════════
+
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer', 'exists:crm_leads,id'],
+        ]);
+
+        $companyId = Auth::user()->company_id;
+
+        try {
+            // Verify all leads belong to the company before deleting
+            $leadsToDelete = CrmLead::whereIn('id', $request->ids)
+                ->where('company_id', $companyId)
+                ->get();
+
+            $deletedCount = 0;
+            foreach ($leadsToDelete as $lead) {
+                // Ensure the user has permission to delete this specific lead (if needed)
+                $this->authorizeLead($lead);
+                if ($this->service->deleteLead($lead)) {
+                    $deletedCount++;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$deletedCount} lead(s).",
+            ]);
+
+        } catch (Throwable $e) {
+            Log::error('[AdminCrmLead] Bulk Destroy failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Failed to delete selected leads.'], 500);
+        }
+    }
+
+    // ════════════════════════════════════════════════════
     //  MOVE STAGE — AJAX
     //  POST /admin/crm/leads/{lead}/stage
     // ════════════════════════════════════════════════════
@@ -375,8 +415,17 @@ class CrmLeadController extends Controller
         $this->authorizeTask($task, $lead);
 
         try {
+            $oldAssignee = $task->assigned_to;
+            
             $task->update($request->validated());
             $task->load('assignedUser:id,name');
+
+            // 🌟 Notify if the task was assigned to a NEW person (and not self)
+            if ($task->assigned_to && $task->assigned_to !== $oldAssignee && $task->assigned_to !== Auth::id()) {
+                if ($task->assignedUser) {
+                    $task->assignedUser->notify(new \App\Notifications\Crm\CrmTaskAssignedNotification($task));
+                }
+            }
 
             return response()->json([
                 'success' => true,

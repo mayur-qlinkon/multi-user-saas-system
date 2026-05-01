@@ -529,121 +529,166 @@
 
             {{-- ── TASKS ── --}}
             @if(has_permission('crm_tasks.view'))
-                <div class="detail-card" x-data="tasksPanel()">
-                    <div class="card-title flex items-center justify-between">
-                        <span>Tasks
-                            <span class="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600"
+                <div class="detail-card flex flex-col" x-data="tasksPanel()">
+                    {{-- Header --}}
+                    <div class="card-title flex items-center justify-between border-b border-gray-50 bg-white">
+                        <div class="flex items-center gap-2">
+                            <span>Tasks</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-brand-50 text-brand-600"
                                 x-text="tasks.filter(t => ['pending','in_progress'].includes(t.status)).length">
                             </span>
-                        </span>
+                        </div>
                         @if(has_permission('crm_tasks.create'))
                         <button @click="addOpen = !addOpen"
-                            class="text-[11px] font-bold px-3 py-1 rounded-lg text-white hover:opacity-90 transition-opacity"
+                            class="text-[11px] font-bold px-3 py-1.5 rounded-lg text-white shadow-sm hover:shadow-md transition-all active:scale-95"
                             style="background: var(--brand-600)">
                             + Add Task
                         </button>
                         @endif
                     </div>
 
-                    {{-- Add task form ── --}}
-                    <div x-show="addOpen" x-cloak class="px-4 py-4 border-b border-gray-50 bg-gray-50/50 space-y-3">
+                    {{-- Modern Add Task Form --}}
+                    <div x-show="addOpen" x-transition x-cloak class="p-5 border-b border-gray-100 bg-slate-50/60">
                         <template x-if="taskAddError">
-                            <div class="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                                <p class="text-[12px] font-semibold text-red-600" x-text="taskAddError"></p>
+                            <div class="mb-4 bg-red-50/80 border border-red-100 rounded-xl px-4 py-3 flex items-center gap-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                <p class="text-[12px] font-bold text-red-600" x-text="taskAddError"></p>
                             </div>
                         </template>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <input type="text" x-model="taskForm.title"
-                                placeholder="Task title *"
-                                class="field-input sm:col-span-2">
-                            <select x-model="taskForm.type" class="field-select">
-                                @foreach(\App\Models\CrmTask::TYPES as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            <select x-model="taskForm.priority" class="field-select">
-                                <option value="medium">Medium Priority</option>
-                                <option value="high">High Priority</option>
-                                <option value="low">Low Priority</option>
-                            </select>
-                            <input type="datetime-local" x-model="taskForm.due_at"
-                                class="field-input" placeholder="Due date *">
-                            <select x-model="taskForm.assigned_to" class="field-select">
-                                <option value="">Assign to...</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                @endforeach
-                            </select>
+
+                        <div class="space-y-4">
+                            {{-- Title Input (Prominent) --}}
+                            <div>
+                                <input type="text" x-model="taskForm.title"
+                                    placeholder="What needs to be done? *"
+                                    class="w-full bg-transparent border-0 border-b-2 border-gray-200 px-1 py-2 text-[15px] font-bold text-gray-800 placeholder-gray-400 focus:ring-0 focus:border-brand-500 transition-colors">
+                            </div>
+
+                            {{-- Metadata Grid --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <select x-model="taskForm.type" class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-gray-700 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 cursor-pointer shadow-sm">
+                                    @foreach(\App\Models\CrmTask::TYPES as $key => $label)
+                                        <option value="{{ $key }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <select x-model="taskForm.priority" class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-gray-700 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 cursor-pointer shadow-sm">
+                                    <option value="medium">Medium Priority</option>
+                                    <option value="high">High Priority</option>
+                                    <option value="low">Low Priority</option>
+                                </select>
+                                <input type="datetime-local" x-model="taskForm.due_at"
+                                    class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[12px] font-semibold text-gray-700 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm cursor-text">
+                                <select x-model="taskForm.assigned_to" class="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-gray-700 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 cursor-pointer shadow-sm">
+                                    <option value="">Assign to...</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Description --}}
                             <textarea x-model="taskForm.description" rows="2"
-                                placeholder="Description (optional)"
-                                class="field-input sm:col-span-2 resize-none"></textarea>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button @click="addTask()"
-                                :disabled="taskAdding || !taskForm.title.trim() || !taskForm.due_at"
-                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold text-white hover:opacity-90 transition-opacity"
-                                style="background: var(--brand-600)"
-                                :class="taskAdding ? 'opacity-60 cursor-not-allowed' : ''">
-                                <span x-text="taskAdding ? 'Adding...' : 'Add Task'"></span>
-                            </button>
-                            <button @click="addOpen = false; taskAddError = null"
-                                class="px-4 py-2 rounded-xl text-[12px] font-bold text-gray-600 border border-gray-200 hover:bg-gray-50">
-                                Cancel
-                            </button>
+                                placeholder="Add extra details, notes, or instructions (optional)..."
+                                class="w-full rounded-xl border border-gray-200 bg-white px-3 py-3 text-[13px] text-gray-700 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 resize-none shadow-sm"></textarea>
+                            
+                            {{-- Actions --}}
+                            <div class="flex items-center justify-end gap-2 pt-1">
+                                <button @click="addOpen = false; taskAddError = null"
+                                    class="px-5 py-2.5 rounded-xl text-[12px] font-bold text-gray-600 hover:bg-gray-200 transition-colors">
+                                    Cancel
+                                </button>
+                                <button @click="addTask()"
+                                    :disabled="taskAdding || !taskForm.title.trim() || !taskForm.due_at"
+                                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[12px] font-bold text-white transition-all shadow-sm"
+                                    style="background: var(--brand-600)"
+                                    :class="(!taskForm.title.trim() || !taskForm.due_at) ? 'opacity-50 cursor-not-allowed' : (taskAdding ? 'opacity-75 cursor-wait' : 'hover:shadow-md hover:-translate-y-px')">
+                                    <span x-text="taskAdding ? 'Saving Task...' : 'Save Task'"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {{-- Task list ── --}}
+                    {{-- Empty State --}}
                     <template x-if="tasks.length === 0">
-                        <div class="px-5 py-8 text-center text-[13px] text-gray-400 font-medium">
-                            No tasks yet. Add a follow-up task to stay on track.
-                        </div>
-                    </template>
-
-                    <template x-for="task in tasks" :key="task.id">
-                        <div class="task-item">
-
-                            {{-- Complete button ── --}}
-                            @if(has_permission('crm_tasks.complete'))
-                            <button @click="completeTask(task)"
-                                :disabled="task.status === 'completed' || task.status === 'cancelled'"
-                                class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
-                                :class="task.status === 'completed' ? 'border-green-400 bg-green-400' : (task.is_overdue ? 'border-red-400 hover:border-red-500' : 'border-gray-300 hover:border-green-400')"
-                                :title="task.status === 'completed' ? 'Completed' : 'Mark complete'">
-                                <svg x-show="task.status === 'completed'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </button>
-                            @endif
-
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="min-w-0">
-                                        <p class="text-[13px] font-bold text-gray-800 truncate"
-                                            :class="task.status === 'completed' ? 'line-through text-gray-400' : ''"
-                                            x-text="task.title"></p>
-                                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                                :style="`background: ${task.status_color}15; color: ${task.status_color}`"
-                                                x-text="task.status_label"></span>
-                                            <span class="text-[10px] text-gray-400 font-medium"
-                                                x-text="task.type_label"></span>
-                                            <span class="text-[10px] font-semibold"
-                                                :class="task.is_overdue ? 'text-red-500' : 'text-gray-400'"
-                                                x-text="(task.is_overdue ? '⚠ ' : '') + task.due_at"></span>
-                                        </div>
-                                        <p x-show="task.assignee_name"
-                                            class="text-[11px] text-gray-400 mt-0.5"
-                                            x-text="'Assigned to ' + task.assignee_name"></p>
-                                    </div>
-                                    {{-- Delete task ── --}}
-                                    <button @click="deleteTask(task.id)"
-                                        x-show="task.status !== 'completed'"
-                                        class="w-6 h-6 flex items-center justify-center rounded text-gray-300 hover:text-red-400 transition-colors flex-shrink-0">
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                                    </button>
-                                </div>
+                        <div class="px-6 py-12 flex flex-col items-center justify-center text-center">
+                            <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                             </div>
+                            <p class="text-[14px] font-bold text-gray-600 mb-1">No tasks created</p>
+                            <p class="text-[12px] text-gray-400 font-medium">Keep track of your next moves by adding a task.</p>
                         </div>
                     </template>
+
+                    {{-- Task List --}}
+                    <div class="flex flex-col divide-y divide-gray-50/80">
+                        <template x-for="task in tasks" :key="task.id">
+                            <div class="group flex items-start gap-3.5 p-5 hover:bg-slate-50/40 transition-colors">
+                                
+                                {{-- Complete Toggle --}}
+                                @if(has_permission('crm_tasks.complete'))
+                                <button @click="completeTask(task)"
+                                    :disabled="task.status === 'completed' || task.status === 'cancelled'"
+                                    class="relative mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[6px] border-2 transition-all"
+                                    :class="task.status === 'completed' ? 'border-green-500 bg-green-500 cursor-default' : (task.is_overdue ? 'border-red-400 hover:border-red-500 hover:bg-red-50' : 'border-gray-300 hover:border-green-500 hover:bg-green-50')"
+                                    :title="task.status === 'completed' ? 'Completed' : 'Mark as completed'">
+                                    <svg x-show="task.status === 'completed'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </button>
+                                @endif
+
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="min-w-0">
+                                            {{-- Title & Status --}}
+                                            <div class="flex items-center gap-2.5 mb-1">
+                                                <p class="text-[14px] font-bold text-gray-800 truncate transition-colors"
+                                                    :class="task.status === 'completed' ? 'text-gray-400 line-through' : ''"
+                                                    x-text="task.title"></p>
+                                                <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0"
+                                                    :style="`background: ${task.status_color}1A; color: ${task.status_color}`"
+                                                    x-text="task.status_label"></span>
+                                            </div>
+
+                                            {{-- Description (Now Visible) --}}
+                                            <p x-show="task.description" 
+                                                class="text-[12px] text-gray-500 leading-relaxed mb-2.5 line-clamp-2" 
+                                                x-text="task.description"></p>
+
+                                            {{-- Meta Badges --}}
+                                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                                {{-- Due Date --}}
+                                                <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 border border-gray-100"
+                                                     :class="task.is_overdue && task.status !== 'completed' ? 'bg-red-50 border-red-100' : ''">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" :class="task.is_overdue && task.status !== 'completed' ? 'text-red-500' : 'text-gray-400'"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                                    <span class="text-[10px] font-bold"
+                                                        :class="task.is_overdue && task.status !== 'completed' ? 'text-red-600' : 'text-gray-600'"
+                                                        x-text="task.due_at"></span>
+                                                </div>
+
+                                                {{-- Assignee --}}
+                                                <div x-show="task.assignee_name" class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 border border-gray-100">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                    <span class="text-[10px] font-bold text-gray-600" x-text="task.assignee_name"></span>
+                                                </div>
+
+                                                {{-- Type --}}
+                                                <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-50 border border-gray-100">
+                                                    <span class="text-[10px] font-bold text-gray-500" x-text="task.type_label"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Delete task (Hidden on Desktop until hover, visible on mobile) --}}
+                                        <button @click="deleteTask(task.id)"
+                                            x-show="task.status !== 'completed'"
+                                            class="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </template>
+                    </div>
                 </div>
             @endif
 

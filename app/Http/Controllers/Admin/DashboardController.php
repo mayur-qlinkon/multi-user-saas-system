@@ -109,7 +109,10 @@ class DashboardController extends Controller
         $todayDate = $today->toDateString();
 
         // 💳 Sales this month + today in one query (conditional SUM avoids a second round-trip).
+         $storeIds = dashboard_store_ids(); // null = owner sees all, array = staff sees own store(s)
+
         $invoiceAgg = Invoice::where('company_id', $companyId)
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
             ->where('status', '!=', 'cancelled')
             ->where('invoice_date', '>=', $startOfMonth)
             ->selectRaw(
@@ -149,8 +152,10 @@ class DashboardController extends Controller
         $today = now()->startOfDay();
         $todayDate = $today->toDateString();
 
+        $storeIds = dashboard_store_ids(); // null = owner sees all, array = staff sees own store(s)
         // 🛒 Purchases this month + today in one query.
         $purchaseAgg = Purchase::where('company_id', $companyId)
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
             ->where('status', '!=', 'cancelled')
             ->where('purchase_date', '>=', $startOfMonth)
             ->selectRaw(
@@ -188,8 +193,10 @@ class DashboardController extends Controller
         $startOfMonth = now()->startOfMonth();
         $last7Days = now()->subDays(6)->startOfDay();
 
+        $storeIds = dashboard_store_ids(); // null = owner sees all, array = staff sees own store(s)
         // 📊 Weekly Sales Chart (Grouped by Date)
         $weeklySales = Invoice::where('company_id', $companyId)
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
             ->where('status', '!=', 'cancelled')
             ->where('invoice_date', '>=', $last7Days)
             ->selectRaw('DATE(invoice_date) as date, SUM(grand_total) as total')
@@ -199,6 +206,7 @@ class DashboardController extends Controller
             ->toArray();
         // 📊 Weekly Purchases Chart (Grouped by Date)
         $weeklyPurchases = Purchase::where('company_id', $companyId)
+            ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
             ->where('status', '!=', 'cancelled')
             ->where('purchase_date', '>=', $last7Days)
             ->selectRaw('DATE(purchase_date) as date, SUM(total_amount) as total')

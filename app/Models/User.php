@@ -34,6 +34,7 @@ class User extends Authenticatable
         'country',
         'zip_code',
         'status',
+        'user_type', 
     ];
 
     protected $hidden = [
@@ -44,7 +45,26 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'user_type'=> 'string',
     ];
+
+    /**
+     * True when this user is an employee-only login (not a full system user).
+     * Employee users do not consume user_limit seats.
+     */
+    public function isEmployeeType(): bool
+    {
+        return $this->user_type === 'employee';
+    }
+
+    /**
+     * Scope: only full system users (admins, managers, owners, etc.)
+     * Excludes employee-only logins from counts and queries where relevant.
+     */
+    public function scopeFullUsers(Builder $query): Builder
+    {
+        return $query->where('user_type', 'full');
+    }
 
     /** * Company relationship */
     public function company(): BelongsTo
@@ -87,15 +107,15 @@ class User extends Authenticatable
     }
 
     /**
-     * Backoffice-only users. Excludes customer logins and linked client profiles.
+     * Full system users only.
+     * Excludes: customer-role users, client-linked users, and employee-type logins.
+     * Employee users are managed entirely through the HRM module, not the Users panel.
      */
     public function scopeInternal(Builder $query): Builder
     {
         return $query
-            ->whereDoesntHave('roles', function (Builder $builder): void {
-                $builder->where('slug', 'customer');
-            })
-            ->whereDoesntHave('client');
+            ->where('user_type', 'full')           // exclude employee-type logins
+            ->whereDoesntHave('client');             // exclude storefront customer accounts
     }
 
     public function hasRole($role)

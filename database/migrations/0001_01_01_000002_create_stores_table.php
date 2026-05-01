@@ -56,6 +56,27 @@ return new class extends Migration
             $table->text('invoice_footer_note')->nullable();
             $table->text('invoice_terms')->nullable();
 
+            // Public identity
+            $table->string('tagline', 160)->nullable();
+            $table->text('description')->nullable();
+
+            // Public contact (store-specific override of company settings)
+            $table->string('whatsapp', 20)->nullable();
+            $table->string('instagram')->nullable();
+            $table->string('facebook')->nullable();
+            $table->string('twitter')->nullable();
+
+            // SEO
+            $table->string('seo_title', 160)->nullable();
+            $table->string('seo_description', 300)->nullable();
+
+            // Hours & Map
+            $table->string('business_hours', 500)->nullable(); // "Mon-Sat: 9am-8pm"
+            $table->string('map_embed_url')->nullable();
+
+            // Public on/off (independent per store, not killing whole company)
+            $table->boolean('storefront_enabled')->default(true);
+
             // --- Status & Timestamps ---
             $table->boolean('is_active')->default(true);
             $table->timestamps();

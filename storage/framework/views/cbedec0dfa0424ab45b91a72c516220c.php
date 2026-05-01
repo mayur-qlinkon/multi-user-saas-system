@@ -322,7 +322,16 @@
                                     
                                     <div class="flex-1 pr-2">
                                         <h3 class="text-[13px] font-bold text-gray-800 leading-tight" x-text="item.product_name"></h3>
-                                        <div class="text-[10px] text-gray-400 font-mono mt-0.5" x-text="'₹' + item.unit_price + ' / ' + (item.unit_name || 'unit')"></div>
+                                        <div class="flex flex-col mt-0.5">
+                                            <span class="text-[10px] text-gray-500 font-mono" x-text="formatCurrency(item.unit_price) + ' / ' + (item.unit_name || 'unit')"></span>
+                                            
+                                            
+                                            <span x-show="item.tax_percent > 0" 
+                                                  class="text-[9px] font-bold tracking-wide mt-0.5" 
+                                                  :class="item.tax_type === 'inclusive' ? 'text-blue-500' : 'text-brand-500'"
+                                                  x-text="(item.tax_type === 'inclusive' ? 'Incl. ' : '+ ') + item.tax_percent + '% Tax (' + formatCurrency(item.calculated_tax || 0) + ')'">
+                                            </span>
+                                        </div>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <div class="text-[14px] font-black text-gray-800" x-text="formatCurrency(item.unit_price * item.quantity)"></div>
@@ -381,7 +390,7 @@
                     <div class="space-y-3 text-[13px] font-medium text-gray-500">
                         <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-2 shadow-sm">
                             <span class="font-bold text-gray-700">Received (₹)</span>
-                            <input type="number" step="0.01" placeholder="0.00" x-model.number="payment.received" @input="calculatePayment()" :disabled="(payment.method_name || '').toLowerCase() !== 'cash'" class="w-24 bg-transparent text-right text-base font-black text-brand-600 focus:outline-none">
+                            <input type="number" placeholder="0.00" x-model.number="payment.received" @input="calculatePayment()" class="w-24 bg-transparent text-right text-base font-black text-brand-600 focus:outline-none">
                         </div>
 
                         <div class="flex items-center justify-between px-1">
@@ -409,14 +418,60 @@
                                     <option value="fixed">₹</option>
                                     <option value="percent">%</option>
                                 </select>
-                                <input type="number" step="0.01" placeholder="0.00" x-model.number="totals.discount_value" @input="calculateCart()" class="w-16 px-2 py-1.5 text-right text-xs font-bold text-red-500 placeholder-gray-300 focus:outline-none">
+                                <input type="number"                                    
+                                    min="0"
+                                    placeholder="0.00"
+                                    x-model.number="totals.discount_value"
+                                    @keydown="if(['-', 'e'].includes($event.key)) $event.preventDefault();"
+                                    @input="
+                                        let val = parseFloat($event.target.value) || 0;
+
+                                        // Prevent negative
+                                        val = Math.max(0, val);
+
+                                        // If percent → max 100
+                                        if (totals.discount_type === 'percent') {
+                                            val = Math.min(100, val);
+                                        }
+
+                                        // If fixed → cannot exceed subtotal
+                                        if (totals.discount_type === 'fixed') {
+                                            val = Math.min(val, totals.subtotal || 0);
+                                        }
+
+                                        totals.discount_value = val;
+                                        calculateCart();
+                                    "
+                                    class="w-16 px-2 py-1.5 text-right text-xs font-bold text-red-500 placeholder-gray-300 focus:outline-none">
                             </div>
                         </div>
                         <?php endif; ?>
 
-                        <div class="flex items-center justify-between px-1">
-                            <span>Tax Amount</span>
-                            <span class="font-bold text-gray-800" x-text="formatCurrency(totals.tax)"></span>
+                        <div class="flex items-start justify-between px-1">
+                            <div class="flex flex-col pt-1">
+                                <span>Order Tax</span>
+                                <span x-show="totals.item_tax_amount > 0" class="text-[10px] font-bold text-brand-600 mt-0.5" x-text="'Product Taxes: ' + formatCurrency(totals.item_tax_amount)"></span>
+                            </div>
+                            <div class="flex flex-col items-end gap-1">
+                                <div class="relative w-20">
+                                    <input type="number"
+                                        min="0"
+                                        max="100"                                        
+                                        placeholder="0"
+                                        x-model.number="totals.order_tax_percent"
+                                        @keydown="if(['-', 'e'].includes($event.key)) $event.preventDefault();"
+                                        @input="
+                                            let val = parseFloat($event.target.value) || 0;
+                                            val = Math.min(100, Math.max(0, val));
+                                            totals.order_tax_percent = val;
+                                            calculateCart();
+                                        "
+                                        class="w-full pr-5 pl-2 py-1.5 text-right text-[13px] font-bold text-brand-600 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all bg-white m-0">
+                                    <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-[10px]">%</span>
+                                </div>
+                                
+                                <span class="text-[11px] font-black text-gray-500" x-show="totals.order_tax_amount > 0" x-text="'+ ' + formatCurrency(totals.order_tax_amount)"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -685,12 +740,17 @@
                     due: 0
                 },
                 totals: {
-                    subtotal: 0,
+                    gross_subtotal: 0,          // sum of item prices before discount
+                    taxable_subtotal: 0,        // sum of taxable values after discount
+                    subtotal: 0,                // keep this for UI if needed
                     discount_type: 'fixed',
                     discount_value: 0,
                     discount_amount: 0,
+                    item_tax_amount: 0,
+                    order_tax_percent: 0,
+                    order_tax_amount: 0,
                     tax: 0,
-                    round_off: '0.00',
+                    round_off: 0,
                     payable: 0
                 },
                 isProcessing: false,
@@ -1087,43 +1147,105 @@
                     this.calculateCart();
                 },
 
-                calculateCart() {
-                    let subAcc = 0;
-                    let taxAcc = 0;
+               calculateCart() {
+                    const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+                    const num = (v) => parseFloat(v) || 0;
 
-                    this.cart.forEach(item => {
-                        let base = item.quantity * item.unit_price;
-                        let tax = 0;
-                        let taxable = base;
+                    // Normalize cart lines first
+                    const lines = this.cart.map(item => ({
+                        ...item,
+                        _qty: num(item.quantity),
+                        _unit: num(item.unit_price),
+                        _taxPct: num(item.tax_percent),
+                        _type: (item.tax_type || 'exclusive').toLowerCase(),
+                    }));
 
-                        if (item.tax_type === 'inclusive') {
-                            taxable = base / (1 + (item.tax_percent / 100));
-                            tax = base - taxable;
-                        } else {
-                            tax = base * (item.tax_percent / 100);
-                        }
+                    // Gross subtotal = sum of displayed unit prices × qty
+                    const grossSubtotal = lines.reduce((sum, item) => {
+                        return round2(sum + round2(item._qty * item._unit));
+                    }, 0);
 
-                        subAcc += taxable;
-                        taxAcc += tax;
-                    });
-
+                    // Global discount
                     let discountAmt = 0;
-                    let discVal = parseFloat(this.totals.discount_value) || 0;
+                    const discVal = num(this.totals.discount_value);
 
                     if (this.totals.discount_type === 'percent') {
-                        discountAmt = subAcc * (discVal / 100);
+                        discountAmt = round2(grossSubtotal * (discVal / 100));
                     } else {
-                        discountAmt = discVal;
+                        discountAmt = round2(discVal);
                     }
 
-                    let afterDiscount = Math.max(0, subAcc - discountAmt);
-                    let rawTotal = afterDiscount + taxAcc;
+                    discountAmt = Math.min(discountAmt, grossSubtotal);
 
-                    this.totals.subtotal = subAcc;
+                    // Allocate global discount proportionally to each line
+                    let allocatedDiscount = 0;
+                    let taxableSubtotal = 0;
+                    let itemTaxTotal = 0;
+                    let grandTotalBeforeOrderTax = 0;
+
+                    lines.forEach((line, index) => {
+                        const lineGross = round2(line._qty * line._unit);
+                        const ratio = grossSubtotal > 0 ? (lineGross / grossSubtotal) : 0;
+
+                        const lineDiscount = index === lines.length - 1
+                            ? round2(discountAmt - allocatedDiscount)
+                            : round2(discountAmt * ratio);
+
+                        allocatedDiscount = round2(allocatedDiscount + lineDiscount);
+
+                        const grossAfterDiscount = Math.max(0, round2(lineGross - lineDiscount));
+
+                        let taxable = 0;
+                        let tax = 0;
+                        let finalLineTotal = 0;
+
+                        if (line._type === 'inclusive') {
+                            // Unit price already includes GST
+                            if (line._taxPct > 0) {
+                                taxable = round2(grossAfterDiscount / (1 + (line._taxPct / 100)));
+                                tax = round2(grossAfterDiscount - taxable);
+                            } else {
+                                taxable = grossAfterDiscount;
+                                tax = 0;
+                            }
+                            finalLineTotal = grossAfterDiscount;
+                        } else {
+                            // Unit price is base price, GST is added on top
+                            taxable = grossAfterDiscount;
+                            tax = round2(taxable * (line._taxPct / 100));
+                            finalLineTotal = round2(taxable + tax);
+                        }
+
+                        line.line_gross = lineGross;
+                        line.line_discount = lineDiscount;
+                        line.line_gross_after_discount = grossAfterDiscount;
+                        line.line_taxable = taxable;
+                        line.calculated_tax = tax;
+                        line.line_total = finalLineTotal;
+
+                        taxableSubtotal = round2(taxableSubtotal + taxable);
+                        itemTaxTotal = round2(itemTaxTotal + tax);
+                        grandTotalBeforeOrderTax = round2(grandTotalBeforeOrderTax + finalLineTotal);
+
+                        // Keep reactive cart updated
+                        this.cart[index] = line;
+                    });
+
+                    // Order tax should apply on taxable value after discount
+                    const orderTaxPct = num(this.totals.order_tax_percent);
+                    const orderTaxAmt = round2(taxableSubtotal * (orderTaxPct / 100));
+
+                    const payableBeforeRound = round2(grandTotalBeforeOrderTax + orderTaxAmt);
+
+                    this.totals.gross_subtotal = grossSubtotal;
+                    this.totals.taxable_subtotal = taxableSubtotal;
+                    this.totals.subtotal = taxableSubtotal; // keep UI-friendly subtotal as taxable value
                     this.totals.discount_amount = discountAmt;
-                    this.totals.tax = taxAcc;
-                    this.totals.payable = Math.round(rawTotal);
-                    this.totals.round_off = (this.totals.payable - rawTotal).toFixed(2);
+                    this.totals.item_tax_amount = itemTaxTotal;
+                    this.totals.order_tax_amount = orderTaxAmt;
+                    this.totals.tax = round2(itemTaxTotal + orderTaxAmt);
+                    this.totals.payable = payableBeforeRound;
+                    this.totals.round_off = round2(this.totals.payable - payableBeforeRound);
 
                     this.calculatePayment();
 
@@ -1193,6 +1315,8 @@
                     this.customer.id = ''; // Optional: Reset to Walk-in
                     this.customer.name = 'Guest';
                     this.clientSearchTerm = '';
+                    this.totals.discount_value = 0;
+                    this.totals.order_tax_percent = 0;
                     this.calculateCart();
                 },
 
@@ -1238,10 +1362,12 @@
                         payment_method_id: this.payment.method_id,
                         amount_received: this.payment.received,
                         items: this.cart,
-                        // 🌟 WE MUST ACTUALLY SEND THE DISCOUNT TO THE SERVER
+                        // 🌟 WE MUST ACTUALLY SEND THE DISCOUNT & ORDER TAX TO THE SERVER
                         discount_type: this.totals.discount_type,
                         discount_value: this.totals.discount_value,
-                        discount_amount: this.totals.discount_amount
+                        discount_amount: this.totals.discount_amount,
+                        order_tax_percent: this.totals.order_tax_percent,
+                        order_tax_amount: this.totals.order_tax_amount
                     };
 
                     try {
@@ -1268,6 +1394,8 @@
 
                         this.cart = [];
                         this.payment.received = '';
+                        this.totals.discount_value = 0;
+                        this.totals.order_tax_percent = 0;
                         this.calculateCart();
 
                     } catch (error) {

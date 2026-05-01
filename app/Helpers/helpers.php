@@ -157,7 +157,7 @@ if (! function_exists('check_plan_limit')) {
 
         if ($resourceType === 'users') {
             // internal() excludes customer-role and client-linked users — staff only.
-            return User::internal()->count() < $subscription->plan->user_limit;
+            return User::internal()->where('user_type', 'full')->count() < $subscription->plan->user_limit;
         }
 
         if ($resourceType === 'stores') {
@@ -449,7 +449,7 @@ if (! function_exists('auth_stores')) {
     {
         $storeIds = auth_store_ids();
 
-        $query = \App\Models\Store::where('is_active', true);
+        $query = Store::where('is_active', true);
 
         if ($storeIds !== null) {
             // Non-owner: restrict to assigned stores only.
@@ -458,5 +458,68 @@ if (! function_exists('auth_stores')) {
         }
 
         return $query;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PUBLIC STOREFRONT: Resolve store from route {store_slug}
+    // Used by the new store-level public controller and middleware
+    // ─────────────────────────────────────────────────────────────────────────
+    if (! function_exists('resolve_public_store')) {
+        function resolve_public_store(string $companySlug, string $storeSlug): ?\App\Models\Store
+        {
+            $cacheKey = "public_store_{$companySlug}_{$storeSlug}";
+
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($companySlug, $storeSlug) {
+                return \App\Models\Store::whereHas('company', fn ($q) => $q->where('slug', $companySlug))
+                    ->where('slug', $storeSlug)
+                    ->where('is_active', true)
+                    ->first();
+            });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // STORE PRICING: Get branch-specific price for a SKU, fallback to base price
+    // ─────────────────────────────────────────────────────────────────────────
+    if (! function_exists('store_price')) {
+        function store_price(\App\Models\ProductSku $sku, ?int $storeId = null): float
+        {
+            if (! $storeId) {
+                $store = active_store();
+                $storeId = $store?->id;
+            }
+
+            if ($storeId) {
+                $rule = \App\Models\StorePricingRule::where('store_id', $storeId)
+                    ->where('product_sku_id', $sku->id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if ($rule && $rule->override_price !== null) {
+                    return (float) $rule->override_price;
+                }
+            }
+
+            return (float) $sku->price;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // DASHBOARD: Get store_id scope for DashboardController queries
+    // Returns array of store IDs to filter, or null for "all" (owner)
+    // ─────────────────────────────────────────────────────────────────────────
+    if (! function_exists('dashboard_store_ids')) {
+        function dashboard_store_ids(): ?array
+        {
+            // Owner / super-admin → null (no filter — aggregate all stores)
+            if (is_owner() || is_super_admin()) {
+                return null;
+            }
+
+            // Active store only for non-owner staff dashboard
+            $store = active_store();
+
+            return $store ? [$store->id] : [];
+        }
     }
 }

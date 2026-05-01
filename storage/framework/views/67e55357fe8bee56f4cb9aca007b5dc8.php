@@ -103,6 +103,17 @@
                 --bg-page: #f4f6f9;
                 --ease: cubic-bezier(0.4, 0, 0.2, 1);
             }
+            /* Chrome, Safari, Edge, Opera */
+            input[type="number"]::-webkit-outer-spin-button,
+            input[type="number"]::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            /* Firefox */
+            input[type="number"] {
+                -moz-appearance: textfield;
+            }
 
             [x-cloak] {
                 display: none !important;
@@ -534,7 +545,7 @@
                         </a>
                     <?php endif; ?>       
                     
-                    <?php if(has_module('ocr_scanner')): ?>
+                    <?php if(has_module('ocr_scanner') && has_permission('ocr_scanner.access')): ?>
                         <a href="<?php echo e(route('admin.ocr-scanner.index')); ?>"
                         class="nav-item <?php echo e($navCls(['admin.ocr-scanner.*'])); ?>">
                             <span class="flex items-center gap-3">
@@ -1149,7 +1160,10 @@
                                 <button @click="open = !open" type="button"
                                     class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-sm font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-100 text-gray-700 rounded-lg transition-colors">
                                     <i data-lucide="store" class="w-3 h-3 sm:w-[15px] sm:h-[15px] text-gray-400"></i>
-                                    <span class="truncate max-w-[80px] sm:max-w-none"><?php echo e($currentStore->name ?? 'Select Store'); ?></span>
+                                    <span class="truncate max-w-[80px] sm:max-w-none">
+                                        <?php echo e($currentStore->name ?? (is_owner() ? 'All Branches' : 'Select Store')); ?>
+
+                                    </span>
                                     <i data-lucide="chevron-down" class="w-3 h-3 sm:w-4 sm:h-4 text-gray-400"></i>
                                 </button>
                                 <div x-cloak x-show="open" @click.away="open = false" x-transition
@@ -2180,8 +2194,7 @@
             };
         </script>
 
-        <?php echo $__env->yieldPushContent('scripts'); ?>
-        
+        <?php echo $__env->yieldPushContent('scripts'); ?>       
     </body>
 
     </html>

@@ -161,7 +161,7 @@
                     <p class="text-[13px] font-bold text-gray-800">Choose Pipeline & Stage</p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 ml-10">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ml-10">
                     <div>
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                             Pipeline
@@ -187,6 +187,19 @@
                             <template x-for="stage in availableStages" :key="stage.id">
                                 <option :value="stage.id" x-text="stage.name"></option>
                             </template>
+                        </select>
+                    </div>
+
+                    {{-- 🌟 Bulk Assign To --}}
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Assign To User
+                        </label>
+                        <select x-model="assignedTo" class="field-input">
+                            <option value="">Leave Unassigned</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -342,6 +355,7 @@ function importPage() {
         dragover:        false,
         pipelineId:      '',
         stageId:         '',
+        assignedTo:      '',
         availableStages: [],
         importing:       false,
         importError:     null,
@@ -390,6 +404,7 @@ function importPage() {
             formData.append('file', this.file);
             if (this.pipelineId) formData.append('pipeline_id', this.pipelineId);
             if (this.stageId)    formData.append('stage_id',    this.stageId);
+            if (this.assignedTo) formData.append('assigned_to', this.assignedTo);
 
             try {
                 const res  = await fetch('{{ route("admin.crm.leads.import.store") }}', {

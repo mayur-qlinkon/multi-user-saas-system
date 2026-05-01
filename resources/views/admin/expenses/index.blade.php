@@ -206,7 +206,7 @@
                                     Status</th>
                                 <th
                                     class="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider text-center">
-                                    Payment</th>
+                                    Payment Status</th>
                                 <th
                                     class="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-wider text-right">
                                     Actions</th>
@@ -266,16 +266,16 @@
                                     {{-- Amount --}}
                                     <td class="px-3 py-3 sm:px-4 sm:py-3.5 text-right">
                                         <p class="text-[14px] font-black text-gray-900 whitespace-nowrap">
-                                            {{ $expense->currency_code }} {{ number_format($expense->total_amount, 2) }}
+                                            &#8377;{{ number_format($expense->total_amount, 2) }}
                                         </p>
-                                        @if ($expense->tax_amount > 0)
+                                        {{-- @if ($expense->tax_amount > 0)
                                             <p class="text-[10px] font-semibold text-gray-400 mt-0.5"
                                                 title="Base: {{ number_format($expense->base_amount, 2) }} + Taxes">
                                                 Includes Tax
                                             </p>
                                         @else
                                             <p class="text-[10px] font-semibold text-gray-400 mt-0.5">No Tax</p>
-                                        @endif
+                                        @endif --}}
                                     </td>
 
                                     {{-- Status --}}
@@ -290,12 +290,15 @@
 
                                     {{-- Payment Status --}}
                                     <td class="px-3 py-3 sm:px-4 sm:py-3.5 text-center">
-                                        <span
-                                            class="inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
-                                            style="background: {{ $payConf['bg'] }}; color: {{ $payConf['text'] }}">
-                                            {{ $expense->payment_status }}
-                                        </span>
+                                        @if($expense->payment_status === 'paid')
+                                            <span class="badge bg-success">Paid</span>
+                                        @elseif($expense->payment_status === 'partial')
+                                            <span class="badge bg-warning">Partial</span>
+                                        @else
+                                            <span class="badge bg-danger">Unpaid</span>
+                                        @endif
                                     </td>
+                                    
 
                                     {{-- Actions --}}
                                     <td class="px-3 py-3 sm:px-4 sm:py-3.5 text-right">

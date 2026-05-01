@@ -108,6 +108,17 @@
                 --bg-page: #f4f6f9;
                 --ease: cubic-bezier(0.4, 0, 0.2, 1);
             }
+            /* Chrome, Safari, Edge, Opera */
+            input[type="number"]::-webkit-outer-spin-button,
+            input[type="number"]::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            /* Firefox */
+            input[type="number"] {
+                -moz-appearance: textfield;
+            }
 
             [x-cloak] {
                 display: none !important;
@@ -539,7 +550,7 @@
                         </a>
                     @endif       
                     
-                    @if (has_module('ocr_scanner'))
+                    @if (has_module('ocr_scanner') && has_permission('ocr_scanner.access'))
                         <a href="{{ route('admin.ocr-scanner.index') }}"
                         class="nav-item {{ $navCls(['admin.ocr-scanner.*']) }}">
                             <span class="flex items-center gap-3">
@@ -1154,7 +1165,9 @@
                                 <button @click="open = !open" type="button"
                                     class="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-sm font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-100 text-gray-700 rounded-lg transition-colors">
                                     <i data-lucide="store" class="w-3 h-3 sm:w-[15px] sm:h-[15px] text-gray-400"></i>
-                                    <span class="truncate max-w-[80px] sm:max-w-none">{{ $currentStore->name ?? 'Select Store' }}</span>
+                                    <span class="truncate max-w-[80px] sm:max-w-none">
+                                        {{ $currentStore->name ?? (is_owner() ? 'All Branches' : 'Select Store') }}
+                                    </span>
                                     <i data-lucide="chevron-down" class="w-3 h-3 sm:w-4 sm:h-4 text-gray-400"></i>
                                 </button>
                                 <div x-cloak x-show="open" @click.away="open = false" x-transition
@@ -2183,21 +2196,7 @@
             };
         </script>
 
-        @stack('scripts')
-        {{-- @if (has_module('ocr_scanner'))
-            @php
-                $isOcrPage = request()->routeIs('admin.ocr-scanner.*');
-            @endphp
-
-            @unless($isOcrPage)
-                <a href="{{ route('admin.ocr-scanner.index') }}"
-                title="OCR Scanner"
-                class="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full text-white flex items-center justify-center shadow-xl transition-transform hover:scale-110"
-                style="background: var(--brand-500)">
-                    <i data-lucide="scan-line" class="w-5 h-5"></i>
-                </a>
-            @endunless
-        @endif --}}
+        @stack('scripts')       
     </body>
 
     </html>

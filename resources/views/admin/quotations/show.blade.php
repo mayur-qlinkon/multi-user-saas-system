@@ -304,7 +304,7 @@
                 {{-- Products Table --}}
                 <div class="overflow-x-auto mb-10 print:overflow-visible">
                     <table class="w-full text-sm border-collapse min-w-[700px] print:min-w-0">
-                        <thead class="bg-gray-900 text-white">
+                        <thead class="bg-gray-200">
                             <tr>
                                 <th class="py-3 px-4 text-left font-bold rounded-tl-sm">Description</th>
                                 <th class="py-3 px-4 text-center font-bold">HSN</th>

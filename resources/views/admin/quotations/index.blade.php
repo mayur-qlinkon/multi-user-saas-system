@@ -212,14 +212,7 @@
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
                                         @endif
-
-                                        @if(has_permission('quotations.download_pdf'))
-                                        <a href="{{ route('admin.quotations.pdf', $quotation->id) }}"
-                                            class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
-                                            title="Download Quotation">
-                                            <i data-lucide="download" class="w-4 h-4"></i>
-                                        </a>
-                                        @endif
+                                      
 
                                         @if ($quotation->status !== 'converted')
                                             {{-- Mark Sent Button (Quick Action) --}}
@@ -258,6 +251,14 @@
                                                     <i data-lucide="file-check-2" class="w-4 h-4"></i>
                                                 </button>
                                             </form>
+                                            @endif
+
+                                            @if(has_permission('quotations.download_pdf'))
+                                            <a href="{{ route('admin.quotations.pdf', $quotation->id) }}" target="_blank"
+                                                class="w-8 h-8 rounded border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors"
+                                                title="Download Quotation">
+                                                <i data-lucide="download" class="w-4 h-4"></i>
+                                            </a>
                                             @endif
 
                                             {{-- Archive Button --}}

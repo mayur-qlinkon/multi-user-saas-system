@@ -94,8 +94,9 @@ class AdminOrderController extends Controller
         $companyId = Auth::user()->company_id;
 
         $clients = Client::with('state')->where('is_active', true)->get();
-        $stores = Store::where('is_active', true)->get();
-        $warehouses = Warehouse::where('is_active', true)->get();
+        $stores = auth_stores()->get();
+        $storeIds = auth_stores()->pluck('id');
+        $warehouses = Warehouse::whereIn('store_id', $storeIds)->get();
 
         Log::info('[AdminOrder] Create form loaded', [
             'company_id' => $companyId,

@@ -291,7 +291,7 @@ class InvoiceService
                 $isInterState
             );
 
-            $discountType = (isset($item['discount_type']) && $item['discount_type'] === 'percentage')
+           $discountType = (isset($item['discount_type']) && in_array($item['discount_type'], ['percent', 'percentage']))
                 ? 'percentage'
                 : 'fixed';
 
@@ -452,16 +452,22 @@ class InvoiceService
         ];
     }
 
-    protected function generateInvoiceNumber($companyId, $source): string
+    public function generateInvoiceNumber($companyId, $source): string
     {
         $prefix = ($source === 'pos') ? 'POS' : 'INV';
-        $year = date('y').'-'.(date('y') + 1);
-        $count = Invoice::withoutGlobalScopes()
-            ->where('company_id', $companyId)
-            ->withTrashed()
-            ->count() + 1;
+        $yearPrefix = $prefix.'/'.date('y').'-'.(date('y') + 1).'/';
 
-        return $prefix.'/'.$year.'/'.str_pad($count, 4, '0', STR_PAD_LEFT);
+        $latest = Invoice::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('invoice_number', 'like', $yearPrefix.'%')
+            ->withTrashed()
+            ->lockForUpdate()
+            ->orderByDesc('invoice_number')
+            ->value('invoice_number');
+
+        $next = $latest ? ((int) substr($latest, -4)) + 1 : 1;
+
+        return $yearPrefix.str_pad($next, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -474,18 +480,19 @@ class InvoiceService
         // 1. Mark as cancelled
         $invoice->update(['status' => 'cancelled']);
 
-        // 2. Reverse stock for all line items
-        foreach ($invoice->items as $item) {
-            $sku = ProductSku::find($item->product_sku_id);
-            if ($sku) {
-                // Return stock to the warehouse it was originally sold from
-                $this->inventory->addStock(
-                    $sku,
-                    $invoice->warehouse_id,
-                    $item->quantity,
-                    'sale_return',
-                    $invoice
-                );
+         // 2. Reverse stock — only if invoice was confirmed (drafts never deducted stock)
+        if ($wasConfirmed) {
+            foreach ($invoice->items as $item) {
+                $sku = ProductSku::find($item->product_sku_id);
+                if ($sku) {
+                    $this->inventory->addStock(
+                        $sku,
+                        $invoice->warehouse_id,
+                        $item->quantity,
+                        'sale_return',
+                        $invoice
+                    );
+                }
             }
         }
 

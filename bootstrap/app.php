@@ -45,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'store.session' => EnsureValidStoreSession::class,
             'announcements' => CheckPendingAnnouncements::class,
             'custom.domain' => \App\Http\Middleware\ResolveCustomDomain::class,
+            'store.public' => \App\Http\Middleware\ResolveStorePublic::class,           
 
             'customer' => IsCustomer::class,
         ]);

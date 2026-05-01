@@ -202,10 +202,19 @@
                             <template x-for="result in globalSearchResults" :key="result.product_sku_id">
                                 <li @click="addSkuToTable(result); showResults = false"
                                     class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
-                                    <div class="text-[13px] font-bold text-gray-800" x-text="result.product_name"></div>
-                                    <div class="text-[11px] text-gray-500 flex justify-between mt-1 font-medium">
-                                        <span x-text="'SKU: ' + result.sku_code"></span>
-                                        <span x-text="'Cost: ₹' + result.cost" class="text-brand-600 font-bold"></span>
+                                    <div class="flex justify-between items-start gap-2">
+                                        {{-- 🌟 NEW: Primary Display Name (Product - Variant) --}}
+                                        <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="result.display_name"></div>
+                                        <span x-text="'₹' + result.cost" class="text-brand-600 font-bold text-[12px] flex-shrink-0"></span>
+                                    </div>
+                                    {{-- 🌟 NEW: Detailed Secondary Line --}}
+                                    <div class="text-[11px] text-gray-500 flex items-center flex-wrap gap-1.5 mt-1.5 font-medium">
+                                        <span>Code:</span>
+                                        <span class="bg-gray-100 border border-gray-200 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px] font-bold tracking-wide" x-text="result.sku_code"></span>
+                                        <span class="text-gray-300">&middot;</span>
+                                        <span x-text="'Stock: ' + result.stock"></span>
+                                        <span class="text-gray-300">&middot;</span>
+                                        <span x-text="'Unit: ' + result.unit_name"></span>
                                     </div>
                                 </li>
                             </template>
@@ -229,23 +238,19 @@
                             <template x-for="(item, index) in items" :key="item.key">
                                 <tr class="flex flex-col md:table-row border-b md:border-b-0 border-gray-200 p-4 md:p-0 hover:bg-gray-50/50 transition-colors relative">
                                     <td class="block md:table-cell px-0 py-2 md:px-5 md:py-3 w-full md:w-auto">
-                                        <div class="text-[13px] font-bold text-gray-800 pr-8" x-text="item.product_name"></div>
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span
-                                                class="bg-[#dcfce7] text-[#16a34a] text-[10px] px-2 py-0.5 rounded font-mono font-bold tracking-wide border border-green-200"
-                                                x-text="item.sku_code"></span>
-
+                                        <div class="flex items-start gap-2">
+                                            {{-- 🌟 FIX: Primary Title and Icon grouped together --}}
+                                            <div class="text-[13px] font-bold text-gray-800" x-text="item.display_name"></div>
                                             <button type="button" @click="openItemModal(index)"
-                                                class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition-colors"
+                                                class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition-colors flex-shrink-0 mt-0.5"
                                                 title="Edit Tax, Discount & Unit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5"
-                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z">
-                                                    </path>
-                                                </svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                             </button>
-
+                                        </div>
+                                        <div class="flex items-center gap-1.5 mt-1.5">
+                                            <span class="text-gray-500 text-[11px] font-medium">Code:</span>
+                                            <span class="bg-[#f1f5f9] text-[#475569] text-[10px] px-1.5 py-0.5 rounded font-mono font-bold tracking-wide border border-slate-200"
+                                                x-text="item.sku_code"></span>
                                         </div>
                                         <div
                                             class="flex flex-wrap items-center gap-2 mt-2 text-[10px] font-medium text-gray-600">
@@ -283,6 +288,9 @@
                                             :value="item.tax_type">
                                         <input type="hidden" :name="'items[' + index + '][product_name]'"
                                             :value="item.product_name">
+                                        {{-- 🌟 NEW: Keep Display Name on validation errors --}}
+                                        <input type="hidden" :name="'items[' + index + '][display_name]'"
+                                            :value="item.display_name">
                                         <input type="hidden" :name="'items[' + index + '][sku_code]'"
                                             :value="item.sku_code">
                                     </td>
@@ -632,8 +640,9 @@
                 product_id: item.product_id || '',
                 product_sku_id: item.product_sku_id || '',
                 unit_id: item.unit_id || '',
-                product_name: item.product_name || '', // Restore UI data
-                sku_code: item.sku_code || '', // Restore UI data
+                product_name: item.product_name || '', 
+                display_name: item.display_name || item.product_name || '', // 🌟 NEW: Restore Variant String
+                sku_code: item.sku_code || '',
                 quantity: parseFloat(item.quantity) || 1,
                 unit_cost: parseFloat(item.unit_cost) || 0,
                 discount_type: item.discount_type || 'percent',
@@ -657,6 +666,7 @@
                     product_sku_id: prefillSku.id,
                     unit_id: prefillSku.product ? prefillSku.product.purchase_unit_id : '',
                     product_name: prefillSku.product ? prefillSku.product.name : 'Unknown Product',
+                    display_name: prefillSku.display_name || (prefillSku.product ? prefillSku.product.name : 'Unknown Product'), // 🌟 NEW
                     sku_code: prefillSku.sku,
                     quantity: parseFloat(prefillQty) || 1,
                     unit_cost: parseFloat(prefillSku.cost) || 0,
@@ -738,7 +748,13 @@
                     this.isSearching = true; // 🌟 Set to true before fetch
 
                     try {
-                        let response = await fetch(`/admin/api/search-skus?term=${encodeURIComponent(term)}`);
+                        // 🌟 FIX: Include warehouse_id to get accurate stock levels
+                        let url = `/admin/api/search-skus?term=${encodeURIComponent(term)}`;
+                        if (this.selectedWarehouse) {
+                            url += `&warehouse_id=${encodeURIComponent(this.selectedWarehouse)}`;
+                        }
+
+                        let response = await fetch(url);
                         if (!response.ok) {
                             throw new Error("Server Error: Check Laravel Logs");
                         }
@@ -767,6 +783,7 @@
                         product_sku_id: result.product_sku_id,
                         unit_id: result.unit_id,
                         product_name: result.product_name,
+                        display_name: result.display_name, // 🌟 NEW: Map to state
                         sku_code: result.sku_code,
                         quantity: 1,
                         unit_cost: parseFloat(result.cost) || 0,

@@ -33,6 +33,8 @@ return new class extends Migration
 
             // --- System Status ---
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
+             $table->enum('user_type', ['full', 'employee'])
+                  ->default('full');
 
             // --- Laravel Defaults ---
             $table->rememberToken();

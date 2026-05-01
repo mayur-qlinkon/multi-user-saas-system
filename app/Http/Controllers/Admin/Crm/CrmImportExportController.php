@@ -24,6 +24,7 @@ class CrmImportExportController extends Controller
 
     public function importPage()
     {
+        $companyId = Auth::user()->company_id;
 
         $pipelines = CrmPipeline::query()
             ->active()
@@ -31,7 +32,12 @@ class CrmImportExportController extends Controller
             ->with(['stages' => fn ($q) => $q->active()->ordered()])
             ->get();
 
-        return view('admin.crm.leads.import', compact('pipelines'));
+        // 🌟 Fetch users for the quick-assign dropdown
+        $users = \App\Models\User::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('admin.crm.leads.import', compact('pipelines', 'users'));
     }
 
     // ════════════════════════════════════════════════════
@@ -42,9 +48,10 @@ class CrmImportExportController extends Controller
     public function import(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'], // 10MB max
-            'pipeline_id' => ['nullable', 'integer', 'exists:crm_pipelines,id'],
-            'stage_id' => ['nullable', 'integer', 'exists:crm_stages,id'],
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'], // 10MB limit
+            'pipeline_id' => ['nullable', 'exists:crm_pipelines,id'],
+            'stage_id' => ['nullable', 'exists:crm_stages,id'],
+            'assigned_to' => ['nullable', 'exists:users,id'], // 🌟 Validate assignee
         ]);
 
         $companyId = Auth::user()->company_id;
@@ -64,13 +71,19 @@ class CrmImportExportController extends Controller
         }
 
         try {
+            // 🌟 1. Instantiate ONCE with the assigned_to parameter
             $importer = new LeadsImport(
-                companyId: $companyId,
-                pipelineId: $request->pipeline_id,
-                stageId: $request->stage_id,
+                $companyId, 
+                $request->pipeline_id, 
+                $request->stage_id, 
+                $request->assigned_to
             );
 
-            Excel::import($importer, $request->file('file'));
+            // 🌟 2. Pass the EXACT SAME instance to Excel so getResult() works
+            Excel::import(
+                $importer,
+                $request->file('file')
+            );
 
             $result = $importer->getResult();
 

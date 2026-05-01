@@ -38,6 +38,8 @@ class LeadsImport implements SkipsEmptyRows, SkipsOnError, ToCollection, WithBat
     private ?int $pipelineId;
 
     private ?int $stageId;
+    
+    private ?int $assignedTo; // 🌟 Add this property
 
     private array $sourceMap = [];
 
@@ -46,11 +48,13 @@ class LeadsImport implements SkipsEmptyRows, SkipsOnError, ToCollection, WithBat
     public function __construct(
         int $companyId,
         ?int $pipelineId = null,
-        ?int $stageId = null
+        ?int $stageId = null,
+        ?int $assignedTo = null // 🌟 Accept it in constructor
     ) {
         $this->companyId = $companyId;
         $this->pipelineId = $pipelineId;
         $this->stageId = $stageId;
+        $this->assignedTo = $assignedTo; // 🌟 Assign it
 
         // ── Pre-load source and tag maps for fast lookup ──
         CrmLeadSource::where('company_id', $companyId)
@@ -157,6 +161,11 @@ class LeadsImport implements SkipsEmptyRows, SkipsOnError, ToCollection, WithBat
                     'description' => trim($row['notes'] ?? $row['description'] ?? '') ?: null,
                     'created_by' => Auth::id(),
                 ]);
+
+                // 🌟 NEW: Attach the assigned user immediately after lead creation
+                if ($this->assignedTo) {
+                    $lead->assignees()->syncWithoutDetaching([$this->assignedTo]);
+                }
 
                 // ── Sync tags if provided ──
                 $tagsRaw = trim($row['tags'] ?? '');

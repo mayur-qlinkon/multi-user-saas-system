@@ -13,6 +13,9 @@ use App\Models\CrmStage;
 use App\Models\CrmTag;
 use App\Models\CrmTask;
 use App\Models\Order;
+
+use App\Notifications\Crm\CrmTaskAssignedNotification;
+
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -388,6 +391,14 @@ class CrmLeadService
         }
 
         $this->refreshNextFollowup($lead);
+
+        // 🌟 Send Notification to assignee (if it's not the user currently creating it)
+        if ($task->assigned_to && $task->assigned_to != Auth::id()) {
+            $assignee = \App\Models\User::find($task->assigned_to);
+            if ($assignee) {
+                $assignee->notify(new CrmTaskAssignedNotification($task));
+            }
+        }
 
         Log::info('[CrmLeadService] Task created', [
             'lead_id' => $lead->id,

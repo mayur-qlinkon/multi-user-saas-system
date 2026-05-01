@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-<div x-data="ocrScanner()" class="max-w-6xl mx-auto w-full pb-10">
+<div x-data="ocrScanner()" class="w-full pb-10">
 
     {{-- Top Action Bar --}}
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">

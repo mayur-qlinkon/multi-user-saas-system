@@ -3,6 +3,7 @@
 namespace App\Services\Hrm;
 
 use App\Models\Hrm\Employee;
+use App\Models\Hrm\User;
 use App\Services\ImageUploadService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,17 @@ class EmployeeService
 
             $employee = Employee::create($data);
             $employee->user->stores()->sync($storeIds);
+
+            // If the linked user has no non-employee, non-customer roles,
+            // reclassify them as 'employee' type so they stop consuming a user_limit seat.
+            $linkedUser = $employee->user;
+            $hasFullSystemRole = $linkedUser->roles()
+                ->whereNotIn('slug', ['employee', 'customer'])
+                ->exists();
+
+            if (! $hasFullSystemRole) {
+                $linkedUser->update(['user_type' => 'employee']);
+            }
 
             return $employee->fresh(['user.stores', 'shift']);
         });
@@ -75,7 +87,17 @@ class EmployeeService
     public function delete(Employee $employee): void
     {
         DB::transaction(function () use ($employee) {
+            // Capture user_id before soft-delete removes the relationship.
+            $userId = $employee->user_id;
+
             $employee->delete();
+
+            // Revert the user to 'full' type so they are counted correctly.
+            // They no longer have an active employee profile, so they would
+            // consume a user_limit seat if they retain any system access.
+            if ($userId) {
+                User::where('id', $userId)->update(['user_type' => 'full']);
+            }
         });
     }
 

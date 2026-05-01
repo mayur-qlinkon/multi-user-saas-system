@@ -137,6 +137,66 @@ class ExpenseService
     }
 
     // ════════════════════════════════════════════════════
+    //  PAYMENT HANDLING
+    // ════════════════════════════════════════════════════
+   public function recordPayment(Expense $expense, array $data)
+    {
+        return DB::transaction(function () use ($expense, $data) {
+            try {
+
+                // 🌟 Normalize data for PaymentService
+                $payload = [
+                    'amount' => $data['amount'],
+                    'payment_method_id' => $data['payment_method_id'] ?? null,
+                    'payment_date' => $data['payment_date'] ?? now(),
+                    'reference' => $data['reference'] ?? null,
+                    'notes' => $data['notes'] ?? null,
+                    'status' => 'completed',
+                ];
+
+                // 🌟 Use CENTRAL SERVICE (this handles EVERYTHING)
+                $payment = app(\App\Services\PaymentService::class)
+                    ->recordPayment($expense, $payload);
+
+                $expense->refresh();
+
+                // 🔁 Recalculate totals AFTER payment
+                $totalPaid = $expense->payments()
+                    ->where('status', 'completed')
+                    ->sum('amount_received');
+
+                if ($totalPaid >= $expense->total_amount) {
+                    $expense->update([
+                        'payment_status' => 'paid',
+                    ]);
+                } else {
+                    $expense->update([
+                        'payment_status' => 'partial',
+                    ]);
+                }
+
+                Log::info('[ExpenseService] Payment recorded via PaymentService', [
+                    'expense_id' => $expense->id,
+                    'payment_id' => $payment->id,
+                    'amount' => $payload['amount'],
+                    'by_user' => Auth::id(),
+                ]);
+
+                return $payment;
+
+            } catch (Throwable $e) {
+                Log::error('[ExpenseService] Payment failed', [
+                    'expense_id' => $expense->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                throw $e;
+            }
+        });
+    }
+    
+
+    // ════════════════════════════════════════════════════
     //  PRIVATE HELPERS (The heavy lifting)
     // ════════════════════════════════════════════════════
 

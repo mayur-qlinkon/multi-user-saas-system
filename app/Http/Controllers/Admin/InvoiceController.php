@@ -52,9 +52,11 @@ class InvoiceController extends Controller
             ->when($storeIds, fn ($q) => $q->whereIn('store_id', $storeIds))
             ->latest();
 
-        if ($request->filled('search')) {
-            $query->where('invoice_number', 'like', "%{$request->search}%")
-                ->orWhere('customer_name', 'like', "%{$request->search}%");
+         if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('invoice_number', 'like', "%{$request->search}%")
+                  ->orWhere('customer_name', 'like', "%{$request->search}%");
+            });
         }
 
         if ($request->filled('status')) {
@@ -99,7 +101,7 @@ class InvoiceController extends Controller
                     'challan_item_id' => $i->id,
                     'product_id' => $i->product_id,
                     'product_sku_id' => $i->product_sku_id,
-                    'unit_id' => $i->productSku?->unit_id,
+                    'unit_id' => $i->unit_id ?? $i->productSku?->unit_id,
                     'product_name' => $i->product_name,
                     'sku_code' => $i->sku_code,
                     'hsn_code' => $i->hsn_code,
@@ -119,17 +121,17 @@ class InvoiceController extends Controller
         $orderPrefill    = null;
         $orderPrefillJs  = null;
         if ($request->filled('order_id')) {
-            $orderPrefill = Order::with(['items.sku.unit'])
+             $orderPrefill = Order::with(['items.skuWithTrashed.unit'])
                 ->where('company_id', Auth::user()->company_id)
                 ->findOrFail($request->order_id);
 
             // Build a JS-safe array of items for Alpine.js pre-population.
             // unit_price may be null for catalog/inquiry orders — defaults to 0
             // so the user can fill in the price on the invoice form.
-            $orderPrefillJs = $orderPrefill->items->map(fn ($i) => [
+           $orderPrefillJs = $orderPrefill->items->map(fn ($i) => [
                 'product_id'     => $i->product_id,
                 'product_sku_id' => $i->sku_id,
-                'unit_id'        => $i->sku?->unit_id,
+                'unit_id'        => $i->skuWithTrashed?->unit_id,
                 'product_name'   => $i->product_name,
                 'sku_code'       => $i->sku_code ?? '',
                 'hsn_code'       => $i->sku?->hsn_code ?? '',
@@ -208,6 +210,7 @@ class InvoiceController extends Controller
      */
     public function show(Invoice $invoice)
     {
+        abort_if($invoice->company_id !== Auth::user()->company_id, 403);
         // 🌟 Added 'company' and 'store.state' to eager load the new header data!
         $invoice->load([
             'items.sku.product',
@@ -227,6 +230,7 @@ class InvoiceController extends Controller
      */
     public function edit(Invoice $invoice)
     {
+        abort_if($invoice->company_id !== Auth::user()->company_id, 403);
         if ($invoice->status === 'cancelled') {
             return back()->with('error', 'Cannot edit a cancelled invoice.');
         }
@@ -324,6 +328,12 @@ class InvoiceController extends Controller
 
         try {
             DB::transaction(function () use ($request, $invoice) {
+                // Re-check balance inside transaction to prevent TOCTOU race
+                $totalPaidNow = $invoice->payments()->where('status', 'completed')->lockForUpdate()->sum('amount');
+                $balanceDueNow = round($invoice->grand_total - $totalPaidNow, 2);
+                if ($balanceDueNow <= 0 || round($request->amount_paid, 2) > $balanceDueNow) {
+                    throw new \RuntimeException('Payment amount exceeds current balance due. Please refresh and try again.');
+                }
                 // 4. Record the payment using our robust service
                 // (This will automatically trigger syncDocumentPaymentStatus to update the Invoice to 'partial' or 'paid')
                 $this->paymentService->recordPayment($invoice, [
@@ -348,6 +358,7 @@ class InvoiceController extends Controller
      */
     public function downloadPdf(Invoice $invoice)
     {
+        abort_if($invoice->company_id !== Auth::user()->company_id, 403);
         // Load all required relations
         $invoice->load([
             'items.sku.product',
@@ -377,6 +388,7 @@ class InvoiceController extends Controller
      */
     public function destroy(Invoice $invoice)
     {
+        abort_if($invoice->company_id !== Auth::user()->company_id, 403);
         if ($invoice->status === 'cancelled') {
             return back()->with('error', 'Invoice is already cancelled.');
         }

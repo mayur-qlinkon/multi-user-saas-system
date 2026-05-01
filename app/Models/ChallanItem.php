@@ -31,6 +31,7 @@ class ChallanItem extends Model
         'sku_code',
         'hsn_code',
         'unit',
+        'unit_id',
 
         // Quantities
         'qty_sent',
@@ -348,7 +349,7 @@ class ChallanItem extends Model
         return [
             'challan_id' => $challanId,
             'product_id' => $product->id,
-            'sku_id' => $sku->id,
+            'product_sku_id' => $sku->id,
             'product_name' => $product->name,
             'sku_label' => $skuLabel ?: null,
             'sku_code' => $sku->sku ?? null,

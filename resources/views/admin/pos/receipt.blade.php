@@ -151,14 +151,31 @@
                     {{-- SMART SECOND ROW FOR HSN & TAX (Fits perfectly in 80mm) --}}
                     <tr class="meta-row">
                         <td colspan="3">
+                            @php
+                                $taxPct = (float) $item->tax_percent;
+                                $qty = (float) $item->quantity;
+                                $unitPrice = (float) $item->unit_price;
+                                $taxType = $item->tax_type ?? 'exclusive'; 
+
+                                if ($taxType === 'inclusive') {
+                                    // INCLUSIVE: Price already includes tax. Do not go higher.
+                                    $lineTotal = $unitPrice * $qty;
+                                    $taxableLine = $lineTotal / (1 + ($taxPct / 100));
+                                    $taxAmtLine = $lineTotal - $taxableLine;
+                                } else {
+                                    // EXCLUSIVE: Tax is added ON TOP of the base price.
+                                    $taxableLine = $unitPrice * $qty;
+                                    $taxAmtLine = $taxableLine * ($taxPct / 100);
+                                }
+                            @endphp
+
                             @if ($item->hsn_code)
                                 HSN:{{ $item->hsn_code }} |
-                            @endif Rate:₹{{ number_format($item->unit_price, 2) }} |
-                            Tax:{{ (float) $item->tax_percent }}%
-                            @if(batch_enabled() && isset($receiptBatchMovements[$item->product_sku_id]))
-                                @foreach($receiptBatchMovements[$item->product_sku_id] as $bm)
-                                    | Batch:{{ $bm->batch_number }}
-                                @endforeach
+                            @endif
+                            Taxable:₹{{ number_format($taxableLine, 2) }}
+
+                            @if ($taxPct > 0)
+                                | {{ $taxType === 'inclusive' ? 'Incl.' : '+' }}{{ $taxPct }}% GST:₹{{ number_format($taxAmtLine, 2) }}
                             @endif
                         </td>
                     </tr>
@@ -167,72 +184,102 @@
         </table>
 
         {{-- Financials & GST Breakup --}}
+        @php
+            $trueTaxableSubtotal = 0;
+            $trueGstTotal = 0;
+
+            foreach ($invoice->items as $item) {
+                $taxPct = (float) $item->tax_percent;
+                $qty = (float) $item->quantity;
+                $unitPrice = (float) $item->unit_price;
+                $taxType = $item->tax_type ?? 'exclusive';
+
+                if ($taxType === 'inclusive') {
+                    $lineTotal = $unitPrice * $qty;
+                    $taxable = $lineTotal / (1 + ($taxPct / 100));
+                    $gst = $lineTotal - $taxable;
+                } else {
+                    $taxable = $unitPrice * $qty;
+                    $gst = $taxable * ($taxPct / 100);
+                }
+
+                $trueTaxableSubtotal += $taxable;
+                $trueGstTotal += $gst;
+            }
+
+            // Split total GST equally for CGST/SGST
+            $trueCgst = $trueGstTotal / 2;
+            $trueSgst = $trueGstTotal / 2;
+        @endphp
+
         <table class="totals">
+            {{-- 1. Display Taxable Subtotal --}}
             <tr>
-                <td>Subtotal</td>
-                <td class="text-right">{{ number_format($invoice->subtotal, 2) }}</td>
+                <td>Taxable Value</td>
+                <td class="text-right">₹{{ number_format($trueTaxableSubtotal, 2) }}</td>
             </tr>
 
-            {{-- 🌟 FIXED: SHOW DISCOUNT IF APPLIED --}}            
+            {{-- 2. Display Discount (If Any) --}}
             @if ($invoice->discount_amount > 0)
                 <tr>
-                    <td class="font-bold">
-                        Discount 
-                        @if(in_array($invoice->discount_type, ['percent', 'percentage']) && $invoice->discount_value > 0)
-                            ({{ (float) $invoice->discount_value }}%)
-                        @endif
-                    </td>
-                    <td class="text-right font-bold">-{{ number_format($invoice->discount_amount, 2) }}</td>
+                    <td class="font-bold">Discount</td>
+                    <td class="text-right font-bold">-₹{{ number_format($invoice->discount_amount, 2) }}</td>
                 </tr>
             @endif
 
-            {{-- 🌟 NEW: INDIAN GST BREAKUP --}}
-            @if ($invoice->igst_amount > 0)
+            {{-- 3. Display Split GST --}}
+            @if ($trueGstTotal > 0)
                 <tr>
-                    <td>IGST (Inter-state)</td>
-                    <td class="text-right">{{ number_format($invoice->igst_amount, 2) }}</td>
+                    <td>CGST</td>
+                    <td class="text-right">₹{{ number_format($trueCgst, 2) }}</td>
                 </tr>
-            @else
-                @if ($invoice->cgst_amount > 0 || $invoice->sgst_amount > 0)
-                    <tr>
-                        <td>CGST</td>
-                        <td class="text-right">{{ number_format($invoice->cgst_amount, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td>SGST</td>
-                        <td class="text-right">{{ number_format($invoice->sgst_amount, 2) }}</td>
-                    </tr>
-                @endif
+                <tr>
+                    <td>SGST</td>
+                    <td class="text-right">₹{{ number_format($trueSgst, 2) }}</td>
+                </tr>
             @endif
 
-            {{-- 🌟 NEW: ROUND OFF --}}
+            {{-- 4. Round Off --}}
             @if ($invoice->round_off != 0)
                 <tr>
                     <td>Round Off</td>
-                    <td class="text-right">{{ number_format($invoice->round_off, 2) }}</td>
+                    <td class="text-right">₹{{ number_format($invoice->round_off, 2) }}</td>
                 </tr>
             @endif
 
+            {{-- 5. Grand Total (Sum of inclusive prices) --}}
             <tr class="font-bold" style="font-size: 15px;">
                 <td style="border-top: 1px dashed #000; padding-top: 5px;">GRAND TOTAL</td>
                 <td class="text-right" style="border-top: 1px dashed #000; padding-top: 5px;">
-                    ₹{{ number_format($invoice->grand_total, 2) }}</td>
+                    ₹{{ number_format($invoice->grand_total, 2) }}
+                </td>
             </tr>
-        </table>
+        </table>    
 
         {{-- Smart Divider Logic --}}
         @php
             $upiId = $invoice->store->upi_id ?? null;
-            $paymentStatus = strtolower($invoice->payment_status ?? 'unpaid');
             $showQr = false;
 
+            // 🔥 CALCULATE ACTUAL PAYMENT STATUS
+            $amountReceived = $payment->amount_received ?? 0;
+            $grandTotal = $invoice->grand_total ?? 0;
+
+            $isFullyPaid = $amountReceived >= $grandTotal;
+
             if (!empty($upiId)) {
-                if ($paymentStatus !== 'paid') {
+
+                // ✅ SHOW QR IF NOT FULLY PAID
+                if (!$isFullyPaid) {
                     $showQr = true;
-                } elseif (isset($payment) && isset($payment->paymentMethod)) {
+                }
+
+                // ✅ ALSO SHOW QR IF PAYMENT METHOD IS UPI (even if full paid)
+                elseif (isset($payment) && isset($payment->paymentMethod)) {
                     $methodStr = strtolower(
-                        ($payment->paymentMethod->name ?? '') . ' ' . ($payment->paymentMethod->slug ?? ''),
+                        ($payment->paymentMethod->name ?? '') . ' ' . ($payment->paymentMethod->slug ?? '')
                     );
+
                     if (
                         str_contains($methodStr, 'upi') ||
                         str_contains($methodStr, 'qr') ||

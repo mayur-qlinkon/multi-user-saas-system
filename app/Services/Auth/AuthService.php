@@ -3,7 +3,6 @@
 namespace App\Services\Auth;
 
 use App\Models\Company;
-use App\Models\Hrm\Employee;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -49,22 +48,10 @@ class AuthService
 
     public function login(array $credentials, bool $remember = false): User
     {
-        $login = $credentials['email'];
-
-        // If the input is not an email, treat it as an employee code and resolve to email.
-        if (! str_contains($login, '@')) {
-            $employee = Employee::withoutGlobalScope('tenant')
-                ->where('employee_code', strtoupper($login))
-                ->with('user')
-                ->first();
-
-            if ($employee?->user) {
-                $login = $employee->user->email;
-            }
-        }
-
+        // Email-only authentication. Employee code login is not supported —
+        // this is a multi-tenant system and employee codes are not globally unique.
         $user = User::with(['company', 'roles.permissions', 'stores'])
-            ->where('email', $login)
+            ->where('email', $credentials['email'])
             ->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {

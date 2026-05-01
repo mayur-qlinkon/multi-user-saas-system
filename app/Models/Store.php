@@ -18,15 +18,20 @@ class Store extends Model
         'company_id', 'name', 'slug', 'email', 'phone', 'upi_id', 'logo', 'signature',
         'gst_number', 'currency', 'address', 'city', 'state_id', 'zip_code', 'country',
         'office_lat', 'office_lng', 'gps_radius_meters', 'is_active',
-        // New Billing Fields
+        // Billing Fields
         'bank_name', 'account_name', 'account_number', 'ifsc_code', 'branch_name',
         'invoice_prefix', 'quotation_prefix', 'purchase_prefix', 'next_invoice_number',
         'default_tax_type', 'default_payment_terms', 'round_off_amounts',
         'invoice_footer_note', 'invoice_terms',
+        // Public Storefront Fields
+        'tagline', 'description', 'whatsapp', 'instagram', 'facebook', 'twitter',
+        'seo_title', 'seo_description', 'business_hours', 'map_embed_url',
+        'storefront_enabled',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'storefront_enabled' => 'boolean',
         'next_invoice_number' => 'integer',
         'office_lat' => 'float',
         'office_lng' => 'float',
@@ -165,5 +170,87 @@ class Store extends Model
         }
 
         return null;
+    }
+     public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function warehouses()
+    {
+        return $this->hasMany(Warehouse::class);
+    }
+
+    public function stockTransfersOut()
+    {
+        return $this->hasMany(StockTransfer::class, 'from_store_id');
+    }
+
+    public function stockTransfersIn()
+    {
+        return $this->hasMany(StockTransfer::class, 'to_store_id');
+    }
+
+    public function pricingRules()
+    {
+        return $this->hasMany(StorePricingRule::class);
+    }
+
+    // ── Public storefront accessors (with company-level fallback) ───────
+
+    public function getPublicPhoneAttribute(): ?string
+    {
+        return $this->phone ?: get_setting('call_number');
+    }
+
+    public function getPublicEmailAttribute(): ?string
+    {
+        return $this->email ?: get_setting('support_email');
+    }
+
+    public function getPublicWhatsappAttribute(): ?string
+    {
+        return $this->whatsapp ?: get_setting('whatsapp');
+    }
+
+    public function getPublicAddressAttribute(): ?string
+    {
+        $parts = array_filter([$this->address, $this->city, $this->zip_code]);
+        return $parts ? implode(', ', $parts) : get_setting('storefront_address');
+    }
+
+    public function getPublicTaglineAttribute(): ?string
+    {
+        return $this->tagline ?: get_setting('storefront_tagline');
+    }
+
+    public function getPublicInstagramAttribute(): ?string
+    {
+        return $this->instagram ?: get_setting('instagram');
+    }
+
+    public function getPublicFacebookAttribute(): ?string
+    {
+        return $this->facebook ?: get_setting('facebook');
+    }
+
+    public function getPublicUrlAttribute(): string
+    {
+        return url("/{$this->company->slug}/{$this->slug}");
     }
 }

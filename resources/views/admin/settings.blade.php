@@ -705,11 +705,17 @@
                     </div>
 
                     {{-- ════════════════════════════════
-                 TAB 4 — STOREFRONT
-            ════════════════════════════════ --}}
+                        TAB 4 — STOREFRONT
+                    ════════════════════════════════ --}}
                     <div x-show="activeTab === 'storefront'" x-cloak x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 translate-y-1"
                         x-transition:enter-end="opacity-100 translate-y-0">
+                        <div class="p-3 bg-blue-50 border border-blue-100 rounded-xl mb-5 flex gap-2">
+                            <i data-lucide="info" class="w-4 h-4 text-blue-500 mt-0.5 shrink-0"></i>
+                            <p class="text-xs text-blue-700">These are <strong>company-wide defaults</strong>.
+                            Per-branch contact details, WhatsApp, hours, and social links are configured under
+                            <a href="{{ route('admin.stores.index') }}" class="underline font-semibold">Stores → Edit Branch → Public Page</a>.</p>
+                        </div>
 
                         <p class="section-title"><i data-lucide="monitor" class="w-4 h-4"></i> Public Shop Status</p>
 

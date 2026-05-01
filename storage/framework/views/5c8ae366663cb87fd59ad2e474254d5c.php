@@ -87,14 +87,14 @@
     <section class="hero-gradient min-h-screen flex items-center pt-16">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-24 lg:py-32 text-center">
             <span class="inline-block text-xs font-bold tracking-widest text-brand-100 uppercase mb-4 bg-white/10 px-4 py-1.5 rounded-full">
-                Smart ERP for Indian SMEs
+                Smart Software for Indian Businesses
             </span>
             <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
                 Run Your Business<br>
                 <span class="text-brand-100">Smarter, Faster.</span>
             </h1>
             <p class="text-base sm:text-lg text-teal-100/80 max-w-2xl mx-auto mb-10 leading-relaxed">
-                <?php echo e(get_system_setting('app_name', 'Qlinkon')); ?> provides a complete ERP solution — invoicing,
+                <?php echo e(get_system_setting('app_name', config('app.name','Qlinkon'))); ?> provides a complete business solution — invoicing,
                 inventory, POS, attendance &amp; more. Built for Indian small businesses, it offers
                 powerful multi‑store handling so you can manage all your outlets in one software.
             </p>

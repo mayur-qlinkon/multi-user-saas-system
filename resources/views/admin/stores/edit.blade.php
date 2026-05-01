@@ -245,6 +245,93 @@
                         </div>
                     </div>
 
+                    {{-- ========================================== --}}
+                    {{-- SECTION 6: PUBLIC STOREFRONT PAGE          --}}
+                    {{-- ========================================== --}}
+                    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h2 class="text-sm sm:text-base font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex items-center gap-2">
+                            <i data-lucide="globe" class="w-4 h-4 text-brand-500"></i> 6. Public Store Page
+                            <a href="/{{ auth()->user()->company?->slug }}/{{ $store->slug }}" target="_blank"
+                            class="ml-auto text-xs text-brand-500 underline font-normal">Preview →</a>
+                        </h2>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                            {{-- Storefront enabled toggle --}}
+                            <div class="sm:col-span-2 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="storefront_enabled" value="1"
+                                        {{ old('storefront_enabled', $store->storefront_enabled) ? 'checked' : '' }}
+                                        class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full
+                                        peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                        after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5
+                                        after:transition-all peer-checked:bg-brand-500"></div>
+                                </label>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-700">Store is publicly visible</p>
+                                    <p class="text-xs text-gray-400">Uncheck to take this branch offline without affecting other branches</p>
+                                </div>
+                            </div>
+
+                            {{-- Tagline --}}
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Store Tagline</label>
+                                <input type="text" name="tagline" value="{{ old('tagline', $store->tagline) }}"
+                                    maxlength="160" placeholder="e.g. Fresh groceries, daily delivery"
+                                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none">
+                            </div>
+
+                            {{-- WhatsApp --}}
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">WhatsApp Number</label>
+                                <input type="text" name="whatsapp" value="{{ old('whatsapp', $store->whatsapp) }}"
+                                    maxlength="20" placeholder="9876543210"
+                                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none">
+                            </div>
+
+                            {{-- Business Hours --}}
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Business Hours</label>
+                                <input type="text" name="business_hours" value="{{ old('business_hours', $store->business_hours) }}"
+                                    placeholder="Mon-Sat: 9am-8pm, Sun: 10am-6pm"
+                                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none">
+                            </div>
+
+                            {{-- Instagram --}}
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Instagram URL</label>
+                                <input type="url" name="instagram" value="{{ old('instagram', $store->instagram) }}"
+                                    placeholder="https://instagram.com/yourbranch"
+                                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none">
+                            </div>
+
+                            {{-- Facebook --}}
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Facebook URL</label>
+                                <input type="url" name="facebook" value="{{ old('facebook', $store->facebook) }}"
+                                    placeholder="https://facebook.com/yourbranch"
+                                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none">
+                            </div>
+
+                            {{-- SEO Title --}}
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">SEO Title</label>
+                                <input type="text" name="seo_title" value="{{ old('seo_title', $store->seo_title) }}"
+                                    maxlength="160" placeholder="Branch Name — City — Your Brand"
+                                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none">
+                            </div>
+
+                            {{-- SEO Description --}}
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">SEO Description</label>
+                                <textarea name="seo_description" maxlength="300"
+                                    placeholder="Describe this branch in 1-2 sentences for Google search..."
+                                    class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-brand-500 outline-none resize-none" rows="2">{{ old('seo_description', $store->seo_description) }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             @endif
 

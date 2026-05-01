@@ -299,24 +299,23 @@
                             <template x-for="result in globalSearchResults" :key="result.product_sku_id">
                                 <li @click="addSkuToTable(result); showResults = false"
                                     class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <div class="text-[13px] font-bold text-gray-800" x-text="result.product_name">
-                                            </div>
-                                            <div class="text-[10px] text-gray-400 font-mono mt-0.5"
-                                                x-text="result.sku_code"></div>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-[12px] font-black text-[#108c2a]"
-                                                x-text="result.price ? '₹' + parseFloat(result.price).toFixed(2) : '₹0.00'">
-                                            </div>
-                                        </div>
-                                        <div class="text-[10px] text-gray-500" x-text="'Stock: ' + (result.stock || 0)">
-                                        </div>
+                                    <div class="flex justify-between items-start gap-2">
+                                        {{-- 🌟 NEW: Primary Display Name (Product - Variant) --}}
+                                        <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="result.display_name"></div>
+                                        <div class="text-[12px] font-black text-[#108c2a] flex-shrink-0"
+                                            x-text="result.price ? '₹' + parseFloat(result.price).toFixed(2) : '₹0.00'"></div>
                                     </div>
-                    </div>
-                    </li>
-                    </template>
+                                    {{-- 🌟 NEW: Detailed Secondary Line --}}
+                                    <div class="text-[11px] text-gray-500 flex items-center flex-wrap gap-1.5 mt-1.5 font-medium">
+                                        <span>Code:</span>
+                                        <span class="bg-gray-100 border border-gray-200 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px] font-bold tracking-wide" x-text="result.sku_code"></span>
+                                        <span class="text-gray-300">&middot;</span>
+                                        <span x-text="'Stock: ' + (result.stock || 0)"></span>
+                                        <span class="text-gray-300">&middot;</span>
+                                        <span x-text="'Unit: ' + (result.unit_name || 'Unit')"></span>
+                                    </div>
+                                </li>
+                            </template>
                     </ul>
                 </div>
             </div>
@@ -343,21 +342,21 @@
 
                                 {{-- 1. Product Details & Actions --}}
                                 <td class="px-5 py-3">
-                                    <div class="text-[13px] font-bold text-gray-800 flex items-center gap-2">
-                                        <span x-text="item.product_name"></span>
+                                    <div class="flex items-start gap-2">
+                                        {{-- 🌟 FIX: Primary Title + Icon tightly grouped --}}
+                                        <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="item.display_name"></div>
                                         <button type="button" @click="openItemModal(index)"
-                                            class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition-colors"
+                                            class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1 rounded transition-colors flex-shrink-0 mt-0.5"
                                             title="Edit Tax, Discount & Unit">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                                            </svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                         </button>
                                     </div>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-[11px] text-gray-500 font-mono"
-                                            x-text="'SKU: ' + item.sku_code"></span>
+                                    <div class="flex items-center gap-2 mt-1.5">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-gray-500 text-[11px] font-medium">Code:</span>
+                                            <span class="bg-[#dcfce7] text-[#16a34a] text-[10px] px-1.5 py-0.5 rounded font-mono font-bold tracking-wide border border-green-200"
+                                                x-text="item.sku_code"></span>
+                                        </div>
 
                                         <span x-show="item.discount_value > 0"
                                             class="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
@@ -378,6 +377,9 @@
                                         :value="item.product_id">
                                     <input type="hidden" :name="'items[' + index + '][product_name]'" 
                                         :value="item.product_name">
+                                    {{-- 🌟 NEW: Keep Display Name on validation errors --}}
+                                    <input type="hidden" :name="'items[' + index + '][display_name]'" 
+                                        :value="item.display_name">
                                     <input type="hidden" :name="'items[' + index + '][sku_code]'" 
                                         :value="item.sku_code">
                                     <input type="hidden" :name="'items[' + index + '][product_sku_id]'"
@@ -479,8 +481,11 @@
                         {{-- Header: Name, SKU, Remove --}}
                         <div class="flex justify-between items-start pr-8">
                             <div>
-                                <div class="text-[13px] font-bold text-gray-800" x-text="item.product_name"></div>
-                                <div class="text-[11px] text-gray-500 font-mono mt-0.5" x-text="'SKU: ' + item.sku_code"></div>
+                                <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="item.display_name"></div>
+                                <div class="flex items-center gap-1.5 mt-1">
+                                    <span class="text-gray-500 text-[11px] font-medium">Code:</span>
+                                    <div class="text-[10px] text-gray-600 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded font-mono font-bold tracking-wide" x-text="item.sku_code"></div>
+                                </div>
                                 <span x-show="item.discount_value > 0"
                                     class="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold mt-1 inline-block">
                                     Disc: <span x-text="item.discount_type === 'percentage' ? item.discount_value + '%' : '₹' + item.discount_value"></span>
@@ -843,6 +848,7 @@
                             product_sku_id:  item.product_sku_id,
                             unit_id:         item.unit_id,
                             product_name:    item.product_name || 'Restored Item',
+                            display_name:    item.display_name || item.product_name || 'Restored Item',
                             sku_code:        item.sku_code || '-',
                             hsn_code:        item.hsn_code || '',
                             quantity:        parseFloat(item.quantity) || 1,
@@ -864,6 +870,7 @@
                             product_sku_id:  item.product_sku_id,
                             unit_id:         item.unit_id,
                             product_name:    item.product_name,
+                            display_name:    item.display_name || item.product_name,
                             sku_code:        item.sku_code,
                             hsn_code:        item.hsn_code || '',
                             quantity:        item.quantity,
@@ -888,6 +895,7 @@
                             product_sku_id:  item.product_sku_id,
                             unit_id:         item.unit_id,
                             product_name:    item.product_name,
+                            display_name:    item.display_name || item.product_name,
                             sku_code:        item.sku_code  || '',
                             hsn_code:        item.hsn_code  || '',
                             quantity:        item.quantity,
@@ -1115,6 +1123,7 @@
                         product_sku_id:  result.product_sku_id,
                         unit_id:         result.unit_id,
                         product_name:    result.product_name,
+                        display_name:    result.display_name, // 🌟 Map the new computed name
                         sku_code:        result.sku_code,
                         hsn_code:        result.hsn_code || '',
                         quantity:        1,

@@ -54,6 +54,13 @@ class Expense extends Model implements HasMedia
         'approved_by',
         'approved_at',
     ];
+    /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = [
+        'total_paid',
+        'due_amount'
+    ];
 
     /**
      * The attributes that should be cast.
@@ -141,5 +148,22 @@ class Expense extends Model implements HasMedia
     public function payments(): MorphMany
     {
         return $this->morphMany(Payment::class, 'paymentable');
+    }
+    /**
+     * Computed: Total amount paid so far.
+     */
+    public function getTotalPaidAttribute(): float
+    {
+        return (float) $this->payments()
+            ->where('status', 'completed')
+            ->sum('amount_received');
+    }
+
+    /**
+     * Computed: Remaining balance.
+     */
+    public function getDueAmountAttribute(): float
+    {
+        return max(0, (float) $this->total_amount - $this->total_paid);
     }
 }

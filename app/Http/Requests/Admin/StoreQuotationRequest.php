@@ -55,7 +55,7 @@ class StoreQuotationRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['nullable', 'exists:products,id'],
             'items.*.product_sku_id' => ['nullable', 'exists:product_skus,id'],
-            'items.*.unit_id' => ['nullable', 'exists:units,id'],
+            'items.*.unit_id' => ['required', 'exists:units,id'],
 
             // Line Item Snapshots
             'items.*.product_name' => ['required', 'string', 'max:255'],

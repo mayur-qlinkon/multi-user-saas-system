@@ -86,9 +86,12 @@ class LoginController extends Controller
             return route('admin.dashboard');
         }
 
-        if ($user->employee) {
+        if (($user->user_type ?? 'full') === 'employee') {
             return route('admin.hrm.employee.dashboard');
         }
+        // if ($user->employee) {
+        //     return route('admin.hrm.employee.dashboard');
+        // }
 
         return route('admin.dashboard');
     }

@@ -6,12 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreQuotationRequest;
 use App\Http\Requests\Admin\UpdateQuotationRequest;
 use App\Models\Client;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
 use App\Models\State;
-use App\Models\Store;
 use App\Models\Unit;
 use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -319,77 +316,49 @@ class QuotationController extends Controller
 
             $companyId = $quotation->company_id;
 
-            // Generate New Invoice Number safely
-            $prefix = 'INV-'.date('ym');
-            $latestInvoice = Invoice::withTrashed()
-                ->where('company_id', $companyId)
-                ->where('invoice_number', 'like', "{$prefix}-%")
-                ->orderBy('invoice_number', 'desc')
-                ->first();
-            $nextSequence = $latestInvoice ? ((int) substr($latestInvoice->invoice_number, -4)) + 1 : 1;
-            $invoiceNumber = $prefix.'-'.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
+            // Delegate number generation to the canonical service to avoid format divergence
+            $invoiceService = app(\App\Services\InvoiceService::class);
+            $invoiceNumber = $invoiceService->generateInvoiceNumber($companyId, 'direct');
 
             // Create the Invoice Header
-            $invoice = Invoice::create([
-                'company_id' => $companyId,
-                'store_id' => $quotation->store_id,
-                'warehouse_id' => Warehouse::where('company_id', $companyId)->first()->id,
-                'customer_id' => $quotation->customer_id,
-                'customer_name' => $quotation->customer_name,
-                'billing_address' => $quotation->billing_address,
-                'shipping_address' => $quotation->shipping_address,
-                'created_by' => Auth::id(),
-                'invoice_number' => $invoiceNumber,
-                'source' => 'direct',
-                'invoice_date' => now()->toDateString(),
-                'due_date' => now()->addDays(7)->toDateString(),
-                'supply_state' => $quotation->supply_state,
-                'gst_treatment' => $quotation->gst_treatment,
-                'currency_code' => $quotation->currency_code,
-                'exchange_rate' => $quotation->exchange_rate,
-                'subtotal' => $quotation->subtotal,
-                'discount_type' => $quotation->discount_type,
-                'discount_value' => $quotation->discount_value,
-                'discount_amount' => $quotation->discount_amount,
-                'taxable_amount' => $quotation->taxable_amount,
-                'cgst_amount' => $quotation->cgst_amount,
-                'sgst_amount' => $quotation->sgst_amount,
-                'igst_amount' => $quotation->igst_amount,
-                'tax_amount' => $quotation->tax_amount,
-                'shipping_charge' => $quotation->shipping_charge,
-                'other_charges' => $quotation->other_charges,
-                'round_off' => $quotation->round_off,
-                'grand_total' => $quotation->grand_total,
-                'notes' => $quotation->notes,
-                'terms_conditions' => $quotation->terms_conditions,
-                'status' => 'draft',
-                'payment_status' => 'unpaid',
-            ]);
+            $invoiceService = app(\App\Services\InvoiceService::class);
 
-            // Deep Copy Line Items
-            foreach ($quotation->items as $qItem) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'product_id' => $qItem->product_id,
-                    'product_sku_id' => $qItem->product_sku_id,
-                    'unit_id' => $qItem->unit_id,
-                    'product_name' => $qItem->product_name,
-                    'hsn_code' => $qItem->hsn_code,
-                    'quantity' => $qItem->quantity,
-                    'unit_price' => $qItem->unit_price,
-                    'tax_type' => $qItem->tax_type,
-                    'discount_type' => $qItem->discount_type,
-                    'discount_value' => $qItem->discount_value,
-                    'discount_amount' => $qItem->discount_amount,
-                    'taxable_value' => $qItem->taxable_value,
-                    'tax_percent' => $qItem->tax_percent,
-                    'cgst_amount' => $qItem->cgst_amount,
-                    'sgst_amount' => $qItem->sgst_amount,
-                    'igst_amount' => $qItem->igst_amount,
-                    'tax_amount' => $qItem->tax_amount,
-                    'total_amount' => $qItem->total_amount,
-                ]);
-            }
+            $itemsPayload = $quotation->items->map(fn ($qItem) => [
+                'product_sku_id'  => $qItem->product_sku_id,
+                'unit_id'         => $qItem->unit_id,
+                'quantity'        => $qItem->quantity,
+                'unit_price'      => $qItem->unit_price,
+                'tax_percent'     => $qItem->tax_percent,
+                'tax_type'        => $qItem->tax_type ?? 'exclusive',
+                'discount_type'   => $qItem->discount_type,
+                'discount_value'  => $qItem->discount_value,
+                'batch_id'        => null,
+                'batch_number'    => null,
+            ])->toArray();
+
+            $invoice = $invoiceService->createInvoice([
+                'store_id'         => $quotation->store_id,
+                'warehouse_id'     => optional(Warehouse::where('company_id', $companyId)->first())->id
+                                        ?? throw new \RuntimeException('No warehouse configured.'),
+                'customer_id'      => $quotation->customer_id,
+                'customer_name'    => $quotation->customer_name,
+                'billing_address'  => $quotation->billing_address,
+                'shipping_address' => $quotation->shipping_address,
+                'source'           => 'direct',
+                'invoice_date'     => now()->toDateString(),
+                'due_date'         => now()->addDays(7)->toDateString(),
+                'supply_state'     => $quotation->supply_state,
+                'gst_treatment'    => $quotation->gst_treatment,
+                'currency_code'    => $quotation->currency_code,
+                'exchange_rate'    => $quotation->exchange_rate,
+                'discount_type'    => $quotation->discount_type,
+                'discount_value'   => $quotation->discount_value,
+                'shipping_charge'  => $quotation->shipping_charge ?? 0,
+                'notes'            => $quotation->notes,
+                'terms_conditions' => $quotation->terms_conditions,
+                'status'           => 'draft',
+                'items'            => $itemsPayload,
+            ], $companyId);
 
             // Lock the Quotation & Trace it
             $quotation->update([

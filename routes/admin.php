@@ -474,6 +474,7 @@ Route::prefix('ocr-scanner')
                 Route::get('/{lead}/edit', 'edit')->name('edit');
                 Route::put('/{lead}', 'update')->name('update');
                 Route::delete('/{lead}', 'destroy')->name('destroy');
+                Route::post('/bulk-delete', 'bulkDestroy')->name('bulk_destroy');
                 // ── Stage move — AJAX ──
                 Route::post('/{lead}/stage', 'moveStage')->name('stage');
                 // ── Activity log — AJAX ──
@@ -504,6 +505,8 @@ Route::prefix('ocr-scanner')
 
             // Workflow / Status Update (AJAX)
             Route::patch('/{expense}/status', [ExpenseController::class, 'updateStatus'])->name('status.update');
+            Route::post('/{expenseId}/add-payment', [ExpenseController::class, 'addPayment'])->name('add.payment');
+            
         });
 
         // Expense Categories (Single Page CRUD)

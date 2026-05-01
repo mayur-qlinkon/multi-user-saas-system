@@ -671,50 +671,5 @@ class OrderService
             ]);
         }
     }
-    // ════════════════════════════════════════════════════
-    //  PRIVATE — Inventory Control Helpers
-    // ════════════════════════════════════════════════════
-
-    private function deductOrderStock(Order $order, string $movementType = 'sale'): void
-    {
-        // Guard: Cannot deduct if no warehouse is assigned yet
-        if (! $order->warehouse_id) {
-            Log::warning('[OrderService] Could not deduct stock: No warehouse assigned to order', ['order_id' => $order->id]);
-
-            return;
-        }
-
-        foreach ($order->items as $item) {
-            $sku = ProductSku::find($item->sku_id);
-            if ($sku) {
-                $this->inventoryService->deductStock(
-                    sku: $sku,
-                    warehouseId: $order->warehouse_id,
-                    qty: $item->qty,
-                    movementType: $movementType,
-                    reference: $order
-                );
-            }
-        }
-    }
-
-    private function restoreOrderStock(Order $order, string $movementType = 'cancelled_order'): void
-    {
-        if (! $order->warehouse_id) {
-            return;
-        }
-
-        foreach ($order->items as $item) {
-            $sku = ProductSku::find($item->sku_id);
-            if ($sku) {
-                $this->inventoryService->addStock(
-                    sku: $sku,
-                    warehouseId: $order->warehouse_id,
-                    qty: $item->qty,
-                    movementType: $movementType,
-                    reference: $order
-                );
-            }
-        }
-    }
+    
 }

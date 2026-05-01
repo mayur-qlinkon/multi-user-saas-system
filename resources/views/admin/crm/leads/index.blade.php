@@ -153,7 +153,7 @@
     <div class="bg-white border border-gray-100 rounded-2xl px-4 py-3 mb-4">
         <form method="GET" action="{{ route('admin.crm.leads.index') }}" id="filter-form">
 
-            <div class="grid grid-cols-1 sm:flex sm:items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3 w-full">
 
                 {{-- Search ── --}}
                 <div class="relative w-full sm:flex-1 sm:min-w-[180px]">
@@ -164,15 +164,15 @@
                         class="filter-input search-input pl-8 w-full">
                 </div>
 
-                {{-- Pipeline ── --}}
-                <select name="pipeline_id" class="filter-input" onchange="this.form.submit()">
-                    <option value="">All Pipelines</option>
-                    @foreach($pipelines as $pl)
-                        <option value="{{ $pl->id }}" {{ ($filters['pipeline_id'] ?? '') == $pl->id ? 'selected' : '' }}>
-                            {{ $pl->name }}
+                {{-- Assigned User (Owner Only Filter) ── --}}                
+                <select name="assigned_to" class="filter-input" onchange="this.form.submit()">
+                    <option value="">All Users</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}" {{ ($filters['assigned_to'] ?? '') == $user->id ? 'selected' : '' }}>
+                            {{ $user->name }}
                         </option>
                     @endforeach
-                </select>
+                </select>                
 
                 {{-- Stage ── --}}
                 <select name="stage_id" class="filter-input" onchange="this.form.submit()">
@@ -201,7 +201,7 @@
                             {{ $src->name }}
                         </option>
                     @endforeach
-                </select>
+                </select>                              
 
                 {{-- Quick filters ── --}}
                 <div class="grid grid-cols-2 sm:flex items-center gap-2">
@@ -210,11 +210,6 @@
                         {{ !empty($filters['mine']) ? 'border-brand text-white' : 'border-gray-200 text-gray-500 hover:bg-gray-50' }}"
                         style="{{ !empty($filters['mine']) ? 'background: var(--brand-600); border-color: var(--brand-600)' : '' }}">
                         My Leads
-                    </a>
-                    <a href="{{ route('admin.crm.leads.index', array_merge($filters, ['overdue' => 1])) }}"
-                        class="text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-colors
-                        {{ !empty($filters['overdue']) ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-200 text-gray-500 hover:bg-gray-50' }}">
-                        Overdue
                     </a>
                     <a href="{{ route('admin.crm.leads.index', array_merge($filters, ['unassigned' => 1])) }}"
                         class="text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-colors
@@ -271,12 +266,26 @@
 
         {{-- Table header ── --}}
         <div class="px-5 py-3 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <p class="text-[12px] font-bold text-gray-500">
-            {{ $leads->total() }} lead{{ $leads->total() !== 1 ? 's' : '' }}
-            @if(array_filter($filters))
-                <span class="text-gray-400 font-medium">— filtered</span>
-            @endif
-        </p>
+            <div class="flex items-center gap-3">
+                <p class="text-[12px] font-bold text-gray-500">
+                    {{ $leads->total() }} lead{{ $leads->total() !== 1 ? 's' : '' }}
+                    @if(array_filter($filters))
+                        <span class="text-gray-400 font-medium">— filtered</span>
+                    @endif
+                </p>
+                
+                {{-- Bulk Delete Button (Shows when items are selected) --}}
+                <div x-show="selectedLeads.length > 0" x-cloak x-transition.opacity>
+                    @if(has_permission('crm_leads.delete'))
+                        <button @click="bulkDeleteLeads()" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-[11px] font-bold transition-colors">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            Delete Selected (<span x-text="selectedLeads.length"></span>)
+                        </button>
+                    @endif
+                </div>
+            </div>
+
         {{-- Sort ── --}}
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2">
                 <span class="text-[11px] text-gray-400 font-medium">Sort:</span>
@@ -320,7 +329,13 @@
                 <table class="w-full min-w-[1100px]">
                     <thead>
                         <tr class="border-b border-gray-100">
-                            <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
+                            <th class="px-5 py-3 text-left w-[40px]">
+                                <input type="checkbox" 
+                                    @click="toggleAll($event)" 
+                                    :checked="selectedLeads.length > 0 && selectedLeads.length === currentViewLeadIds.length"
+                                    class="w-3.5 h-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer">
+                            </th>
+                            <th class="px-2 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[50px]">#</th>
                             <th class="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider w-[260px]">Lead</th>
                             <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Stage</th>
                             <th class="px-3 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Source</th>
@@ -341,9 +356,16 @@
                                 $avatarBg = $avatarColors[crc32($lead->name) % count($avatarColors)];
                             @endphp
                             <tr class="table-row">
+                                {{-- Checkbox --}}
+                                <td class="px-5 py-3">
+                                    <input type="checkbox" 
+                                        value="{{ $lead->id }}" 
+                                        x-model="selectedLeads"
+                                        class="w-3.5 h-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer">
+                                </td>
 
                                 {{-- 🌟 Added Dynamic Continuous Numbering --}}
-                                <td class="px-5 py-3 text-[12px] font-bold text-gray-400">
+                                <td class="px-2 py-3 text-[12px] font-bold text-gray-400">
                                     {{ $leads->firstItem() + $loop->index }}
                                 </td>
 
@@ -577,8 +599,62 @@
 <script>
 function leadsPage() {
     return {
+        selectedLeads: [],
+        currentViewLeadIds: @json($leads->pluck('id')),
+
         init() {
             // nothing dynamic on index — all server-rendered
+        },
+        
+        toggleAll(event) {
+            if (event.target.checked) {
+                this.selectedLeads = [...this.currentViewLeadIds];
+            } else {
+                this.selectedLeads = [];
+            }
+        },
+
+        async bulkDeleteLeads() {
+            if (this.selectedLeads.length === 0) return;
+
+            const c = await Swal.fire({
+                title: 'Delete Selected Leads?',
+                text: `You are about to delete ${this.selectedLeads.length} lead(s). This can be recovered.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete them',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#ef4444',
+            });
+
+            if (!c.isConfirmed) return;
+
+            try {
+                const res = await fetch(`{{ route('admin.crm.leads.bulk_destroy') }}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ ids: this.selectedLeads })
+                });
+
+                const data = await res.json();
+                
+                if (data.success) {
+                    Swal.fire({
+                        toast: true, position: 'top-end', showConfirmButton: false, timer: 2000,
+                        icon: 'success', title: data.message,
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Network error. Please try again.', 'error');
+            }
         },
 
         async updateLeadStage(event, leadId, oldStageId) {

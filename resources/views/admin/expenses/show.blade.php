@@ -1,7 +1,9 @@
 @extends('layouts.admin')
 
 @section('title', $expense->merchant_name . ' - Expense Details')
-
+@push('styles')
+<style>[x-cloak] { display: none !important; }</style>
+@endpush
 @section('content')
     <div class="space-y-6 pb-10" x-data="expenseShow(@js($expense), @js(auth()->user()->can('expenses.approve')), @js(auth()->user()->can('expenses.reimburse')))">
 
@@ -36,8 +38,58 @@
                         <i data-lucide="edit" class="w-4 h-4"></i> Edit Expense
                     </a>
                 @endif
+                @if(in_array($expense->status, ['approved', 'reimbursed']) && $expense->due_amount > 0)
+                    <button type="button" @click="$dispatch('open-quick-payment')"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-all">
+                        <i data-lucide="banknote" class="w-4 h-4"></i> Record Payment
+                    </button>
+                @endif
             </div>
         </div>
+
+        {{-- ── Payment history table (example) ──────────────── --}}
+        @if($expense->payments->count())
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm mb-6 overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-gray-100">
+                <h2 class="text-sm font-semibold text-gray-700">Payment History</h2>
+            </div>
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-[11px] text-gray-400 uppercase tracking-wide">
+                    <tr>
+                        <th class="px-5 py-2.5 text-left font-medium">Date</th>
+                        <th class="px-5 py-2.5 text-left font-medium">Method</th>
+                        <th class="px-5 py-2.5 text-left font-medium">Reference</th>
+                        <th class="px-5 py-2.5 text-right font-medium">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach($expense->payments->where('status','completed') as $payment)
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-5 py-3 text-gray-600">{{ $payment->payment_date?->format('d M Y') }}</td>
+                        <td class="px-5 py-3 text-gray-600">{{ $payment->paymentMethod?->label ?? '—' }}</td>
+                        <td class="px-5 py-3 text-gray-400 font-mono text-xs">{{ $payment->reference ?? '—' }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-emerald-700 tabular-nums">₹{{ number_format($payment->amount, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
+        {{-- ══════════════════════════════════════════
+            QUICK PAYMENT MODAL — Drop in once per page
+            The trigger above dispatches 'open-quick-payment'
+        ══════════════════════════════════════════ --}}
+        <x-modals.quick-payment
+            :action="route('admin.expenses.add.payment', $expense)"
+            :due-amount="$expense->due_amount"
+            :total-amount="$expense->total_amount"
+            :paid-amount="$expense->total_paid"
+            :payment-methods="$paymentMethods"
+            currency="₹"
+            title="Record Expense Payment"
+            subtitle="This payment will be logged against {{ $expense->expense_number }}"
+        />
 
         <div class="grid grid-cols-1 lg:grid-cols-5 xl:grid-cols-3 gap-6">
 
@@ -151,32 +203,7 @@
                                     <p class="text-xs text-gray-400">{{ $expense->approved_at ? \Carbon\Carbon::parse($expense->approved_at)->format('d M, Y h:i A') : '' }}</p>
                                 </div>
                             @endif
-                        </div>
-                        {{-- Inside the Audit Trail card, after the grid --}}
-                            <div class="mt-6 pt-4 border-t border-gray-200">
-                                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Activity History</p>
-                                @forelse($expense->activities->sortByDesc('created_at') as $activity)
-                                    <div class="flex justify-between items-start text-sm py-2 border-b border-gray-100 last:border-0">
-                                        <div>
-                                            <span class="font-medium text-gray-800">{{ $activity->description }}</span>
-                                            @if($activity->properties->count() && is_super_admin())
-                                                <div class="mt-1.5">
-                                                    <button type="button" @click="openAuditModal('{{ $activity->description }}', {{ $activity->properties->toJson() }})"
-                                                        class="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded transition-colors">
-                                                        <i data-lucide="eye" class="w-3 h-3"></i> View Changes
-                                                    </button>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="text-right text-[11px] text-gray-400">
-                                            {{ $activity->causer?->name ?? 'System' }}<br>
-                                            {{ $activity->created_at->format('d M, Y h:i A') }}
-                                        </div>
-                                    </div>
-                                @empty
-                                    <p class="text-sm text-gray-400 italic">No activity recorded yet.</p>
-                                @endforelse
-                            </div>
+                        </div>                       
                     </div>
                 </div>
 
@@ -227,6 +254,14 @@
                         <div class="flex justify-between items-end pt-2">
                             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Amount</span>
                             <span class="text-2xl font-black text-brand-600">₹ {{ number_format($expense->total_amount, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between items-end pt-4 border-t border-gray-100 mt-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Paid</span>
+                            <span class="text-lg font-bold text-green-600">₹ {{ number_format($expense->total_paid, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between items-end pt-2">
+                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Amount Due</span>
+                            <span class="text-lg font-bold text-red-500">₹ {{ number_format($expense->due_amount, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -327,7 +362,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>        
 
     </div>
     
@@ -339,9 +374,9 @@
             return {
                 status: expense.status,
                 statusLabel: '',
-                // --- NEW AUDIT MODAL STATE ---
+                // --- NEW AUDIT MODAL STATE ---                
                 isAuditModalOpen: false,
-                currentAudit: { title: '', changes: [] },
+                currentAudit: { title: '', changes: [] },                
 
                 openAuditModal(description, properties) {
                     this.currentAudit.title = description;
@@ -429,8 +464,10 @@
                         console.error(error);
                         BizAlert.toast('Network error. Please try again.', 'error');
                     }
-                }
+                },                               
+                
             };
+            
         }
     </script>
 @endpush

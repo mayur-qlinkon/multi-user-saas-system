@@ -458,6 +458,7 @@ class PosController extends Controller
                     $qty = (float) $item['quantity'];
                     $price = (float) $item['unit_price'];
                     $taxPct = (float) $item['tax_percent'];
+                    $taxType = $item['tax_type'] ?? 'exclusive';
 
                     // Strict Inventory Deduction
                     $this->inventoryService->deductStock(
@@ -468,9 +469,15 @@ class PosController extends Controller
                         reference: $invoice
                     );
 
-                    $taxableValue = $qty * $price;
-                    $taxAmount = $taxableValue * ($taxPct / 100);
-                    $lineTotal = $taxableValue + $taxAmount;
+                    if ($taxType === 'inclusive') {
+                        $lineTotal = $qty * $price;
+                        $taxableValue = $lineTotal / (1 + ($taxPct / 100));
+                        $taxAmount = $lineTotal - $taxableValue;
+                    } else {
+                        $taxableValue = $qty * $price;
+                        $taxAmount = $taxableValue * ($taxPct / 100);
+                        $lineTotal = $taxableValue + $taxAmount;
+                    }
 
                     $totalSubtotal += $taxableValue;
                     $totalTax += $taxAmount;
@@ -484,7 +491,7 @@ class PosController extends Controller
                         'hsn_code' => $item['hsn_code'] ?? null,
                         'quantity' => $qty,
                         'unit_price' => $price,
-                        'tax_type' => $item['tax_type'] ?? 'exclusive',
+                        'tax_type' => $taxType,
                         'tax_percent' => $taxPct,
                         'taxable_value' => $taxableValue,
                         'tax_amount' => $taxAmount,
