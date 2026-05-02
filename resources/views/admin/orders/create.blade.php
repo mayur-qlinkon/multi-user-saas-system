@@ -168,16 +168,16 @@
 
                                     <template x-for="result in globalSearchResults" :key="result.product_sku_id">
                                         <li @click="addSkuToTable(result); showResults = false"
-                                            class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors">
-                                            <div class="flex justify-between items-center">
-                                                <div>
-                                                    <div class="text-[13px] font-bold text-gray-800" x-text="result.product_name"></div>
-                                                    <div class="text-[10px] text-gray-400 font-mono" x-text="result.sku_code"></div>
-                                                </div>
-                                                <div class="text-right">
-                                                    <div class="text-[12px] font-black text-[#108c2a]" x-text="'₹' + parseFloat(result.price).toFixed(2)"></div>
-                                                    <div class="text-[10px] text-gray-500" x-text="'Stock: ' + (result.stock || 0)"></div>
-                                                </div>
+                                            class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors">
+                                            <div class="flex justify-between items-start gap-2">
+                                                <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="result.display_name || result.product_name"></div>
+                                                <div class="text-[12px] font-black text-[#108c2a] flex-shrink-0" x-text="result.price ? '₹' + parseFloat(result.price).toFixed(2) : '₹0.00'"></div>
+                                            </div>
+                                            <div class="text-[11px] text-gray-500 flex items-center flex-wrap gap-1.5 mt-1.5 font-medium">
+                                                <span>Code:</span>
+                                                <span class="bg-gray-100 border border-gray-200 text-gray-600 px-1 py-0.5 rounded font-mono text-[10px] font-bold tracking-wide" x-text="result.sku_code"></span>
+                                                <span class="text-gray-300">&middot;</span>
+                                                <span x-text="'Stock: ' + (result.stock || 0)"></span>
                                             </div>
                                         </li>
                                     </template>
@@ -201,10 +201,13 @@
                                         <td colspan="5" class="text-center py-8 text-gray-400 text-sm">Cart is empty. Search above to add items.</td>
                                     </tr>
                                     <template x-for="(item, index) in items" :key="item.key">
-                                        <tr class="hover:bg-gray-50/50">
-                                            <td class="px-5 py-3">
-                                                <div class="text-[13px] font-bold text-gray-800" x-text="item.name"></div>
-                                                <div class="text-[11px] text-gray-500 font-mono mt-0.5" x-text="item.sku"></div>
+                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                            <td class="px-5 py-3 align-middle">
+                                                <div class="text-[13px] font-bold text-gray-800 leading-tight" x-text="item.display_name || item.name"></div>
+                                                <div class="flex items-center gap-1.5 mt-1.5">
+                                                    <span class="text-gray-500 text-[11px] font-medium">Code:</span>
+                                                    <span class="bg-[#dcfce7] text-[#16a34a] text-[10px] px-1.5 py-0.5 rounded font-mono font-bold tracking-wide border border-green-200" x-text="item.sku"></span>
+                                                </div>
                                                 {{-- Required payload for backend OrderService --}}
                                                 <input type="hidden" :name="'items[' + index + '][sku_id]'" :value="item.sku_id">
                                                 <input type="hidden" :name="'items[' + index + '][product_id]'" :value="item.product_id">                                                
@@ -218,8 +221,15 @@
                                                 </div>
                                             </td>
                                             <td class="px-4 py-3 text-right font-black text-gray-800 text-sm" x-text="'₹' + (item.price * item.qty).toFixed(2)"></td>
-                                            <td class="px-4 py-3 text-center">
-                                                <button type="button" @click="removeItem(index)" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                            <td class="px-4 py-3 text-center align-middle">
+                                                <button type="button" @click="removeItem(index)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors" title="Remove Item">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                                    </svg>
+                                                </button>
                                             </td>
                                         </tr>
                                     </template>
@@ -462,11 +472,20 @@
             },
 
             addSkuToTable(result) {
+                // Prevent duplicate items in the table
+                if (this.items.some(item => item.sku_id === result.product_sku_id)) {
+                    BizAlert.toast('This product is already added!', 'error');
+                    this.globalSearch = '';
+                    this.showResults = false;
+                    return;
+                }
+
                 this.items.push({
                     key: this.itemCounter++,
                     product_id: result.product_id,
                     sku_id: result.product_sku_id,
                     name: result.product_name,
+                    display_name: result.display_name || result.product_name, // 🌟 Map the variant name
                     sku: result.sku_code,
                     price: parseFloat(result.price) || 0,
                     qty: 1

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="company-slug" content="{{ request()->route('slug') ?? '' }}">
+    <meta name="store-slug" content="{{ request()->route('store_slug') ?? '' }}">
 
    @php
         try {
@@ -14,9 +15,17 @@
             $primary = get_setting('primary_color') ?: '#008a62';
             $hover   = get_setting('primary_hover_color') ?: '#007050';
 
-            $routeSlug  = request()->route('slug') ?? 'store';
-            $company    = $company ?? new \App\Models\Company(['name' => 'StoreFront', 'slug' => $routeSlug]);
+            $routeSlug   = request()->route('slug') ?? 'store';
+            $storeSlug   = request()->route('store_slug') ?? null;
+            $company     = $company ?? new \App\Models\Company(['name' => 'StoreFront', 'slug' => $routeSlug]);
+            $store       = $store ?? request()->attributes->get('current_store');
             $companySlug = $company?->slug ?: $routeSlug;
+            $isStoreView = ($store !== null && $storeSlug !== null);
+            $baseUrl     = $isStoreView
+                ? url("/{$companySlug}/{$storeSlug}")
+                : url("/{$companySlug}");
+            $footerTagline = $store?->public_tagline ?? get_setting('storefront_tagline');
+            $storeWhatsApp = $store?->public_whatsapp ?? get_setting('whatsapp');
 
             $autoFill = [
                 'name' => '',
@@ -319,7 +328,9 @@
 
            {{-- Logo directly on the left --}}
             <a href="/{{ $companySlug }}" class="flex items-center gap-2.5 shrink-0">
-                @if (get_setting('icon'))
+                @if ($store?->logo)
+                    <img src="{{ asset('storage/'.$store->logo) }}" alt="{{ $store->name }}" class="h-10 object-contain">
+                @elseif (get_setting('icon'))
                     <img src="{{ asset('storage/' . get_setting('icon')) }}" alt="Store Logo" class="h-10 object-contain">
                 @else
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded flex items-center justify-center text-white shadow-sm"
@@ -327,7 +338,7 @@
                         <i data-lucide="store" class="w-5 h-5 fill-current"></i>
                     </div>
                     <span class="font-bold text-[18px] sm:text-[22px] text-gray-800 tracking-tight">
-                        {{ $company->name ?? 'StoreFront' }}
+                        {{ $store?->name ?? $company->name ?? 'StoreFront' }}
                     </span>
                 @endif
             </a>
@@ -840,16 +851,16 @@
                <div>
                     <div class="mb-5">
                         <h4 class="text-[16px] font-black text-gray-900 tracking-tight">{{ $company->name ?? config('app.name') }}</h4>
-                        @if(get_setting('storefront_tagline'))
-                            <p class="text-[12px] text-gray-500 font-medium mt-1 leading-relaxed">{{ get_setting('storefront_tagline') }}</p>
+                        @if($footerTagline)
+                            <p class="text-[12px] text-gray-500 font-medium mt-1 leading-relaxed">{{ $footerTagline }}</p>
                         @endif
                     </div>
                     <ul class="space-y-4 text-[13px] text-gray-500 font-medium">
                         {{-- 🛡️ Fallback dummy data if settings are empty --}}
                         @php
-                            $phone = get_setting('call_number') ?: '+91 98765 43210';
-                            $email = get_setting('support_email') ?: 'support@' . ($companySlug ?? 'store') . '.com';
-                            $address = get_setting('storefront_address') ?: '123 Commerce Avenue, Business District, 400001';
+                            $phone   = $store?->public_phone   ?: get_setting('call_number')      ?: '+91 98765 43210';
+                            $email   = $store?->public_email   ?: get_setting('support_email')    ?: 'support@'.$companySlug.'.com';
+                            $address = $store?->public_address ?: get_setting('storefront_address') ?: '123 Commerce Avenue';
                         @endphp
                         
                         <li class="flex items-start gap-3">
@@ -1066,8 +1077,8 @@
         </div>
     </footer>
 
-    @if (get_setting('whatsapp'))
-        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', get_setting('whatsapp')) }}?text={{ urlencode("Hi, I'm interested in your products") }}"
+    @if ($storeWhatsApp)
+        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $storeWhatsApp) }}?text={{ urlencode("Hi, I'm interested in your products") }}"
             target="_blank"
             class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25d366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
             title="Chat on WhatsApp">
@@ -1173,7 +1184,11 @@
                         this.open    = true;
 
                         try {
-                            const url = `/${this.companySlug}/suggest?q=` + encodeURIComponent(this.query);
+                            const storeSlug = document.querySelector('meta[name="store-slug"]')?.content;
+                            const suggestBase = storeSlug
+                                ? `/${this.companySlug}/${storeSlug}/suggest`
+                                : `/${this.companySlug}/suggest`;
+                            const url = suggestBase + '?q=' + encodeURIComponent(this.query);
                             const res  = await fetch(url, {
                                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
                             });

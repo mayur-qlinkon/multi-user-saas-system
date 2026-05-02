@@ -1,14 +1,12 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'OCR Scan History'); ?>
 
-@section('title', 'OCR Scan History')
-
-@section('header-title')
+<?php $__env->startSection('header-title'); ?>
     <div>
         <h1 class="text-sm font-bold text-gray-500 uppercase tracking-widest">OCR Scan History</h1>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     [x-cloak] { display: none !important; }
 
@@ -90,12 +88,12 @@
         padding: 20px;
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="p-4 md:p-6" x-data="ocrHistory()" x-init="init()">
 
-    {{-- ── Header ─────────────────────────────────────────────────── --}}
+    
     <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -104,10 +102,10 @@
             </div>
             <div>
                 <h2 class="text-base font-bold text-gray-800">Scan History</h2>
-                <p class="text-xs text-gray-400">{{ $scans->total() }} scan(s) found</p>
+                <p class="text-xs text-gray-400"><?php echo e($scans->total()); ?> scan(s) found</p>
             </div>
         </div>
-        <a href="{{ route('admin.ocr-scanner.index') }}"
+        <a href="<?php echo e(route('admin.ocr-scanner.index')); ?>"
            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold"
            style="background: var(--brand-500)">
             <i data-lucide="scan-line" class="w-4 h-4"></i>
@@ -115,13 +113,13 @@
         </a>
     </div>
 
-    {{-- ── Filters ─────────────────────────────────────────────────── --}}
-    <form method="GET" action="{{ route('admin.ocr-scanner.history') }}"
+    
+    <form method="GET" action="<?php echo e(route('admin.ocr-scanner.history')); ?>"
           class="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-3 mb-6">
         
         <div class="relative flex-1 min-w-[200px]">
             <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-            <input type="text" name="search" value="{{ request('search') }}"
+            <input type="text" name="search" value="<?php echo e(request('search')); ?>"
                    class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
                    placeholder="Search names, emails, or raw text...">
         </div>
@@ -129,17 +127,17 @@
         <div class="flex flex-wrap sm:flex-nowrap gap-3">
             <select name="scan_type" class="flex-1 sm:flex-none px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:border-brand-500 focus:bg-white transition-all cursor-pointer">
                 <option value="">All Document Types</option>
-                <option value="business_card" @selected(request('scan_type') === 'business_card')>Business Card</option>
-                <option value="invoice"       @selected(request('scan_type') === 'invoice')>Invoice</option>
-                <option value="receipt"       @selected(request('scan_type') === 'receipt')>Receipt</option>
-                <option value="general"       @selected(request('scan_type') === 'general')>General</option>
+                <option value="business_card" <?php if(request('scan_type') === 'business_card'): echo 'selected'; endif; ?>>Business Card</option>
+                <option value="invoice"       <?php if(request('scan_type') === 'invoice'): echo 'selected'; endif; ?>>Invoice</option>
+                <option value="receipt"       <?php if(request('scan_type') === 'receipt'): echo 'selected'; endif; ?>>Receipt</option>
+                <option value="general"       <?php if(request('scan_type') === 'general'): echo 'selected'; endif; ?>>General</option>
             </select>
 
             <select name="status" class="flex-1 sm:flex-none px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:border-brand-500 focus:bg-white transition-all cursor-pointer">
                 <option value="">All Statuses</option>
-                <option value="saved"      @selected(request('status') === 'saved')>Saved</option>
-                <option value="completed"  @selected(request('status') === 'completed')>Completed</option>
-                <option value="failed"     @selected(request('status') === 'failed')>Failed</option>
+                <option value="saved"      <?php if(request('status') === 'saved'): echo 'selected'; endif; ?>>Saved</option>
+                <option value="completed"  <?php if(request('status') === 'completed'): echo 'selected'; endif; ?>>Completed</option>
+                <option value="failed"     <?php if(request('status') === 'failed'): echo 'selected'; endif; ?>>Failed</option>
             </select>
 
             <button type="submit"
@@ -148,17 +146,17 @@
                 Filter
             </button>
 
-            @if(request()->hasAny(['search', 'scan_type', 'status']))
-                <a href="{{ route('admin.ocr-scanner.history') }}"
+            <?php if(request()->hasAny(['search', 'scan_type', 'status'])): ?>
+                <a href="<?php echo e(route('admin.ocr-scanner.history')); ?>"
                    class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-4 py-2 rounded-xl text-gray-500 text-sm font-bold border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
                     <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear
                 </a>
-            @endif
+            <?php endif; ?>
         </div>
     </form>
 
-    {{-- ── Scan Cards ──────────────────────────────────────────────── --}}
-    @if ($scans->isEmpty())
+    
+    <?php if($scans->isEmpty()): ?>
         <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
             <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-gray-50 border border-gray-100 shadow-sm">
                 <i data-lucide="scan-line" class="w-8 h-8 text-gray-400"></i>
@@ -166,17 +164,17 @@
             <h3 class="text-base font-bold text-gray-700 mb-1">No scan history found</h3>
             <p class="text-sm text-gray-400 max-w-sm mb-6">You haven't scanned any documents yet, or no scans match your current filters.</p>
             
-            <a href="{{ route('admin.ocr-scanner.index') }}"
+            <a href="<?php echo e(route('admin.ocr-scanner.index')); ?>"
                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-sm transition-transform active:scale-95 hover:opacity-90"
                style="background: var(--brand-500)">
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 Start New Scan
             </a>
         </div>
-    @else
+    <?php else: ?>
         <div class="grid gap-3">
-            @foreach ($scans as $scan)
-                @php
+            <?php $__currentLoopData = $scans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $scan): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
                     $finalData = $scan->final_data;
                     $typeBadge = match($scan->scan_type) {
                         'business_card' => ['badge-card', '🪪 Business Card'],
@@ -190,84 +188,91 @@
                         'failed'     => 'badge-failed',
                         default      => 'badge-pending',
                     };
-                @endphp
+                ?>
                 <div class="scan-card">
                     <div class="flex items-start gap-3">
-                        {{-- Image thumbnail --}}
+                        
                         <div class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center relative">
-                            @if ($scan->image_path)
-                                <img src="{{ asset('storage/' . $scan->image_path) }}"
+                            <?php if($scan->image_path): ?>
+                                <img src="<?php echo e(asset('storage/' . $scan->image_path)); ?>"
                                      onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23d1d5db\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21 15 16 10 5 21\'/></svg>'; this.className='w-6 h-6 object-contain';"
                                      class="w-full h-full object-cover" alt="scan">
-                            @else
+                            <?php else: ?>
                                 <i data-lucide="image" class="w-5 h-5 text-gray-300"></i>
-                            @endif
+                            <?php endif; ?>
                         </div>
 
-                        {{-- Info --}}
+                        
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 flex-wrap mb-1">
                                 <p class="text-sm font-bold text-gray-800 truncate">
-                                    {{ $scan->display_name }}
+                                    <?php echo e($scan->display_name); ?>
+
                                 </p>
-                                <span class="badge {{ $typeBadge[0] }}">{{ $typeBadge[1] }}</span>
-                                <span class="badge {{ $statusBadge }}">{{ ucfirst($scan->status) }}</span>
+                                <span class="badge <?php echo e($typeBadge[0]); ?>"><?php echo e($typeBadge[1]); ?></span>
+                                <span class="badge <?php echo e($statusBadge); ?>"><?php echo e(ucfirst($scan->status)); ?></span>
                             </div>
 
-                            @if (!empty($finalData['email']))
+                            <?php if(!empty($finalData['email'])): ?>
                                 <p class="text-xs text-gray-500 truncate">
-                                    <i data-lucide="mail" class="w-3 h-3 inline mr-1"></i>{{ $finalData['email'] }}
+                                    <i data-lucide="mail" class="w-3 h-3 inline mr-1"></i><?php echo e($finalData['email']); ?>
+
                                 </p>
-                            @endif
-                            @if (!empty($finalData['phone']))
+                            <?php endif; ?>
+                            <?php if(!empty($finalData['phone'])): ?>
                                 <p class="text-xs text-gray-500 truncate">
-                                    <i data-lucide="phone" class="w-3 h-3 inline mr-1"></i>{{ $finalData['phone'] }}
+                                    <i data-lucide="phone" class="w-3 h-3 inline mr-1"></i><?php echo e($finalData['phone']); ?>
+
                                 </p>
-                            @endif
+                            <?php endif; ?>
 
                             <p class="text-xs text-gray-400 mt-1">
-                                {{ $scan->created_at->diffForHumans() }}
-                                · by {{ $scan->user->name ?? 'Unknown' }}
+                                <?php echo e($scan->created_at->diffForHumans()); ?>
+
+                                · by <?php echo e($scan->user->name ?? 'Unknown'); ?>
+
                             </p>
                         </div>
 
-                        {{-- Actions --}}
+                        
                         <div class="flex flex-col gap-1 flex-shrink-0">
-                            <button @click="openDetail({{ $scan->id }})"
+                            <button @click="openDetail(<?php echo e($scan->id); ?>)"
                                     class="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
                                 <i data-lucide="eye" class="w-4 h-4"></i>
                             </button>
-                            <button @click="archiveScan({{ $scan->id }})"
+                            <button @click="archiveScan(<?php echo e($scan->id); ?>)"
                                     class="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
 
-                    {{-- Compact data preview --}}
-                    @if (!empty($finalData))
+                    
+                    <?php if(!empty($finalData)): ?>
                         <div class="mt-3 pt-3 border-t border-gray-50 flex flex-wrap gap-x-4 gap-y-1">
-                            @foreach (array_slice($finalData, 0, 4) as $k => $v)
-                                @if ($v)
+                            <?php $__currentLoopData = array_slice($finalData, 0, 4); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k => $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php if($v): ?>
                                     <span class="text-xs text-gray-500">
-                                        <span class="text-gray-400 uppercase text-[10px]">{{ $k }}</span>
-                                        {{ Str::limit($v, 25) }}
+                                        <span class="text-gray-400 uppercase text-[10px]"><?php echo e($k); ?></span>
+                                        <?php echo e(Str::limit($v, 25)); ?>
+
                                     </span>
-                                @endif
-                            @endforeach
+                                <?php endif; ?>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
-        {{-- Pagination --}}
+        
         <div class="mt-6">
-            {{ $scans->links() }}
-        </div>
-    @endif
+            <?php echo e($scans->links()); ?>
 
-    {{-- ── Detail Modal ────────────────────────────────────────────── --}}
+        </div>
+    <?php endif; ?>
+
+    
     <div x-show="showModal" x-cloak class="modal-backdrop" @click.self="showModal = false">
         <div class="modal-box">
             <div x-show="loadingDetail" class="text-center py-8 text-gray-400">
@@ -286,7 +291,7 @@
                     </button>
                 </div>
 
-                {{-- Image --}}
+                
                 <template x-if="detail?.image_url">
                     <div class="mb-5 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center p-2">
                         <img :src="detail.image_url" 
@@ -295,7 +300,7 @@
                     </div>
                 </template>
 
-                {{-- Final fields --}}
+                
                 <div class="mb-4">
                     <p class="text-xs font-bold text-gray-400 uppercase mb-2">Extracted Data</p>
                     <template x-for="(val, key) in detail?.final_data" :key="key">
@@ -306,7 +311,7 @@
                     </template>
                 </div>
 
-                {{-- Notes --}}
+                
                 <template x-if="detail?.notes">
                     <div class="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
                         <p class="text-xs font-semibold text-amber-700 mb-1">Notes</p>
@@ -314,7 +319,7 @@
                     </div>
                 </template>
 
-                {{-- Raw text --}}
+                
                 <div x-data="{ open: false }" class="mt-2">
                     <button @click="open = !open"
                             class="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wide transition-colors mb-2">
@@ -336,9 +341,9 @@
     </div>
 
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 function ocrHistory() {
     return {
@@ -416,4 +421,6 @@ function ocrHistory() {
     };
 }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\qlinkongraphics\Desktop\MyLab\qlink-saas - Slug Based\resources\views/admin/ocr-scanner/history.blade.php ENDPATH**/ ?>

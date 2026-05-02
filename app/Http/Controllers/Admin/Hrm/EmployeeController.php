@@ -72,23 +72,8 @@ class EmployeeController extends Controller
         $stores = Store::where('is_active', true)->get();
         $managers = Employee::active()->with('user')->get();
 
-        // Users not yet linked as employees (include old value on validation redirect)
-        $availableUsers = User::query()
-            ->internal()
-            ->where(function ($query) {
-                $query->whereDoesntHave('employee');
-                
-                // Keep the selected user in the list if validation fails
-                if (old('user_id')) {
-                    $query->orWhere('id', old('user_id'));
-                }
-            })
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->get();
-
         return view('admin.hrm.employees.create', compact(
-            'departments', 'designations', 'shifts', 'stores', 'managers', 'availableUsers'
+            'departments', 'designations', 'shifts', 'stores', 'managers'
         ));
     }
 

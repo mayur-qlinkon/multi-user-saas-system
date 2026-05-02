@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\Module;
 use App\Services\Platform\PlanService;
 use Illuminate\Http\Request;
 
@@ -17,14 +18,26 @@ class PlanController extends Controller
     }
 
     /**
-     * Display the single-page CRUD view.
+     * Display the plans list.
      */
     public function index()
     {
+        // Assuming your service returns ['plans' => $plans, 'modules' => $modules]
         $data = $this->planService->getPlansForIndex();
 
-        // Passes both $plans and $modules so the modal dropdowns can be populated
-        return view('platform.plans', $data);
+        // We will move this view to a 'plans' subdirectory
+        return view('platform.plans.index', $data);
+    }
+
+    /**
+     * Show the form for creating a new plan.
+     */
+    public function create()
+    {
+        // Fetch active modules for the checkboxes
+        $modules = Module::where('is_active', true)->get(); 
+        
+        return view('platform.plans.create', compact('modules'));
     }
 
     /**
@@ -42,22 +55,30 @@ class PlanController extends Controller
             'store_limit' => ['required', 'integer', 'min:1'],
             'product_limit' => ['required', 'integer', 'min:1'],
             'employee_limit' => ['required', 'integer', 'min:1'],
+            'ocr_scan_limit' => ['required', 'integer', 'min:0'],
 
-            // Status
             'is_active' => ['nullable', 'boolean'],
-
-            // Relationships
             'modules' => ['nullable', 'array'],
             'modules.*' => ['exists:modules,id'],
         ]);
 
-        // Convert HTML checkbox values ('on' / null) to true/false booleans for the service
         $validated['is_active'] = $request->has('is_active');
 
         $this->planService->storePlan($validated);
 
         return redirect()->route('platform.plans.index')
             ->with('success', 'Plan created successfully.');
+    }
+
+    /**
+     * Show the form for editing the specified plan.
+     */
+    public function edit(Plan $plan)
+    {
+        $plan->load('modules');
+        $modules = Module::where('is_active', true)->get();
+
+        return view('platform.plans.edit', compact('plan', 'modules'));
     }
 
     /**
@@ -75,16 +96,13 @@ class PlanController extends Controller
             'store_limit' => ['required', 'integer', 'min:1'],
             'product_limit' => ['required', 'integer', 'min:1'],
             'employee_limit' => ['required', 'integer', 'min:1'],
+            'ocr_scan_limit' => ['required', 'integer', 'min:0'],
 
-            // Status
             'is_active' => ['nullable', 'boolean'],
-
-            // Relationships
             'modules' => ['nullable', 'array'],
             'modules.*' => ['exists:modules,id'],
         ]);
 
-        // Convert HTML checkbox values ('on' / null) to true/false booleans for the service
         $validated['is_active'] = $request->has('is_active');
 
         $this->planService->updatePlan($plan, $validated);

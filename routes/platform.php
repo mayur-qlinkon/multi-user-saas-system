@@ -20,7 +20,7 @@ Route::middleware(['auth', 'role:super_admin'])
         Route::get('/dashboard', [PlatformDashboardController::class, 'index'])->name('dashboard');
         Route::get('/', [PlatformDashboardController::class, 'index']); // Fallback so /platform goes to dashboard
 
-        Route::resource('plans', PlanController::class)->except(['create', 'show', 'edit']);
+        Route::resource('plans', PlanController::class);
         Route::resource('modules', ModuleController::class)->except(['create', 'show', 'edit']);
         Route::resource('companies', CompanyController::class);
         Route::get('companies/slug-check', [CompanyController::class, 'slugCheck'])->name('companies.slug-check');

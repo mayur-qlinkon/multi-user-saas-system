@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Company;
+use App\Models\Store;
 use App\Models\Order;
 use App\Services\EmailService;
 use App\Services\OrderService;
@@ -106,6 +107,57 @@ class OrderController extends Controller
                 'success' => false,
                 'message' => 'Something went wrong. Please try again or contact us on WhatsApp.',
             ], 500);
+        }
+    }
+     /**
+     * Place order from the store-level public storefront.
+     * Identical to store() but tags the order with the store_id from the route.
+     */
+    public function storeForBranch(StoreOrderRequest $request, string $slug, string $storeSlug): JsonResponse
+    {
+        $company = Company::where('slug', $slug)->firstOrFail();
+        $store   = Store::where('company_id', $company->id)
+            ->where('slug', $storeSlug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        request()->attributes->set('current_company_id', $company->id);
+
+        try {
+            $data = array_merge($request->validated(), [
+                'source'           => 'storefront',
+                'order_type'       => 'retail',
+                'delivery_address' => $request->address,
+                'customer_id'      => Auth::check() ? Auth::id() : null,
+                'store_id'         => $store->id,   // ← critical: tag to specific branch
+            ]);
+
+            $order = $this->orderService->placeOrder($data, $company->id);
+
+            // Use store's WhatsApp, fallback to company
+            $waNumber = $store->public_whatsapp;
+            $waUrl    = null;
+            if ($waNumber) {
+                $waUrl = 'https://wa.me/'.preg_replace('/[^0-9]/', '', $waNumber)
+                    .'?text='.$order->whatsapp_message;
+            }
+
+            return response()->json([
+                'success'      => true,
+                'message'      => 'Order placed successfully!',
+                'order_number' => $order->order_number,
+                'total'        => '₹'.number_format($order->total_amount, 2),
+                'whatsapp_url' => $waUrl,
+                'receipt_url'  => route('store.orders.receipt', [
+                    'slug'       => $slug,
+                    'store_slug' => $storeSlug,
+                    'orderNumber'=> $order->order_number,
+                ]),
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('[OrderController] storeForBranch failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Order failed. Please try again.'], 500);
         }
     }
 

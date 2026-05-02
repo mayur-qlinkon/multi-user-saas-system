@@ -20,6 +20,7 @@ class Plan extends Model
         'store_limit',
         'product_limit',
         'employee_limit',
+        'ocr_scan_limit',
         'is_recommended',
         'button_text',
         'button_link',
@@ -27,7 +28,6 @@ class Plan extends Model
         'is_active',
     ];
 
-    // 🌟 Casts ensure Laravel treats these fields correctly (e.g., boolean instead of 1/0)
     protected $casts = [
         'price' => 'decimal:2',
         'is_recommended' => 'boolean',
@@ -36,6 +36,7 @@ class Plan extends Model
         'store_limit' => 'integer',
         'product_limit' => 'integer',
         'employee_limit' => 'integer',
+        'ocr_scan_limit' => 'integer',
         'trial_days' => 'integer',
         'sort_order' => 'integer',
     ];

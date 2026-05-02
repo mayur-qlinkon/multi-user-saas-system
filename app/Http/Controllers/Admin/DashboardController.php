@@ -10,11 +10,14 @@ use App\Models\Payment;
 use App\Models\ProductSku;
 use App\Models\Purchase;
 use App\Models\PurchaseReturn;
+use App\Models\Quotation;
+
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -45,6 +48,7 @@ class DashboardController extends Controller
             'tables' => [
                 'recent_sales' => collect(),
                 'low_stock_skus' => collect(),
+                'recent_activities' => collect(),
             ],
         ];
 
@@ -73,6 +77,7 @@ class DashboardController extends Controller
             // 3. Fetch Table Data
             $data['tables']['recent_sales'] = $this->getRecentSales($companyId);
             $data['tables']['low_stock_skus'] = $this->getLowStockAlerts($companyId);
+            $data['tables']['recent_activities'] = $this->getRecentActivities($companyId);
 
         } catch (Exception $e) {
             Log::error('Dashboard Aggregation Failed', [
@@ -280,6 +285,78 @@ class DashboardController extends Controller
                     'payment_status' => $invoice->payment_status,
                 ];
             });
+    }
+    /**
+     * Aggregates recent activity across Sales, Purchases, Expenses & Quotations.
+     */
+    private function getRecentActivities(?int $companyId)
+    {
+        if (! $companyId) return collect();
+
+        $invoices = Invoice::where('company_id', $companyId)
+            ->where('status', '!=', 'cancelled')
+            ->latest('created_at')->take(6)
+            ->get(['id', 'invoice_number', 'customer_name', 'grand_total', 'created_at'])
+            ->map(fn ($r) => [
+                'type'        => 'sale',
+                'icon'        => 'shopping-cart',
+                'color'       => 'emerald',
+                'label'       => 'New Sale',
+                'reference'   => $r->invoice_number,
+                'description' => $r->customer_name ?: 'Walk-in Customer',
+                'amount'      => (float) $r->grand_total,
+                'time'        => $r->created_at,
+            ]);
+
+        $purchases = Purchase::where('company_id', $companyId)
+            ->where('status', '!=', 'cancelled')
+            ->latest('created_at')->take(6)
+            ->get(['id', 'purchase_number', 'total_amount', 'created_at'])
+            ->map(fn ($r) => [
+                'type'        => 'purchase',
+                'icon'        => 'package',
+                'color'       => 'blue',
+                'label'       => 'Purchase Added',
+                'reference'   => $r->purchase_number,
+                'description' => 'Stock purchase recorded',
+                'amount'      => (float) $r->total_amount,
+                'time'        => $r->created_at,
+            ]);
+
+        $expenses = Expense::where('company_id', $companyId)
+            ->whereNotIn('status', ['draft', 'rejected'])
+            ->latest('created_at')->take(6)
+            ->get(['id', 'reference_number', 'notes', 'total_amount', 'created_at'])
+            ->map(fn ($r) => [
+                'type'        => 'expense',
+                'icon'        => 'receipt-indian-rupee',
+                'color'       => 'orange',
+                'label'       => 'Expense Added',
+                'reference'   => $r->reference_number ?: 'EXP-' . $r->id,
+                'description' => $r->notes ? Str::limit($r->notes, 40) : 'General Expense',
+                'amount'      => (float) $r->total_amount,
+                'time'        => $r->created_at,
+            ]);
+
+        $quotations = Quotation::where('company_id', $companyId)
+            ->where('status', '!=', 'cancelled')
+            ->latest('created_at')->take(6)
+            ->get(['id', 'quotation_number', 'customer_name', 'grand_total', 'created_at'])
+            ->map(fn ($r) => [
+                'type'        => 'quotation',
+                'icon'        => 'file-text',
+                'color'       => 'violet',
+                'label'       => 'Quotation Created',
+                'reference'   => $r->quotation_number,
+                'description' => $r->customer_name ?: 'Walk-in Customer',
+                'amount'      => (float) $r->grand_total,
+                'time'        => $r->created_at,
+            ]);
+
+        return $invoices->concat($purchases)->concat($expenses)->concat($quotations)
+            ->sortByDesc('time')
+            ->take(10)
+            ->values();
     }
 
     /**

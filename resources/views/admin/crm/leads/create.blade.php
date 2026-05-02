@@ -92,8 +92,17 @@
     .field-error {
         font-size: 11px;
         font-weight: 600;
-        color: #f43f5e;
-        margin-top: 4px;
+        color: #e11d48; /* Slightly deeper, less neon red */
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .field-error::before {
+        content: "•";
+        font-size: 14px;
+        line-height: 1;
     }
 
     .priority-btn {
@@ -630,26 +639,51 @@ function createLeadPage() {
                 const data = await res.json();
 
                 if (res.status === 422) {
-                    // Laravel validation errors — show inline
-                    this.errors      = data.errors ?? {};
-                    this.serverError = data.message ?? 'Please fix the errors below.';
-                    // Scroll to top to see error banner
+                    this.errors = data.errors ?? {};
+                    this.serverError = 'We need a little more info. Please check the highlighted fields below.';
+                    
+                    if (typeof BizAlert !== 'undefined') {
+                        BizAlert.toast('Please check the highlighted fields.', 'error');
+                    }
+
+                    // UX Win: Scroll to and focus the first field with an error
+                    this.$nextTick(() => {
+                        const firstErrorNode = document.querySelector('.has-error');
+                        if (firstErrorNode) {
+                            firstErrorNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            firstErrorNode.focus();
+                        } else {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    });
+                    return;
+                }
+
+                if (!res.ok || (data && !data.success)) {
+                    this.serverError = data?.message || 'Oops! Something went wrong on our end. Please try again.';
+                    
+                    if (typeof BizAlert !== 'undefined') {
+                        BizAlert.toast(this.serverError, 'error');
+                    }
+                    
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
                 }
 
-                if (!data.success) {
-                    this.serverError = data.message || 'Something went wrong.';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return;
+                // ── Success → Toast & Redirect ──
+                if (typeof BizAlert !== 'undefined') {
+                    BizAlert.toast('Lead created successfully!', 'success');
                 }
 
-                // ── Success → redirect to show page ──
-                window.location.href = data.redirect;
+                // Slight delay so the user can read the success toast before the page disappears
+                setTimeout(() => {
+                    window.location.href = data.redirect || '{{ route("admin.crm.leads.index") }}';
+                }, 800);
 
             } catch (e) {
                 console.error('[CreateLead] Submit error:', e);
-                this.serverError = 'Network error. Please try again.';
+                this.serverError = 'We lost connection to the server. Please check your internet and try again.';
+                if (typeof BizAlert !== 'undefined') BizAlert.toast('Network error occurred.', 'error');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } finally {
                 this.saving = false;

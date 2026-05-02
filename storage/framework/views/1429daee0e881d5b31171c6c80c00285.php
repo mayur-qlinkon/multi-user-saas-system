@@ -154,11 +154,70 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4">
 
                     
-                    <div>
-                        <label class="field-label">User</label>
-                        <div class="field-readonly"><?php echo e($employee->user->name); ?></div>
+                    <div class="col-span-1 sm:col-span-2 lg:col-span-3 pb-2 border-b border-gray-100">
+                        <h5 class="text-sm font-bold text-gray-700">User Account Credentials</h5>
+                        <p class="text-[11px] text-gray-400 font-medium mt-0.5">Update the linked employee login details.</p>
                     </div>
-
+                    
+                    <div>
+                        <label class="field-label">Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" value="<?php echo e(old('name', $employee->user->name)); ?>" placeholder="e.g. John Doe" required
+                            class="field-input <?php echo e($errors->has('name') ? 'has-error' : ''); ?>">
+                        <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="field-error"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+                    
+                    <div>
+                        <label class="field-label">Email Address <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" value="<?php echo e(old('email', $employee->user->email)); ?>" placeholder="employee@company.com" required
+                            class="field-input <?php echo e($errors->has('email') ? 'has-error' : ''); ?>">
+                        <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="field-error"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+                    
+                    <div>
+                        <label class="field-label">Phone Number</label>
+                        <input type="text" name="phone" value="<?php echo e(old('phone', $employee->user->phone)); ?>" placeholder="+1 234 567 8900"
+                            class="field-input <?php echo e($errors->has('phone') ? 'has-error' : ''); ?>">
+                        <?php $__errorArgs = ['phone'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="field-error"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+                    
+                    <div>
+                        <label class="field-label">Update Password</label>
+                        <input type="password" name="password" placeholder="Leave blank to keep current"
+                            class="field-input <?php echo e($errors->has('password') ? 'has-error' : ''); ?>">
+                        <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="field-error"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+                    
+                    <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-4 pb-2 border-b border-gray-100">
+                        <h5 class="text-sm font-bold text-gray-700">Employment Details</h5>
+                    </div>
                     
                     <div>
                         <label class="field-label">Employee Code</label>
@@ -247,9 +306,9 @@ unset($__errorArgs, $__bag); ?>
 
                     
                     <div>
-                        <label class="field-label">Store</label>
-                        <select name="store_id" class="field-input <?php echo e($errors->has('store_id') ? 'has-error' : ''); ?>">
-                            <option value="">Select store</option>
+                        <label class="field-label">Primary Branch / Store <span class="text-red-500">*</span></label>
+                        <select name="store_id" required class="field-input <?php echo e($errors->has('store_id') ? 'has-error' : ''); ?>">
+                            <option value="">Select Primary Store</option>
                             <?php $__currentLoopData = $stores; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $store): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <option value="<?php echo e($store->id); ?>" <?php echo e(old('store_id', $employee->store_id) == $store->id ? 'selected' : ''); ?>><?php echo e($store->name); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -265,36 +324,7 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
                     </div>
-
                     
-                    <div>
-                        <label class="field-label">Additional Store Access</label>
-                        <select name="store_ids[]" multiple size="4" class="field-input <?php echo e($errors->has('store_ids') || $errors->has('store_ids.*') ? 'has-error' : ''); ?>">
-                            <?php $__currentLoopData = $stores; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $store): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($store->id); ?>" <?php echo e(in_array($store->id, old('store_ids', $employee->user?->stores->pluck('id')->all() ?? [])) ? 'selected' : ''); ?>><?php echo e($store->name); ?></option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </select>
-                        <?php $__errorArgs = ['store_ids'];
-$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
-if ($__bag->has($__errorArgs[0])) :
-if (isset($message)) { $__messageOriginal = $message; }
-$message = $__bag->first($__errorArgs[0]); ?>
-                            <p class="field-error"><?php echo e($message); ?></p>
-                        <?php unset($message);
-if (isset($__messageOriginal)) { $message = $__messageOriginal; }
-endif;
-unset($__errorArgs, $__bag); ?>
-                        <?php $__errorArgs = ['store_ids.*'];
-$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
-if ($__bag->has($__errorArgs[0])) :
-if (isset($message)) { $__messageOriginal = $message; }
-$message = $__bag->first($__errorArgs[0]); ?>
-                            <p class="field-error"><?php echo e($message); ?></p>
-                        <?php unset($message);
-if (isset($__messageOriginal)) { $message = $__messageOriginal; }
-endif;
-unset($__errorArgs, $__bag); ?>
-                    </div>
 
                     
                     <div>

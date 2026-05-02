@@ -172,6 +172,23 @@ if (! function_exists('check_plan_limit')) {
             return Employee::count() < $subscription->plan->employee_limit;
         }
 
+        // ── NEW: OCR Scan Daily Limit Check ──
+        if ($resourceType === 'ocr_scans') {
+            $limit = $subscription->plan->ocr_scan_limit;
+            
+            // If the limit is 0, they have no access. (Use -1 if you want to offer unlimited)
+            if ($limit <= 0) {
+                return false;
+            }
+
+            // Count scans created today by this company
+            $todayScans = \App\Models\OcrScan::where('company_id', Auth::user()->company_id)
+                ->whereDate('created_at', today())
+                ->count();
+
+            return $todayScans < $limit;
+        }
+
         return false;
     }
 }
@@ -465,12 +482,12 @@ if (! function_exists('auth_stores')) {
     // Used by the new store-level public controller and middleware
     // ─────────────────────────────────────────────────────────────────────────
     if (! function_exists('resolve_public_store')) {
-        function resolve_public_store(string $companySlug, string $storeSlug): ?\App\Models\Store
+        function resolve_public_store(string $companySlug, string $storeSlug): ? Store
         {
             $cacheKey = "public_store_{$companySlug}_{$storeSlug}";
 
-            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 600, function () use ($companySlug, $storeSlug) {
-                return \App\Models\Store::whereHas('company', fn ($q) => $q->where('slug', $companySlug))
+            return Cache::remember($cacheKey, 600, function () use ($companySlug, $storeSlug) {
+                return Store::whereHas('company', fn ($q) => $q->where('slug', $companySlug))
                     ->where('slug', $storeSlug)
                     ->where('is_active', true)
                     ->first();

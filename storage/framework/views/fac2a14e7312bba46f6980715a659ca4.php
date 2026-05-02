@@ -322,6 +322,66 @@
         </div>
 
         
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="activity" class="w-5 h-5 text-gray-400"></i>
+                    <h2 class="text-sm font-black text-gray-800 uppercase tracking-wider">Recent Activities</h2>
+                </div>
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2.5 py-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Live
+                </span>
+            </div>
+
+            <?php if($tables['recent_activities']->isEmpty()): ?>
+                <div class="flex flex-col items-center justify-center py-12 text-gray-300">
+                    <i data-lucide="inbox" class="w-10 h-10 mb-3"></i>
+                    <span class="text-sm font-bold">No recent activity yet</span>
+                </div>
+            <?php else: ?>
+                <div class="divide-y divide-gray-50">
+                    <?php $__currentLoopData = $tables['recent_activities']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $activity): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php
+                            $activityColors = [
+                                'emerald' => ['bg' => 'bg-emerald-100', 'icon' => 'text-emerald-600', 'badge' => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'],
+                                'blue'    => ['bg' => 'bg-blue-100',    'icon' => 'text-blue-600',    'badge' => 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'],
+                                'orange'  => ['bg' => 'bg-orange-100',  'icon' => 'text-orange-600',  'badge' => 'bg-orange-50 text-orange-700 ring-1 ring-orange-200'],
+                                'violet'  => ['bg' => 'bg-violet-100',  'icon' => 'text-violet-600',  'badge' => 'bg-violet-50 text-violet-700 ring-1 ring-violet-200'],
+                            ];
+                            $ac = $activityColors[$activity['color']] ?? $activityColors['blue'];
+                        ?>
+                        <div class="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 hover:bg-gray-50/60 transition-colors">
+                            
+                            <div class="flex-shrink-0 w-9 h-9 rounded-lg <?php echo e($ac['bg']); ?> flex items-center justify-center">
+                                <i data-lucide="<?php echo e($activity['icon']); ?>" class="w-4 h-4 <?php echo e($ac['icon']); ?>"></i>
+                            </div>
+
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full <?php echo e($ac['badge']); ?>">
+                                        <?php echo e($activity['label']); ?>
+
+                                    </span>
+                                    <span class="text-xs font-bold text-gray-700 truncate"><?php echo e($activity['reference']); ?></span>
+                                </div>
+                                <p class="text-[11px] text-gray-400 truncate leading-tight"><?php echo e($activity['description']); ?></p>
+                            </div>
+
+                            
+                            <div class="flex-shrink-0 text-right">
+                                <p class="text-sm font-black text-gray-800 tabular-nums">₹ <?php echo e($formatAmt($activity['amount'])); ?></p>
+                                <p class="text-[10px] text-gray-400 font-medium mt-0.5 whitespace-nowrap">
+                                    <?php echo e($activity['time']->diffForHumans()); ?>
+
+                                </p>
+                            </div>
+                        </div>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </div>
+            <?php endif; ?>
+        </div>
 
         
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">

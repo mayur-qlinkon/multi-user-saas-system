@@ -22,9 +22,11 @@
             </div>
         <?php endif; ?>
         <?php if($errors->any()): ?>
-            <div class="bg-[#fee2e2] text-[#ef4444] px-5 py-4 rounded-xl text-sm font-bold shadow-sm border border-red-100 mb-6">
-                <div class="flex items-center gap-2 mb-2"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Please fix the following errors:</div>
-                <ul class="list-disc list-inside pl-7 text-xs font-medium space-y-1">
+            <div class="bg-red-50 text-red-700 px-5 py-4 rounded-xl text-sm shadow-sm border border-red-200 mb-6">
+                <div class="flex items-center gap-2 mb-2 font-bold">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i> We found a few issues:
+                </div>
+                <ul class="list-disc list-inside pl-7 text-[13px] font-medium space-y-1">
                     <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <li><?php echo e($error); ?></li>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

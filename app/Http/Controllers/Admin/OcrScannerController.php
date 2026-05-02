@@ -48,6 +48,14 @@ class OcrScannerController extends Controller
             'scan_type' => ['nullable', 'string', 'in:business_card,invoice,receipt,general'],
         ]);
 
+        // ── Gatekeeper: Check Daily OCR Limit ──
+        if (! check_plan_limit('ocr_scans')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have reached your daily OCR scan limit. Please upgrade your plan to continue scanning.'
+            ], 403);
+        }
+
         $file     = $request->file('image');
         $scanType = $request->input('scan_type', 'business_card');
         $user     = auth()->user();

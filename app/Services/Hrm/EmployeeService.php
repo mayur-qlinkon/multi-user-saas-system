@@ -3,7 +3,7 @@
 namespace App\Services\Hrm;
 
 use App\Models\Hrm\Employee;
-use App\Models\Hrm\User;
+use App\Models\User;
 use App\Services\ImageUploadService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -33,19 +33,24 @@ class EmployeeService
 
             unset($data['store_ids']);
 
+            // 1. Create the dedicated Employee User Account
+            $user = User::create([
+                'company_id' => $data['company_id'],
+                'name'       => $data['name'],
+                'email'      => $data['email'],
+                'phone'      => $data['phone'] ?? null,
+                'password'   => bcrypt($data['password']),
+                'user_type'  => 'employee', // Hardcoded strictly as employee
+                'status'     => 'active',
+            ]);
+
+            // 2. Attach new user_id and remove user-specific fields before creating Employee
+            $data['user_id'] = $user->id;
+            unset($data['name'], $data['email'], $data['phone'], $data['password']);
+
+            // 3. Create Employee
             $employee = Employee::create($data);
             $employee->user->stores()->sync($storeIds);
-
-            // If the linked user has no non-employee, non-customer roles,
-            // reclassify them as 'employee' type so they stop consuming a user_limit seat.
-            $linkedUser = $employee->user;
-            $hasFullSystemRole = $linkedUser->roles()
-                ->whereNotIn('slug', ['employee', 'customer'])
-                ->exists();
-
-            if (! $hasFullSystemRole) {
-                $linkedUser->update(['user_type' => 'employee']);
-            }
 
             return $employee->fresh(['user.stores', 'shift']);
         });
@@ -74,12 +79,22 @@ class EmployeeService
                 $this->deleteDocument($employee->address_proof);
                 $data['address_proof'] = $this->uploadDocument($data['address_proof'], 'employees/documents');
             }
-
-            unset($data['store_ids']);
-
+            // 1. Extract and update the linked User account details
+            $userData = [
+                'name'  => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+            ];
+            // Only update password if a new one was provided
+            if (!empty($data['password'])) {
+                $userData['password'] = bcrypt($data['password']);
+            }
+            $employee->user->update($userData);
+            // 2. Unset user fields so they don't break the Employee model update
+            unset($data['name'], $data['email'], $data['phone'], $data['password'], $data['store_ids']);
+            // 3. Update the Employee record
             $employee->update($data);
             $employee->user->stores()->sync($storeIds);
-
             return $employee->fresh(['user.stores', 'shift']);
         });
     }
@@ -92,11 +107,10 @@ class EmployeeService
 
             $employee->delete();
 
-            // Revert the user to 'full' type so they are counted correctly.
-            // They no longer have an active employee profile, so they would
-            // consume a user_limit seat if they retain any system access.
+            // Because Employee accounts are strictly 1:1 and separate from system accounts,
+            // deleting the employee profile should also delete the linked employee login.
             if ($userId) {
-                User::where('id', $userId)->update(['user_type' => 'full']);
+                User::where('id', $userId)->delete();
             }
         });
     }

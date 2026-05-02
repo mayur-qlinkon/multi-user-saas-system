@@ -1231,6 +1231,20 @@
                     if (sizeMap[cleanVal]) return sizeMap[cleanVal];
                     return cleanVal.substring(0, 3);
                 },
+                generateSKU(length = 8, prefix = 'SKU-') {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                    let result = prefix;
+
+                    // Use crypto for better randomness
+                    const randomValues = new Uint32Array(length);
+                    crypto.getRandomValues(randomValues);
+
+                    for (let i = 0; i < length; i++) {
+                        result += chars[randomValues[i] % chars.length];
+                    }
+
+                    return result;
+                },
 
                 // 🌟 New Intelligent SKU Builder
                 generateIntelligentSku(comboNames, usedSkus) {

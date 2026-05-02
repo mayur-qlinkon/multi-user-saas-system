@@ -145,18 +145,42 @@
             <div class="section-body">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4">
 
-                    {{-- User --}}
+                    {{-- User Account Credentials Header --}}
+                    <div class="col-span-1 sm:col-span-2 lg:col-span-3 pb-2 border-b border-gray-100">
+                        <h5 class="text-sm font-bold text-gray-700">User Account Credentials</h5>
+                        <p class="text-[11px] text-gray-400 font-medium mt-0.5">This will automatically create a dedicated employee login.</p>
+                    </div>
+                    {{-- Name --}}
                     <div>
-                        <label class="field-label">User <span class="text-red-500">*</span></label>
-                        <select name="user_id" class="field-input {{ $errors->has('user_id') ? 'has-error' : '' }}">
-                            <option value="">Select user</option>
-                            @foreach($availableUsers as $user)
-                                <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('user_id')
-                            <p class="field-error">{{ $message }}</p>
-                        @enderror
+                        <label class="field-label">Full Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" value="{{ old('name') }}" placeholder="e.g. John Doe" required
+                            class="field-input {{ $errors->has('name') ? 'has-error' : '' }}">
+                        @error('name') <p class="field-error">{{ $message }}</p> @enderror
+                    </div>
+                    {{-- Email --}}
+                    <div>
+                        <label class="field-label">Email Address <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" value="{{ old('email') }}" placeholder="employee@company.com" required
+                            class="field-input {{ $errors->has('email') ? 'has-error' : '' }}">
+                        @error('email') <p class="field-error">{{ $message }}</p> @enderror
+                    </div>
+                    {{-- Phone --}}
+                    <div>
+                        <label class="field-label">Phone Number</label>
+                        <input type="text" name="phone" value="{{ old('phone') }}" placeholder="+1 234 567 8900"
+                            class="field-input {{ $errors->has('phone') ? 'has-error' : '' }}">
+                        @error('phone') <p class="field-error">{{ $message }}</p> @enderror
+                    </div>
+                    {{-- Password --}}
+                    <div>
+                        <label class="field-label">Login Password <span class="text-red-500">*</span></label>
+                        <input type="password" name="password" placeholder="Minimum 8 characters" required
+                            class="field-input {{ $errors->has('password') ? 'has-error' : '' }}">
+                        @error('password') <p class="field-error">{{ $message }}</p> @enderror
+                    </div>
+                    {{-- Employment Details Header --}}
+                    <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-4 pb-2 border-b border-gray-100">
+                        <h5 class="text-sm font-bold text-gray-700">Employment Details</h5>
                     </div>
 
                     {{-- Employee Code --}}
@@ -224,11 +248,13 @@
 
                     {{-- Store --}}
                     <div>
-                        <label class="field-label">Store</label>
-                        <select name="store_id" class="field-input {{ $errors->has('store_id') ? 'has-error' : '' }}">
-                            <option value="">Select store</option>
+                        <label class="field-label">Primary Branch / Store <span class="text-red-500">*</span></label>
+                        <select name="store_id" required class="field-input {{ $errors->has('store_id') ? 'has-error' : '' }}">
+                            <option value="" disabled {{ old('store_id') ? '' : 'selected' }}>Select Primary Store</option>
                             @foreach($stores as $store)
-                                <option value="{{ $store->id }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>{{ $store->name }}</option>
+                                <option value="{{ $store->id }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>
+                                    {{ $store->name }}
+                                </option>
                             @endforeach
                         </select>
                         @error('store_id')
@@ -236,21 +262,7 @@
                         @enderror
                     </div>
 
-                    {{-- Additional Store Access --}}
-                    <div>
-                        <label class="field-label">Additional Store Access</label>
-                        <select name="store_ids[]" multiple size="4" class="field-input {{ $errors->has('store_ids') || $errors->has('store_ids.*') ? 'has-error' : '' }}">
-                            @foreach($stores as $store)
-                                <option value="{{ $store->id }}" {{ in_array($store->id, old('store_ids', [])) ? 'selected' : '' }}>{{ $store->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('store_ids')
-                            <p class="field-error">{{ $message }}</p>
-                        @enderror
-                        @error('store_ids.*')
-                            <p class="field-error">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    
 
                     {{-- Shift --}}
                     <div>

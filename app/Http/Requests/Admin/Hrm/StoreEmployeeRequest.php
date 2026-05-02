@@ -19,26 +19,16 @@ class StoreEmployeeRequest extends FormRequest
         $companyId = auth()->user()->company_id;
 
         return [
-            'user_id' => [
-                'required',
-                Rule::exists('users', 'id')->where('company_id', $companyId),
-                function (string $attribute, mixed $value, Closure $fail): void {
-                    if (blank($value)) {
-                        return;
-                    }
-
-                    $isEligibleUser = User::query()
-                        ->internal()
-                        ->where('status', 'active')
-                        ->whereKey($value)
-                        ->exists();
-
-                    if (! $isEligibleUser) {
-                        $fail('Please select an active staff user.');
-                    }
-                },
-                Rule::unique('employees')->where('company_id', $companyId),
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required', 
+                'string', 
+                'email', 
+                'max:255', 
+                Rule::unique('users', 'email')->where('company_id', $companyId)
             ],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'password' => ['required', 'string', 'min:8'],
             'store_id' => ['required', Rule::exists('stores', 'id')->where('company_id', $companyId)],
             'store_ids' => ['nullable', 'array'],
             'store_ids.*' => [Rule::exists('stores', 'id')->where('company_id', $companyId)],
@@ -82,9 +72,14 @@ class StoreEmployeeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_id.unique' => 'This user is already registered as an employee.',
-            'pan_number.regex' => 'PAN number must be in format ABCDE1234F.',
-            'aadhaar_number.regex' => 'Aadhaar number must be 12 digits.',
+            'name.required' => 'Please provide the employee\'s full name.',
+            'email.required' => 'An email address is required for the employee login.',
+            'email.unique' => 'This email is already in use by another account in your company. Please use a different email.',
+            'password.min' => 'For security, the password must be at least 8 characters long.',
+            'store_id.required' => 'Please select a primary branch/store for this employee.',
+            'date_of_joining.required' => 'The date of joining is required.',
+            'pan_number.regex' => 'The PAN number format seems incorrect. It should be like ABCDE1234F.',
+            'aadhaar_number.regex' => 'The Aadhaar number must be exactly 12 digits.',
         ];
     }
 }

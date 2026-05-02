@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Store;
 use App\Models\StorefrontSection;
 
 use App\Services\BannerService;
@@ -34,12 +35,30 @@ class StorefrontController extends Controller
     //  HOMEPAGE
     // ════════════════════════════════════════════════════
 
-    public function index(?string $slug = null)
+     public function index(?string $slug = null)
     {
         $company = $this->resolveCompany($slug);
 
-        // ── Hero banners (top of page) ──
-        $heroBanners = $this->safeGetBanners($company->id, 'home_top');
+        // ── Single store? Auto-redirect to store-level URL ──
+        $activeStores = Store::where('company_id', $company->id)
+            ->where('is_active', true)
+            ->where('storefront_enabled', true)
+            ->get(['id', 'slug', 'name', 'city', 'logo', 'business_hours']);
+
+        if ($activeStores->count() === 1) {
+            return redirect()->route('store.index', [
+                'slug'       => $company->slug,
+                'store_slug' => $activeStores->first()->slug,
+            ]);
+        }
+
+        // ── Multi-store: show branch picker ──
+        if ($activeStores->count() > 1) {
+            return view('storefront.branches', compact('company', 'activeStores'));
+        }
+
+        // ── No stores online: fallback to old company homepage ──
+        $heroBanners   = $this->safeGetBanners($company->id, 'home_top');
 
         // ── Storefront sections with products ──
         // Each section knows its own type and resolves its own products
